@@ -1,5 +1,5 @@
 const crypto = require('crypto');
-const sqlite3 = require('sqlite3');
+const {exec} = require("child_process");
 
 if (process.platform !== 'darwin') {
     throw new Error('This script only works on macOS');
@@ -10,7 +10,6 @@ if (process.platform !== 'darwin') {
  * @returns {Promise<string>}
  */
 async function getChromePassword() {
-    const {exec} = require("child_process");
     return await new Promise((resolve, reject) => {
         exec("security find-generic-password -w -s \"Chrome Safe Storage\"", (error, stdout, stderr) => {
             if (error) {
@@ -27,6 +26,7 @@ async function getChromePassword() {
     });
 }
 
+
 async function getEncryptedCookie(name, domain) {
     if (name && typeof name !== 'string') {
         throw new Error('name must be a string');
@@ -36,9 +36,8 @@ async function getEncryptedCookie(name, domain) {
     }
     return await new Promise((resolve, reject) => {
         const file = `${process.env.HOME}/Library/Application Support/Google/Chrome/Default/Cookies`;
-        const db = new sqlite3.Database(file);
         let sql;
-        sql = `SELECT * FROM cookies`;
+        sql = `SELECT encrypted_value FROM cookies`;
         if (typeof name === 'string' || typeof domain === 'string') {
             sql += ` WHERE `;
             if (typeof name === 'string') {
@@ -51,17 +50,17 @@ async function getEncryptedCookie(name, domain) {
                 sql += `host_key LIKE '${domain}';`;
             }
         }
-        // console.log(sql);
-        db.each(sql, (err, row) => {
-            if (err) {
-                reject(err);
+        exec(`sqlite3 "${file}" "${sql}"`, (error, stdout, stderr) => {
+            if (error) {
+                reject(error);
+                return;
             }
-            if (row) {
-                let rowEncryptedValue = row["encrypted_value"];
-                if (rowEncryptedValue) {
-                    resolve(rowEncryptedValue);
-                }
+            if (stderr) {
+                reject(error);
+                return;
             }
+            let s = stdout.toString().trim();
+            resolve(s);
         });
     });
 }

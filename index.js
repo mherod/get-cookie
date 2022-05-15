@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 const {exec} = require("child_process");
+const fs = require("fs");
 
 if (process.platform !== 'darwin') {
     throw new Error('This script only works on macOS');
@@ -50,7 +51,11 @@ async function getEncryptedCookie(name, domain) {
                 sql += `host_key LIKE '${domain}';`;
             }
         }
-        exec(`sqlite3 "${file}" "${sql}"`, (error, stdout, stderr) => {
+        const command = `sqlite3 "${file}" "${sql}"`;
+        if (process.env.DEBUG) {
+            console.log(command);
+        }
+        exec(command, {encoding: 'binary', maxBuffer: 1024}, (error, stdout, stderr) => {
             if (error) {
                 reject(error);
                 return;
@@ -59,8 +64,14 @@ async function getEncryptedCookie(name, domain) {
                 reject(error);
                 return;
             }
-            let s = stdout.toString().trim();
-            resolve(s);
+            let stdoutAsBuffer = stdout;
+            if (typeof stdoutAsBuffer === 'string' && stdoutAsBuffer.length > 0) {
+                // noinspection JSCheckFunctionSignatures
+                stdoutAsBuffer = Buffer.from(stdoutAsBuffer, 'binary').slice(0, -1);
+            }
+            if (stdoutAsBuffer && stdoutAsBuffer.length > 0) {
+                resolve(stdoutAsBuffer);
+            }
         });
     });
 }
@@ -74,6 +85,9 @@ async function getEncryptedCookie(name, domain) {
 async function decrypt(password, encryptedData) {
     if (typeof password !== 'string') {
         throw new Error('password must be a string');
+    }
+    if (typeof encryptedData !== 'object') {
+        throw new Error('encryptedData must be a object');
     }
     return await new Promise((resolve, reject) => {
         crypto.pbkdf2(password, 'saltysalt', 1003, 16, 'sha1', (error, buffer) => {

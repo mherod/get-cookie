@@ -6,7 +6,8 @@
   "bin": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "install": "pkg . --target host --out-path $HOMEBREW_FORMULA_PREFIX/bin || pkg . --target host --out-path /usr/local/bin"
+    "install": "pkg . --target host --out-path $HOMEBREW_FORMULA_PREFIX/bin/ -debug",
+    "install2": "pkg . --target host --out-path /usr/local/bin/ -debug"
   },
   "keywords": [],
   "author": "",

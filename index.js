@@ -40,15 +40,14 @@ async function getFirefoxCookie({name, domain}) {
     if (domain && typeof domain !== 'string') {
         throw new Error('domain must be a string');
     }
+    const file = await findFile(`${process.env.HOME}/Library/Application Support/Firefox/Profiles/`, "cookies.sqlite")
+    if (!fs.existsSync(file)) {
+        throw new Error(`File ${file} does not exist`);
+    }
+    if (process.env.VERBOSE) {
+        console.log(`Trying Firefox cookie ${name} for domain ${domain}`);
+    }
     return await new Promise((resolve, reject) => {
-        const file = `${process.env.HOME}/Library/Application Support/Firefox/Profiles/jk9edb6s.default-release/cookies.sqlite`;
-        if (!fs.existsSync(file)) {
-            reject(new Error(`File ${file} does not exist`));
-            return;
-        }
-        if (process.env.VERBOSE) {
-            console.log(`Trying Firefox cookie ${name} for domain ${domain}`);
-        }
         let sql;
         sql = `SELECT value FROM moz_cookies`;
         if (typeof name === 'string' || typeof domain === 'string') {
@@ -233,6 +232,26 @@ async function getChromeCookie({name, domain}) {
         console.log("Decrypted", s);
     }
     return s;
+}
+
+/**
+ *
+ * @param path
+ * @param name
+ * @returns {Promise<string>}
+ */
+async function findFile(path, name) {
+    return await new Promise((resolve, reject) => {
+        for (const file of fs.readdirSync(path)) {
+            const filePath = path + '/' + file;
+            const stat = fs.statSync(filePath);
+            if (stat.isDirectory()) {
+                findFile(filePath, name).then(resolve).catch(reject);
+            } else if (file === name) {
+                resolve(filePath);
+            }
+        }
+    });
 }
 
 function printStringValue(r) {

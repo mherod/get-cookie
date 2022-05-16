@@ -1,6 +1,6 @@
 {
   "name": "@mherod/get-cookie",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Node.js module for querying a local user's Chrome cookie",
   "main": "index.js",
   "bin": "index.js",

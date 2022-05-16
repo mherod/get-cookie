@@ -112,13 +112,16 @@ async function doSqliteQuery1(file, sql) {
             }
             const rows1 = rows;
             if (rows1.length === 0) {
+                if (process.env.VERBOSE) {
+                    console.log(`No rows found`);
+                }
                 resolve(null);
                 return;
             }
             if (Array.isArray(rows1)) {
                 // noinspection JSCheckFunctionSignatures
                 const [value] = rows1.flatMap(row => Object.values(row));
-                resolve(value);
+                resolve(Buffer.from(value));
                 return;
             }
             resolve(rows1);
@@ -161,10 +164,11 @@ async function doSqliteQuery(file, sql) {
  */
 async function decrypt(password, encryptedData) {
     if (typeof password !== 'string') {
-        throw new Error('password must be a string');
+        throw new Error('password must be a string: ' + password);
     }
-    if (typeof encryptedData !== 'object') {
-        throw new Error('encryptedData must be a object');
+    const encryptedData1 = encryptedData;
+    if (encryptedData1 == null || typeof encryptedData1 !== 'object') {
+        throw new Error('encryptedData must be a object: ' + encryptedData1);
     }
     if (process.env.VERBOSE) {
         console.log(`Trying to decrypt with password ${password}`);
@@ -172,7 +176,6 @@ async function decrypt(password, encryptedData) {
     return await new Promise((resolve, reject) => {
         crypto.pbkdf2(password, 'saltysalt', 1003, 16, 'sha1', (error, buffer) => {
             try {
-
                 if (error) {
                     if (process.env.VERBOSE) {
                         console.log("Error doing pbkdf2", error);
@@ -180,6 +183,7 @@ async function decrypt(password, encryptedData) {
                     reject(error);
                     return;
                 }
+
                 if (buffer.length !== 16) {
                     if (process.env.VERBOSE) {
                         console.log("Error doing pbkdf2, buffer length is not 16", buffer.length);
@@ -191,17 +195,20 @@ async function decrypt(password, encryptedData) {
                 const iv = new Buffer.from(new Array(17).join(' '), 'binary');
                 const decipher = crypto.createDecipheriv('aes-128-cbc', buffer, iv);
                 decipher.setAutoPadding(false);
-                encryptedData = encryptedData.slice(3);
 
-                if (encryptedData.length % 16 !== 0) {
+                if (encryptedData1 && encryptedData1.slice) {
+                    encryptedData = encryptedData1.slice(3);
+                }
+
+                if (encryptedData1.length % 16 !== 0) {
                     if (process.env.VERBOSE) {
-                        console.log("Error doing pbkdf2, encryptedData length is not a multiple of 16", encryptedData.length);
+                        console.log("Error doing pbkdf2, encryptedData length is not a multiple of 16", encryptedData1.length);
                     }
                     reject(new Error('encryptedData length is not a multiple of 16'));
                     return;
                 }
 
-                let decoded = decipher.update(encryptedData, 'binary', 'utf8');
+                let decoded = decipher.update(encryptedData1, 'binary', 'utf8');
                 // let decoded = decipher.update(encryptedData);
                 try {
                     decipher.final('utf-8');
@@ -240,8 +247,10 @@ async function getChromeCookie({name, domain}) {
     if (domain && typeof domain !== 'string') {
         throw new Error('domain must be a string');
     }
-    const password = await getChromePassword();
-    const encryptedData = await getEncryptedChromeCookie(name, domain);
+    const chromePasswordPromise = getChromePassword();
+    const encryptedChromeCookiePromise = getEncryptedChromeCookie(name, domain);
+    const password = await chromePasswordPromise;
+    const encryptedData = await encryptedChromeCookiePromise;
     if (process.env.VERBOSE) {
         console.log("Received encrypted", encryptedData);
     }
@@ -249,7 +258,9 @@ async function getChromeCookie({name, domain}) {
     try {
         s = await decrypt(password, encryptedData);
     } catch (e) {
-        console.error(e);
+        if (process.env.VERBOSE) {
+            console.error("Error decrypting", e);
+        }
         throw new Error('Failed to decrypt');
     }
     if (process.env.VERBOSE) {
@@ -303,7 +314,7 @@ module.exports = {
 if (process.argv) {
     if (process.argv.length > 2) {
         const name = process.argv[2];
-        const domain = process.argv[3];
+        const domain = process.argv[3] ?? '%';
 
         if (process.argv.includes('--verbose')) {
             process.env.VERBOSE = "true";

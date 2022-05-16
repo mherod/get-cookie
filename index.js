@@ -73,7 +73,7 @@ async function getFirefoxCookie({name, domain}) {
 const defaultChromeRoot = `${process.env.HOME}/Library/Application Support/Google/Chrome`;
 const defaultChromeCookies = `${defaultChromeRoot}/Default/Cookies`;
 
-async function getEncryptedChromeCookie(name, domain, file = defaultChromeCookies) {
+async function getEncryptedChromeCookie({name, domain, file = defaultChromeCookies}) {
     if (name && typeof name !== 'string') {
         throw new Error('name must be a string');
     }
@@ -253,8 +253,26 @@ async function getChromeCookie({name, domain}) {
         throw new Error('domain must be a string');
     }
     const chromePasswordPromise = getChromePassword();
-    const [encryptedData] = await findAllFiles({path: defaultChromeRoot, name: 'Cookies'}).then(files => {
-        return Promise.all(files.map(file => getEncryptedChromeCookie(name, domain, file)));
+    const [encryptedData] = await findAllFiles({
+        path: defaultChromeRoot,
+        name: 'Cookies'
+    }).then(files => {
+        const promise = Promise.all(files.map(file => {
+            return getEncryptedChromeCookie({
+                name: name,
+                domain: domain,
+                file: file
+            });
+        }));
+        if (process.env.VERBOSE) {
+            console.log('promise', promise);
+        }
+        return promise;
+    }).catch(error => {
+        if (process.env.VERBOSE) {
+            console.log('error', error);
+        }
+        return [];
     });
     const password = await chromePasswordPromise;
     if (process.env.VERBOSE) {
@@ -294,9 +312,26 @@ async function findAllFiles({path, name, rootSegments = path.split('/').length, 
         console.log(`Searching for ${name} in ${path}`);
     }
     const files = [];
-    for (const file of fs.readdirSync(path)) {
+    let readdirSync;
+    try {
+        readdirSync = fs.readdirSync(path);
+    } catch (e) {
+        if (process.env.VERBOSE) {
+            console.log(`Error reading ${path}`, e);
+        }
+        return files;
+    }
+    for (const file of readdirSync) {
         const filePath = path + '/' + file;
-        const stat = fs.statSync(filePath);
+        let stat;
+        try {
+            stat = fs.statSync(filePath);
+        } catch (e) {
+            if (process.env.VERBOSE) {
+                console.error(`Error getting stat for ${filePath}`, e);
+            }
+            continue;
+        }
         if (stat.isDirectory()) {
             if (filePath.split('/').length < rootSegments + maxDepth) {
                 try {

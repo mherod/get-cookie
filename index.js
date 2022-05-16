@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 const crypto = require('crypto');
 const {exec} = require("child_process");
 const fs = require("fs");

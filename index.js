@@ -29,6 +29,10 @@ async function getChromePassword() {
     });
 }
 
+async function getCookie() {
+    throw new Error('Not implemented');
+}
+
 /**
  *
  * @param name
@@ -271,7 +275,9 @@ function printStringValue(r) {
 // noinspection JSUnusedGlobalSymbols
 module.exports = {
     getDecryptedCookie: getChromeCookie,
-    getChromeCookie
+    getChromeCookie,
+    getFirefoxCookie,
+    getCookie
 };
 
 if (process.argv) {

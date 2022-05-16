@@ -46,8 +46,8 @@ async function getFirefoxCookie({name, domain}) {
             reject(new Error(`File ${file} does not exist`));
             return;
         }
-        if (process.env.DEBUG) {
-            console.log(`File ${file} exists, trying firefox`);
+        if (process.env.VERBOSE) {
+            console.log(`Trying Firefox cookie ${name} for domain ${domain}`);
         }
         let sql;
         sql = `SELECT value FROM moz_cookies`;
@@ -64,7 +64,7 @@ async function getFirefoxCookie({name, domain}) {
             }
         }
         const command = `sqlite3 "${file}" "${sql}"`;
-        if (process.env.DEBUG) {
+        if (process.env.VERBOSE) {
             console.log(command);
         }
         exec(command, {encoding: 'binary', maxBuffer: 1024}, (error, stdout, stderr) => {
@@ -101,6 +101,9 @@ async function getEncryptedChromeCookie(name, domain) {
             reject(new Error(`File ${file} does not exist`));
             return;
         }
+        if (process.env.VERBOSE) {
+            console.log(`Trying Chrome cookie ${name} for domain ${domain}`);
+        }
         let sql;
         sql = `SELECT encrypted_value FROM cookies`;
         if (typeof name === 'string' || typeof domain === 'string') {
@@ -116,7 +119,7 @@ async function getEncryptedChromeCookie(name, domain) {
             }
         }
         const command = `sqlite3 "${file}" "${sql}"`;
-        if (process.env.DEBUG) {
+        if (process.env.VERBOSE) {
             console.log(command);
         }
         exec(command, {encoding: 'binary', maxBuffer: 1024}, (error, stdout, stderr) => {
@@ -153,20 +156,48 @@ async function decrypt(password, encryptedData) {
     if (typeof encryptedData !== 'object') {
         throw new Error('encryptedData must be a object');
     }
+    if (process.env.VERBOSE) {
+        console.log(`Trying to decrypt with password ${password}`);
+    }
     return await new Promise((resolve, reject) => {
         crypto.pbkdf2(password, 'saltysalt', 1003, 16, 'sha1', (error, buffer) => {
+            if (error) {
+                if (process.env.VERBOSE) {
+                    console.log("Error doing pbkdf2", error);
+                }
+                reject(error);
+                return;
+            }
+            if (buffer.length !== 16) {
+                if (process.env.VERBOSE) {
+                    console.log("Error doing pbkdf2, buffer length is not 16", buffer.length);
+                }
+                reject(new Error('Buffer length is not 16'));
+                return;
+            }
+
             const iv = new Buffer.from(new Array(17).join(' '), 'binary');
             const decipher = crypto.createDecipheriv('aes-128-cbc', buffer, iv);
             decipher.setAutoPadding(false);
             encryptedData = encryptedData.slice(3);
 
-            let decoded = decipher.update(encryptedData);
-            decipher.final('utf-8');
+            let decoded = decipher.update(encryptedData, 'binary', 'utf8');
+            // let decoded = decipher.update(encryptedData);
+            try {
+                decipher.final('utf-8');
+            } catch (e) {
+                if (process.env.VERBOSE) {
+                    console.log("Error doing decipher.final()", e);
+                }
+                reject(e);
+                return;
+            }
 
             let padding = decoded[decoded.length - 1];
             if (padding) {
                 decoded = decoded.slice(0, decoded.length - padding);
             }
+            // noinspection JSCheckFunctionSignatures
             decoded = decoded.toString('utf8');
             resolve(decoded)
         });
@@ -188,8 +219,32 @@ async function getChromeCookie({name, domain}) {
     }
     const password = await getChromePassword();
     const encryptedData = await getEncryptedChromeCookie(name, domain);
-    console.log(encryptedData);
-    return await decrypt(password, encryptedData);
+    if (process.env.VERBOSE) {
+        console.log("Received encrypted", encryptedData);
+    }
+    let s;
+    try {
+        s = await decrypt(password, encryptedData);
+    } catch (e) {
+        console.error(e);
+        throw new Error('Failed to decrypt');
+    }
+    if (process.env.VERBOSE) {
+        console.log("Decrypted", s);
+    }
+    return s;
+}
+
+function printStringValue(r) {
+    if (process.env.VERBOSE) {
+        console.log("Printing value", r);
+    }
+    if (typeof r === 'string') {
+        console.log(r);
+    } else {
+        // noinspection JSCheckFunctionSignatures
+        console.log(r.toString('utf8'));
+    }
 }
 
 // noinspection JSUnusedGlobalSymbols
@@ -203,9 +258,6 @@ if (process.argv) {
         const name = process.argv[2];
         const domain = process.argv[3];
 
-        if (process.argv.includes('--debug')) {
-            process.env.DEBUG = "true";
-        }
         if (process.argv.includes('--verbose')) {
             process.env.VERBOSE = "true";
         }
@@ -220,33 +272,52 @@ if (process.argv) {
         }
 
         if (process.env.CHROME_ONLY) {
+            if (process.env.VERBOSE) {
+                console.log('chrome only');
+            }
             getChromeCookie({name, domain})
-                .then(console.log)
-                .catch(console.error);
+                .then(printStringValue)
+                .catch(err => {
+                    if (process.env.VERBOSE) {
+                        console.error(err);
+                    }
+                });
         } else if (process.env.FIREFOX_ONLY) {
+            if (process.env.VERBOSE) {
+                console.log('firefox only');
+            }
             getFirefoxCookie({name, domain})
-                .then(console.log)
-                .catch(console.error);
+                .then(printStringValue)
+                .catch(err => {
+                    if (process.env.VERBOSE) {
+                        console.error("Error getting Firefox cookie", err);
+                    }
+                });
         } else {
             getChromeCookie({name, domain})
+                .catch(err => {
+                    if (process.env.VERBOSE) {
+                        console.error("Error getting Chrome cookie", err);
+                    }
+                })
                 .then(r => {
-                    if (typeof r === 'string') {
-                        console.log(r);
+                    if (typeof r === 'string' && r.trim().length > 0) {
+                        return r;
                     } else {
-                        return getFirefoxCookie({name, domain}).catch(console.error);
+                        return getFirefoxCookie({name, domain})
+                            .catch(err => {
+                                if (process.env.VERBOSE) {
+                                    console.error("Error getting Firefox cookie", err);
+                                }
+                            });
                     }
                 })
                 .catch((e) => {
                     if (process.env.VERBOSE) {
-                        console.error(e);
+                        console.error("Error getting Chrome or Firefox cookie", e);
                     }
-                    return getFirefoxCookie({name, domain}).catch(console.error);
                 })
-                .then(r => {
-                    if (typeof r === 'string') {
-                        console.log(r);
-                    }
-                });
+                .then(printStringValue);
         }
     }
 }

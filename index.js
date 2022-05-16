@@ -29,7 +29,7 @@ async function getChromePassword() {
     });
 }
 
-async function getCookie() {
+async function getCookie(name, domain) {
     throw new Error('Not implemented');
 }
 

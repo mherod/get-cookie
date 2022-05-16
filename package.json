@@ -9,10 +9,9 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "install": "pkg . --target node17-macos-x64 --out-path $HOMEBREW_FORMULA_PREFIX/bin/ --debug",
-    "install2": "pkg . --target host --out-path $HOMEBREW_FORMULA_PREFIX/bin/ --debug",
-    "install3": "pkg . --target node17-macos-x64 --out-path /usr/local/bin/ --debug",
-    "install4": "pkg . --target host --out-path /usr/local/bin/ --debug"
+    "installForHomebrew": "pkg . --target host --out-path $HOMEBREW_FORMULA_PREFIX/bin/ --debug",
+    "installForMac": "pkg . --target node17-macos-x64 --out-path /usr/local/bin/ --debug",
+    "installForHost": "pkg . --target host --out-path /usr/local/bin/ --debug"
   },
   "keywords": [],
   "author": "Matthew Herod",

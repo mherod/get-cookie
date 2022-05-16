@@ -292,12 +292,22 @@ if (process.argv) {
             process.env.IGNORE_EXPIRED = "true";
         }
 
+        if (process.env.VERBOSE) {
+            console.log("Verbose mode", process.argv);
+        }
+
         if (process.env.CHROME_ONLY) {
             if (process.env.VERBOSE) {
                 console.log('chrome only');
             }
             getChromeCookie({name, domain})
-                .then(printStringValue)
+                .then(cookie => {
+                    if (cookie && cookie.length > 0) {
+                        printStringValue(cookie);
+                    } else {
+                        console.log('No cookie found');
+                    }
+                })
                 .catch(err => {
                     if (process.env.VERBOSE) {
                         console.error(err);
@@ -308,7 +318,13 @@ if (process.argv) {
                 console.log('firefox only');
             }
             getFirefoxCookie({name, domain})
-                .then(printStringValue)
+                .then(cookie => {
+                    if (cookie && cookie.length > 0) {
+                        printStringValue(cookie);
+                    } else {
+                        console.log('No cookie found');
+                    }
+                })
                 .catch(err => {
                     if (process.env.VERBOSE) {
                         console.error("Error getting Firefox cookie", err);

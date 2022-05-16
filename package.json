@@ -1,9 +1,12 @@
 {
-  "name": "get-cookie",
-  "version": "1.0.1",
-  "description": "",
+  "name": "@mherod/get-cookie",
+  "version": "1.0.2",
+  "description": "Node.js module for querying a local user's Chrome cookie",
   "main": "index.js",
   "bin": "index.js",
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "install": "pkg . --target node17-macos-x64 --out-path $HOMEBREW_FORMULA_PREFIX/bin/ --debug",
@@ -12,7 +15,7 @@
     "install4": "pkg . --target host --out-path /usr/local/bin/ --debug"
   },
   "keywords": [],
-  "author": "",
+  "author": "Matthew Herod",
   "license": "ISC",
   "dependencies": {
   }

@@ -46,7 +46,7 @@ async function getFirefoxCookie({name, domain}) {
     if (domain && typeof domain !== 'string') {
         throw new Error('domain must be a string');
     }
-    const file = await findFile(`${process.env.HOME}/Library/Application Support/Firefox/Profiles/`, "cookies.sqlite")
+    const file = await findFile(`${process.env.HOME}/Library/Application Support/Firefox/Profiles`, "cookies.sqlite")
     if (!fs.existsSync(file)) {
         throw new Error(`File ${file} does not exist`);
     }
@@ -55,7 +55,7 @@ async function getFirefoxCookie({name, domain}) {
     }
     return await new Promise((resolve, reject) => {
         let sql;
-        sql = `SELECT value FROM moz_cookies`;
+        sql = "SELECT value FROM moz_cookies";
         if (typeof name === 'string' || typeof domain === 'string') {
             sql += ` WHERE `;
             if (typeof name === 'string') {
@@ -72,7 +72,7 @@ async function getFirefoxCookie({name, domain}) {
         if (process.env.VERBOSE) {
             console.log(command);
         }
-        exec(command, {encoding: 'binary', maxBuffer: 1024}, (error, stdout, stderr) => {
+        exec(command, {encoding: 'binary', maxBuffer: 5 * 1024}, (error, stdout, stderr) => {
             if (error) {
                 reject(error);
                 return;
@@ -127,7 +127,7 @@ async function getEncryptedChromeCookie(name, domain) {
         if (process.env.VERBOSE) {
             console.log(command);
         }
-        exec(command, {encoding: 'binary', maxBuffer: 1024}, (error, stdout, stderr) => {
+        exec(command, {encoding: 'binary', maxBuffer: 5 * 1024}, (error, stdout, stderr) => {
             if (error) {
                 reject(error);
                 return;
@@ -185,6 +185,14 @@ async function decrypt(password, encryptedData) {
             const decipher = crypto.createDecipheriv('aes-128-cbc', buffer, iv);
             decipher.setAutoPadding(false);
             encryptedData = encryptedData.slice(3);
+
+            if (encryptedData.length % 16 !== 0) {
+                if (process.env.VERBOSE) {
+                    console.log("Error doing pbkdf2, encryptedData length is not a multiple of 16", encryptedData.length);
+                }
+                reject(new Error('encryptedData length is not a multiple of 16'));
+                return;
+            }
 
             let decoded = decipher.update(encryptedData, 'binary', 'utf8');
             // let decoded = decipher.update(encryptedData);
@@ -264,11 +272,13 @@ function printStringValue(r) {
     if (process.env.VERBOSE) {
         console.log("Printing value", r);
     }
-    if (typeof r === 'string') {
-        console.log(r);
-    } else {
-        // noinspection JSCheckFunctionSignatures
-        console.log(r.toString('utf8'));
+    if (r) {
+        if (typeof r === 'string') {
+            console.log(r);
+        } else if (r.toString) {
+            // noinspection JSCheckFunctionSignatures
+            console.log(r.toString('utf8'));
+        }
     }
 }
 

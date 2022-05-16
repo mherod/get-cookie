@@ -70,19 +70,24 @@ async function getFirefoxCookie({name, domain}) {
     return await doSqliteQuery1(file, sql);
 }
 
-async function getEncryptedChromeCookie(name, domain) {
+const defaultChromeRoot = `${process.env.HOME}/Library/Application Support/Google/Chrome`;
+const defaultChromeCookies = `${defaultChromeRoot}/Default/Cookies`;
+
+async function getEncryptedChromeCookie(name, domain, file = defaultChromeCookies) {
     if (name && typeof name !== 'string') {
         throw new Error('name must be a string');
     }
     if (domain && typeof domain !== 'string') {
         throw new Error('domain must be a string');
     }
-    const file = `${process.env.HOME}/Library/Application Support/Google/Chrome/Default/Cookies`;
+    if (file && typeof file !== 'string') {
+        throw new Error('file must be a string');
+    }
     if (!fs.existsSync(file)) {
         throw new Error(`File ${file} does not exist`);
     }
     if (process.env.VERBOSE) {
-        console.log(`Trying Chrome cookie ${name} for domain ${domain}`);
+        console.log(`Trying Chrome (at ${file}) cookie ${name} for domain ${domain}`);
     }
     let sql;
     sql = `SELECT encrypted_value FROM cookies`;
@@ -248,9 +253,10 @@ async function getChromeCookie({name, domain}) {
         throw new Error('domain must be a string');
     }
     const chromePasswordPromise = getChromePassword();
-    const encryptedChromeCookiePromise = getEncryptedChromeCookie(name, domain);
+    const [encryptedData] = await findAllFiles({path: defaultChromeRoot, name: 'Cookies'}).then(files => {
+        return Promise.all(files.map(file => getEncryptedChromeCookie(name, domain, file)));
+    });
     const password = await chromePasswordPromise;
-    const encryptedData = await encryptedChromeCookiePromise;
     if (process.env.VERBOSE) {
         console.log("Received encrypted", encryptedData);
     }
@@ -267,6 +273,57 @@ async function getChromeCookie({name, domain}) {
         console.log("Decrypted", s);
     }
     return s;
+}
+
+/**
+ *
+ * @param path
+ * @param name
+ * @param rootSegments
+ * @param maxDepth
+ * @returns {Promise<[string]>}
+ */
+async function findAllFiles({path, name, rootSegments = path.split('/').length, maxDepth = 2}) {
+    if (typeof path !== 'string') {
+        throw new Error('path must be a string');
+    }
+    if (typeof name !== 'string') {
+        throw new Error('name must be a string');
+    }
+    if (process.env.VERBOSE) {
+        console.log(`Searching for ${name} in ${path}`);
+    }
+    const files = [];
+    for (const file of fs.readdirSync(path)) {
+        const filePath = path + '/' + file;
+        const stat = fs.statSync(filePath);
+        if (stat.isDirectory()) {
+            if (filePath.split('/').length < rootSegments + maxDepth) {
+                try {
+                    const subFiles = await findAllFiles({
+                        path: filePath,
+                        name: name,
+                        rootSegments: rootSegments,
+                        maxDepth: 2
+                    });
+                    files.push(...subFiles);
+                } catch (e) {
+                    if (process.env.VERBOSE) {
+                        console.error(e);
+                    }
+                }
+            }
+        } else if (file === name) {
+            files.push(filePath);
+        }
+    }
+    if (process.env.VERBOSE) {
+        if (files.length > 0) {
+            console.log(`Found ${(files.length)} ${name} files`);
+            console.log(files);
+        }
+    }
+    return files;
 }
 
 /**

@@ -9,13 +9,12 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "installForHomebrew": "pkg . --target host --out-path $HOMEBREW_FORMULA_PREFIX/bin/ --debug",
-    "installForMac": "pkg . --target node17-macos-x64 --out-path /usr/local/bin/ --debug",
-    "installForHost": "pkg . --target host --out-path /usr/local/bin/ --debug"
+    "install": "npm install --force --global ."
   },
   "keywords": [],
   "author": "Matthew Herod",
   "license": "ISC",
   "dependencies": {
+    "sqlite3": "^5.0.8"
   }
 }

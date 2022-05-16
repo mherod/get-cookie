@@ -53,44 +53,21 @@ async function getFirefoxCookie({name, domain}) {
     if (process.env.VERBOSE) {
         console.log(`Trying Firefox cookie ${name} for domain ${domain}`);
     }
-    return await new Promise((resolve, reject) => {
-        let sql;
-        sql = "SELECT value FROM moz_cookies";
-        if (typeof name === 'string' || typeof domain === 'string') {
-            sql += ` WHERE `;
-            if (typeof name === 'string') {
-                sql += `name = '${name}'`;
-                if (typeof domain === 'string') {
-                    sql += ` AND `;
-                }
-            }
+    let sql;
+    sql = "SELECT value FROM moz_cookies";
+    if (typeof name === 'string' || typeof domain === 'string') {
+        sql += ` WHERE `;
+        if (typeof name === 'string') {
+            sql += `name = '${name}'`;
             if (typeof domain === 'string') {
-                sql += `host LIKE '${domain}';`;
+                sql += ` AND `;
             }
         }
-        const command = `sqlite3 "${file}" "${sql}"`;
-        if (process.env.VERBOSE) {
-            console.log(command);
+        if (typeof domain === 'string') {
+            sql += `host LIKE '${domain}';`;
         }
-        exec(command, {encoding: 'binary', maxBuffer: 5 * 1024}, (error, stdout, stderr) => {
-            if (error) {
-                reject(error);
-                return;
-            }
-            if (stderr) {
-                reject(error);
-                return;
-            }
-            let stdoutAsBuffer = stdout;
-            if (typeof stdoutAsBuffer === 'string' && stdoutAsBuffer.length > 0) {
-                // noinspection JSCheckFunctionSignatures
-                stdoutAsBuffer = Buffer.from(stdoutAsBuffer, 'binary').slice(0, -1);
-            }
-            if (stdoutAsBuffer && stdoutAsBuffer.length > 0) {
-                resolve(stdoutAsBuffer);
-            }
-        });
-    });
+    }
+    return await doSqliteQuery1(file, sql);
 }
 
 async function getEncryptedChromeCookie(name, domain) {
@@ -100,33 +77,61 @@ async function getEncryptedChromeCookie(name, domain) {
     if (domain && typeof domain !== 'string') {
         throw new Error('domain must be a string');
     }
-    return await new Promise((resolve, reject) => {
-        const file = `${process.env.HOME}/Library/Application Support/Google/Chrome/Default/Cookies`;
-        if (!fs.existsSync(file)) {
-            reject(new Error(`File ${file} does not exist`));
-            return;
-        }
-        if (process.env.VERBOSE) {
-            console.log(`Trying Chrome cookie ${name} for domain ${domain}`);
-        }
-        let sql;
-        sql = `SELECT encrypted_value FROM cookies`;
-        if (typeof name === 'string' || typeof domain === 'string') {
-            sql += ` WHERE `;
-            if (typeof name === 'string') {
-                sql += `name = '${name}'`;
-                if (typeof domain === 'string') {
-                    sql += ` AND `;
-                }
-            }
+    const file = `${process.env.HOME}/Library/Application Support/Google/Chrome/Default/Cookies`;
+    if (!fs.existsSync(file)) {
+        throw new Error(`File ${file} does not exist`);
+    }
+    if (process.env.VERBOSE) {
+        console.log(`Trying Chrome cookie ${name} for domain ${domain}`);
+    }
+    let sql;
+    sql = `SELECT encrypted_value FROM cookies`;
+    if (typeof name === 'string' || typeof domain === 'string') {
+        sql += ` WHERE `;
+        if (typeof name === 'string') {
+            sql += `name = '${name}'`;
             if (typeof domain === 'string') {
-                sql += `host_key LIKE '${domain}';`;
+                sql += ` AND `;
             }
         }
-        const command = `sqlite3 "${file}" "${sql}"`;
-        if (process.env.VERBOSE) {
-            console.log(command);
+        if (typeof domain === 'string') {
+            sql += `host_key LIKE '${domain}';`;
         }
+    }
+    return await doSqliteQuery1(file, sql);
+}
+
+async function doSqliteQuery1(file, sql) {
+    const sqlite3 = require('sqlite3');
+    const db = new sqlite3.Database(file);
+    return new Promise((resolve, reject) => {
+        db.all(sql, (err, rows) => {
+            if (err) {
+                reject(err);
+                return;
+            }
+            const rows1 = rows;
+            if (rows1.length === 0) {
+                resolve(null);
+                return;
+            }
+            if (Array.isArray(rows1)) {
+                // noinspection JSCheckFunctionSignatures
+                const [value] = rows1.flatMap(row => Object.values(row));
+                resolve(value);
+                return;
+            }
+            resolve(rows1);
+        });
+    });
+}
+
+async function doSqliteQuery(file, sql) {
+    const command = `sqlite3 "${file}" "${sql}"`;
+    if (process.env.VERBOSE) {
+        console.log(command);
+    }
+    return await new Promise((resolve, reject) => {
         exec(command, {encoding: 'binary', maxBuffer: 5 * 1024}, (error, stdout, stderr) => {
             if (error) {
                 reject(error);
@@ -166,53 +171,58 @@ async function decrypt(password, encryptedData) {
     }
     return await new Promise((resolve, reject) => {
         crypto.pbkdf2(password, 'saltysalt', 1003, 16, 'sha1', (error, buffer) => {
-            if (error) {
-                if (process.env.VERBOSE) {
-                    console.log("Error doing pbkdf2", error);
-                }
-                reject(error);
-                return;
-            }
-            if (buffer.length !== 16) {
-                if (process.env.VERBOSE) {
-                    console.log("Error doing pbkdf2, buffer length is not 16", buffer.length);
-                }
-                reject(new Error('Buffer length is not 16'));
-                return;
-            }
-
-            const iv = new Buffer.from(new Array(17).join(' '), 'binary');
-            const decipher = crypto.createDecipheriv('aes-128-cbc', buffer, iv);
-            decipher.setAutoPadding(false);
-            encryptedData = encryptedData.slice(3);
-
-            if (encryptedData.length % 16 !== 0) {
-                if (process.env.VERBOSE) {
-                    console.log("Error doing pbkdf2, encryptedData length is not a multiple of 16", encryptedData.length);
-                }
-                reject(new Error('encryptedData length is not a multiple of 16'));
-                return;
-            }
-
-            let decoded = decipher.update(encryptedData, 'binary', 'utf8');
-            // let decoded = decipher.update(encryptedData);
             try {
-                decipher.final('utf-8');
-            } catch (e) {
-                if (process.env.VERBOSE) {
-                    console.log("Error doing decipher.final()", e);
-                }
-                reject(e);
-                return;
-            }
 
-            let padding = decoded[decoded.length - 1];
-            if (padding) {
-                decoded = decoded.slice(0, decoded.length - padding);
+                if (error) {
+                    if (process.env.VERBOSE) {
+                        console.log("Error doing pbkdf2", error);
+                    }
+                    reject(error);
+                    return;
+                }
+                if (buffer.length !== 16) {
+                    if (process.env.VERBOSE) {
+                        console.log("Error doing pbkdf2, buffer length is not 16", buffer.length);
+                    }
+                    reject(new Error('Buffer length is not 16'));
+                    return;
+                }
+
+                const iv = new Buffer.from(new Array(17).join(' '), 'binary');
+                const decipher = crypto.createDecipheriv('aes-128-cbc', buffer, iv);
+                decipher.setAutoPadding(false);
+                encryptedData = encryptedData.slice(3);
+
+                if (encryptedData.length % 16 !== 0) {
+                    if (process.env.VERBOSE) {
+                        console.log("Error doing pbkdf2, encryptedData length is not a multiple of 16", encryptedData.length);
+                    }
+                    reject(new Error('encryptedData length is not a multiple of 16'));
+                    return;
+                }
+
+                let decoded = decipher.update(encryptedData, 'binary', 'utf8');
+                // let decoded = decipher.update(encryptedData);
+                try {
+                    decipher.final('utf-8');
+                } catch (e) {
+                    if (process.env.VERBOSE) {
+                        console.log("Error doing decipher.final()", e);
+                    }
+                    reject(e);
+                    return;
+                }
+
+                let padding = decoded[decoded.length - 1];
+                if (padding) {
+                    decoded = decoded.slice(0, 0 - padding);
+                }
+                // noinspection JSCheckFunctionSignatures
+                decoded = decoded.toString('utf8');
+                resolve(decoded);
+            } catch (e) {
+                reject(e);
             }
-            // noinspection JSCheckFunctionSignatures
-            decoded = decoded.toString('utf8');
-            resolve(decoded)
         });
     });
 }

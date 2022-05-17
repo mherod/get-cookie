@@ -168,16 +168,16 @@ async function decrypt(password, encryptedData) {
                     encryptedData = encryptedData1.slice(3);
                 }
 
-                // if (encryptedData1.length % 16 !== 0) {
-                //     if (process.env.VERBOSE) {
-                //         console.log("Error doing pbkdf2, encryptedData length is not a multiple of 16", encryptedData1.length);
-                //     }
-                //     reject(new Error('encryptedData length is not a multiple of 16'));
-                //     return;
-                // }
+                if (encryptedData1.length % 16 !== 0) {
+                    if (process.env.VERBOSE) {
+                        console.log("Error doing pbkdf2, encryptedData length is not a multiple of 16", encryptedData1.length);
+                    }
+                    reject(new Error('encryptedData length is not a multiple of 16'));
+                    return;
+                }
 
-                let decoded = decipher.update(encryptedData1, 'binary', 'utf8');
-                // let decoded = decipher.update(encryptedData);
+                // let decoded = decipher.update(encryptedData1, 'binary', 'utf8');
+                let decoded = decipher.update(encryptedData);
                 try {
                     decipher.final('utf-8');
                 } catch (e) {

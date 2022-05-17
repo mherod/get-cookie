@@ -11,6 +11,8 @@ To install get-cookie, run the following command:
 
         $ npm install @mherod/get-cookie --global
 
+**Note: Currently only macOS is supported. Windows support is planned for a future release.**
+
 ## How do I use it?
 
 To use get-cookie, run the following command:

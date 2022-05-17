@@ -3,6 +3,7 @@
 const crypto = require('crypto');
 const {exec} = require("child_process");
 const fs = require("fs");
+const {execSimple} = require("./utils");
 
 if (process.platform !== 'darwin') {
     throw new Error('This script only works on macOS');
@@ -13,20 +14,7 @@ if (process.platform !== 'darwin') {
  * @returns {Promise<string>}
  */
 async function getChromePassword() {
-    return await new Promise((resolve, reject) => {
-        exec("security find-generic-password -w -s \"Chrome Safe Storage\"", (error, stdout, stderr) => {
-            if (error) {
-                reject(error);
-                return;
-            }
-            if (stderr) {
-                reject(error);
-                return;
-            }
-            let s = stdout.toString().trim();
-            resolve(s);
-        });
-    });
+    return await execSimple("security find-generic-password -w -s \"Chrome Safe Storage\"");
 }
 
 async function getCookie(name, domain) {
@@ -46,8 +34,11 @@ async function getFirefoxCookie({name, domain}) {
     if (domain && typeof domain !== 'string') {
         throw new Error('domain must be a string');
     }
-    const file = await findFile(`${process.env.HOME}/Library/Application Support/Firefox/Profiles`, "cookies.sqlite")
-    if (!fs.existsSync(file)) {
+    const [file] = await findAllFiles({
+        path: `${process.env.HOME}/Library/Application Support/Firefox/Profiles`,
+        name: "cookies.sqlite"
+    })
+    if (file && !fs.existsSync(file)) {
         throw new Error(`File ${file} does not exist`);
     }
     if (process.env.VERBOSE) {
@@ -134,33 +125,6 @@ async function doSqliteQuery1(file, sql) {
     });
 }
 
-async function doSqliteQuery(file, sql) {
-    const command = `sqlite3 "${file}" "${sql}"`;
-    if (process.env.VERBOSE) {
-        console.log(command);
-    }
-    return await new Promise((resolve, reject) => {
-        exec(command, {encoding: 'binary', maxBuffer: 5 * 1024}, (error, stdout, stderr) => {
-            if (error) {
-                reject(error);
-                return;
-            }
-            if (stderr) {
-                reject(error);
-                return;
-            }
-            let stdoutAsBuffer = stdout;
-            if (typeof stdoutAsBuffer === 'string' && stdoutAsBuffer.length > 0) {
-                // noinspection JSCheckFunctionSignatures
-                stdoutAsBuffer = Buffer.from(stdoutAsBuffer, 'binary').slice(0, -1);
-            }
-            if (stdoutAsBuffer && stdoutAsBuffer.length > 0) {
-                resolve(stdoutAsBuffer);
-            }
-        });
-    });
-}
-
 /**
  *
  * @param {string} password
@@ -242,28 +206,38 @@ async function decrypt(password, encryptedData) {
 /**
  *
  * @param {string|undefined} name
- * @param {string|undefined} domain
+ * @param {string} domain
  * @returns {Promise<string>}
  */
-async function getChromeCookie({name, domain}) {
+async function getChromeCookie({name, domain = '%'}) {
     if (name && typeof name !== 'string') {
         throw new Error('name must be a string');
     }
-    if (domain && typeof domain !== 'string') {
+    if (typeof domain !== 'string') {
         throw new Error('domain must be a string');
     }
     const chromePasswordPromise = getChromePassword();
-    const [encryptedData] = await findAllFiles({
+    const encryptedDatas = await findAllFiles({
         path: defaultChromeRoot,
         name: 'Cookies'
     }).then(files => {
-        const promise = Promise.all(files.map(file => {
+        const promises = files.map(file => {
             return getEncryptedChromeCookie({
                 name: name,
                 domain: domain,
                 file: file
+            }).catch(e => {
+                if (process.env.VERBOSE) {
+                    console.log("Error getting encrypted cookie", e);
+                }
+                return null;
             });
-        }));
+        });
+        const promise = Promise.all(promises).then(results => {
+            return results.filter(result => {
+                return result;
+            });
+        });
         if (process.env.VERBOSE) {
             console.log('promise', promise);
         }
@@ -275,6 +249,9 @@ async function getChromeCookie({name, domain}) {
         return [];
     });
     const password = await chromePasswordPromise;
+    const [encryptedData] = encryptedDatas.filter(encryptedData => {
+        return encryptedData != null && encryptedData.length > 0;
+    });
     if (process.env.VERBOSE) {
         console.log("Received encrypted", encryptedData);
     }
@@ -359,26 +336,6 @@ async function findAllFiles({path, name, rootSegments = path.split('/').length, 
         }
     }
     return files;
-}
-
-/**
- *
- * @param path
- * @param name
- * @returns {Promise<string>}
- */
-async function findFile(path, name) {
-    return await new Promise((resolve, reject) => {
-        for (const file of fs.readdirSync(path)) {
-            const filePath = path + '/' + file;
-            const stat = fs.statSync(filePath);
-            if (stat.isDirectory()) {
-                findFile(filePath, name).then(resolve).catch(reject);
-            } else if (file === name) {
-                resolve(filePath);
-            }
-        }
-    });
 }
 
 function printStringValue(r) {

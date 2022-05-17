@@ -1,3 +1,5 @@
+// noinspection JSUnusedGlobalSymbols
+
 const {exec} = require('child_process');
 
 async function execSimple(command) {
@@ -53,6 +55,22 @@ async function execAsBuffer(command) {
     });
 }
 
+function printStringValue(r) {
+    if (process.env.VERBOSE) {
+        console.log("Printing value", r);
+    }
+    if (r) {
+        if (typeof r === 'string') {
+            console.log(r);
+        } else if (r.toString) {
+            // noinspection JSCheckFunctionSignatures
+            console.log(r.toString('utf8'));
+        }
+    }
+}
+
 module.exports = {
-    execSimple: execSimple
+    execSimple: execSimple,
+    execAsBuffer: execAsBuffer,
+    printStringValue: printStringValue
 };

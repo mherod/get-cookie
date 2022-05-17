@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 
 const crypto = require('crypto');
-const {exec} = require("child_process");
 const fs = require("fs");
 const {execSimple} = require("./utils");
 
@@ -169,13 +168,13 @@ async function decrypt(password, encryptedData) {
                     encryptedData = encryptedData1.slice(3);
                 }
 
-                if (encryptedData1.length % 16 !== 0) {
-                    if (process.env.VERBOSE) {
-                        console.log("Error doing pbkdf2, encryptedData length is not a multiple of 16", encryptedData1.length);
-                    }
-                    reject(new Error('encryptedData length is not a multiple of 16'));
-                    return;
-                }
+                // if (encryptedData1.length % 16 !== 0) {
+                //     if (process.env.VERBOSE) {
+                //         console.log("Error doing pbkdf2, encryptedData length is not a multiple of 16", encryptedData1.length);
+                //     }
+                //     reject(new Error('encryptedData length is not a multiple of 16'));
+                //     return;
+                // }
 
                 let decoded = decipher.update(encryptedData1, 'binary', 'utf8');
                 // let decoded = decipher.update(encryptedData);
@@ -217,7 +216,7 @@ async function getChromeCookie({name, domain = '%'}) {
         throw new Error('domain must be a string');
     }
     const chromePasswordPromise = getChromePassword();
-    const encryptedDatas = await findAllFiles({
+    const encryptedDataItems = await findAllFiles({
         path: defaultChromeRoot,
         name: 'Cookies'
     }).then(files => {
@@ -249,25 +248,32 @@ async function getChromeCookie({name, domain = '%'}) {
         return [];
     });
     const password = await chromePasswordPromise;
-    const [encryptedData] = encryptedDatas.filter(encryptedData => {
+    const decrypted = encryptedDataItems.filter(encryptedData => {
         return encryptedData != null && encryptedData.length > 0;
-    });
-    if (process.env.VERBOSE) {
-        console.log("Received encrypted", encryptedData);
-    }
-    let s;
-    try {
-        s = await decrypt(password, encryptedData);
-    } catch (e) {
+    }).map(async encryptedData => {
         if (process.env.VERBOSE) {
-            console.error("Error decrypting", e);
+            console.log("Received encrypted", encryptedData);
         }
-        throw new Error('Failed to decrypt');
-    }
-    if (process.env.VERBOSE) {
-        console.log("Decrypted", s);
-    }
-    return s;
+        let decrypted;
+        try {
+            decrypted = await decrypt(password, encryptedData);
+        } catch (e) {
+            if (process.env.VERBOSE) {
+                console.log("Error decrypting cookie", e);
+            }
+            return null;
+        }
+        if (decrypted) {
+            if (process.env.VERBOSE) {
+                console.log("Decrypted", decrypted);
+            }
+            return decrypted;
+        }
+        return null;
+    });
+    return await Promise.all(decrypted).then(results => {
+        return results.find(result => typeof result === 'string' && result.length > 0);
+    });
 }
 
 /**
@@ -338,20 +344,6 @@ async function findAllFiles({path, name, rootSegments = path.split('/').length, 
     return files;
 }
 
-function printStringValue(r) {
-    if (process.env.VERBOSE) {
-        console.log("Printing value", r);
-    }
-    if (r) {
-        if (typeof r === 'string') {
-            console.log(r);
-        } else if (r.toString) {
-            // noinspection JSCheckFunctionSignatures
-            console.log(r.toString('utf8'));
-        }
-    }
-}
-
 // noinspection JSUnusedGlobalSymbols
 module.exports = {
     getDecryptedCookie: getChromeCookie,
@@ -359,88 +351,3 @@ module.exports = {
     getFirefoxCookie,
     getCookie
 };
-
-if (process.argv) {
-    if (process.argv.length > 2) {
-        const name = process.argv[2];
-        const domain = process.argv[3] ?? '%';
-
-        if (process.argv.includes('--verbose')) {
-            process.env.VERBOSE = "true";
-        }
-        if (process.argv.includes("--chrome-only")) {
-            process.env.CHROME_ONLY = "true";
-        }
-        if (process.argv.includes("--firefox-only")) {
-            process.env.FIREFOX_ONLY = "true";
-        }
-        if (process.argv.includes("--ignore-expired")) {
-            process.env.IGNORE_EXPIRED = "true";
-        }
-
-        if (process.env.VERBOSE) {
-            console.log("Verbose mode", process.argv);
-        }
-
-        if (process.env.CHROME_ONLY) {
-            if (process.env.VERBOSE) {
-                console.log('chrome only');
-            }
-            getChromeCookie({name, domain})
-                .then(cookie => {
-                    if (cookie && cookie.length > 0) {
-                        printStringValue(cookie);
-                    } else {
-                        console.log('No cookie found');
-                    }
-                })
-                .catch(err => {
-                    if (process.env.VERBOSE) {
-                        console.error(err);
-                    }
-                });
-        } else if (process.env.FIREFOX_ONLY) {
-            if (process.env.VERBOSE) {
-                console.log('firefox only');
-            }
-            getFirefoxCookie({name, domain})
-                .then(cookie => {
-                    if (cookie && cookie.length > 0) {
-                        printStringValue(cookie);
-                    } else {
-                        console.log('No cookie found');
-                    }
-                })
-                .catch(err => {
-                    if (process.env.VERBOSE) {
-                        console.error("Error getting Firefox cookie", err);
-                    }
-                });
-        } else {
-            getChromeCookie({name, domain})
-                .catch(err => {
-                    if (process.env.VERBOSE) {
-                        console.error("Error getting Chrome cookie", err);
-                    }
-                })
-                .then(r => {
-                    if (typeof r === 'string' && r.trim().length > 0) {
-                        return r;
-                    } else {
-                        return getFirefoxCookie({name, domain})
-                            .catch(err => {
-                                if (process.env.VERBOSE) {
-                                    console.error("Error getting Firefox cookie", err);
-                                }
-                            });
-                    }
-                })
-                .catch((e) => {
-                    if (process.env.VERBOSE) {
-                        console.error("Error getting Chrome or Firefox cookie", e);
-                    }
-                })
-                .then(printStringValue);
-        }
-    }
-}

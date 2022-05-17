@@ -2,7 +2,7 @@
 
 const crypto = require('crypto');
 const fs = require("fs");
-const {execSimple, toStringOrNull} = require("./utils");
+const {execSimple, toStringOrNull, doSqliteQuery1} = require("./utils");
 
 if (process.platform !== 'darwin') {
     throw new Error('This script only works on macOS');
@@ -57,8 +57,9 @@ async function getFirefoxCookie({name, domain}) {
             sql += `host LIKE '${domain}';`;
         }
     }
-    const queried = await doSqliteQuery1(file, sql);
-    return toStringOrNull(queried);
+    return await doSqliteQuery1(file, sql).then(rows => {
+        return rows.map(toStringOrNull).find(v => v !== null);
+    });
 }
 
 const defaultChromeRoot = `${process.env.HOME}/Library/Application Support/Google/Chrome`;
@@ -97,34 +98,6 @@ async function getEncryptedChromeCookie({name, domain, file = defaultChromeCooki
     return await doSqliteQuery1(file, sql);
 }
 
-async function doSqliteQuery1(file, sql) {
-    const sqlite3 = require('sqlite3');
-    const db = new sqlite3.Database(file);
-    return new Promise((resolve, reject) => {
-        db.all(sql, (err, rows) => {
-            if (err) {
-                reject(err);
-                return;
-            }
-            const rows1 = rows;
-            if (rows1.length === 0) {
-                if (process.env.VERBOSE) {
-                    console.log(`No rows found`);
-                }
-                resolve(null);
-                return;
-            }
-            if (Array.isArray(rows1)) {
-                // noinspection JSCheckFunctionSignatures
-                const [value] = rows1.flatMap(row => Object.values(row));
-                resolve(Buffer.from(value));
-                return;
-            }
-            resolve(rows1);
-        });
-    });
-}
-
 /**
  *
  * @param {string} password
@@ -135,9 +108,21 @@ async function decrypt(password, encryptedData) {
     if (typeof password !== 'string') {
         throw new Error('password must be a string: ' + password);
     }
-    const encryptedData1 = encryptedData;
+    let encryptedData1;
+    encryptedData1 = encryptedData;
     if (encryptedData1 == null || typeof encryptedData1 !== 'object') {
         throw new Error('encryptedData must be a object: ' + encryptedData1);
+    }
+    if (!(encryptedData1 instanceof Buffer)) {
+        if (Array.isArray(encryptedData1) && encryptedData1[0] instanceof Buffer) {
+            [encryptedData1] = encryptedData1;
+            if (process.env.VERBOSE) {
+                console.log(`encryptedData is an array of buffers, selected first: ${encryptedData1}`);
+            }
+        } else {
+            throw new Error('encryptedData must be a Buffer: ' + encryptedData1);
+        }
+        encryptedData1 = Buffer.from(encryptedData1);
     }
     if (process.env.VERBOSE) {
         console.log(`Trying to decrypt with password ${password}`);
@@ -166,7 +151,7 @@ async function decrypt(password, encryptedData) {
                 decipher.setAutoPadding(false);
 
                 if (encryptedData1 && encryptedData1.slice) {
-                    encryptedData = encryptedData1.slice(3);
+                    encryptedData1 = encryptedData1.slice(3);
                 }
 
                 if (encryptedData1.length % 16 !== 0) {
@@ -177,8 +162,7 @@ async function decrypt(password, encryptedData) {
                     return;
                 }
 
-                // let decoded = decipher.update(encryptedData1, 'binary', 'utf8');
-                let decoded = decipher.update(encryptedData);
+                let decoded = decipher.update(encryptedData1);
                 try {
                     decipher.final('utf-8');
                 } catch (e) {
@@ -216,7 +200,6 @@ async function getChromeCookie({name, domain = '%'}) {
     if (typeof domain !== 'string') {
         throw new Error('domain must be a string');
     }
-    const chromePasswordPromise = getChromePassword();
     const encryptedDataItems = await findAllFiles({
         path: defaultChromeRoot,
         name: 'Cookies'
@@ -230,25 +213,24 @@ async function getChromeCookie({name, domain = '%'}) {
                 if (process.env.VERBOSE) {
                     console.log("Error getting encrypted cookie", e);
                 }
-                return null;
+                return [];
             });
         });
-        const promise = Promise.all(promises).then(results => {
+        return Promise.all(promises).then(results => results.flat()).then(results => {
+            if (process.env.VERBOSE) {
+                console.log("getEncryptedChromeCookie results", results);
+            }
             return results.filter(result => {
                 return result;
             });
         });
-        if (process.env.VERBOSE) {
-            console.log('promise', promise);
-        }
-        return promise;
     }).catch(error => {
         if (process.env.VERBOSE) {
             console.log('error', error);
         }
         return [];
     });
-    const password = await chromePasswordPromise;
+    const password = await getChromePassword();
     if (process.env.VERBOSE) {
         console.log('encryptedDataItems', encryptedDataItems);
     }
@@ -357,5 +339,6 @@ module.exports = {
     getDecryptedCookie: getChromeCookie,
     getChromeCookie,
     getFirefoxCookie,
-    getCookie
+    getCookie,
+    decrypt
 };

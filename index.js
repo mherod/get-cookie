@@ -2,7 +2,7 @@
 
 const crypto = require('crypto');
 const fs = require("fs");
-const {execSimple} = require("./utils");
+const {execSimple, toStringOrNull} = require("./utils");
 
 if (process.platform !== 'darwin') {
     throw new Error('This script only works on macOS');
@@ -57,7 +57,8 @@ async function getFirefoxCookie({name, domain}) {
             sql += `host LIKE '${domain}';`;
         }
     }
-    return await doSqliteQuery1(file, sql);
+    const queried = await doSqliteQuery1(file, sql);
+    return toStringOrNull(queried);
 }
 
 const defaultChromeRoot = `${process.env.HOME}/Library/Application Support/Google/Chrome`;
@@ -248,6 +249,9 @@ async function getChromeCookie({name, domain = '%'}) {
         return [];
     });
     const password = await chromePasswordPromise;
+    if (process.env.VERBOSE) {
+        console.log('encryptedDataItems', encryptedDataItems);
+    }
     const decrypted = encryptedDataItems.filter(encryptedData => {
         return encryptedData != null && encryptedData.length > 0;
     }).map(async encryptedData => {
@@ -271,8 +275,12 @@ async function getChromeCookie({name, domain = '%'}) {
         }
         return null;
     });
-    return await Promise.all(decrypted).then(results => {
-        return results.find(result => typeof result === 'string' && result.length > 0);
+    const results = await Promise.all(decrypted);
+    if (process.env.VERBOSE) {
+        console.log('results', results);
+    }
+    return results.map(toStringOrNull).find(result => {
+        return typeof result === 'string' && result.length > 0;
     });
 }
 

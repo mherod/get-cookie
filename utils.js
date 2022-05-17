@@ -69,8 +69,27 @@ function printStringValue(r) {
     }
 }
 
+
+function toStringOrNull(result) {
+    if (result == null) {
+        return null;
+    }
+    if (process.env.VERBOSE) {
+        console.log('result', result);
+    }
+    if (typeof result === 'string' && result.length > 0) {
+        return result;
+    }
+    if (result.slice && result.toString) {
+        // noinspection JSCheckFunctionSignatures
+        return result.toString('utf8');
+    }
+    return null;
+}
+
 module.exports = {
     execSimple: execSimple,
     execAsBuffer: execAsBuffer,
-    printStringValue: printStringValue
+    printStringValue: printStringValue,
+    toStringOrNull: toStringOrNull
 };

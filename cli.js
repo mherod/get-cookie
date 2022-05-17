@@ -6,7 +6,13 @@ const {printStringValue} = require("./utils");
 if (process.argv) {
     if (process.argv.length > 2) {
         const name = process.argv[2];
-        const domain = process.argv[3] ?? '%';
+
+        let domain;
+        if (process.argv[3] != null && process.argv[3].indexOf(".") > -1) {
+            domain = process.argv[3];
+        } else {
+            domain = '%';
+        }
 
         if (process.argv.includes('--verbose')) {
             process.env.VERBOSE = "true";

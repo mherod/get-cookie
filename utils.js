@@ -108,24 +108,43 @@ async function doSqliteQuery1(file, sql) {
     if (!fs.existsSync(file)) {
         throw new Error(`doSqliteQuery1: file ${file} does not exist`);
     }
+    if (process.env.VERBOSE) {
+        console.log(`doSqliteQuery1: file ${file}`);
+        console.log(`doSqliteQuery1: sql ${sql}`);
+    }
     const sqlite3 = require('sqlite3');
     const db = new sqlite3.Database(file);
     return new Promise((resolve, reject) => {
         db.all(sql, (err, rows) => {
             if (err) {
+                if (process.env.VERBOSE) {
+                    console.log(`doSqliteQuery1: error ${err}`);
+                }
                 reject(err);
                 return;
             }
             const rows1 = rows;
             if (rows1 == null || rows1.length === 0) {
+                if (process.env.VERBOSE) {
+                    console.log(`doSqliteQuery1: no rows`);
+                }
                 resolve([]);
                 return;
             }
             if (Array.isArray(rows1)) {
+                if (process.env.VERBOSE) {
+                    console.log(`doSqliteQuery1: ${rows1.length} rows`);
+                }
                 // noinspection JSCheckFunctionSignatures
                 const buffers = rows1.flatMap(row => Object.values(row)).map(v => Buffer.from(v, 'binary'));
+                if (process.env.VERBOSE) {
+                    console.log(`doSqliteQuery1: ${buffers.length} buffers`);
+                }
                 resolve(buffers);
                 return;
+            }
+            if (process.env.VERBOSE) {
+                console.log(`doSqliteQuery1: rows ${JSON.stringify(rows1)}`);
             }
             resolve([rows1]);
         });

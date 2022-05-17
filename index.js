@@ -79,7 +79,7 @@ async function getEncryptedChromeCookie({name, domain, file = defaultChromeCooki
         throw new Error(`File ${file} does not exist`);
     }
     if (process.env.VERBOSE) {
-        console.log(`Trying Chrome (at ${file}) cookie ${name} for domain ${domain}`);
+        console.log(`Trying Chrome (at ${file.split('/').slice(-3).join('/')}) cookie ${name} for domain ${domain}`);
     }
     let sql;
     sql = `SELECT encrypted_value FROM cookies`;
@@ -101,7 +101,7 @@ async function getEncryptedChromeCookie({name, domain, file = defaultChromeCooki
 /**
  *
  * @param {string} password
- * @param encryptedData
+ * @param {Buffer} encryptedData
  * @returns {Promise<string>}
  */
 async function decrypt(password, encryptedData) {

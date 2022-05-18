@@ -1,11 +1,27 @@
 #!/usr/bin/env node
 
-const crypto = require('crypto');
-const fs = require("fs");
-const {execSimple, toStringOrNull, doSqliteQuery1} = require("./utils");
-
 if (process.platform !== 'darwin') {
     throw new Error('This script only works on macOS');
+}
+
+const crypto = require('crypto');
+const fs = require("fs");
+const {execSimple, toStringOrNull, doSqliteQuery1, printStringValue, toStringValue} = require("./utils");
+const jsonwebtoken = require('jsonwebtoken');
+
+function isValidJwt(token) {
+    if (typeof token !== 'string') {
+        return false;
+    }
+    try {
+        const result = jsonwebtoken.decode(token, {complete: true});
+        if (process.env.VERBOSE) {
+            console.log(result);
+        }
+        return true;
+    } catch (err) {
+        return false;
+    }
 }
 
 /**
@@ -16,8 +32,71 @@ async function getChromePassword() {
     return await execSimple("security find-generic-password -w -s \"Chrome Safe Storage\"");
 }
 
-async function getCookie(name, domain) {
-    throw new Error('Not implemented');
+/**
+ *
+ * @param params
+ * @returns {Promise<string>}
+ */
+async function getCookie(params) {
+    if (process.env.CHROME_ONLY) {
+        if (process.env.VERBOSE) {
+            console.log('chrome only');
+        }
+        return await getChromeCookie(params)
+            .then(cookie => {
+                if (cookie && cookie.length > 0) {
+                    return toStringValue(cookie);
+                }
+            })
+            .catch(err => {
+                if (process.env.VERBOSE) {
+                    console.error(err);
+                }
+            });
+    } else if (process.env.FIREFOX_ONLY) {
+        if (process.env.VERBOSE) {
+            console.log('firefox only');
+        }
+        return await getFirefoxCookie(params)
+            .then(b => b.toString('utf8'))
+            .then(cookie => {
+                if (cookie && cookie.length > 0) {
+                    return toStringValue(cookie);
+                } else {
+                    console.log('No cookie found');
+                }
+            })
+            .catch(err => {
+                if (process.env.VERBOSE) {
+                    console.error("Error getting Firefox cookie", err);
+                }
+            });
+    } else {
+        return await getChromeCookie(params)
+            .catch(err => {
+                if (process.env.VERBOSE) {
+                    console.error("Error getting Chrome cookie", err);
+                }
+            })
+            .then(r => {
+                if (typeof r === 'string' && r.trim().length > 0) {
+                    return r;
+                } else {
+                    return getFirefoxCookie(params)
+                        .catch(err => {
+                            if (process.env.VERBOSE) {
+                                console.error("Error getting Firefox cookie", err);
+                            }
+                        });
+                }
+            })
+            .catch((e) => {
+                if (process.env.VERBOSE) {
+                    console.error("Error getting Chrome or Firefox cookie", e);
+                }
+            })
+            .then(toStringValue);
+    }
 }
 
 /**
@@ -191,9 +270,10 @@ async function decrypt(password, encryptedData) {
  *
  * @param {string|undefined} name
  * @param {string} domain
+ * @param {boolean} requireJwt
  * @returns {Promise<string>}
  */
-async function getChromeCookie({name, domain = '%'}) {
+async function getChromeCookie({name, domain = '%', requireJwt = false}) {
     if (name && typeof name !== 'string') {
         throw new Error('name must be a string');
     }
@@ -262,7 +342,7 @@ async function getChromeCookie({name, domain = '%'}) {
         console.log('results', results);
     }
     return results.map(toStringOrNull).find(result => {
-        return typeof result === 'string' && result.length > 0;
+        return typeof result === 'string' && result.length > 0 && (requireJwt === false || isValidJwt(result));
     });
 }
 

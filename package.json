@@ -15,6 +15,7 @@
   "author": "Matthew Herod",
   "license": "ISC",
   "dependencies": {
+    "jsonwebtoken": "^8.5.1",
     "sqlite3": "^5.0.8"
   },
   "devDependencies": {

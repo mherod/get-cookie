@@ -56,6 +56,20 @@ async function execAsBuffer(command) {
     });
 }
 
+function toStringValue(r) {
+    if (process.env.VERBOSE) {
+        console.log("Printing value", r);
+    }
+    if (r) {
+        if (typeof r === 'string') {
+            return r;
+        } else if (r.toString) {
+            // noinspection JSCheckFunctionSignatures
+            return r.toString('utf8');
+        }
+    }
+}
+
 function printStringValue(r) {
     if (process.env.VERBOSE) {
         console.log("Printing value", r);
@@ -155,6 +169,7 @@ module.exports = {
     execSimple: execSimple,
     execAsBuffer: execAsBuffer,
     printStringValue: printStringValue,
+    toStringValue,
     toStringOrNull: toStringOrNull,
     doSqliteQuery1
 };

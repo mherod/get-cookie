@@ -1,6 +1,12 @@
 #!/usr/bin/env node
 
-const {getCookie} = require("./index");
+import {getCookie} from "./index.js";
+
+if (process.env.VERBOSE) {
+    await import("./package.json", {assert: {type: "json"}}).then(({default: {version}}) => {
+        console.log("get-cookie version", version);
+    });
+}
 
 if (process.argv) {
     if (process.argv.length > 2) {

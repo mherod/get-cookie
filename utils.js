@@ -1,9 +1,10 @@
 // noinspection JSUnusedGlobalSymbols
 
-const {exec} = require('child_process');
-const fs = require("fs");
+import {exec} from "child_process";
 
-async function execSimple(command) {
+import fs from "fs";
+
+export async function execSimple(command) {
     if (typeof command !== 'string') {
         throw new TypeError('execSimple: command must be a string');
     }
@@ -56,7 +57,7 @@ async function execAsBuffer(command) {
     });
 }
 
-function toStringValue(r) {
+export function toStringValue(r) {
     if (process.env.VERBOSE) {
         console.log("Printing value", r);
     }
@@ -89,7 +90,7 @@ function printStringValue(r) {
  * @param result
  * @returns {string|null}
  */
-function toStringOrNull(result) {
+export function toStringOrNull(result) {
     if (result == null) {
         return null;
     }
@@ -112,7 +113,7 @@ function toStringOrNull(result) {
  * @param {string} sql
  * @returns {Promise<Buffer[]>}
  */
-async function doSqliteQuery1(file, sql) {
+export async function doSqliteQuery1(file, sql) {
     if (typeof sql !== 'string') {
         throw new TypeError('doSqliteQuery1: sql must be a string');
     }
@@ -164,12 +165,3 @@ async function doSqliteQuery1(file, sql) {
         });
     });
 }
-
-module.exports = {
-    execSimple: execSimple,
-    execAsBuffer: execAsBuffer,
-    printStringValue: printStringValue,
-    toStringValue,
-    toStringOrNull: toStringOrNull,
-    doSqliteQuery1
-};

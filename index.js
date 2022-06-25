@@ -4,10 +4,10 @@ if (process.platform !== 'darwin') {
     throw new Error('This script only works on macOS');
 }
 
-const crypto = require('crypto');
-const fs = require("fs");
-const {execSimple, toStringOrNull, doSqliteQuery1, printStringValue, toStringValue} = require("./utils");
-const jsonwebtoken = require('jsonwebtoken');
+import crypto from "crypto";
+import fs from "fs";
+import jsonwebtoken from "jsonwebtoken";
+import {doSqliteQuery1, execSimple, toStringOrNull, toStringValue} from "./utils.js";
 
 function isValidJwt(token) {
     if (typeof token !== 'string') {
@@ -37,7 +37,7 @@ async function getChromePassword() {
  * @param params
  * @returns {Promise<string>}
  */
-async function getCookie(params) {
+export async function getCookie(params) {
     if (process.env.CHROME_ONLY) {
         if (process.env.VERBOSE) {
             console.log('chrome only');
@@ -105,7 +105,7 @@ async function getCookie(params) {
  * @param domain
  * @returns {Promise<Buffer>}
  */
-async function getFirefoxCookie({name, domain}) {
+export async function getFirefoxCookie({name, domain}) {
     if (name && typeof name !== 'string') {
         throw new Error('name must be a string');
     }
@@ -183,7 +183,7 @@ async function getEncryptedChromeCookie({name, domain, file = defaultChromeCooki
  * @param {Buffer} encryptedData
  * @returns {Promise<string>}
  */
-async function decrypt(password, encryptedData) {
+export async function decrypt(password, encryptedData) {
     if (typeof password !== 'string') {
         throw new Error('password must be a string: ' + password);
     }
@@ -273,7 +273,7 @@ async function decrypt(password, encryptedData) {
  * @param {boolean} requireJwt
  * @returns {Promise<string>}
  */
-async function getChromeCookie({name, domain = '%', requireJwt = false}) {
+export async function getChromeCookie({name, domain = '%', requireJwt = false}) {
     if (name && typeof name !== 'string') {
         throw new Error('name must be a string');
     }
@@ -415,7 +415,7 @@ async function findAllFiles({path, name, rootSegments = path.split('/').length, 
 }
 
 // noinspection JSUnusedGlobalSymbols
-module.exports = {
+export const exports = {
     getDecryptedCookie: getChromeCookie,
     getChromeCookie,
     getFirefoxCookie,

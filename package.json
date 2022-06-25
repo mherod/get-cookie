@@ -4,6 +4,7 @@
   "description": "Node.js module for querying a local user's Chrome cookie",
   "main": "index.js",
   "bin": "cli.js",
+  "type": "module",
   "publishConfig": {
     "access": "public"
   },

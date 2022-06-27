@@ -6,7 +6,7 @@ if (process.platform !== 'darwin') {
 
 const crypto = require('crypto');
 const fs = require("fs");
-const {execSimple, toStringOrNull, doSqliteQuery1, printStringValue, toStringValue} = require("./utils");
+const { execSimple, toStringOrNull, doSqliteQuery1, printStringValue, toStringValue } = require("./utils");
 const jsonwebtoken = require('jsonwebtoken');
 
 function isValidJwt(token) {
@@ -14,7 +14,7 @@ function isValidJwt(token) {
         return false;
     }
     try {
-        const result = jsonwebtoken.decode(token, {complete: true});
+        const result = jsonwebtoken.decode(token, { complete: true });
         if (process.env.VERBOSE) {
             console.log(result);
         }
@@ -105,7 +105,7 @@ async function getCookie(params) {
  * @param domain
  * @returns {Promise<Buffer>}
  */
-async function getFirefoxCookie({name, domain}) {
+async function getFirefoxCookie({ name, domain }) {
     if (name && typeof name !== 'string') {
         throw new Error('name must be a string');
     }
@@ -144,7 +144,7 @@ async function getFirefoxCookie({name, domain}) {
 const defaultChromeRoot = `${process.env.HOME}/Library/Application Support/Google/Chrome`;
 const defaultChromeCookies = `${defaultChromeRoot}/Default/Cookies`;
 
-async function getEncryptedChromeCookie({name, domain, file = defaultChromeCookies}) {
+async function getEncryptedChromeCookie({ name, domain, file = defaultChromeCookies }) {
     if (name && typeof name !== 'string') {
         throw new Error('name must be a string');
     }
@@ -273,7 +273,7 @@ async function decrypt(password, encryptedData) {
  * @param {boolean} requireJwt
  * @returns {Promise<string>}
  */
-async function getChromeCookie({name, domain = '%', requireJwt = false}) {
+async function getChromeCookie({ name, domain = '%', requireJwt = false }) {
     if (name && typeof name !== 'string') {
         throw new Error('name must be a string');
     }
@@ -354,13 +354,16 @@ async function getChromeCookie({name, domain = '%', requireJwt = false}) {
  * @param maxDepth
  * @returns {Promise<[string]>}
  */
-async function findAllFiles({path, name, rootSegments = path.split('/').length, maxDepth = 2}) {
+async function findAllFiles({ path, name, maxDepth = 2 }) {
     if (typeof path !== 'string') {
         throw new Error('path must be a string');
     }
     if (typeof name !== 'string') {
         throw new Error('name must be a string');
     }
+
+    const rootSegments = path.split('/').length
+
     if (process.env.VERBOSE) {
         console.log(`Searching for ${name} in ${path}`);
     }

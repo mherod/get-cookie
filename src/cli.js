@@ -2,57 +2,69 @@
 
 import { version } from "../package.json";
 import { env } from "./global";
-const { getCookie } = require("./index");
+import { queryCookies } from "./queryCookies";
 
 const argv = process.argv;
-if (argv) {
-  if (argv.length > 2) {
-    if (argv.includes("--version") || argv.includes("-v")) {
-      console.log(version);
-      return;
-    }
 
-    const name = argv[2];
-
-    let domain;
-    if (argv[3] != null && argv[3].indexOf(".") > -1) {
-      domain = argv[3];
+async function cliQueryCookies(name, domain) {
+  try {
+    const results = await queryCookies(name, domain);
+    if (results.length > 0) {
+      for (const result of results) {
+        console.log(result);
+      }
     } else {
-      domain = "%";
+      console.error("No results");
     }
-
-    if (argv.includes("--require-jwt")) {
-      env.REQUIRE_JWT = "true";
-    }
-    if (argv.includes("--verbose")) {
-      env.VERBOSE = "true";
-    }
-    if (argv.includes("--chrome-only")) {
-      env.CHROME_ONLY = "true";
-    }
-    if (argv.includes("--firefox-only")) {
-      env.FIREFOX_ONLY = "true";
-    }
-    if (argv.includes("--ignore-expired")) {
-      env.IGNORE_EXPIRED = "true";
-    }
-
-    if (env.VERBOSE) {
-      console.log("Verbose mode", argv);
-    }
-
-    getCookie({
-      name: name,
-      domain: domain,
-      requireJwt: env.REQUIRE_JWT === "true",
-    })
-      .then((cookie) => {
-        if (typeof cookie === "string") {
-          console.log(cookie);
-        }
-      })
-      .catch((err) => {
-        console.error(err);
-      });
+  } catch (e) {
+    console.error(e);
   }
+}
+
+if (argv && argv.length > 2) {
+  if (argv.includes("--version") || argv.includes("-v")) {
+    console.log(version);
+    return;
+  }
+
+  const name = argv[2];
+
+  let domain;
+  if (argv[3] != null && argv[3].indexOf(".") > -1) {
+    domain = argv[3];
+  } else {
+    domain = "%";
+  }
+
+  const tru = `${true}`;
+
+  if (argv.includes("--require-jwt")) {
+    env.REQUIRE_JWT = tru;
+  }
+  if (argv.includes("--verbose")) {
+    env.VERBOSE = tru;
+  }
+  if (argv.includes("--chrome-only")) {
+    env.CHROME_ONLY = tru;
+  }
+  if (argv.includes("--firefox-only")) {
+    env.FIREFOX_ONLY = tru;
+  }
+  if (argv.includes("--ignore-expired")) {
+    env.IGNORE_EXPIRED = tru;
+  }
+
+  if (argv.includes("--single")) {
+    env.SINGLE = tru;
+  }
+
+  if (env.VERBOSE) {
+    console.log("Verbose mode", argv);
+  }
+
+  cliQueryCookies(name, domain)
+    .then(() => {
+      //
+    })
+    .catch(console.error);
 }

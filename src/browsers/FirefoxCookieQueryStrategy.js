@@ -1,5 +1,5 @@
 import AbstractCookieQueryStrategy from "./AbstractCookieQueryStrategy";
-import { env } from "../global";
+import { env, HOME } from "../global";
 import { existsSync } from "fs";
 import { doSqliteQuery1, toStringOrNull } from "../utils";
 import { findAllFiles } from "../findAllFiles";
@@ -9,6 +9,9 @@ export default class FirefoxCookieQueryStrategy extends AbstractCookieQueryStrat
   async queryCookies(name, domain) {
     if (process.platform !== "darwin") {
       throw new Error("This only works on macOS");
+    }
+    if (env.CHROME_ONLY) {
+      return [];
     }
     const cookies = await this.#getFirefoxCookie({ name, domain });
     return Array.isArray(cookies) ? cookies.map(toStringOrNull) : [];
@@ -26,10 +29,6 @@ export default class FirefoxCookieQueryStrategy extends AbstractCookieQueryStrat
     }
     if (domain && typeof domain !== "string") {
       throw new Error("domain must be a string");
-    }
-    const HOME = env["HOME"];
-    if (!HOME) {
-      throw new Error("env.HOME is not defined");
     }
     const files = await findAllFiles({
       path: path.join(

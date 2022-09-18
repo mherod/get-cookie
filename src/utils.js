@@ -176,6 +176,6 @@ export async function doSqliteQuery1(file, sql) {
   });
 }
 
-export function goodString(input) {
-  return input && typeof input !== "string";
+export function invalidString(input) {
+  return typeof input !== "string" || input.length === 0;
 }

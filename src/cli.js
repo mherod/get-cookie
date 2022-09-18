@@ -8,7 +8,7 @@ const argv = process.argv;
 
 async function cliQueryCookies(name, domain) {
   try {
-    const results = await queryCookies(name, domain);
+    const results = await queryCookies({ name, domain });
     if (results.length > 0) {
       for (const result of results) {
         console.log(result);

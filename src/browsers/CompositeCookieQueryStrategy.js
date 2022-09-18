@@ -3,18 +3,23 @@ import FirefoxCookieQueryStrategy from "./FirefoxCookieQueryStrategy";
 import SafariCookieQueryStrategy from "./SafariCookieQueryStrategy";
 import AbstractCookieQueryStrategy from "./AbstractCookieQueryStrategy";
 
-const compositeCookieQueryStrategy = [
-  ChromeCookieQueryStrategy,
-  FirefoxCookieQueryStrategy,
-  SafariCookieQueryStrategy,
-].map((strategy) => {
-  return new strategy();
-});
-
 export default class CompositeCookieQueryStrategy extends AbstractCookieQueryStrategy {
+  #strategies;
+
+  constructor() {
+    super();
+    this.#strategies = [
+      ChromeCookieQueryStrategy,
+      FirefoxCookieQueryStrategy,
+      SafariCookieQueryStrategy,
+    ].map((strategy) => {
+      return new strategy();
+    });
+  }
+
   async queryCookies(name, domain) {
     const results = await Promise.all(
-      compositeCookieQueryStrategy.map(async (strategy) => {
+      this.#strategies.map(async (strategy) => {
         return strategy.queryCookies(name, domain).catch(() => []);
       })
     );

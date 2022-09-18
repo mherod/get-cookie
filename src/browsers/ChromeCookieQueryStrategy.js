@@ -2,35 +2,23 @@ import AbstractCookieQueryStrategy from "./AbstractCookieQueryStrategy";
 import {
   doSqliteQuery1,
   execSimple,
+  goodString,
   toStringOrNull,
   toStringValue,
 } from "../utils";
 import { env } from "../global";
-import fs from "fs";
-import { decrypt } from "../index2";
+import { existsSync } from "fs";
 import { findAllFiles } from "../findAllFiles";
+import crypto from "crypto";
 
 export default class ChromeCookieQueryStrategy extends AbstractCookieQueryStrategy {
   async queryCookies(name, domain) {
     if (process.platform !== "darwin") {
       throw new Error("This only works on macOS");
     }
-    const queriedCookies = await getChromeCookies({
-      name,
-      domain,
-      //
-    }).then((cookies) => {
-      return cookies.map(toStringValue);
-    });
-    return [
-      ...queriedCookies,
-      //
-    ];
+    const cookies = await getChromeCookies({ name, domain });
+    return cookies.map(toStringValue);
   }
-}
-
-function goodString(input) {
-  return input && typeof input !== "string";
 }
 
 /**
@@ -115,7 +103,11 @@ async function getChromeCookies({ name, domain = "%", requireJwt = false }) {
   return results.map(toStringOrNull);
 }
 
-const defaultChromeRoot = `${env.HOME}/Library/Application Support/Google/Chrome`;
+const HOME = env["HOME"];
+if (!HOME) {
+  throw new Error("HOME environment variable is not set");
+}
+const defaultChromeRoot = `${HOME}/Library/Application Support/Google/Chrome`;
 const defaultChromeCookies = `${defaultChromeRoot}/Default/Cookies`;
 
 async function getEncryptedChromeCookie({
@@ -132,16 +124,12 @@ async function getEncryptedChromeCookie({
   if (file && typeof file !== "string") {
     throw new Error("file must be a string");
   }
-  if (!fs.existsSync(file)) {
+  if (!existsSync(file)) {
     throw new Error(`File ${file} does not exist`);
   }
   if (env.VERBOSE) {
-    console.log(
-      `Trying Chrome (at ${file
-        .split("/")
-        .slice(-3)
-        .join("/")}) cookie ${name} for domain ${domain}`
-    );
+    const s = file.split("/").slice(-3).join("/");
+    console.log(`Trying Chrome (at ${s}) cookie ${name} for domain ${domain}`);
   }
   let sql;
   sql = `SELECT encrypted_value FROM cookies`;
@@ -168,4 +156,101 @@ async function getChromePassword() {
   return execSimple(
     'security find-generic-password -w -s "Chrome Safe Storage"'
   );
+}
+
+/**
+ *
+ * @param {string} password
+ * @param {Buffer} encryptedData
+ * @returns {Promise<string>}
+ */
+async function decrypt(password, encryptedData) {
+  if (typeof password !== "string") {
+    throw new Error("password must be a string: " + password);
+  }
+  let encryptedData1;
+  encryptedData1 = encryptedData;
+  if (encryptedData1 == null || typeof encryptedData1 !== "object") {
+    throw new Error("encryptedData must be a object: " + encryptedData1);
+  }
+  if (!(encryptedData1 instanceof Buffer)) {
+    if (Array.isArray(encryptedData1) && encryptedData1[0] instanceof Buffer) {
+      [encryptedData1] = encryptedData1;
+      if (env.VERBOSE) {
+        console.log(
+          `encryptedData is an array of buffers, selected first: ${encryptedData1}`
+        );
+      }
+    } else {
+      throw new Error("encryptedData must be a Buffer: " + encryptedData1);
+    }
+    encryptedData1 = Buffer.from(encryptedData1);
+  }
+  if (env.VERBOSE) {
+    console.log(`Trying to decrypt with password ${password}`);
+  }
+  return new Promise((resolve, reject) => {
+    crypto.pbkdf2(password, "saltysalt", 1003, 16, "sha1", (error, buffer) => {
+      try {
+        if (error) {
+          if (env.VERBOSE) {
+            console.log("Error doing pbkdf2", error);
+          }
+          reject(error);
+          return;
+        }
+
+        if (buffer.length !== 16) {
+          if (env.VERBOSE) {
+            console.log(
+              "Error doing pbkdf2, buffer length is not 16",
+              buffer.length
+            );
+          }
+          reject(new Error("Buffer length is not 16"));
+          return;
+        }
+
+        const iv = new Buffer.from(new Array(17).join(" "), "binary");
+        const decipher = crypto.createDecipheriv("aes-128-cbc", buffer, iv);
+        decipher.setAutoPadding(false);
+
+        if (encryptedData1 && encryptedData1.slice) {
+          encryptedData1 = encryptedData1.slice(3);
+        }
+
+        if (encryptedData1.length % 16 !== 0) {
+          if (env.VERBOSE) {
+            console.log(
+              "Error doing pbkdf2, encryptedData length is not a multiple of 16",
+              encryptedData1.length
+            );
+          }
+          reject(new Error("encryptedData length is not a multiple of 16"));
+          return;
+        }
+
+        let decoded = decipher.update(encryptedData1);
+        try {
+          decipher.final("utf-8");
+        } catch (e) {
+          if (env.VERBOSE) {
+            console.log("Error doing decipher.final()", e);
+          }
+          reject(e);
+          return;
+        }
+
+        let padding = decoded[decoded.length - 1];
+        if (padding) {
+          decoded = decoded.slice(0, 0 - padding);
+        }
+        // noinspection JSCheckFunctionSignatures
+        decoded = decoded.toString("utf8");
+        resolve(decoded);
+      } catch (e) {
+        reject(e);
+      }
+    });
+  });
 }

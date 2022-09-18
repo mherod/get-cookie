@@ -34,16 +34,6 @@ function isValidJwt(token) {
 
 /**
  *
- * @returns {Promise<string>}
- */
-async function getChromePassword() {
-  return execSimple(
-    'security find-generic-password -w -s "Chrome Safe Storage"'
-  );
-}
-
-/**
- *
  * @param params
  * @returns {Promise<string>}
  */

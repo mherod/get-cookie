@@ -4,21 +4,18 @@ import { env } from "./global";
 import { queryCookies } from "./queryCookies";
 import { argv } from "./argv";
 import { groupBy } from "lodash";
-import { blue, green } from "colorette";
+import { green, yellow } from "colorette";
 import { resultsRendered } from "./resultsRendered";
-import { ExportedCookie } from "./ExportedCookie";
-
-function combinedString(results: ExportedCookie[]) {
-  return blue(resultsRendered(results));
-}
 
 async function cliQueryCookies(name: string, domain: string) {
   try {
     const results = await queryCookies({ name, domain });
     if (results.length > 0) {
       if (argv.includes("--combined-string")) {
-        console.log(combinedString(results));
-      } else if (argv.includes("--dump")) {
+        console.log(yellow(resultsRendered(results)));
+      } else if (argv.includes("--render") || argv.includes("-r")) {
+        console.log(yellow(resultsRendered(results)));
+      } else if (argv.includes("--dump") || argv.includes("-d")) {
         console.log(results);
       } else if (argv.includes("--dump-grouped")) {
         const groupedByFile = groupBy(results, (r) => r.meta?.file);
@@ -27,7 +24,7 @@ async function cliQueryCookies(name: string, domain: string) {
         const groupedByFile = groupBy(results, (r) => r.meta?.file);
         for (const file of Object.keys(groupedByFile)) {
           let results = groupedByFile[file];
-          console.log(green(file) + ": ", combinedString(results));
+          console.log(green(file) + ": ", yellow(resultsRendered(results)));
         }
       } else {
         for (const result of results) {

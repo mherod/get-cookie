@@ -6,6 +6,7 @@ import FirefoxCookieQueryStrategy from "./browsers/FirefoxCookieQueryStrategy";
 import ChromeCookieQueryStrategy from "./browsers/ChromeCookieQueryStrategy";
 import CompositeCookieQueryStrategy from "./browsers/CompositeCookieQueryStrategy";
 import { getGroupedRenderedCookies } from "./getGroupedRenderedCookies";
+import { fetchWithCookies } from "./fetchWithCookies";
 
 export async function getCookie(params: { name: string; domain: string; }) {
   const cookies = await queryCookies(
@@ -61,4 +62,5 @@ export default {
   getFirefoxCookie,
   getChromeCookie,
   getGroupedRenderedCookies,
+  fetchWithCookies
 }

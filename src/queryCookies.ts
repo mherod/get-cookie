@@ -1,9 +1,9 @@
-import CompositeCookieQueryStrategy from "./browsers/CompositeCookieQueryStrategy";
-import { uniqBy } from "lodash";
 import { env } from "./global";
+import { uniqBy } from "lodash";
+import CompositeCookieQueryStrategy from "./browsers/CompositeCookieQueryStrategy";
+import CookieQueryStrategy from "./browsers/CookieQueryStrategy";
 import isValidJwt from "./isValidJwt";
-import { ExportedCookie } from "./CookieRow";
-import AbstractCookieQueryStrategy from "./browsers/AbstractCookieQueryStrategy";
+import ExportedCookie from "./ExportedCookie";
 
 export async function queryCookies(
   {
@@ -13,7 +13,7 @@ export async function queryCookies(
     name: string;
     domain: string;
   },
-  strategy: AbstractCookieQueryStrategy = new CompositeCookieQueryStrategy()
+  strategy: CookieQueryStrategy = new CompositeCookieQueryStrategy()
 ) {
   const results: ExportedCookie[] = await strategy.queryCookies(name, domain);
   const results1: ExportedCookie[] = uniqBy(results, JSON.stringify);

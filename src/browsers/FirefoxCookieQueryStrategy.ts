@@ -1,13 +1,13 @@
-import AbstractCookieQueryStrategy from "./AbstractCookieQueryStrategy";
+import CookieQueryStrategy from "./CookieQueryStrategy";
 import { env, HOME } from "../global";
 import { existsSync } from "fs";
 import { toStringOrNull } from "../utils";
 import { findAllFiles } from "../findAllFiles";
 import * as path from "path";
 import { doSqliteQuery1 } from "../doSqliteQuery1";
-import { ExportedCookie } from "../CookieRow";
+import ExportedCookie from "../ExportedCookie";
 
-export default class FirefoxCookieQueryStrategy extends AbstractCookieQueryStrategy {
+export default class FirefoxCookieQueryStrategy implements CookieQueryStrategy {
   async queryCookies(name: string, domain: string): Promise<ExportedCookie[]> {
     if (process.platform !== "darwin") {
       throw new Error("This only works on macOS");

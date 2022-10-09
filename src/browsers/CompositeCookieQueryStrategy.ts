@@ -1,14 +1,13 @@
 import ChromeCookieQueryStrategy from "./ChromeCookieQueryStrategy";
 import FirefoxCookieQueryStrategy from "./FirefoxCookieQueryStrategy";
 import SafariCookieQueryStrategy from "./SafariCookieQueryStrategy";
-import AbstractCookieQueryStrategy from "./AbstractCookieQueryStrategy";
-import {ExportedCookie} from "../CookieRow";
+import CookieQueryStrategy from "./CookieQueryStrategy";
+import ExportedCookie from "../ExportedCookie";
 
-export default class CompositeCookieQueryStrategy extends AbstractCookieQueryStrategy {
+export default class CompositeCookieQueryStrategy implements CookieQueryStrategy {
   #strategies;
 
   constructor() {
-    super();
     this.#strategies = [
       ChromeCookieQueryStrategy,
       FirefoxCookieQueryStrategy,

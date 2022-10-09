@@ -1,15 +1,18 @@
-import AbstractCookieQueryStrategy from "./AbstractCookieQueryStrategy";
+import CookieQueryStrategy from "./CookieQueryStrategy";
 import { execSimple } from "../utils";
 import { env, HOME } from "../global";
 import { existsSync } from "fs";
 import { findAllFiles } from "../findAllFiles";
 import * as crypto from "crypto";
 import * as path from "path";
-import { CookieRow, ExportedCookie, isCookieRow, isExportedCookie } from "../CookieRow";
+import CookieRow from "../CookieRow";
+import ExportedCookie from "../ExportedCookie";
 import { doSqliteQuery1 } from "../doSqliteQuery1";
 import { merge } from "lodash";
+import { isCookieRow } from "../IsCookieRow";
+import { isExportedCookie } from "../IsExportedCookie";
 
-export default class ChromeCookieQueryStrategy extends AbstractCookieQueryStrategy {
+export default class ChromeCookieQueryStrategy implements CookieQueryStrategy {
   async queryCookies(name: string, domain: string): Promise<ExportedCookie[]> {
     if (process.platform !== "darwin") {
       throw new Error("This only works on macOS");

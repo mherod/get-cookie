@@ -3,16 +3,13 @@
 import { env } from "./global";
 import { queryCookies } from "./queryCookies";
 import { argv } from "./argv";
-import { groupBy, uniqBy } from "lodash";
+import { groupBy } from "lodash";
 import { blue, green } from "colorette";
-import { ExportedCookie } from "./CookieRow";
+import ExportedCookie from "./ExportedCookie";
+import { resultsRendered } from "./resultsRendered";
 
 function combinedString(results: ExportedCookie[]) {
-  return blue(
-    uniqBy(results, (r) => r.name)
-      .map((r) => r.name + "=" + r.value)
-      .join("; ")
-  );
+  return blue(resultsRendered(results));
 }
 
 async function cliQueryCookies(name: string, domain: string) {

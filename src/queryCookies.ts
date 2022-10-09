@@ -3,6 +3,7 @@ import { uniqBy } from "lodash";
 import { env } from "./global";
 import isValidJwt from "./isValidJwt";
 import { ExportedCookie } from "./CookieRow";
+import AbstractCookieQueryStrategy from "./browsers/AbstractCookieQueryStrategy";
 
 export async function queryCookies(
   {
@@ -12,7 +13,7 @@ export async function queryCookies(
     name: string;
     domain: string;
   },
-  strategy = new CompositeCookieQueryStrategy()
+  strategy: AbstractCookieQueryStrategy = new CompositeCookieQueryStrategy()
 ) {
   const results: ExportedCookie[] = await strategy.queryCookies(name, domain);
   const results1: ExportedCookie[] = uniqBy(results, JSON.stringify);

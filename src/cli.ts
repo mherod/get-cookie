@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 
-import { version } from "../package.json";
 import { env } from "./global";
 import { queryCookies } from "./queryCookies";
 import { argv } from "./argv";
 import { groupBy, uniqBy } from "lodash";
 import { blue, green } from "colorette";
+import { ExportedCookie } from "./CookieRow";
 
-function combinedString(results) {
+function combinedString(results: ExportedCookie[]) {
   return blue(
     uniqBy(results, (r) => r.name)
       .map((r) => r.name + "=" + r.value)
@@ -15,7 +15,7 @@ function combinedString(results) {
   );
 }
 
-async function cliQueryCookies(name, domain) {
+async function cliQueryCookies(name: string, domain: string) {
   try {
     const results = await queryCookies({ name, domain });
     if (results.length > 0) {
@@ -46,11 +46,6 @@ async function cliQueryCookies(name, domain) {
 }
 
 if (argv && argv.length > 2) {
-  if (argv.includes("--version") || argv.includes("-v")) {
-    console.log(version);
-    return;
-  }
-
   const name = argv[2];
 
   let domain;

@@ -1,11 +1,11 @@
 {
   "name": "@mherod/get-cookie",
-  "version": "2.0.0-beta.3",
+  "version": "2.0.0-beta.4",
   "description": "Node.js module for querying a local user's Chrome cookie",
-  "source": "src/index.js",
   "bin": "dist/cli.js",
   "main": "dist/main.js",
   "module": "dist/module.js",
+  "types": "dist/types.d.ts",
   "publishConfig": {
     "access": "public"
   },
@@ -21,24 +21,29 @@
     "check": "tsc --noEmit"
   },
   "targets": {
-    "main": {
-      "source": "src/index.js",
+    "main": {},
+    "types": {},
+    "library": {
+      "source": "src/index.ts",
       "distDir": "dist",
       "engines": {
         "node": "16"
       }
     },
     "cli": {
-      "source": "src/cli.js",
+      "source": "src/cli.ts",
       "distDir": "dist",
       "engines": {
         "node": "16"
-      }
+      },
+      "includeNodeModules": [
+        "colorette"
+      ]
     }
   },
   "@parcel/transformer-js": {
     "inlineFS": false,
-    "inlineEnvironment": false
+    "inlineEnvironment": true
   },
   "engines": {
     "node": "16"
@@ -53,6 +58,8 @@
     "sqlite3": "^5.1.1"
   },
   "devDependencies": {
+    "@parcel/packager-ts": "^2.7.0",
+    "@parcel/transformer-typescript-types": "^2.7.0",
     "@types/jsonwebtoken": "^8.5.9",
     "@types/lodash": "^4.14.186",
     "@types/node": "^18.8.2",

@@ -6,12 +6,7 @@ import FirefoxCookieQueryStrategy from "./browsers/FirefoxCookieQueryStrategy";
 import ChromeCookieQueryStrategy from "./browsers/ChromeCookieQueryStrategy";
 import CompositeCookieQueryStrategy from "./browsers/CompositeCookieQueryStrategy";
 
-/**
- *
- * @param params
- * @returns {Promise<string>}
- */
-export async function getCookie(params) {
+export async function getCookie(params: { name: string; domain: string; }) {
   const cookies = await queryCookies(
     params,
     new CompositeCookieQueryStrategy()
@@ -29,7 +24,7 @@ export async function getCookie(params) {
  * @param params
  * @returns {Promise<*>}
  */
-export async function getFirefoxCookie(params) {
+export async function getFirefoxCookie(params: { name: string; domain: string; }) {
   const cookies = await queryCookies(
     params,
     new FirefoxCookieQueryStrategy()
@@ -47,7 +42,7 @@ export async function getFirefoxCookie(params) {
  * @param params
  * @returns {Promise<*>}
  */
-export async function getChromeCookie(params) {
+export async function getChromeCookie(params: { name: string; domain: string; }) {
   const cookies = await queryCookies(
     params,
     new ChromeCookieQueryStrategy()

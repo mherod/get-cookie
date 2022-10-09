@@ -2,6 +2,7 @@ import ChromeCookieQueryStrategy from "./ChromeCookieQueryStrategy";
 import FirefoxCookieQueryStrategy from "./FirefoxCookieQueryStrategy";
 import SafariCookieQueryStrategy from "./SafariCookieQueryStrategy";
 import AbstractCookieQueryStrategy from "./AbstractCookieQueryStrategy";
+import {ExportedCookie} from "../CookieRow";
 
 export default class CompositeCookieQueryStrategy extends AbstractCookieQueryStrategy {
   #strategies;
@@ -17,10 +18,12 @@ export default class CompositeCookieQueryStrategy extends AbstractCookieQueryStr
     });
   }
 
-  async queryCookies(name, domain) {
+  async queryCookies(name: string, domain: string): Promise<ExportedCookie[]> {
     const results = await Promise.all(
       this.#strategies.map(async (strategy) => {
-        return strategy.queryCookies(name, domain).catch(() => []);
+        // @ts-ignore
+        const cookies: Promise<ExportedCookie[]> = strategy.queryCookies(name, domain);
+        return cookies.catch(() => []);
       })
     );
     return results.flat();

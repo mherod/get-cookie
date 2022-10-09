@@ -13,11 +13,12 @@
     "clean": "git clean -fXd",
     "build": "parcel build",
     "test": "jest",
-    "postbuild": "npm run install:global",
+    "postbuild": "npm run check && npm run install:global",
     "prepublish": "npm run build",
     "install:global": "npm install --force --global .",
     "postinstall:global": "find $NVM_BIN -exec chmod +x {} \\; || true",
-    "prettier": "prettier --write 'src/{**/*,*}.{js,json}'"
+    "prettier": "prettier --write 'src/{**/*,*}.{js,json,ts}'",
+    "check": "tsc --noEmit"
   },
   "targets": {
     "main": {
@@ -46,12 +47,19 @@
   "author": "Matthew Herod",
   "license": "ISC",
   "dependencies": {
+    "colorette": "^2.0.19",
     "jsonwebtoken": "^8.5.1",
     "lodash": "^4.17.21",
     "sqlite3": "^5.1.1"
   },
   "devDependencies": {
+    "@types/jsonwebtoken": "^8.5.9",
+    "@types/lodash": "^4.14.186",
+    "@types/node": "^18.8.2",
     "jest": "^29.0.3",
-    "prettier": "^2.7.1"
+    "parcel": "^2.7.0",
+    "prettier": "^2.7.1",
+    "ts-node": "^10.9.1",
+    "typescript": "^4.8.4"
   }
 }

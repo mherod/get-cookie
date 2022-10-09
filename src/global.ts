@@ -1,7 +1,7 @@
 const { merge } = require("lodash");
-export const env = {};
+export const env: any = {};
 merge(env, process.env);
-export const HOME = env["HOME"];
+export const HOME: string = env["HOME"];
 if (!HOME) {
   throw new Error("HOME environment variable is not set");
 }

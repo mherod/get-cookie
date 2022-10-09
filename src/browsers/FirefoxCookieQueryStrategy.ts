@@ -1,12 +1,14 @@
 import AbstractCookieQueryStrategy from "./AbstractCookieQueryStrategy";
 import { env, HOME } from "../global";
 import { existsSync } from "fs";
-import { doSqliteQuery1, toStringOrNull } from "../utils";
+import { toStringOrNull } from "../utils";
 import { findAllFiles } from "../findAllFiles";
 import * as path from "path";
+import { doSqliteQuery1 } from "../doSqliteQuery1";
+import { ExportedCookie } from "../CookieRow";
 
 export default class FirefoxCookieQueryStrategy extends AbstractCookieQueryStrategy {
-  async queryCookies(name, domain) {
+  async queryCookies(name: string, domain: string): Promise<ExportedCookie[]> {
     if (process.platform !== "darwin") {
       throw new Error("This only works on macOS");
     }
@@ -23,14 +25,19 @@ export default class FirefoxCookieQueryStrategy extends AbstractCookieQueryStrat
    * @param domain
    * @returns {Promise<Buffer>}
    */
-  async #getFirefoxCookie({ name, domain }) {
-    if (name && typeof name !== "string") {
-      throw new Error("name must be a string");
+  async #getFirefoxCookie(
+    //
+    {
+      name,
+      domain
+    }: {
+      name: string,
+      domain: string
+      //
     }
-    if (domain && typeof domain !== "string") {
-      throw new Error("domain must be a string");
-    }
-    const files = await findAllFiles({
+    //
+  ) {
+    const files: string[] = await findAllFiles({
       path: path.join(
         HOME,
         "Library",
@@ -38,9 +45,9 @@ export default class FirefoxCookieQueryStrategy extends AbstractCookieQueryStrat
         "Firefox",
         "Profiles"
       ),
-      name: "cookies.sqlite",
+      name: "cookies.sqlite"
     });
-    const all = Promise.all(
+    const all = await Promise.all(
       files.map((file) => {
         return this.#queryCookiesDb(file, name, domain);
       })
@@ -48,7 +55,7 @@ export default class FirefoxCookieQueryStrategy extends AbstractCookieQueryStrat
     return all.flat();
   }
 
-  #queryCookiesDb(file, name, domain) {
+  #queryCookiesDb(file: string, name: string, domain: string) {
     if (file && !existsSync(file)) {
       throw new Error(`File ${file} does not exist`);
     }
@@ -71,7 +78,15 @@ export default class FirefoxCookieQueryStrategy extends AbstractCookieQueryStrat
       }
     }
     return doSqliteQuery1(file, sql)
-      .then((rows) => rows.map(toStringOrNull))
+      .then((rows) => {
+        return rows.map((row) => {
+          return {
+            domain: row.domain,
+            name: row.name,
+            value: row.value.toString("utf8")
+          };
+        });
+      })
       .catch(() => []);
   }
 }

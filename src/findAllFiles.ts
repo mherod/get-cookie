@@ -1,28 +1,24 @@
 import { env } from "./global";
-import fs from "fs";
+import * as fs from "fs";
 
-/**
- *
- * @param path
- * @param name
- * @param rootSegments
- * @param maxDepth
- * @returns {Promise<[string]>}
- */
-export async function findAllFiles({ path, name, maxDepth = 2 }) {
-  if (typeof path !== "string") {
-    throw new Error("path must be a string");
+export async function findAllFiles(
+  {
+    path,
+    name,
+    maxDepth = 2
+//
+  }: {
+    path: string;
+    name: string;
+    maxDepth?: number;
   }
-  if (typeof name !== "string") {
-    throw new Error("name must be a string");
-  }
-
+): Promise<string[]> {
   const rootSegments = path.split("/").length;
 
   if (env.VERBOSE) {
     console.log(`Searching for ${name} in ${path}`);
   }
-  const files = [];
+  const files: string[] = [];
   let readdirSync;
   try {
     readdirSync = fs.readdirSync(path);
@@ -30,7 +26,7 @@ export async function findAllFiles({ path, name, maxDepth = 2 }) {
     if (env.VERBOSE) {
       console.log(`Error reading ${path}`, e);
     }
-    return files;
+    return [];
   }
   for (const file of readdirSync) {
     const filePath = path + "/" + file;
@@ -49,8 +45,7 @@ export async function findAllFiles({ path, name, maxDepth = 2 }) {
           const subFiles = await findAllFiles({
             path: filePath,
             name: name,
-            rootSegments: rootSegments,
-            maxDepth: 2,
+            maxDepth: 2
           });
           files.push(...subFiles);
         } catch (e) {

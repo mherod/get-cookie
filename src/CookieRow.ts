@@ -4,4 +4,3 @@ export default interface CookieRow {
     value: Buffer;
     meta?: any;
 }
-

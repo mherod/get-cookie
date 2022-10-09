@@ -4,15 +4,13 @@ import CompositeCookieQueryStrategy from "./browsers/CompositeCookieQueryStrateg
 import CookieQueryStrategy from "./browsers/CookieQueryStrategy";
 import isValidJwt from "./isValidJwt";
 import ExportedCookie from "./ExportedCookie";
+import CookieRequest from "./CookieRequest";
 
 export async function queryCookies(
   {
     name,
     domain
-  }: {
-    name: string;
-    domain: string;
-  },
+  }: CookieRequest,
   strategy: CookieQueryStrategy = new CompositeCookieQueryStrategy()
 ) {
   const results: ExportedCookie[] = await strategy.queryCookies(name, domain);

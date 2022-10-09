@@ -3,9 +3,6 @@
 import {exec, ExecException} from "child_process";
 
 export async function execSimple(command: string): Promise<string> {
-  if (process.env.VERBOSE) {
-    console.log(command);
-  }
   return new Promise((resolve, reject) => {
     exec(
       command,
@@ -25,65 +22,6 @@ export async function execSimple(command: string): Promise<string> {
       }
     );
   });
-}
-
-// export async function execAsBuffer(command: string) {
-//   if (process.env.VERBOSE) {
-//     console.log(command);
-//   }
-//   return await new Promise((resolve, reject) => {
-//     exec(
-//       command,
-//       { encoding: "binary", maxBuffer: 5 * 1024 },
-//       (error: ExecException | null, stdout: string, stderr: string) => {
-//         if (error) {
-//           reject(error);
-//           return;
-//         }
-//         if (stderr) {
-//           reject(error);
-//           return;
-//         }
-//         let stdoutAsBuffer: string = stdout;
-//         if (typeof stdoutAsBuffer === "string" && stdoutAsBuffer.length > 0) {
-//           // noinspection JSCheckFunctionSignatures
-//           stdoutAsBuffer = Buffer.from(stdoutAsBuffer, "binary").slice(0, -1);
-//         }
-//         if (stdoutAsBuffer && stdoutAsBuffer.length > 0) {
-//           resolve(stdoutAsBuffer);
-//         }
-//       }
-//     );
-//   });
-// }
-
-// @ts-ignore
-export function toStringValue(r: any): string {
-  if (process.env.VERBOSE) {
-    console.log("Printing value", r);
-  }
-  if (r) {
-    if (typeof r === "string") {
-      return r;
-    } else if (r.toString) {
-      // noinspection JSCheckFunctionSignatures
-      return r.toString("utf8");
-    }
-  }
-}
-
-export function printStringValue(r: any) {
-  if (process.env.VERBOSE) {
-    console.log("Printing value", r);
-  }
-  if (r) {
-    if (typeof r === "string") {
-      console.log(r);
-    } else if (r.toString) {
-      // noinspection JSCheckFunctionSignatures
-      console.log(r.toString("utf8"));
-    }
-  }
 }
 
 /**

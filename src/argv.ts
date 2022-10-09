@@ -1,1 +1,1 @@
-export const argv = process.argv ?? [];
+export const argv: string[] = process.argv ?? [];

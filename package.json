@@ -1,7 +1,8 @@
 {
   "name": "@mherod/get-cookie",
-  "version": "2.0.0-beta.5",
+  "version": "2.0.0-beta.6",
   "description": "Node.js module for querying a local user's Chrome cookie",
+  "source": "src/index.ts",
   "bin": "dist/cli.js",
   "main": "dist/main.js",
   "module": "dist/module.js",

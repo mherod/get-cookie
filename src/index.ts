@@ -5,10 +5,12 @@ import { queryCookies } from "./queryCookies";
 import FirefoxCookieQueryStrategy from "./browsers/FirefoxCookieQueryStrategy";
 import ChromeCookieQueryStrategy from "./browsers/ChromeCookieQueryStrategy";
 import CompositeCookieQueryStrategy from "./browsers/CompositeCookieQueryStrategy";
+import { CookieRequest } from "./CookieRequest";
+import { ExportedCookie } from "./ExportedCookie";
 import { getGroupedRenderedCookies } from "./getGroupedRenderedCookies";
 import { fetchWithCookies } from "./fetchWithCookies";
 
-export async function getCookie(params: { name: string; domain: string; }) {
+export async function getCookie(params: CookieRequest): Promise<ExportedCookie | undefined> {
   const cookies = await queryCookies(
     params,
     new CompositeCookieQueryStrategy()
@@ -21,12 +23,7 @@ export async function getCookie(params: { name: string; domain: string; }) {
   }
 }
 
-/**
- *
- * @param params
- * @returns {Promise<*>}
- */
-export async function getFirefoxCookie(params: { name: string; domain: string; }) {
+export async function getFirefoxCookie(params: CookieRequest): Promise<ExportedCookie | undefined> {
   const cookies = await queryCookies(
     params,
     new FirefoxCookieQueryStrategy()
@@ -39,12 +36,7 @@ export async function getFirefoxCookie(params: { name: string; domain: string; }
   }
 }
 
-/**
- *
- * @param params
- * @returns {Promise<*>}
- */
-export async function getChromeCookie(params: { name: string; domain: string; }) {
+export async function getChromeCookie(params: CookieRequest): Promise<ExportedCookie | undefined> {
   const cookies = await queryCookies(
     params,
     new ChromeCookieQueryStrategy()
@@ -57,10 +49,11 @@ export async function getChromeCookie(params: { name: string; domain: string; })
   }
 }
 
-export default {
-  getCookie,
-  getFirefoxCookie,
-  getChromeCookie,
+export {
   getGroupedRenderedCookies,
-  fetchWithCookies
-}
+  fetchWithCookies,
+};
+
+export * from "./CookieRequest";
+export * from "./CookieRow";
+export * from "./ExportedCookie";

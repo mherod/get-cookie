@@ -5,12 +5,12 @@ import { existsSync } from "fs";
 import { findAllFiles } from "../findAllFiles";
 import * as crypto from "crypto";
 import * as path from "path";
-import CookieRow from "../CookieRow";
-import ExportedCookie from "../ExportedCookie";
 import { doSqliteQuery1 } from "../doSqliteQuery1";
 import { merge } from "lodash";
 import { isCookieRow } from "../IsCookieRow";
 import { isExportedCookie } from "../IsExportedCookie";
+import { CookieRow } from "../CookieRow";
+import { ExportedCookie } from "../ExportedCookie";
 
 export default class ChromeCookieQueryStrategy implements CookieQueryStrategy {
   async queryCookies(name: string, domain: string): Promise<ExportedCookie[]> {

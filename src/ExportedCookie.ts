@@ -1,4 +1,4 @@
-export default interface ExportedCookie {
+export interface ExportedCookie {
   domain: string;
   name: string;
   value: string;

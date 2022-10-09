@@ -1,5 +1,4 @@
-export default interface CookieRequest {
+export interface CookieRequest {
   name: string;
   domain: string;
 }
-

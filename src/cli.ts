@@ -5,8 +5,8 @@ import { queryCookies } from "./queryCookies";
 import { argv } from "./argv";
 import { groupBy } from "lodash";
 import { blue, green } from "colorette";
-import ExportedCookie from "./ExportedCookie";
 import { resultsRendered } from "./resultsRendered";
+import { ExportedCookie } from "./ExportedCookie";
 
 function combinedString(results: ExportedCookie[]) {
   return blue(resultsRendered(results));

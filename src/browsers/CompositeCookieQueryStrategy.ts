@@ -2,7 +2,7 @@ import ChromeCookieQueryStrategy from "./ChromeCookieQueryStrategy";
 import FirefoxCookieQueryStrategy from "./FirefoxCookieQueryStrategy";
 import SafariCookieQueryStrategy from "./SafariCookieQueryStrategy";
 import CookieQueryStrategy from "./CookieQueryStrategy";
-import ExportedCookie from "../ExportedCookie";
+import { ExportedCookie } from "../ExportedCookie";
 
 export default class CompositeCookieQueryStrategy implements CookieQueryStrategy {
   #strategies;

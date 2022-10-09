@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import * as sqlite3 from "sqlite3";
-import CookieRow from "./CookieRow";
+import { CookieRow } from "./CookieRow";
 
 export async function doSqliteQuery1(file: string, sql: string): Promise<CookieRow[]> {
   if (!fs.existsSync(file)) {

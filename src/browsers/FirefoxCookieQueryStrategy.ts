@@ -5,7 +5,7 @@ import { toStringOrNull } from "../utils";
 import { findAllFiles } from "../findAllFiles";
 import * as path from "path";
 import { doSqliteQuery1 } from "../doSqliteQuery1";
-import ExportedCookie from "../ExportedCookie";
+import { ExportedCookie } from "../ExportedCookie";
 
 export default class FirefoxCookieQueryStrategy implements CookieQueryStrategy {
   async queryCookies(name: string, domain: string): Promise<ExportedCookie[]> {

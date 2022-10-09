@@ -1,6 +1,6 @@
 {
   "name": "@mherod/get-cookie",
-  "version": "2.0.0-beta.7",
+  "version": "2.0.0-beta.8",
   "description": "Node.js module for querying a local user's Chrome cookie",
   "source": "src/index.ts",
   "bin": "dist/cli.js",
@@ -25,8 +25,11 @@
     "main": {},
     "types": {},
     "library": {
-      "source": "src/index.ts",
+      "source": [
+        "src/index.ts"
+      ],
       "distDir": "dist",
+      "isLibrary": true,
       "engines": {
         "node": "16"
       }
@@ -34,6 +37,7 @@
     "cli": {
       "source": "src/cli.ts",
       "distDir": "dist",
+      "isLibrary": false,
       "engines": {
         "node": "16"
       },
@@ -58,7 +62,8 @@
     "destr": "^1.1.1",
     "jsonwebtoken": "^8.5.1",
     "lodash": "^4.17.21",
-    "sqlite3": "^5.1.1"
+    "sqlite3": "^5.1.1",
+    "user-agents": "^1.0.1163"
   },
   "devDependencies": {
     "@parcel/packager-ts": "^2.7.0",
@@ -66,6 +71,7 @@
     "@types/jsonwebtoken": "^8.5.9",
     "@types/lodash": "^4.14.186",
     "@types/node": "^18.8.2",
+    "@types/user-agents": "^1.0.2",
     "jest": "^29.0.3",
     "parcel": "^2.7.0",
     "prettier": "^2.7.1",

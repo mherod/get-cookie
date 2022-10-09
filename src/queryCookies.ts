@@ -3,14 +3,14 @@ import { uniqBy } from "lodash";
 import CompositeCookieQueryStrategy from "./browsers/CompositeCookieQueryStrategy";
 import CookieQueryStrategy from "./browsers/CookieQueryStrategy";
 import isValidJwt from "./isValidJwt";
-import { CookieRequest } from "./CookieRequest";
+import { CookieSpec } from "./CookieSpec";
 import { ExportedCookie } from "./ExportedCookie";
 
 export async function queryCookies(
   {
     name,
     domain
-  }: CookieRequest,
+  }: CookieSpec,
   strategy: CookieQueryStrategy = new CompositeCookieQueryStrategy()
 ) {
   const results: ExportedCookie[] = await strategy.queryCookies(name, domain);

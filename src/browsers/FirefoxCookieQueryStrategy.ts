@@ -1,11 +1,13 @@
+import * as path from "path";
 import CookieQueryStrategy from "./CookieQueryStrategy";
 import { env, HOME } from "../global";
 import { existsSync } from "fs";
-import { toStringOrNull } from "../utils";
 import { findAllFiles } from "../findAllFiles";
-import * as path from "path";
 import { doSqliteQuery1 } from "../doSqliteQuery1";
 import { ExportedCookie } from "../ExportedCookie";
+import { CookieRow } from "../CookieRow";
+import { CookieSpec } from "../CookieSpec";
+import { specialCases } from "../SpecialCases";
 
 export default class FirefoxCookieQueryStrategy implements CookieQueryStrategy {
   async queryCookies(name: string, domain: string): Promise<ExportedCookie[]> {
@@ -16,25 +18,24 @@ export default class FirefoxCookieQueryStrategy implements CookieQueryStrategy {
       return [];
     }
     const cookies = await this.#getFirefoxCookie({ name, domain });
-    return Array.isArray(cookies) ? cookies.map(toStringOrNull) : [];
+    if (Array.isArray(cookies)) {
+      return cookies.map((cookie: CookieRow) => {
+        return {
+          domain: cookie.domain,
+          name: cookie.name,
+          value: cookie.value.toString("utf8")
+        };
+      });
+    } else {
+      return [];
+    }
   }
 
-  /**
-   *
-   * @param name
-   * @param domain
-   * @returns {Promise<Buffer>}
-   */
   async #getFirefoxCookie(
-    //
     {
       name,
       domain
-    }: {
-      name: string,
-      domain: string
-      //
-    }
+    }: CookieSpec
     //
   ) {
     const files: string[] = await findAllFiles({
@@ -47,46 +48,53 @@ export default class FirefoxCookieQueryStrategy implements CookieQueryStrategy {
       ),
       name: "cookies.sqlite"
     });
-    const all = await Promise.all(
-      files.map((file) => {
-        return this.#queryCookiesDb(file, name, domain);
-      })
+    const fn: (file: string) => Promise<CookieRow[]> = async (file: string) => {
+      return await this.#queryCookiesDb(file, name, domain);
+    };
+    const all: Awaited<CookieRow[]>[] = await Promise.all(
+      files.map(fn)
     );
     return all.flat();
   }
 
-  #queryCookiesDb(file: string, name: string, domain: string) {
+  async #queryCookiesDb(file: string, name: string, domain: string): Promise<CookieRow[]> {
     if (file && !existsSync(file)) {
       throw new Error(`File ${file} does not exist`);
     }
-    if (env.VERBOSE) {
-      console.log(`Trying Firefox cookie ${name} for domain ${domain}`);
-    }
     let sql;
     //language=SQL
-    sql = "SELECT value FROM moz_cookies";
-    if (typeof name === "string" || typeof domain === "string") {
+    sql = "SELECT value, name, host FROM moz_cookies";
+    const { specifiedName, specifiedDomain } = specialCases({ name, domain });
+    if (specifiedName || specifiedDomain) {
       sql += ` WHERE `;
-      if (typeof name === "string") {
+      if (specifiedName) {
         sql += `name = '${name}'`;
-        if (typeof domain === "string") {
+        if (specifiedDomain) {
           sql += ` AND `;
         }
       }
-      if (typeof domain === "string") {
+      if (specifiedDomain) {
         sql += `host LIKE '${domain}';`;
       }
     }
-    return doSqliteQuery1(file, sql)
-      .then((rows) => {
-        return rows.map((row) => {
-          return {
-            domain: row.domain,
-            name: row.name,
-            value: row.value.toString("utf8")
-          };
-        });
-      })
-      .catch(() => []);
+    const rowTransform = (row: any) => {
+      // row is object key by column name
+      const value = row.value as string;
+      return {
+        domain: row.domain as string,
+        name: row.name as string,
+        value: Buffer.from(value, "utf8")
+      };
+    };
+    try {
+      return await doSqliteQuery1({
+        file,
+        sql,
+        rowTransform
+      });
+    } catch (e) {
+      console.error(`Error querying ${file}`, e);
+      return [];
+    }
   }
 }

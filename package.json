@@ -11,11 +11,12 @@
     "access": "public"
   },
   "scripts": {
-    "clean": "git clean -fXd",
+    "clean": "git clean -fXd && yarn",
     "build": "parcel build",
     "test": "jest",
-    "postbuild": "npm run check && npm run install:global",
+    "postbuild": "npm run check",
     "prepublish": "npm run build",
+    "preinstall:global": "npm run build",
     "install:global": "npm install --force --global .",
     "postinstall:global": "find $NVM_BIN -exec chmod +x {} \\; || true",
     "prettier": "prettier --write 'src/{**/*,*}.{js,json,ts}'",
@@ -62,6 +63,7 @@
     "destr": "^1.1.1",
     "jsonwebtoken": "^8.5.1",
     "lodash": "^4.17.21",
+    "lru-cache": "^7.14.0",
     "sqlite3": "^5.1.1",
     "user-agents": "^1.0.1163"
   },

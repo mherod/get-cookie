@@ -4,7 +4,7 @@ import { fetch } from "cross-fetch";
 import { merge } from "lodash";
 // noinspection SpellCheckingInspection
 import destr from "destr";
-import FetchResponse from "./fetchResponse";
+import FetchResponse from "./FetchResponse";
 import { getGroupedRenderedCookies } from "./getGroupedRenderedCookies";
 
 export async function fetchWithCookies(
@@ -33,7 +33,7 @@ export async function fetchWithCookies(
     }
   });
   try {
-    const res = await fetch(url2, newOptions1);
+    const res: Response = await fetch(url2, newOptions1);
     const newUrl = res.headers.get("location") as string;
     if (res.redirected || newUrl && newUrl !== url2) {
       return fetchWithCookies(newUrl, newOptions1);

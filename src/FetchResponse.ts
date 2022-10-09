@@ -1,4 +1,6 @@
-export default interface FetchResponse {
+import { Response } from "cross-fetch";
+
+export default interface FetchResponse extends Response {
   status: number;
   statusText: string;
   headers: Headers;

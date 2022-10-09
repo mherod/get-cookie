@@ -24,11 +24,6 @@ export async function execSimple(command: string): Promise<string> {
   });
 }
 
-/**
- *
- * @param result
- * @returns {string|null}
- */
 export function toStringOrNull(result: any) {
   if (result == null) {
     return null;

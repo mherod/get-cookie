@@ -3,6 +3,12 @@ import FirefoxCookieQueryStrategy from "./FirefoxCookieQueryStrategy";
 import SafariCookieQueryStrategy from "./SafariCookieQueryStrategy";
 import CookieQueryStrategy from "./CookieQueryStrategy";
 import { ExportedCookie } from "../ExportedCookie";
+import LRUCache from "lru-cache";
+
+const cache = new LRUCache<string, ExportedCookie[]>({
+  ttl: 1000 * 2,
+  max: 10
+});
 
 export default class CompositeCookieQueryStrategy implements CookieQueryStrategy {
   #strategies;
@@ -11,13 +17,18 @@ export default class CompositeCookieQueryStrategy implements CookieQueryStrategy
     this.#strategies = [
       ChromeCookieQueryStrategy,
       FirefoxCookieQueryStrategy,
-      SafariCookieQueryStrategy,
+      SafariCookieQueryStrategy
     ].map((strategy) => {
       return new strategy();
     });
   }
 
   async queryCookies(name: string, domain: string): Promise<ExportedCookie[]> {
+    const key = `${name}:${domain}`;
+    const cached = cache.get(key);
+    if (cached) {
+      return cached;
+    }
     const results = await Promise.all(
       this.#strategies.map(async (strategy) => {
         // @ts-ignore
@@ -25,6 +36,8 @@ export default class CompositeCookieQueryStrategy implements CookieQueryStrategy
         return cookies.catch(() => []);
       })
     );
-    return results.flat();
+    const flat: ExportedCookie[] = results.flat();
+    cache.set(`${name}:${domain}`, flat);
+    return flat;
   }
 }

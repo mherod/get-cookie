@@ -1,9 +1,22 @@
 import * as fs from "fs";
 import * as sqlite3 from "sqlite3";
 import { CookieRow } from "./CookieRow";
+import { merge } from "lodash";
 
-export async function doSqliteQuery1(file: string, sql: string): Promise<CookieRow[]> {
-  if (!fs.existsSync(file)) {
+interface DoSqliteQuery1Params {
+  file: string;
+  sql: string;
+  rowTransform: (row: any) => CookieRow;
+}
+
+export async function doSqliteQuery1(
+  {
+    file,
+    sql,
+    rowTransform
+  }: DoSqliteQuery1Params
+): Promise<CookieRow[]> {
+  if (!file || file && !fs.existsSync(file)) {
     throw new Error(`doSqliteQuery1: file ${file} does not exist`);
   }
   const db = new sqlite3.Database(file);
@@ -19,15 +32,14 @@ export async function doSqliteQuery1(file: string, sql: string): Promise<CookieR
         return;
       }
       if (Array.isArray(rows1)) {
-        const cookieRows: CookieRow[] = rows1.map((row) => {
-          return {
-            domain: row["host_key"],
-            name: row["name"],
-            value: row["encrypted_value"],
+        const cookieRows: CookieRow[] = rows1.map((row: any) => {
+          const newVar = {
             meta: {
               file: file
             }
           };
+          const cookieRow: CookieRow = rowTransform(row);
+          return merge(newVar, cookieRow);
         });
         resolve(cookieRows);
         return;

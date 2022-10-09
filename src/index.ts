@@ -5,12 +5,12 @@ import { queryCookies } from "./queryCookies";
 import FirefoxCookieQueryStrategy from "./browsers/FirefoxCookieQueryStrategy";
 import ChromeCookieQueryStrategy from "./browsers/ChromeCookieQueryStrategy";
 import CompositeCookieQueryStrategy from "./browsers/CompositeCookieQueryStrategy";
-import { CookieRequest } from "./CookieRequest";
+import { CookieSpec } from "./CookieSpec";
 import { ExportedCookie } from "./ExportedCookie";
 import { getGroupedRenderedCookies } from "./getGroupedRenderedCookies";
 import { fetchWithCookies } from "./fetchWithCookies";
 
-export async function getCookie(params: CookieRequest): Promise<ExportedCookie | undefined> {
+export async function getCookie(params: CookieSpec): Promise<ExportedCookie | undefined> {
   const cookies = await queryCookies(
     params,
     new CompositeCookieQueryStrategy()
@@ -23,7 +23,7 @@ export async function getCookie(params: CookieRequest): Promise<ExportedCookie |
   }
 }
 
-export async function getFirefoxCookie(params: CookieRequest): Promise<ExportedCookie | undefined> {
+export async function getFirefoxCookie(params: CookieSpec): Promise<ExportedCookie | undefined> {
   const cookies = await queryCookies(
     params,
     new FirefoxCookieQueryStrategy()
@@ -36,7 +36,7 @@ export async function getFirefoxCookie(params: CookieRequest): Promise<ExportedC
   }
 }
 
-export async function getChromeCookie(params: CookieRequest): Promise<ExportedCookie | undefined> {
+export async function getChromeCookie(params: CookieSpec): Promise<ExportedCookie | undefined> {
   const cookies = await queryCookies(
     params,
     new ChromeCookieQueryStrategy()
@@ -54,6 +54,6 @@ export {
   fetchWithCookies,
 };
 
-export * from "./CookieRequest";
+export * from "./CookieSpec";
 export * from "./CookieRow";
 export * from "./ExportedCookie";

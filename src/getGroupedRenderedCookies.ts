@@ -2,7 +2,7 @@ import { queryCookies } from "./queryCookies";
 import CompositeCookieQueryStrategy from "./browsers/CompositeCookieQueryStrategy";
 import { groupBy } from "lodash";
 import { resultsRendered } from "./resultsRendered";
-import { CookieRequest } from "./CookieRequest";
+import { CookieSpec } from "./CookieSpec";
 import { ExportedCookie } from "./ExportedCookie";
 
 export async function getGroupedRenderedCookies(
@@ -11,7 +11,7 @@ export async function getGroupedRenderedCookies(
     name,
     domain
     //
-  }: CookieRequest
+  }: CookieSpec
   //
 ): Promise<string[]> {
   const cookies: ExportedCookie[] = await queryCookies(

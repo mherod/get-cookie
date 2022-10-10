@@ -23,17 +23,21 @@ export default class ChromeCookieQueryStrategy implements CookieQueryStrategy {
     return getChromeCookies({
       requireJwt: false,
       name,
-      domain
+      domain,
     });
   }
 }
 
-async function getPromise1(name: string, domain: string, file: string): Promise<CookieRow[]> {
+async function getPromise1(
+  name: string,
+  domain: string,
+  file: string
+): Promise<CookieRow[]> {
   try {
     return await getEncryptedChromeCookie({
       name: name,
       domain: domain,
-      file: file
+      file: file,
     });
   } catch (e) {
     if (env.VERBOSE) {
@@ -47,9 +51,11 @@ async function getPromise(name: string, domain: string): Promise<CookieRow[]> {
   try {
     const files: string[] = await findAllFiles({
       path: chromeLocal,
-      name: "Cookies"
+      name: "Cookies",
     });
-    const promises: Promise<CookieRow[]>[] = files.map((file) => getPromise1(name, domain, file));
+    const promises: Promise<CookieRow[]>[] = files.map((file) =>
+      getPromise1(name, domain, file)
+    );
     const results1: Awaited<CookieRow[]>[] = await Promise.all(promises);
     return results1.flat().filter(isCookieRow);
   } catch (error) {
@@ -73,19 +79,17 @@ async function decryptValue(password: string, encryptedValue: Buffer) {
   return d ?? encryptedValue.toString("utf-8");
 }
 
-async function getChromeCookies(
-  {
-    name,
-    domain = "%",
-    requireJwt = false
-  }: {
-    name: string;
-    domain: string;
-    requireJwt: boolean | undefined;
-    //
-  }
+async function getChromeCookies({
+  name,
+  domain = "%",
+  requireJwt = false,
+}: {
+  name: string;
+  domain: string;
+  requireJwt: boolean | undefined;
   //
-): Promise<ExportedCookie[]> {
+}): //
+Promise<ExportedCookie[]> {
   const encryptedDataItems: CookieRow[] = await getPromise(name, domain);
   const password: string = await getChromePassword();
   const decrypted: Promise<ExportedCookie | null>[] = encryptedDataItems
@@ -99,10 +103,12 @@ async function getChromeCookies(
         domain: cookieRow.domain,
         name: cookieRow.name,
         value: decryptedValue,
-        meta: meta
+        meta: meta,
       };
     });
-  const results: ExportedCookie[] = (await Promise.all(decrypted)).filter(isExportedCookie);
+  const results: ExportedCookie[] = (await Promise.all(decrypted)).filter(
+    isExportedCookie
+  );
   if (env.VERBOSE) {
     console.log("results", results);
   }
@@ -117,17 +123,16 @@ const chromeLocal = path.join(
   "Chrome"
 );
 
-async function getEncryptedChromeCookie(
-  {
-    name,
-    domain,
-    file = path.join(chromeLocal, "Default", "Cookies")
-    //
-  }: {
-    name: string;
-    domain: string;
-    file: string;
-  }): Promise<CookieRow[]> {
+async function getEncryptedChromeCookie({
+  name,
+  domain,
+  file = path.join(chromeLocal, "Default", "Cookies"),
+}: //
+{
+  name: string;
+  domain: string;
+  file: string;
+}): Promise<CookieRow[]> {
   if (!existsSync(file)) {
     throw new Error(`File ${file} does not exist`);
   }
@@ -153,22 +158,29 @@ async function getEncryptedChromeCookie(
       sql += `host_key LIKE '${domain}';`;
     }
   }
-  return doSqliteQuery1({file : file, sql : sql, rowTransform : (row) => {
-    return {
-      domain: row["host_key"],
-      name: row["name"],
-      value: row["encrypted_value"],
-    }
-  }});
+  return doSqliteQuery1({
+    file: file,
+    sql: sql,
+    rowTransform: (row) => {
+      return {
+        domain: row["host_key"],
+        name: row["name"],
+        value: row["encrypted_value"],
+      };
+    },
+  });
 }
 
 async function getChromePassword(): Promise<string> {
   return execSimple(
-    "security find-generic-password -w -s \"Chrome Safe Storage\""
+    'security find-generic-password -w -s "Chrome Safe Storage"'
   );
 }
 
-async function decrypt(password: crypto.BinaryLike, encryptedData: Buffer): Promise<string> {
+async function decrypt(
+  password: crypto.BinaryLike,
+  encryptedData: Buffer
+): Promise<string> {
   if (typeof password !== "string") {
     throw new Error("password must be a string: " + password);
   }
@@ -194,73 +206,68 @@ async function decrypt(password: crypto.BinaryLike, encryptedData: Buffer): Prom
     console.log(`Trying to decrypt with password ${password}`);
   }
   return new Promise((resolve, reject) => {
-    crypto.pbkdf2(password,
-      "saltysalt",
-      1003,
-      16,
-      "sha1",
-      (error, buffer) => {
-        try {
-          if (error) {
-            if (env.VERBOSE) {
-              console.log("Error doing pbkdf2", error);
-            }
-            reject(error);
-            return;
+    crypto.pbkdf2(password, "saltysalt", 1003, 16, "sha1", (error, buffer) => {
+      try {
+        if (error) {
+          if (env.VERBOSE) {
+            console.log("Error doing pbkdf2", error);
           }
-
-          if (buffer.length !== 16) {
-            if (env.VERBOSE) {
-              console.log(
-                "Error doing pbkdf2, buffer length is not 16",
-                buffer.length
-              );
-            }
-            reject(new Error("Buffer length is not 16"));
-            return;
-          }
-
-          const str = new Array(17).join(" ");
-          const iv = Buffer.from(str, "binary");
-          const decipher = crypto.createDecipheriv("aes-128-cbc", buffer, iv);
-          decipher.setAutoPadding(false);
-
-          if (encryptedData1 && encryptedData1.slice) {
-            encryptedData1 = encryptedData1.slice(3);
-          }
-
-          if (encryptedData1.length % 16 !== 0) {
-            if (env.VERBOSE) {
-              console.log(
-                "Error doing pbkdf2, encryptedData length is not a multiple of 16",
-                encryptedData1.length
-              );
-            }
-            reject(new Error("encryptedData length is not a multiple of 16"));
-            return;
-          }
-
-          let decoded = decipher.update(encryptedData1);
-          try {
-            decipher.final("utf-8");
-          } catch (e) {
-            if (env.VERBOSE) {
-              console.log("Error doing decipher.final()", e);
-            }
-            reject(e);
-            return;
-          }
-
-          const padding = decoded[decoded.length - 1];
-          if (padding) {
-            decoded = decoded.slice(0, 0 - padding);
-          }
-          // noinspection JSCheckFunctionSignatures
-          const decodedString = decoded.toString("utf8");
-          resolve(decodedString);
-        } catch (e) {
-          reject(e);
+          reject(error);
+          return;
         }
-      });
+
+        if (buffer.length !== 16) {
+          if (env.VERBOSE) {
+            console.log(
+              "Error doing pbkdf2, buffer length is not 16",
+              buffer.length
+            );
+          }
+          reject(new Error("Buffer length is not 16"));
+          return;
+        }
+
+        const str = new Array(17).join(" ");
+        const iv = Buffer.from(str, "binary");
+        const decipher = crypto.createDecipheriv("aes-128-cbc", buffer, iv);
+        decipher.setAutoPadding(false);
+
+        if (encryptedData1 && encryptedData1.slice) {
+          encryptedData1 = encryptedData1.slice(3);
+        }
+
+        if (encryptedData1.length % 16 !== 0) {
+          if (env.VERBOSE) {
+            console.log(
+              "Error doing pbkdf2, encryptedData length is not a multiple of 16",
+              encryptedData1.length
+            );
+          }
+          reject(new Error("encryptedData length is not a multiple of 16"));
+          return;
+        }
+
+        let decoded = decipher.update(encryptedData1);
+        try {
+          decipher.final("utf-8");
+        } catch (e) {
+          if (env.VERBOSE) {
+            console.log("Error doing decipher.final()", e);
+          }
+          reject(e);
+          return;
+        }
+
+        const padding = decoded[decoded.length - 1];
+        if (padding) {
+          decoded = decoded.slice(0, 0 - padding);
+        }
+        // noinspection JSCheckFunctionSignatures
+        const decodedString = decoded.toString("utf8");
+        resolve(decodedString);
+      } catch (e) {
+        reject(e);
+      }
+    });
   });
 }

@@ -7,10 +7,7 @@ import { CookieSpec } from "./CookieSpec";
 import { ExportedCookie } from "./ExportedCookie";
 
 export async function queryCookies(
-  {
-    name,
-    domain
-  }: CookieSpec,
+  { name, domain }: CookieSpec,
   strategy: CookieQueryStrategy = new CompositeCookieQueryStrategy()
 ) {
   const results: ExportedCookie[] = await strategy.queryCookies(name, domain);

@@ -9,14 +9,12 @@ interface DoSqliteQuery1Params {
   rowTransform: (row: any) => CookieRow;
 }
 
-export async function doSqliteQuery1(
-  {
-    file,
-    sql,
-    rowTransform
-  }: DoSqliteQuery1Params
-): Promise<CookieRow[]> {
-  if (!file || file && !fs.existsSync(file)) {
+export async function doSqliteQuery1({
+  file,
+  sql,
+  rowTransform,
+}: DoSqliteQuery1Params): Promise<CookieRow[]> {
+  if (!file || (file && !fs.existsSync(file))) {
     throw new Error(`doSqliteQuery1: file ${file} does not exist`);
   }
   const db = new sqlite3.Database(file);
@@ -35,8 +33,8 @@ export async function doSqliteQuery1(
         const cookieRows: CookieRow[] = rows1.map((row: any) => {
           const newVar = {
             meta: {
-              file: file
-            }
+              file: file,
+            },
           };
           const cookieRow: CookieRow = rowTransform(row);
           return merge(newVar, cookieRow);

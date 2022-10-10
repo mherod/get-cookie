@@ -9,11 +9,11 @@ export async function getGroupedRenderedCookies(
   //
   {
     name,
-    domain
-    //
-  }: CookieSpec
-  //
-): Promise<string[]> {
+    domain,
+  }: //
+  CookieSpec
+): //
+Promise<string[]> {
   const cookies: ExportedCookie[] = await queryCookies(
     { name, domain },
     new CompositeCookieQueryStrategy()

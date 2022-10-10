@@ -1,6 +1,6 @@
 // noinspection JSUnusedGlobalSymbols
 
-import {exec, ExecException} from "child_process";
+import { exec, ExecException } from "child_process";
 
 export async function execSimple(command: string): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -44,7 +44,6 @@ export function toStringOrNull(result: any) {
 export function invalidString(input: any): boolean {
   return typeof input !== "string" || input.length === 0;
 }
-
 
 export function validString(input: any): input is string {
   return typeof input == "string" && input.length > 0;

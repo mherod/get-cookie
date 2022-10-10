@@ -23,7 +23,7 @@ export default class FirefoxCookieQueryStrategy implements CookieQueryStrategy {
         return {
           domain: cookie.domain,
           name: cookie.name,
-          value: cookie.value.toString("utf8")
+          value: cookie.value.toString("utf8"),
         };
       });
     } else {
@@ -32,11 +32,7 @@ export default class FirefoxCookieQueryStrategy implements CookieQueryStrategy {
   }
 
   async #getFirefoxCookie(
-    {
-      name,
-      domain
-    }: CookieSpec
-    //
+    { name, domain }: CookieSpec //
   ) {
     const files: string[] = await findAllFiles({
       path: path.join(
@@ -46,18 +42,20 @@ export default class FirefoxCookieQueryStrategy implements CookieQueryStrategy {
         "Firefox",
         "Profiles"
       ),
-      name: "cookies.sqlite"
+      name: "cookies.sqlite",
     });
     const fn: (file: string) => Promise<CookieRow[]> = async (file: string) => {
       return await this.#queryCookiesDb(file, name, domain);
     };
-    const all: Awaited<CookieRow[]>[] = await Promise.all(
-      files.map(fn)
-    );
+    const all: Awaited<CookieRow[]>[] = await Promise.all(files.map(fn));
     return all.flat();
   }
 
-  async #queryCookiesDb(file: string, name: string, domain: string): Promise<CookieRow[]> {
+  async #queryCookiesDb(
+    file: string,
+    name: string,
+    domain: string
+  ): Promise<CookieRow[]> {
     if (file && !existsSync(file)) {
       throw new Error(`File ${file} does not exist`);
     }
@@ -83,14 +81,14 @@ export default class FirefoxCookieQueryStrategy implements CookieQueryStrategy {
       return {
         domain: row.domain as string,
         name: row.name as string,
-        value: Buffer.from(value, "utf8")
+        value: Buffer.from(value, "utf8"),
       };
     };
     try {
       return await doSqliteQuery1({
         file,
         sql,
-        rowTransform
+        rowTransform,
       });
     } catch (e) {
       console.error(`Error querying ${file}`, e);

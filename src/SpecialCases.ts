@@ -1,11 +1,6 @@
 import { CookieSpec } from "./CookieSpec";
 
-export function specialCases(
-  {
-    name,
-    domain
-  }: CookieSpec
-): {
+export function specialCases({ name, domain }: CookieSpec): {
   specifiedName: boolean;
   specifiedDomain: boolean;
   //
@@ -13,7 +8,7 @@ export function specialCases(
   const wildcardRegexp = /^([*%])$/i;
   return {
     specifiedName: name.match(wildcardRegexp) == null,
-    specifiedDomain: domain.match(wildcardRegexp) == null
+    specifiedDomain: domain.match(wildcardRegexp) == null,
     //
   };
 }

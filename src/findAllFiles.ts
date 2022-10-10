@@ -1,18 +1,16 @@
 import { env } from "./global";
 import * as fs from "fs";
 
-export async function findAllFiles(
-  {
-    path,
-    name,
-    maxDepth = 2
-//
-  }: {
-    path: string;
-    name: string;
-    maxDepth?: number;
-  }
-): Promise<string[]> {
+export async function findAllFiles({
+  path,
+  name,
+  maxDepth = 2,
+}: //
+{
+  path: string;
+  name: string;
+  maxDepth?: number;
+}): Promise<string[]> {
   const rootSegments = path.split("/").length;
 
   if (env.VERBOSE) {
@@ -45,7 +43,7 @@ export async function findAllFiles(
           const subFiles = await findAllFiles({
             path: filePath,
             name: name,
-            maxDepth: 2
+            maxDepth: 2,
           });
           files.push(...subFiles);
         } catch (e) {

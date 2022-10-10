@@ -7,17 +7,19 @@ import LRUCache from "lru-cache";
 
 const cache = new LRUCache<string, ExportedCookie[]>({
   ttl: 1000 * 2,
-  max: 10
+  max: 10,
 });
 
-export default class CompositeCookieQueryStrategy implements CookieQueryStrategy {
+export default class CompositeCookieQueryStrategy
+  implements CookieQueryStrategy
+{
   #strategies;
 
   constructor() {
     this.#strategies = [
       ChromeCookieQueryStrategy,
       FirefoxCookieQueryStrategy,
-      SafariCookieQueryStrategy
+      SafariCookieQueryStrategy,
     ].map((strategy) => {
       return new strategy();
     });
@@ -32,7 +34,10 @@ export default class CompositeCookieQueryStrategy implements CookieQueryStrategy
     const results = await Promise.all(
       this.#strategies.map(async (strategy) => {
         // @ts-ignore
-        const cookies: Promise<ExportedCookie[]> = strategy.queryCookies(name, domain);
+        const cookies: Promise<ExportedCookie[]> = strategy.queryCookies(
+          name,
+          domain
+        );
         return cookies.catch(() => []);
       })
     );

@@ -26,7 +26,7 @@ export async function fetchWithCookies(
   const cookies: string[] = await getGroupedRenderedCookies({
     name: "%",
     domain: domain,
-  });
+  }).catch(() => []);
   const cookie = cookies.pop();
   const newOptions1: RequestInit = merge(defaultOptions, options, {
     headers: {

@@ -1,11 +1,10 @@
 import CookieQueryStrategy from "./CookieQueryStrategy";
 import { execSimple } from "../utils";
 import { env, HOME } from "../global";
-import { existsSync } from "fs";
+import fs, { existsSync } from "fs";
 import { findAllFiles } from "../findAllFiles";
 import * as crypto from "crypto";
 import * as path from "path";
-import { doSqliteQuery1 } from "../doSqliteQuery1";
 import { merge } from "lodash";
 import { isCookieRow } from "../IsCookieRow";
 import { isExportedCookie } from "../IsExportedCookie";
@@ -13,7 +12,6 @@ import CookieRow from "../CookieRow";
 import ExportedCookie from "../ExportedCookie";
 import { stringToRegex } from "../StringToRegex";
 import { parsedArgs } from "../argv";
-import fs from "fs";
 import * as sqlite3 from "sqlite3";
 import { DoSqliteQuery1Params } from "../doSqliteQuery1Params";
 

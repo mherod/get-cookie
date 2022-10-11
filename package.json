@@ -25,7 +25,6 @@
   },
   "targets": {
     "main": {},
-    "types": {},
     "library": {
       "source": "src/index.ts",
       "distDir": "dist",
@@ -33,6 +32,7 @@
       "engines": {
         "node": "16"
       },
+      "sourceMap": true,
       "includeNodeModules": false
     },
     "cli": {
@@ -42,6 +42,7 @@
       "engines": {
         "node": "16"
       },
+      "sourceMap": false,
       "includeNodeModules": [
         "colorette"
       ]

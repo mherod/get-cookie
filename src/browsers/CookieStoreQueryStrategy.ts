@@ -2,7 +2,7 @@ import CookieQueryStrategy from "./CookieQueryStrategy";
 import CookieSpec from "../CookieSpec";
 import ExportedCookie from "../ExportedCookie";
 import { Cookie } from "tough-cookie";
-import { cookieStore, cookieJar } from "../CookieStore";
+import { cookieJar, cookieStore } from "../CookieStore";
 import { stringToRegex } from "../StringToRegex";
 
 export default class CookieStoreQueryStrategy implements CookieQueryStrategy {

@@ -1,4 +1,3 @@
-import { groupBy } from "lodash";
 import { queryCookies } from "./queryCookies";
 import { resultsRendered } from "./resultsRendered";
 import CompositeCookieQueryStrategy from "./browsers/CompositeCookieQueryStrategy";

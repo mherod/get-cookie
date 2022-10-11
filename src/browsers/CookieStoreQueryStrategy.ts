@@ -41,7 +41,9 @@ export default class CookieStoreQueryStrategy implements CookieQueryStrategy {
     }
 
     if (name == "%") {
-      return exportedCookies;
+      return exportedCookies.filter((cookie: ExportedCookie) => {
+        return cookie.domain.match(stringToRegex(domain));
+      });
     }
 
     return exportedCookies.filter((cookie: ExportedCookie) => {

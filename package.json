@@ -67,7 +67,8 @@
     "lru-cache": "^7.14.0",
     "minimist": "^1.2.6",
     "sqlite3": "^5.1.1",
-    "tough-cookie": "^4.1.2"
+    "tough-cookie": "^4.1.2",
+    "tough-cookie-file-store": "^2.0.3"
   },
   "devDependencies": {
     "@parcel/packager-ts": "^2.7.0",

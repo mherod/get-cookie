@@ -10,6 +10,8 @@ import CookieSpec from "../CookieSpec";
 import { specialCases } from "../SpecialCases";
 
 export default class FirefoxCookieQueryStrategy implements CookieQueryStrategy {
+  browserName = "Firefox";
+
   async queryCookies(name: string, domain: string): Promise<ExportedCookie[]> {
     if (process.platform !== "darwin") {
       throw new Error("This only works on macOS");

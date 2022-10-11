@@ -6,7 +6,7 @@ import { merge } from "lodash";
 import destr from "destr";
 import CookieSpec from "./CookieSpec";
 import { getGroupedRenderedCookies } from "./getGroupedRenderedCookies";
-import { cookieJar } from "./MemoryCookieStore";
+import { cookieJar } from "./CookieStore";
 
 export async function fetchWithCookies(
   url: RequestInfo | URL,

@@ -11,8 +11,11 @@ import { isCookieRow } from "../IsCookieRow";
 import { isExportedCookie } from "../IsExportedCookie";
 import CookieRow from "../CookieRow";
 import ExportedCookie from "../ExportedCookie";
+import { stringToRegex } from "../StringToRegex";
 
 export default class ChromeCookieQueryStrategy implements CookieQueryStrategy {
+  browserName = "Chrome";
+
   async queryCookies(name: string, domain: string): Promise<ExportedCookie[]> {
     if (process.platform !== "darwin") {
       throw new Error("This only works on macOS");
@@ -56,7 +59,7 @@ async function getPromise(name: string, domain: string): Promise<CookieRow[]> {
     const promises: Promise<CookieRow[]>[] = files.map((file) =>
       getPromise1(name, domain, file)
     );
-    const results1: Awaited<CookieRow[]>[] = await Promise.all(promises);
+    const results1: CookieRow[][] = await Promise.all(promises);
     return results1.flat().filter(isCookieRow);
   } catch (error) {
     if (env.VERBOSE) {
@@ -146,19 +149,22 @@ async function getEncryptedChromeCookie({
   const wildcardRegexp = /^([*%])$/i;
   const specifiedName = name.match(wildcardRegexp) == null;
   const specifiedDomain = domain.match(wildcardRegexp) == null;
-  if (specifiedName || specifiedDomain) {
+  const wildcardDomain = domain.match(/[%*]/) != null;
+  const queryDomain = specifiedDomain && !wildcardDomain;
+  // if we have a wildcard domain, we need to use a regexp
+  if (specifiedName || queryDomain) {
     sql += ` WHERE `;
     if (specifiedName) {
       sql += `name = '${name}'`;
-      if (specifiedDomain) {
+      if (queryDomain) {
         sql += ` AND `;
       }
     }
-    if (specifiedDomain) {
+    if (queryDomain) {
       sql += `host_key LIKE '${domain}';`;
     }
   }
-  return doSqliteQuery1({
+  const sqliteQuery1: CookieRow[] = await doSqliteQuery1({
     file: file,
     sql: sql,
     rowTransform: (row) => {
@@ -168,6 +174,9 @@ async function getEncryptedChromeCookie({
         value: row["encrypted_value"],
       };
     },
+  });
+  return sqliteQuery1.filter((row) => {
+    return row.domain.match(stringToRegex(domain)) != null;
   });
 }
 

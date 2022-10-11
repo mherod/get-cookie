@@ -13,6 +13,9 @@ import CookieRow from "../CookieRow";
 import ExportedCookie from "../ExportedCookie";
 import { stringToRegex } from "../StringToRegex";
 import { parsedArgs } from "../argv";
+import fs from "fs";
+import * as sqlite3 from "sqlite3";
+import { DoSqliteQuery1Params } from "../doSqliteQuery1Params";
 
 export default class ChromeCookieQueryStrategy implements CookieQueryStrategy {
   browserName = "Chrome";
@@ -103,12 +106,19 @@ Promise<ExportedCookie[]> {
       const decryptedValue = await decryptValue(password, encryptedValue);
       const meta = {};
       merge(meta, cookieRow.meta ?? {});
-      return {
+      const exportedCookie: ExportedCookie = {
         domain: cookieRow.domain,
         name: cookieRow.name,
         value: decryptedValue,
         meta: meta,
       };
+      const expiry = cookieRow.expiry;
+      if (expiry) {
+        merge(exportedCookie, {
+          expiry: new Date(expiry),
+        });
+      }
+      return exportedCookie;
     });
   const results: ExportedCookie[] = (await Promise.all(decrypted)).filter(
     isExportedCookie
@@ -146,7 +156,8 @@ async function getEncryptedChromeCookie({
   }
   let sql;
   //language=SQL
-  sql = "SELECT encrypted_value, name, host_key FROM cookies";
+  sql = "SELECT * FROM cookies";
+  // sql = "SELECT encrypted_value, name, host_key FROM cookies";
 
   const wildcardRegexp = /^([*%])$/i;
   const specifiedName = name.match(wildcardRegexp) == null;
@@ -168,15 +179,20 @@ async function getEncryptedChromeCookie({
       sql += `host_key LIKE '${sqlEmbedDomain}';`;
     }
   }
-  const sqliteQuery1: CookieRow[] = await doSqliteQuery1({
+  const sqliteQuery1: CookieRow[] = await doChromeSqliteQuery1({
     file: file,
     sql: sql,
     rowTransform: (row) => {
-      return {
+      const cookieRow = {
+        expiry: (row["expires_utc"] / 1000000 - 11644473600) * 1000,
         domain: row["host_key"],
         name: row["name"],
         value: row["encrypted_value"],
       };
+      if (parsedArgs.verbose) {
+        console.log("CookieRow", cookieRow);
+      }
+      return cookieRow;
     },
   });
   return sqliteQuery1.filter((row) => {
@@ -281,6 +297,47 @@ async function decrypt(
       } catch (e) {
         reject(e);
       }
+    });
+  });
+}
+
+export async function doChromeSqliteQuery1({
+  file,
+  sql,
+  rowTransform,
+}: DoSqliteQuery1Params): Promise<CookieRow[]> {
+  if (!file || (file && !fs.existsSync(file))) {
+    throw new Error(`doSqliteQuery1: file ${file} does not exist`);
+  }
+  const db = new sqlite3.Database(file);
+  return new Promise((resolve, reject) => {
+    db.all(sql, (err: Error, rows: any[]) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+      const rows1: any[] = rows;
+      if (rows1 == null || rows1.length === 0) {
+        resolve([]);
+        return;
+      }
+      if (Array.isArray(rows1)) {
+        const cookieRows: CookieRow[] = rows1.map((row: any) => {
+          const newVar = {
+            meta: {
+              file: file,
+            },
+          };
+          const cookieRow: CookieRow = rowTransform(row);
+          return merge(newVar, cookieRow);
+        });
+        resolve(cookieRows);
+        return;
+      }
+      if (parsedArgs.verbose) {
+        console.log(`doSqliteQuery1: rows ${JSON.stringify(rows1)}`);
+      }
+      resolve([rows1]);
     });
   });
 }

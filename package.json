@@ -11,7 +11,7 @@
     "access": "public"
   },
   "scripts": {
-    "clean": "git clean -fXd && yarn",
+    "clean": "git clean -fdX && rm -rf node_modules dist && yarn install",
     "build": "parcel build",
     "prepare": "npm run build && npm run prettier",
     "test": "jest",

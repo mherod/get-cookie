@@ -3,12 +3,7 @@ import * as sqlite3 from "sqlite3";
 import CookieRow from "./CookieRow";
 import { merge } from "lodash";
 import { parsedArgs } from "./argv";
-
-interface DoSqliteQuery1Params {
-  file: string;
-  sql: string;
-  rowTransform: (row: any) => CookieRow;
-}
+import { DoSqliteQuery1Params } from "./doSqliteQuery1Params";
 
 export async function doSqliteQuery1({
   file,

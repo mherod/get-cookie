@@ -57,8 +57,9 @@ export default class CookieStoreQueryStrategy implements CookieQueryStrategy {
       domain: cookie.domain ?? cookieSpec.domain,
       name: cookie.key ?? cookieSpec.name,
       value: cookie.value,
+      expiry: cookie.expires ?? Infinity,
       meta: {
-        file: "memory",
+        file: "tough-cookie",
       },
     };
   }

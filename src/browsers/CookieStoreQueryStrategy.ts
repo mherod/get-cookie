@@ -11,15 +11,16 @@ export default class CookieStoreQueryStrategy implements CookieQueryStrategy {
   async queryCookies(name: string, domain: string): Promise<ExportedCookie[]> {
     const exportedCookies: ExportedCookie[] = [];
 
-    if (name.match(/[%*]/) || domain.match(/[%*]/)) {
-      const cookies: Cookie[] = await this.#getAllCookies();
-      const allExportedCookies = cookies.map((cookie: Cookie) => {
-        return this.#extracted(cookie, { name, domain });
-      });
-      exportedCookies.push(...allExportedCookies);
-    }
+    // if (name.match(/[%*]/) || domain.match(/[%*]/)) {
+    const cookies: Cookie[] = await this.#getAllCookies();
+    const allExportedCookies = cookies.map((cookie: Cookie) => {
+      return this.#extracted(cookie, { name, domain });
+    });
+    exportedCookies.push(...allExportedCookies);
+    // }
 
-    if (name == "%" && domain == "%") {
+    const wildcardRegexp = /^([*%])$/i;
+    if (name.match(wildcardRegexp) && domain.match(wildcardRegexp)) {
       return exportedCookies;
     }
 
@@ -29,7 +30,7 @@ export default class CookieStoreQueryStrategy implements CookieQueryStrategy {
       const domain1 = domain.match(/(\w+.+\w+)/gi)?.pop() ?? domain;
       const url = new URL("https://" + domain1);
       url.pathname = path;
-      const cookies: Cookie[] = await cookieJar.getCookies(url.href);
+      const cookies: Cookie[] = await this.#getCookies(url.href);
       const domainCookies = cookies.map((cookie: Cookie) => {
         return this.#extracted(cookie, {
           domain,
@@ -41,17 +42,6 @@ export default class CookieStoreQueryStrategy implements CookieQueryStrategy {
 
     if (name == "%") {
       return exportedCookies;
-    }
-
-    const cookie: Cookie | null = await cookieStore.findCookie(
-      domain,
-      path,
-      name
-    );
-
-    if (cookie) {
-      const singleCookie = this.#extracted(cookie, { name, domain });
-      return [singleCookie];
     }
 
     return exportedCookies.filter((cookie: ExportedCookie) => {
@@ -71,6 +61,19 @@ export default class CookieStoreQueryStrategy implements CookieQueryStrategy {
         file: "memory",
       },
     };
+  }
+
+  #getCookies(url: string): Promise<Cookie[]> {
+    return new Promise((resolve, reject) => {
+      // @ts-ignore
+      return cookieJar.getCookies(url, (err, cookies) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(cookies ?? []);
+        }
+      });
+    });
   }
 
   #getAllCookies(): Promise<Cookie[]> {

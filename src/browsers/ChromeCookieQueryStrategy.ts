@@ -146,6 +146,7 @@ async function getEncryptedChromeCookie({
   let sql;
   //language=SQL
   sql = "SELECT encrypted_value, name, host_key FROM cookies";
+
   const wildcardRegexp = /^([*%])$/i;
   const specifiedName = name.match(wildcardRegexp) == null;
   const specifiedDomain = domain.match(wildcardRegexp) == null;
@@ -161,9 +162,12 @@ async function getEncryptedChromeCookie({
       }
     }
     if (queryDomain) {
-      sql += `host_key LIKE '${domain}';`;
+      // leading dot replaced with % to match subdomains
+      const sqlEmbedDomain = domain.replace(/^[.%]?/, "%");
+      sql += `host_key LIKE '${sqlEmbedDomain}';`;
     }
   }
+  console.log("sql", sql);
   const sqliteQuery1: CookieRow[] = await doSqliteQuery1({
     file: file,
     sql: sql,

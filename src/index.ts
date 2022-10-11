@@ -60,4 +60,3 @@ export { getGroupedRenderedCookies, fetchWithCookies };
 export * from "./CookieSpec";
 export * from "./CookieRow";
 export * from "./ExportedCookie";
-export { stringToRegex } from "./StringToRegex";

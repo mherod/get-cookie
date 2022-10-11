@@ -1,24 +1,13 @@
-import { queryCookies } from "./queryCookies";
 import { resultsRendered } from "./resultsRendered";
-import CompositeCookieQueryStrategy from "./browsers/CompositeCookieQueryStrategy";
 import CookieSpec from "./CookieSpec";
-import ExportedCookie from "./ExportedCookie";
+import { comboQueryCookieSpec } from "./comboQueryCookieSpec";
 
-export async function getMergedRenderedCookies({
-  name,
-  domain,
-}: CookieSpec): Promise<string> {
-  const cookies: ExportedCookie[] = await queryCookies(
-    {
-      name,
-      domain,
-    },
-    new CompositeCookieQueryStrategy()
-    //
-  );
+export async function getMergedRenderedCookies(
+  cookieSpec: CookieSpec | CookieSpec[]
+): Promise<string> {
+  const cookies = await comboQueryCookieSpec(cookieSpec);
   if (cookies.length == 0) {
     throw new Error("Cookie not found");
   }
-  const results: ExportedCookie[] = await queryCookies({ name, domain });
-  return resultsRendered(results);
+  return resultsRendered(cookies);
 }

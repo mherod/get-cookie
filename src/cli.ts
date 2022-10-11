@@ -1,17 +1,18 @@
 #!/usr/bin/env node
 
 import { argv, parsedArgs } from "./argv";
-import { queryCookies } from "./queryCookies";
 import { groupBy } from "lodash";
 import { green, red, yellow } from "colorette";
 import { resultsRendered } from "./resultsRendered";
 import { fetchWithCookies } from "./fetchWithCookies";
 import { unpackHeaders } from "./unpackHeaders";
 import CookieSpec from "./CookieSpec";
+import { comboQueryCookieSpec } from "./comboQueryCookieSpec";
+import { cookieSpecsFromUrl } from "./cookieSpecsFromUrl";
 
-async function cliQueryCookies({ name, domain }: CookieSpec) {
+async function cliQueryCookies(cookieSpec: CookieSpec | CookieSpec[]) {
   try {
-    const results = await queryCookies({ name, domain });
+    const results = await comboQueryCookieSpec(cookieSpec);
     if (results == null || results.length == 0) {
       console.error(red("No results"));
       return;
@@ -49,7 +50,7 @@ async function cliQueryCookies({ name, domain }: CookieSpec) {
   }
 }
 
-function main() {
+async function main() {
   if (parsedArgs["help"] || parsedArgs["h"]) {
     console.log(`Usage: ${argv[1]} [name] [domain] [options] `);
     console.log(`Options:`);
@@ -60,6 +61,8 @@ function main() {
     console.log(`  -r, --render: Render all results`);
     return;
   }
+
+  parsedArgs["verbose"] = parsedArgs["verbose"] || parsedArgs["v"];
 
   const fetchUrl: string = parsedArgs["fetch"] || parsedArgs["F"];
   if (fetchUrl) {
@@ -100,12 +103,24 @@ function main() {
     return;
   }
 
-  const cookieSpec: CookieSpec = {
-    name: parsedArgs["name"] || parsedArgs["_"][0] || "%",
-    domain: parsedArgs["domain"] || parsedArgs["_"][1] || "%",
-  };
+  const cookieSpecs: CookieSpec[] = [];
+  const argUrl: string = parsedArgs["url"] || parsedArgs["u"];
+  if (argUrl) {
+    for (const cookieSpec of cookieSpecsFromUrl(argUrl)) {
+      cookieSpecs.push(cookieSpec);
+    }
+  } else {
+    cookieSpecs.push({
+      name: parsedArgs["name"] || parsedArgs["_"][0] || "%",
+      domain: parsedArgs["domain"] || parsedArgs["_"][1] || "%",
+    });
+  }
 
-  cliQueryCookies(cookieSpec).catch(console.error);
+  if (parsedArgs.verbose) {
+    console.log("cookieSpecs", cookieSpecs);
+  }
+
+  await cliQueryCookies(cookieSpecs).catch(console.error);
 }
 
-main();
+main().then((r) => r, console.error);

@@ -111,11 +111,15 @@ Promise<ExportedCookie[]> {
         meta: meta,
       };
       const expiry = cookieRow.expiry;
-      if (expiry) {
-        merge(exportedCookie, {
-          expiry: new Date(expiry),
-        });
-      }
+      const mergeExpiry =
+        expiry != null && expiry > 0
+          ? {
+              expiry: new Date(expiry),
+            }
+          : {
+              expiry: "Infinity",
+            };
+      merge(exportedCookie, mergeExpiry);
       return exportedCookie;
     });
   const results: ExportedCookie[] = (await Promise.all(decrypted)).filter(

@@ -4,43 +4,37 @@ import { fetch as fetchImpl } from "cross-fetch";
 import { merge } from "lodash";
 // noinspection SpellCheckingInspection
 import destr from "destr";
-import CookieSpec from "./CookieSpec";
 import { cookieJar } from "./CookieStore";
 import UserAgent from "user-agents";
 import { parsedArgs } from "./argv";
 import { blue, yellow } from "colorette";
 import { getMergedRenderedCookies } from "./getMergedRenderedCookies";
+import { cookieSpecsFromUrl } from "./cookieSpecsFromUrl";
+import CookieSpec from "./CookieSpec";
 
 export async function fetchWithCookies(
   url: RequestInfo | URL,
   options: RequestInit | undefined = {},
   fetch: Function = fetchImpl
 ): Promise<Response> {
+  const headers = {
+    "User-Agent": new UserAgent().toString(),
+  };
   const defaultOptions: RequestInit = {
-    headers: {
-      "User-Agent": new UserAgent().toString(),
-    },
+    headers,
     redirect: "manual",
   };
   const url2: string = `${url}`;
   const url1: URL = new URL(url2);
-  const domain = url1.hostname.replace(/^.*(\.\w+\.\w+)$/, (match, p1) => {
-    return `%${p1}`;
-  });
-  const cookieSpec: CookieSpec = {
-    name: "%",
-    domain: domain,
-  };
-  // const cookies: string[] = await getGroupedRenderedCookies(cookieSpec).catch(
-  //   () => []
-  // );
-  // const cookie = cookies.pop();
-  const cookie = await getMergedRenderedCookies(cookieSpec).catch(() => "");
-  const headers = {};
+  const cookieSpecs: CookieSpec[] = cookieSpecsFromUrl(url1);
+  const cookie = await getMergedRenderedCookies(cookieSpecs).catch(() => "");
   if (cookie.length > 0) {
     merge(headers, {
       Cookie: cookie,
     });
+  }
+  if (parsedArgs["dump-request-headers"]) {
+    console.log(blue("Request headers:"), headers);
   }
   const newOptions1: RequestInit = merge(defaultOptions, options, { headers });
   try {

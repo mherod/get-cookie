@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import * as sqlite3 from "sqlite3";
-import { CookieRow } from "./CookieRow";
+import CookieRow from "./CookieRow";
 import { merge } from "lodash";
 
 interface DoSqliteQuery1Params {

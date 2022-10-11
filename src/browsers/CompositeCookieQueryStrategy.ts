@@ -2,8 +2,9 @@ import ChromeCookieQueryStrategy from "./ChromeCookieQueryStrategy";
 import FirefoxCookieQueryStrategy from "./FirefoxCookieQueryStrategy";
 import SafariCookieQueryStrategy from "./SafariCookieQueryStrategy";
 import CookieQueryStrategy from "./CookieQueryStrategy";
-import { ExportedCookie } from "../ExportedCookie";
+import ExportedCookie from "../ExportedCookie";
 import LRUCache from "lru-cache";
+import MemoryCookieStoreQueryStrategy from "./MemoryCookieJarQueryStrategy";
 
 const cache = new LRUCache<string, ExportedCookie[]>({
   ttl: 1000 * 2,
@@ -17,6 +18,7 @@ export default class CompositeCookieQueryStrategy
 
   constructor() {
     this.#strategies = [
+      MemoryCookieStoreQueryStrategy,
       ChromeCookieQueryStrategy,
       FirefoxCookieQueryStrategy,
       SafariCookieQueryStrategy,

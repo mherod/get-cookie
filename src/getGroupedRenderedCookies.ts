@@ -2,8 +2,8 @@ import { queryCookies } from "./queryCookies";
 import CompositeCookieQueryStrategy from "./browsers/CompositeCookieQueryStrategy";
 import { groupBy } from "lodash";
 import { resultsRendered } from "./resultsRendered";
-import { CookieSpec } from "./CookieSpec";
-import { ExportedCookie } from "./ExportedCookie";
+import CookieSpec from "./CookieSpec";
+import ExportedCookie from "./ExportedCookie";
 
 export async function getGroupedRenderedCookies(
   //

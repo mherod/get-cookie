@@ -5,8 +5,8 @@ import { queryCookies } from "./queryCookies";
 import FirefoxCookieQueryStrategy from "./browsers/FirefoxCookieQueryStrategy";
 import ChromeCookieQueryStrategy from "./browsers/ChromeCookieQueryStrategy";
 import CompositeCookieQueryStrategy from "./browsers/CompositeCookieQueryStrategy";
-import { CookieSpec } from "./CookieSpec";
-import { ExportedCookie } from "./ExportedCookie";
+import CookieSpec from "./CookieSpec";
+import ExportedCookie from "./ExportedCookie";
 import { getGroupedRenderedCookies } from "./getGroupedRenderedCookies";
 import { fetchWithCookies } from "./fetchWithCookies";
 

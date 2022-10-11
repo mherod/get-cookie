@@ -4,9 +4,9 @@ import { env, HOME } from "../global";
 import { existsSync } from "fs";
 import { findAllFiles } from "../findAllFiles";
 import { doSqliteQuery1 } from "../doSqliteQuery1";
-import { ExportedCookie } from "../ExportedCookie";
-import { CookieRow } from "../CookieRow";
-import { CookieSpec } from "../CookieSpec";
+import ExportedCookie from "../ExportedCookie";
+import CookieRow from "../CookieRow";
+import CookieSpec from "../CookieSpec";
 import { specialCases } from "../SpecialCases";
 
 export default class FirefoxCookieQueryStrategy implements CookieQueryStrategy {

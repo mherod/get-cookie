@@ -1,16 +1,18 @@
 // noinspection JSUnusedGlobalSymbols
 
-import { fetch } from "cross-fetch";
+import { fetch as fetchImpl } from "cross-fetch";
 import { merge } from "lodash";
 // noinspection SpellCheckingInspection
 import destr from "destr";
-import FetchResponse from "./FetchResponse";
+import CookieSpec from "./CookieSpec";
 import { getGroupedRenderedCookies } from "./getGroupedRenderedCookies";
+import { cookieJar } from "./MemoryCookieStore";
 
 export async function fetchWithCookies(
   url: RequestInfo | URL,
-  options: RequestInit | undefined = {}
-): Promise<FetchResponse> {
+  options: RequestInit | undefined = {},
+  fetch: Function = fetchImpl
+): Promise<Response> {
   const defaultOptions: RequestInit = {
     headers: {
       "User-Agent":
@@ -23,10 +25,13 @@ export async function fetchWithCookies(
   const domain = url1.hostname.replace(/^.*(\.\w+\.\w+)$/, (match, p1) => {
     return `%${p1}`;
   });
-  const cookies: string[] = await getGroupedRenderedCookies({
+  const cookieSpec: CookieSpec = {
     name: "%",
     domain: domain,
-  }).catch(() => []);
+  };
+  const cookies: string[] = await getGroupedRenderedCookies(cookieSpec).catch(
+    () => []
+  );
   const cookie = cookies.pop();
   const newOptions1: RequestInit = merge(defaultOptions, options, {
     headers: {
@@ -35,29 +40,64 @@ export async function fetchWithCookies(
   });
   try {
     const res: Response = await fetch(url2, newOptions1);
-    const newUrl = res.headers.get("location") as string;
+    const headers: [string, string][] = [];
+    res.headers.forEach((value, key) => {
+      headers.push([key, value]);
+    });
+    for (const [key, value] of headers) {
+      if (key === "set-cookie") {
+        await cookieJar.setCookie(value, url2);
+        // const cookie = tough.parse(value);
+        // if (cookie instanceof Cookie) {
+        //   await memoryCookieStore.putCookie(cookie);
+        // }
+      }
+    }
+
+    const newUrl: string = res.headers.get("location") as string;
     if (res.redirected || (newUrl && newUrl !== url2)) {
       return fetchWithCookies(newUrl, newOptions1);
     }
-    const arrayBuffer1 = res.arrayBuffer();
-    const arrayBuffer = async () => arrayBuffer1;
-    const buffer = async () => arrayBuffer().then(Buffer.from);
-    const text = async () => buffer().then((buffer) => buffer.toString("utf8"));
-    const json = async () => text().then(destr);
-    const formData = async () =>
-      text().then((text) => new URLSearchParams(text));
+
+    const arrayBuffer1: Promise<ArrayBuffer> = res.arrayBuffer();
+
+    async function arrayBuffer(): Promise<ArrayBuffer> {
+      return arrayBuffer1;
+    }
+
+    async function buffer(): Promise<Buffer> {
+      return arrayBuffer().then(Buffer.from);
+    }
+
+    async function text(): Promise<string> {
+      return buffer().then((buffer) => buffer.toString("utf8"));
+    }
+
+    async function json(): Promise<any> {
+      return text().then((text) => destr(text));
+    }
+
+    async function formData(): Promise<FormData> {
+      const urlSearchParams: URLSearchParams = await text().then(
+        (text) => new URLSearchParams(text)
+      );
+      const formData = new FormData();
+      for (const [key, value] of urlSearchParams.entries()) {
+        formData.append(key, value);
+      }
+      return formData;
+    }
+
+    const res1: Response = res;
     const source2 = {
-      status: res.status,
-      statusText: res.statusText,
-      headers: res.headers,
       arrayBuffer,
-      buffer,
       text,
       json,
+      buffer,
       formData,
       //
     };
-    return merge({}, res, source2);
+    return merge(res1, source2);
   } catch (e) {
     throw e;
   }

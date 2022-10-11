@@ -2,42 +2,50 @@
 
 import minimist from "minimist";
 import { argv } from "./argv";
-import { env } from "./global";
 import { queryCookies } from "./queryCookies";
 import { groupBy } from "lodash";
-import { green, yellow } from "colorette";
+import { green, red, yellow } from "colorette";
 import { resultsRendered } from "./resultsRendered";
 import { fetchWithCookies } from "./fetchWithCookies";
 import { unpackHeaders } from "./unpackHeaders";
+import CookieSpec from "./CookieSpec";
 
-const parsedArgs: minimist.ParsedArgs = minimist(argv);
+const parsedArgs: minimist.ParsedArgs = minimist(argv.slice(2));
 
-async function cliQueryCookies(name: string, domain: string) {
+async function cliQueryCookies({ name, domain }: CookieSpec) {
   try {
     const results = await queryCookies({ name, domain });
-    if (results.length > 0) {
-      if (argv.includes("--combined-string")) {
-        console.log(yellow(resultsRendered(results)));
-      } else if (argv.includes("--render") || argv.includes("-r")) {
-        console.log(yellow(resultsRendered(results)));
-      } else if (argv.includes("--dump") || argv.includes("-d")) {
-        console.log(results);
-      } else if (argv.includes("--dump-grouped")) {
-        const groupedByFile = groupBy(results, (r) => r.meta?.file);
-        console.log(green(JSON.stringify(groupedByFile, null, 2)));
-      } else if (argv.includes("--combined-string-grouped")) {
-        const groupedByFile = groupBy(results, (r) => r.meta?.file);
-        for (const file of Object.keys(groupedByFile)) {
-          let results = groupedByFile[file];
-          console.log(green(file) + ": ", yellow(resultsRendered(results)));
-        }
-      } else {
-        for (const result of results) {
-          console.log(result.value);
-        }
+    if (results == null || results.length == 0) {
+      console.error(red("No results"));
+      return;
+    }
+    if (parsedArgs["dump"] || parsedArgs["d"]) {
+      console.log(results);
+      return;
+    }
+    if (parsedArgs["dump-grouped"] || parsedArgs["D"]) {
+      const groupedByFile = groupBy(results, (r) => r.meta?.file);
+      console.log(green(JSON.stringify(groupedByFile, null, 2)));
+      return;
+    }
+    if (
+      parsedArgs["render"] ||
+      parsedArgs["render-merged"] ||
+      parsedArgs["r"]
+    ) {
+      console.log(yellow(resultsRendered(results)));
+      return;
+    }
+    if (parsedArgs["render-grouped"] || parsedArgs["R"]) {
+      const groupedByFile = groupBy(results, (r) => r.meta?.file);
+      for (const file of Object.keys(groupedByFile)) {
+        let results = groupedByFile[file];
+        console.log(green(file) + ": ", yellow(resultsRendered(results)));
       }
-    } else {
-      console.error("No results");
+      return;
+    }
+    for (const result of results) {
+      console.log(result.value);
     }
   } catch (e) {
     console.error(e);
@@ -45,74 +53,62 @@ async function cliQueryCookies(name: string, domain: string) {
 }
 
 function main() {
-  if (argv && argv.length > 2) {
-    const arg2 = argv[2];
-    const arg3 = argv[3];
-    if (arg2 == "--fetch" || arg2 == "-f") {
-      const f = parsedArgs["f"];
-      let url: URL;
-      try {
-        url = new URL(f);
-      } catch (e) {
-        console.error("Invalid URL", arg3);
-        return;
-      }
-      const headerArgs: string[] | string = parsedArgs["H"];
-      const headers = unpackHeaders(headerArgs);
-      const onfulfilled = (res: Response) => {
-        return res.text().then((r) => {
-          console.log(r);
-        });
-      };
-      fetchWithCookies(
-        url,
-        {
-          //
-          headers,
-        }
-        //
-      ).then(
-        onfulfilled,
-        console.error
-        //
-      );
+  if (parsedArgs["help"] || parsedArgs["h"]) {
+    console.log(`Usage: ${argv[1]} [name] [domain] [options] `);
+    console.log(`Options:`);
+    console.log(`  -h, --help: Show this help`);
+    console.log(`  -v, --verbose: Show verbose output`);
+    console.log(`  -d, --dump: Dump all results`);
+    console.log(`  -D, --dump-grouped: Dump all results, grouped by profile`);
+    console.log(`  -r, --render: Render all results`);
+    return;
+  }
+
+  const fetchUrl: string = parsedArgs["fetch"] || parsedArgs["F"];
+  if (fetchUrl) {
+    let url: URL;
+    try {
+      url = new URL(<string>fetchUrl);
+    } catch (e) {
+      console.error("Invalid URL", fetchUrl);
       return;
     }
-    let domain;
-    if (arg3 != null && arg3.indexOf(".") > -1) {
-      domain = arg3;
-    } else {
-      domain = "%";
-    }
-
-    const tru = `${true}`;
-
-    if (argv.includes("--require-jwt")) {
-      env.REQUIRE_JWT = tru;
-    }
-    if (argv.includes("--verbose")) {
-      env.VERBOSE = tru;
-    }
-    if (argv.includes("--chrome-only")) {
-      env.CHROME_ONLY = tru;
-    }
-    if (argv.includes("--firefox-only")) {
-      env.FIREFOX_ONLY = tru;
-    }
-    if (argv.includes("--ignore-expired")) {
-      env.IGNORE_EXPIRED = tru;
-    }
-
-    if (argv.includes("--single")) {
-      env.SINGLE = tru;
-    }
-
-    if (env.VERBOSE) {
-      console.log("Verbose mode", argv);
-    }
-
-    cliQueryCookies(arg2, domain).catch(console.error);
+    const headerArgs: string[] | string = parsedArgs["H"];
+    const headers = unpackHeaders(headerArgs);
+    const onfulfilled = (res: Response) => {
+      if (parsedArgs["dump-response-headers"]) {
+        res.headers.forEach((value: string, key: string) => {
+          console.log(`${key}: ${value}`);
+        });
+      }
+      if (parsedArgs["dump-response-body"]) {
+        res.text().then((r) => {
+          console.log(r);
+        });
+      }
+      return;
+    };
+    fetchWithCookies(
+      url,
+      {
+        //
+        headers,
+      }
+      //
+    ).then(
+      onfulfilled,
+      console.error
+      //
+    );
+    return;
   }
+
+  const cookieSpec: CookieSpec = {
+    name: parsedArgs["name"] || parsedArgs["_"][0] || "%",
+    domain: parsedArgs["domain"] || parsedArgs["_"][1] || "%",
+  };
+
+  cliQueryCookies(cookieSpec).catch(console.error);
 }
 
 main();

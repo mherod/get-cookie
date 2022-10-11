@@ -3,8 +3,8 @@ import { uniqBy } from "lodash";
 import CompositeCookieQueryStrategy from "./browsers/CompositeCookieQueryStrategy";
 import CookieQueryStrategy from "./browsers/CookieQueryStrategy";
 import isValidJwt from "./isValidJwt";
-import { CookieSpec } from "./CookieSpec";
-import { ExportedCookie } from "./ExportedCookie";
+import CookieSpec from "./CookieSpec";
+import ExportedCookie from "./ExportedCookie";
 
 export async function queryCookies(
   { name, domain }: CookieSpec,

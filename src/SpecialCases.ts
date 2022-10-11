@@ -1,4 +1,4 @@
-import { CookieSpec } from "./CookieSpec";
+import CookieSpec from "./CookieSpec";
 
 export function specialCases({ name, domain }: CookieSpec): {
   specifiedName: boolean;

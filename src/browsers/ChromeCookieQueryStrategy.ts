@@ -9,8 +9,8 @@ import { doSqliteQuery1 } from "../doSqliteQuery1";
 import { merge } from "lodash";
 import { isCookieRow } from "../IsCookieRow";
 import { isExportedCookie } from "../IsExportedCookie";
-import { CookieRow } from "../CookieRow";
-import { ExportedCookie } from "../ExportedCookie";
+import CookieRow from "../CookieRow";
+import ExportedCookie from "../ExportedCookie";
 
 export default class ChromeCookieQueryStrategy implements CookieQueryStrategy {
   async queryCookies(name: string, domain: string): Promise<ExportedCookie[]> {

@@ -1,4 +1,4 @@
-import { ExportedCookie } from "./ExportedCookie";
+import ExportedCookie from "./ExportedCookie";
 
 export function isExportedCookie(obj: any): obj is ExportedCookie {
   return (

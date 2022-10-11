@@ -28,7 +28,7 @@ export default class ChromeCookieQueryStrategy implements CookieQueryStrategy {
     return getChromeCookies({
       requireJwt: false,
       name,
-      domain
+      domain,
     });
   }
 }
@@ -42,7 +42,7 @@ async function getPromise1(
     return await getEncryptedChromeCookie({
       name: name,
       domain: domain,
-      file: file
+      file: file,
     });
   } catch (e) {
     if (parsedArgs.verbose) {
@@ -56,7 +56,7 @@ async function getPromise(name: string, domain: string): Promise<CookieRow[]> {
   try {
     const files: string[] = await findAllFiles({
       path: chromeLocal,
-      name: "Cookies"
+      name: "Cookies",
     });
     const promises: Promise<CookieRow[]>[] = files.map((file) =>
       getPromise1(name, domain, file)
@@ -85,16 +85,16 @@ async function decryptValue(password: string, encryptedValue: Buffer) {
 }
 
 async function getChromeCookies({
-                                  name,
-                                  domain = "%",
-                                  requireJwt = false
-                                }: {
+  name,
+  domain = "%",
+  requireJwt = false,
+}: {
   name: string;
   domain: string;
   requireJwt: boolean | undefined;
   //
 }): //
-  Promise<ExportedCookie[]> {
+Promise<ExportedCookie[]> {
   const encryptedDataItems: CookieRow[] = await getPromise(name, domain);
   const password: string = await getChromePassword();
   const decrypted: Promise<ExportedCookie | null>[] = encryptedDataItems
@@ -108,17 +108,17 @@ async function getChromeCookies({
         domain: cookieRow.domain,
         name: cookieRow.name,
         value: decryptedValue,
-        meta: meta
+        meta: meta,
       };
       const expiry = cookieRow.expiry;
       const mergeExpiry =
         expiry != null && expiry > 0
           ? {
-            expiry: new Date(expiry)
-          }
+              expiry: new Date(expiry),
+            }
           : {
-            expiry: "Infinity"
-          };
+              expiry: "Infinity",
+            };
       merge(exportedCookie, mergeExpiry);
       return exportedCookie;
     });
@@ -140,15 +140,15 @@ const chromeLocal = path.join(
 );
 
 async function getEncryptedChromeCookie({
-                                          name,
-                                          domain,
-                                          file = path.join(chromeLocal, "Default", "Cookies")
-                                        }: //
-                                          {
-                                            name: string;
-                                            domain: string;
-                                            file: string;
-                                          }): Promise<CookieRow[]> {
+  name,
+  domain,
+  file = path.join(chromeLocal, "Default", "Cookies"),
+}: //
+{
+  name: string;
+  domain: string;
+  file: string;
+}): Promise<CookieRow[]> {
   if (!existsSync(file)) {
     throw new Error(`File ${file} does not exist`);
   }
@@ -196,13 +196,13 @@ async function getEncryptedChromeCookie({
         expiry: (row["expires_utc"] / 1000000 - 11644473600) * 1000,
         domain: row["host_key"],
         name: row["name"],
-        value: row["encrypted_value"]
+        value: row["encrypted_value"],
       };
       if (parsedArgs.verbose) {
         console.log("CookieRow", cookieRow);
       }
       return cookieRow;
-    }
+    },
   });
   return sqliteQuery1.filter((row) => {
     return row.domain.match(domainRegexp) != null;
@@ -211,7 +211,7 @@ async function getEncryptedChromeCookie({
 
 async function getChromePassword(): Promise<string> {
   return execSimple(
-    "security find-generic-password -w -s \"Chrome Safe Storage\""
+    'security find-generic-password -w -s "Chrome Safe Storage"'
   );
 }
 
@@ -311,11 +311,11 @@ async function decrypt(
 }
 
 export async function doChromeSqliteQuery1({
-                                             file,
-                                             sql,
-                                             rowFilter = () => true,
-                                             rowTransform
-                                           }: DoSqliteQuery1Params): Promise<CookieRow[]> {
+  file,
+  sql,
+  rowFilter = () => true,
+  rowTransform,
+}: DoSqliteQuery1Params): Promise<CookieRow[]> {
   if (!file || (file && !fs.existsSync(file))) {
     throw new Error(`doSqliteQuery1: file ${file} does not exist`);
   }
@@ -337,8 +337,8 @@ export async function doChromeSqliteQuery1({
           .map((row: any) => {
             const newVar = {
               meta: {
-                file: file
-              }
+                file: file,
+              },
             };
             const cookieRow: CookieRow = rowTransform(row);
             return merge(newVar, cookieRow);

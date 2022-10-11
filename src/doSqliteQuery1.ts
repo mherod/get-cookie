@@ -2,6 +2,7 @@ import * as fs from "fs";
 import * as sqlite3 from "sqlite3";
 import CookieRow from "./CookieRow";
 import { merge } from "lodash";
+import { parsedArgs } from "./argv";
 
 interface DoSqliteQuery1Params {
   file: string;
@@ -42,7 +43,7 @@ export async function doSqliteQuery1({
         resolve(cookieRows);
         return;
       }
-      if (process.env.VERBOSE) {
+      if (parsedArgs.verbose) {
         console.log(`doSqliteQuery1: rows ${JSON.stringify(rows1)}`);
       }
       resolve([rows1]);

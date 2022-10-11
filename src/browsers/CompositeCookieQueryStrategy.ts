@@ -6,6 +6,8 @@ import ExportedCookie from "../ExportedCookie";
 import LRUCache from "lru-cache";
 import CookieStoreQueryStrategy from "./CookieStoreQueryStrategy";
 import { red } from "colorette";
+import { merge } from "lodash";
+import { parsedArgs } from "../argv";
 
 const cache = new LRUCache<string, ExportedCookie[]>({
   ttl: 1000 * 2,
@@ -37,18 +39,30 @@ export default class CompositeCookieQueryStrategy
     if (cached) {
       return cached;
     }
-    console.log("Querying cookies:", name, domain);
+    if (parsedArgs.verbose) {
+      console.log("Querying cookies:", name, domain);
+    }
     const results: ExportedCookie[][] = await Promise.all(
       this.#strategies.map(async (strategy: CookieQueryStrategy) => {
         // @ts-ignore
-        const cookies: Promise<ExportedCookie[]> = strategy.queryCookies(
-          name,
-          domain
-        );
-        return cookies.catch((e) => {
-          console.log(red(`Error querying ${strategy.browserName} cookies`), e);
-          return [];
-        });
+        return strategy
+          .queryCookies(name, domain)
+          .then((cookies: ExportedCookie[]) => {
+            return cookies.map((cookie: ExportedCookie) => {
+              return merge(cookie, {
+                meta: {
+                  browser: strategy.browserName,
+                },
+              });
+            });
+          })
+          .catch((e) => {
+            console.log(
+              red(`Error querying ${strategy.browserName} cookies`),
+              e
+            );
+            return [];
+          });
       })
     );
     const flat: ExportedCookie[] = results.flat();

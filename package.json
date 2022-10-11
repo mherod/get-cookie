@@ -1,6 +1,6 @@
 {
   "name": "@mherod/get-cookie",
-  "version": "2.0.0-rc.6",
+  "version": "2.0.0-rc.7",
   "description": "Node.js module for querying a local user's Chrome cookie",
   "source": "src/index.ts",
   "bin": "dist/cli.js",
@@ -67,7 +67,8 @@
     "minimist": "^1.2.6",
     "sqlite3": "^5.1.1",
     "tough-cookie": "^4.1.2",
-    "tough-cookie-file-store": "^2.0.3"
+    "tough-cookie-file-store": "^2.0.3",
+    "user-agents": "^1.0.1165"
   },
   "devDependencies": {
     "@parcel/packager-ts": "^2.7.0",

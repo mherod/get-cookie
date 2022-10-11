@@ -23,28 +23,3 @@ export async function execSimple(command: string): Promise<string> {
     );
   });
 }
-
-export function toStringOrNull(result: any) {
-  if (result == null) {
-    return null;
-  }
-  if (process.env.VERBOSE) {
-    console.log("result", result);
-  }
-  if (typeof result === "string" && result.length > 0) {
-    return result;
-  }
-  if (result.slice && result.toString) {
-    // noinspection JSCheckFunctionSignatures
-    return result.toString("utf8");
-  }
-  return null;
-}
-
-export function invalidString(input: any): boolean {
-  return typeof input !== "string" || input.length === 0;
-}
-
-export function validString(input: any): input is string {
-  return typeof input == "string" && input.length > 0;
-}

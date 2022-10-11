@@ -1,10 +1,10 @@
 import jsonwebtoken, { JwtPayload } from "jsonwebtoken";
-import { env } from "./global";
+import { parsedArgs } from "./argv";
 
 export default function isValidJwt(token: any) {
   try {
     const result = jsonwebtoken.decode(token, { complete: true });
-    if (env.VERBOSE) {
+    if (parsedArgs.verbose && result) {
       console.log(result);
     }
     const payload: JwtPayload = result?.payload as JwtPayload;

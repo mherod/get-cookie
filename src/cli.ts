@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 
-import minimist from "minimist";
-import { argv } from "./argv";
+import { argv, parsedArgs } from "./argv";
 import { queryCookies } from "./queryCookies";
 import { groupBy } from "lodash";
 import { green, red, yellow } from "colorette";
@@ -9,8 +8,6 @@ import { resultsRendered } from "./resultsRendered";
 import { fetchWithCookies } from "./fetchWithCookies";
 import { unpackHeaders } from "./unpackHeaders";
 import CookieSpec from "./CookieSpec";
-
-const parsedArgs: minimist.ParsedArgs = minimist(argv.slice(2));
 
 async function cliQueryCookies({ name, domain }: CookieSpec) {
   try {

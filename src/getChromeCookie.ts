@@ -2,6 +2,7 @@ import CookieSpec from "./CookieSpec";
 import ExportedCookie from "./ExportedCookie";
 import { queryCookies } from "./queryCookies";
 import ChromeCookieQueryStrategy from "./browsers/ChromeCookieQueryStrategy";
+import { isExportedCookie } from "./IsExportedCookie";
 
 export async function getChromeCookie(
   params: CookieSpec
@@ -11,9 +12,8 @@ export async function getChromeCookie(
     new ChromeCookieQueryStrategy()
     //
   );
-  if (Array.isArray(cookies) && cookies.length > 0) {
-    return cookies.find((cookie) => cookie != null);
-  } else {
+  if (cookies.length == 0) {
     throw new Error("Cookie not found");
   }
+  return cookies.find(isExportedCookie);
 }

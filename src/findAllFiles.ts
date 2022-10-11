@@ -1,5 +1,5 @@
-import { env } from "./global";
 import * as fs from "fs";
+import { parsedArgs } from "./argv";
 
 export async function findAllFiles({
   path,
@@ -12,16 +12,12 @@ export async function findAllFiles({
   maxDepth?: number;
 }): Promise<string[]> {
   const rootSegments = path.split("/").length;
-
-  if (env.VERBOSE) {
-    console.log(`Searching for ${name} in ${path}`);
-  }
   const files: string[] = [];
   let readdirSync;
   try {
     readdirSync = fs.readdirSync(path);
   } catch (e) {
-    if (env.VERBOSE) {
+    if (parsedArgs.verbose) {
       console.log(`Error reading ${path}`, e);
     }
     return [];
@@ -32,7 +28,7 @@ export async function findAllFiles({
     try {
       stat = fs.statSync(filePath);
     } catch (e) {
-      if (env.VERBOSE) {
+      if (parsedArgs.verbose) {
         console.error(`Error getting stat for ${filePath}`, e);
       }
       continue;
@@ -47,7 +43,7 @@ export async function findAllFiles({
           });
           files.push(...subFiles);
         } catch (e) {
-          if (env.VERBOSE) {
+          if (parsedArgs.verbose) {
             console.error(e);
           }
         }
@@ -56,7 +52,7 @@ export async function findAllFiles({
       files.push(filePath);
     }
   }
-  if (env.VERBOSE) {
+  if (parsedArgs.verbose) {
     if (files.length > 0) {
       console.log(`Found ${files.length} ${name} files`);
       console.log(files);

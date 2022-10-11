@@ -12,6 +12,7 @@ import { isExportedCookie } from "../IsExportedCookie";
 import CookieRow from "../CookieRow";
 import ExportedCookie from "../ExportedCookie";
 import { stringToRegex } from "../StringToRegex";
+import { parsedArgs } from "../argv";
 
 export default class ChromeCookieQueryStrategy implements CookieQueryStrategy {
   browserName = "Chrome";
@@ -43,7 +44,7 @@ async function getPromise1(
       file: file,
     });
   } catch (e) {
-    if (env.VERBOSE) {
+    if (parsedArgs.verbose) {
       console.log("Error getting encrypted cookie", e);
     }
     return [];
@@ -62,7 +63,7 @@ async function getPromise(name: string, domain: string): Promise<CookieRow[]> {
     const results1: CookieRow[][] = await Promise.all(promises);
     return results1.flat().filter(isCookieRow);
   } catch (error) {
-    if (env.VERBOSE) {
+    if (parsedArgs.verbose) {
       console.log("error", error);
     }
     return [];
@@ -74,7 +75,7 @@ async function decryptValue(password: string, encryptedValue: Buffer) {
   try {
     d = await decrypt(password, encryptedValue);
   } catch (e) {
-    if (env.VERBOSE) {
+    if (parsedArgs.verbose) {
       console.log("Error decrypting cookie", e);
     }
     d = null;
@@ -112,7 +113,7 @@ Promise<ExportedCookie[]> {
   const results: ExportedCookie[] = (await Promise.all(decrypted)).filter(
     isExportedCookie
   );
-  if (env.VERBOSE) {
+  if (parsedArgs.verbose) {
     console.log("results", results);
   }
   return results;
@@ -139,7 +140,7 @@ async function getEncryptedChromeCookie({
   if (!existsSync(file)) {
     throw new Error(`File ${file} does not exist`);
   }
-  if (env.VERBOSE) {
+  if (parsedArgs.verbose) {
     const s = file.split("/").slice(-3).join("/");
     console.log(`Trying Chrome (at ${s}) cookie ${name} for domain ${domain}`);
   }
@@ -167,7 +168,6 @@ async function getEncryptedChromeCookie({
       sql += `host_key LIKE '${sqlEmbedDomain}';`;
     }
   }
-  console.log("sql", sql);
   const sqliteQuery1: CookieRow[] = await doSqliteQuery1({
     file: file,
     sql: sql,
@@ -205,7 +205,7 @@ async function decrypt(
   if (!(encryptedData1 instanceof Buffer)) {
     if (Array.isArray(encryptedData1) && encryptedData1[0] instanceof Buffer) {
       [encryptedData1] = encryptedData1;
-      if (env.VERBOSE) {
+      if (parsedArgs.verbose) {
         console.log(
           `encryptedData is an array of buffers, selected first: ${encryptedData1}`
         );
@@ -215,14 +215,14 @@ async function decrypt(
     }
     encryptedData1 = Buffer.from(encryptedData1);
   }
-  if (env.VERBOSE) {
+  if (parsedArgs.verbose) {
     console.log(`Trying to decrypt with password ${password}`);
   }
   return new Promise((resolve, reject) => {
     crypto.pbkdf2(password, "saltysalt", 1003, 16, "sha1", (error, buffer) => {
       try {
         if (error) {
-          if (env.VERBOSE) {
+          if (parsedArgs.verbose) {
             console.log("Error doing pbkdf2", error);
           }
           reject(error);
@@ -230,7 +230,7 @@ async function decrypt(
         }
 
         if (buffer.length !== 16) {
-          if (env.VERBOSE) {
+          if (parsedArgs.verbose) {
             console.log(
               "Error doing pbkdf2, buffer length is not 16",
               buffer.length
@@ -250,7 +250,7 @@ async function decrypt(
         }
 
         if (encryptedData1.length % 16 !== 0) {
-          if (env.VERBOSE) {
+          if (parsedArgs.verbose) {
             console.log(
               "Error doing pbkdf2, encryptedData length is not a multiple of 16",
               encryptedData1.length
@@ -264,7 +264,7 @@ async function decrypt(
         try {
           decipher.final("utf-8");
         } catch (e) {
-          if (env.VERBOSE) {
+          if (parsedArgs.verbose) {
             console.log("Error doing decipher.final()", e);
           }
           reject(e);

@@ -7,6 +7,9 @@ import destr from "destr";
 import CookieSpec from "./CookieSpec";
 import { getGroupedRenderedCookies } from "./getGroupedRenderedCookies";
 import { cookieJar } from "./CookieStore";
+import UserAgent from "user-agents";
+import { parsedArgs } from "./argv";
+import { blue, yellow } from "colorette";
 
 export async function fetchWithCookies(
   url: RequestInfo | URL,
@@ -15,8 +18,7 @@ export async function fetchWithCookies(
 ): Promise<Response> {
   const defaultOptions: RequestInit = {
     headers: {
-      "User-Agent":
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36",
+      "User-Agent": new UserAgent().toString(),
     },
     redirect: "manual",
   };
@@ -47,6 +49,9 @@ export async function fetchWithCookies(
     for (const [key, value] of headers) {
       if (key === "set-cookie") {
         await cookieJar.setCookie(value, url2);
+        if (parsedArgs.verbose) {
+          console.log(blue(`Set-Cookie: ${yellow(value)} ${yellow(url2)}`));
+        }
         // const cookie = tough.parse(value);
         // if (cookie instanceof Cookie) {
         //   await memoryCookieStore.putCookie(cookie);
@@ -56,6 +61,9 @@ export async function fetchWithCookies(
 
     const newUrl: string = res.headers.get("location") as string;
     if (res.redirected || (newUrl && newUrl !== url2)) {
+      if (parsedArgs.verbose) {
+        console.log(blue(`Redirected to `), yellow(newUrl));
+      }
       return fetchWithCookies(newUrl, newOptions1);
     }
 

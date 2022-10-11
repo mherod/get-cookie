@@ -1,10 +1,10 @@
-import CookieSpec from "./CookieSpec";
+import CookieSpec, { MultiCookieSpec } from "./CookieSpec";
 import ExportedCookie from "./ExportedCookie";
 import { queryCookies } from "./queryCookies";
 import { uniqBy } from "lodash";
 
 export async function comboQueryCookieSpec(
-  cookieSpec: CookieSpec | CookieSpec[]
+  cookieSpec: MultiCookieSpec
 ): Promise<ExportedCookie[]> {
   const cookies: ExportedCookie[] = [];
   if (Array.isArray(cookieSpec)) {

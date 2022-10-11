@@ -5,11 +5,11 @@ import { merge } from "lodash";
 // noinspection SpellCheckingInspection
 import destr from "destr";
 import CookieSpec from "./CookieSpec";
-import { getGroupedRenderedCookies } from "./getGroupedRenderedCookies";
 import { cookieJar } from "./CookieStore";
 import UserAgent from "user-agents";
 import { parsedArgs } from "./argv";
 import { blue, yellow } from "colorette";
+import { getMergedRenderedCookies } from "./getMergedRenderedCookies";
 
 export async function fetchWithCookies(
   url: RequestInfo | URL,
@@ -31,15 +31,18 @@ export async function fetchWithCookies(
     name: "%",
     domain: domain,
   };
-  const cookies: string[] = await getGroupedRenderedCookies(cookieSpec).catch(
-    () => []
-  );
-  const cookie = cookies.pop();
-  const newOptions1: RequestInit = merge(defaultOptions, options, {
-    headers: {
+  // const cookies: string[] = await getGroupedRenderedCookies(cookieSpec).catch(
+  //   () => []
+  // );
+  // const cookie = cookies.pop();
+  const cookie = await getMergedRenderedCookies(cookieSpec).catch(() => "");
+  const headers = {};
+  if (cookie.length > 0) {
+    merge(headers, {
       Cookie: cookie,
-    },
-  });
+    });
+  }
+  const newOptions1: RequestInit = merge(defaultOptions, options, { headers });
   try {
     const res: Response = await fetch(url2, newOptions1);
     const headers: [string, string][] = [];

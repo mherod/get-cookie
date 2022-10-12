@@ -8,13 +8,16 @@ export async function comboQueryCookieSpec(
 ): Promise<ExportedCookie[]> {
   const cookies: ExportedCookie[] = [];
   if (Array.isArray(cookieSpec)) {
-    const cookieSpecs = <CookieSpec[]>cookieSpec;
-    for (const cookieSpec1 of cookieSpecs) {
-      const cookies1: ExportedCookie[] = await queryCookies(cookieSpec1);
-      cookies.push(...cookies1);
+    const results: Awaited<ExportedCookie[]>[] = await Promise.all(
+      cookieSpec.map((cs) => {
+        return queryCookies(cs);
+      })
+    );
+    for (const exportedCookie of results.flat()) {
+      cookies.push(exportedCookie);
     }
   } else {
-    const singleQuery = await queryCookies(cookieSpec);
+    const singleQuery: ExportedCookie[] = await queryCookies(cookieSpec);
     cookies.push(...singleQuery);
   }
   return uniqBy(cookies, JSON.stringify);

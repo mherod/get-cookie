@@ -1,22 +1,67 @@
 import * as path from "path";
 import CookieQueryStrategy from "./CookieQueryStrategy";
-import { env, HOME } from "../global";
-import { existsSync } from "fs";
+import { HOME } from "../global";
+import fs, { existsSync } from "fs";
 import { findAllFiles } from "../findAllFiles";
-import { doSqliteQuery1 } from "../doSqliteQuery1";
 import ExportedCookie from "../ExportedCookie";
 import CookieRow from "../CookieRow";
 import CookieSpec from "../CookieSpec";
 import { specialCases } from "../SpecialCases";
+import { parsedArgs } from "../argv";
+import { DoSqliteQuery1Params } from "../doSqliteQuery1Params";
+import * as sqlite3 from "sqlite3";
+import { merge } from "lodash";
+
+export async function doSqliteQuery1({
+  file,
+  sql,
+  rowTransform,
+}: DoSqliteQuery1Params): Promise<CookieRow[]> {
+  if (!file || (file && !fs.existsSync(file))) {
+    throw new Error(`doSqliteQuery1: file ${file} does not exist`);
+  }
+  const db = new sqlite3.Database(file);
+  return new Promise((resolve, reject) => {
+    db.all(sql, (err: Error, rows: any[]) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+      const rows1: any[] = rows;
+      if (rows1 == null || rows1.length === 0) {
+        resolve([]);
+        return;
+      }
+      if (Array.isArray(rows1)) {
+        const cookieRows: CookieRow[] = rows1.map((row: any) => {
+          const newVar = {
+            meta: {
+              file: file,
+            },
+          };
+          const cookieRow: CookieRow = rowTransform(row);
+          return merge(newVar, cookieRow);
+        });
+        resolve(cookieRows);
+        return;
+      }
+      if (parsedArgs.verbose) {
+        console.log(`doSqliteQuery1: rows ${JSON.stringify(rows1)}`);
+      }
+      resolve([rows1]);
+    });
+  });
+}
 
 export default class FirefoxCookieQueryStrategy implements CookieQueryStrategy {
   browserName = "Firefox";
 
   async queryCookies(name: string, domain: string): Promise<ExportedCookie[]> {
     if (process.platform !== "darwin") {
-      throw new Error("This only works on macOS");
+      // TODO: implement
+      return [];
     }
-    if (env.CHROME_ONLY) {
+    if (parsedArgs.browser !== "firefox") {
       return [];
     }
     const cookies = await this.#getFirefoxCookie({ name, domain });
@@ -49,7 +94,8 @@ export default class FirefoxCookieQueryStrategy implements CookieQueryStrategy {
     const fn: (file: string) => Promise<CookieRow[]> = async (file: string) => {
       return await this.#queryCookiesDb(file, name, domain);
     };
-    const all: Awaited<CookieRow[]>[] = await Promise.all(files.map(fn));
+    const all: CookieRow[][] = await Promise.all(files.map(fn));
+    // flatten
     return all.flat();
   }
 

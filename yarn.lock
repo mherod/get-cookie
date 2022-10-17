@@ -4078,9 +4078,9 @@ url-parse@^1.5.3:
     requires-port "^1.0.0"
 
 user-agents@^1.0.1165:
-  version "1.0.1165"
-  resolved "https://registry.yarnpkg.com/user-agents/-/user-agents-1.0.1165.tgz#7eac3cb7f91e7455f470e27126952e4fbfc62faa"
-  integrity sha512-8cxT9EItWMNcAg/9Acz59Zz3cKTbcTR6l6aeBSElQdndMRf9NryspCRc7+l8mz+O766T1LAq5FAEo/cTrRU3Nw==
+  version "1.0.1171"
+  resolved "https://registry.yarnpkg.com/user-agents/-/user-agents-1.0.1171.tgz#e9db1f91f5c3c0584c66fee7de95cd3fcf82ac7e"
+  integrity sha512-758gjNP8OXVZQZVaSaRYTFsZHxfNDfM9sgIOQsnH7ytYuCiJ29b2abu934owHZBmzJpkgee+/IGovfpl0CwEpw==
   dependencies:
     dot-json "^1.2.2"
     lodash.clonedeep "^4.5.0"

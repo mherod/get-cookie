@@ -16,10 +16,10 @@ const userAgent = new UserAgent().toString();
 
 export async function fetchWithCookies(
   url: RequestInfo | URL,
-  options: RequestInit | undefined = {},
+  options: (RequestInit) | undefined = {},
   fetch: Function = fetchImpl
 ): Promise<Response> {
-  const headers = {
+  const headers: HeadersInit = {
     "User-Agent": userAgent
   };
   const defaultOptions: RequestInit = {
@@ -29,18 +29,13 @@ export async function fetchWithCookies(
   const url2: string = `${url}`;
   const url1: URL = new URL(url2);
   const cookieSpecs: CookieSpec[] = cookieSpecsFromUrl(url1);
-  const cookie = await getMergedRenderedCookies(cookieSpecs).catch(() => "");
-  if (cookie.length > 0) {
-    merge(headers, {
-      Cookie: cookie
-    });
-  }
+  headers["Cookie"] = await getMergedRenderedCookies(cookieSpecs).catch(() => "");
   if (parsedArgs["dump-request-headers"]) {
     console.log(blue("Request headers:"), headers);
   }
-  const newOptions1: RequestInit = merge(defaultOptions, options, { headers });
+  const newOptions1: RequestInit = merge(defaultOptions, { headers }, options);
   try {
-    const res: Response = await fetch(url2, newOptions1);
+    const res: Response = await fetch(url1, newOptions1);
     const headers: [string, string][] = [];
     res.headers.forEach((value, key) => {
       headers.push([key, value]);
@@ -60,6 +55,7 @@ export async function fetchWithCookies(
 
     const newUrl: string = res.headers.get("location") as string;
     if (res.status == 301 || res.status == 302) {
+      // const sameHost = new URL(newUrl).host === url1.host;
       if (newUrl && newUrl !== url2) {
         if (parsedArgs.verbose) {
           console.log(blue(`Redirected to `), yellow(newUrl));

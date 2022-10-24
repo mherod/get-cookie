@@ -1043,8 +1043,8 @@ depd@^1.1.2:
   resolved "https://registry.npmjs.org/depd/-/depd-1.1.2.tgz"
 
 destr@^1.1.1:
-  version "1.1.1"
-  resolved "https://registry.npmjs.org/destr/-/destr-1.1.1.tgz"
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/destr/-/destr-1.2.0.tgz#8adb17fa3861b8032ea1bba92f60ba989a9ff119"
 
 detect-indent@~6.0.0:
   version "6.0.0"

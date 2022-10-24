@@ -1,4 +1,4 @@
-// noinspection JSUnusedGlobalSymbols
+// noinspection JSUnusedGlobalSymbols,ExceptionCaughtLocallyJS
 
 import { fetch as fetchImpl } from "cross-fetch";
 import { merge } from "lodash";
@@ -12,13 +12,15 @@ import { getMergedRenderedCookies } from "./getMergedRenderedCookies";
 import { cookieSpecsFromUrl } from "./cookieSpecsFromUrl";
 import CookieSpec from "./CookieSpec";
 
+const userAgent = new UserAgent().toString();
+
 export async function fetchWithCookies(
   url: RequestInfo | URL,
   options: RequestInit | undefined = {},
   fetch: Function = fetchImpl
 ): Promise<Response> {
   const headers = {
-    "User-Agent": new UserAgent().toString(),
+    "User-Agent": userAgent,
   };
   const defaultOptions: RequestInit = {
     headers,
@@ -57,11 +59,15 @@ export async function fetchWithCookies(
     }
 
     const newUrl: string = res.headers.get("location") as string;
-    if (res.redirected || (newUrl && newUrl !== url2)) {
-      if (parsedArgs.verbose) {
-        console.log(blue(`Redirected to `), yellow(newUrl));
+    if (res.status >= 300 && res.status < 400) {
+      if (newUrl && newUrl !== url2) {
+        if (parsedArgs.verbose) {
+          console.log(blue(`Redirected to `), yellow(newUrl));
+        }
+        return fetchWithCookies(newUrl, newOptions1);
+      } else {
+        throw new Error("Redirected but no new location");
       }
-      return fetchWithCookies(newUrl, newOptions1);
     }
 
     const arrayBuffer1: Promise<ArrayBuffer> = res.arrayBuffer();

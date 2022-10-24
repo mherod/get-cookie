@@ -20,11 +20,11 @@ export async function fetchWithCookies(
   fetch: Function = fetchImpl
 ): Promise<Response> {
   const headers = {
-    "User-Agent": userAgent
+    "User-Agent": userAgent,
   };
   const defaultOptions: RequestInit = {
     headers,
-    redirect: "manual"
+    redirect: "manual",
   };
   const url2: string = `${url}`;
   const url1: URL = new URL(url2);
@@ -32,7 +32,7 @@ export async function fetchWithCookies(
   const cookie = await getMergedRenderedCookies(cookieSpecs).catch(() => "");
   if (cookie.length > 0) {
     merge(headers, {
-      Cookie: cookie
+      Cookie: cookie,
     });
   }
   if (parsedArgs["dump-request-headers"]) {
@@ -111,7 +111,7 @@ export async function fetchWithCookies(
       text,
       json,
       buffer,
-      formData
+      formData,
       //
     };
     return merge(res1, source2);

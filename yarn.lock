@@ -2090,8 +2090,8 @@ url-parse@^1.5.3:
     requires-port "^1.0.0"
 
 user-agents@^1.0.1165:
-  version "1.0.1166"
-  resolved "https://registry.npmjs.org/user-agents/-/user-agents-1.0.1166.tgz"
+  version "1.0.1178"
+  resolved "https://registry.yarnpkg.com/user-agents/-/user-agents-1.0.1178.tgz#848cab097a6f9b01fb72faf62d7bdd47b5e26891"
   dependencies:
     dot-json "^1.2.2"
     lodash.clonedeep "^4.5.0"

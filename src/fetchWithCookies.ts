@@ -16,20 +16,22 @@ const userAgent = new UserAgent().toString();
 
 export async function fetchWithCookies(
   url: RequestInfo | URL,
-  options: (RequestInit) | undefined = {},
+  options: RequestInit | undefined = {},
   fetch: Function = fetchImpl
 ): Promise<Response> {
   const headers: HeadersInit = {
-    "User-Agent": userAgent
+    "User-Agent": userAgent,
   };
   const defaultOptions: RequestInit = {
     headers,
-    redirect: "manual"
+    redirect: "manual",
   };
   const url2: string = `${url}`;
   const url1: URL = new URL(url2);
   const cookieSpecs: CookieSpec[] = cookieSpecsFromUrl(url1);
-  headers["Cookie"] = await getMergedRenderedCookies(cookieSpecs).catch(() => "");
+  headers["Cookie"] = await getMergedRenderedCookies(cookieSpecs).catch(
+    () => ""
+  );
   if (parsedArgs["dump-request-headers"]) {
     console.log(blue("Request headers:"), headers);
   }
@@ -105,7 +107,7 @@ export async function fetchWithCookies(
       text,
       json,
       buffer,
-      formData
+      formData,
       //
     };
     return merge(res1, source2);

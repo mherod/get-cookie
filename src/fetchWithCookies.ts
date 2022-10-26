@@ -22,11 +22,11 @@ export async function fetchWithCookies(
 ): Promise<Response> {
   const originalRequest1 = originalRequest || new Request(url, options);
   const headers: HeadersInit = {
-    "User-Agent": userAgent
+    "User-Agent": userAgent,
   };
   const defaultOptions: RequestInit = {
     headers,
-    redirect: "manual"
+    redirect: "manual",
   };
   const url2: string = `${url}`;
   const url1: URL = new URL(url2);
@@ -132,7 +132,7 @@ export async function fetchWithCookies(
       text,
       json,
       buffer,
-      formData
+      formData,
       //
     };
     return merge(res1, source2);

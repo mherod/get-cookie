@@ -17,14 +17,16 @@ const userAgent = new UserAgent().toString();
 export async function fetchWithCookies(
   url: RequestInfo | URL,
   options: RequestInit | undefined = {},
-  fetch: Function = fetchImpl
+  fetch: Function = fetchImpl,
+  originalRequest: Request | undefined = undefined
 ): Promise<Response> {
+  const originalRequest1 = originalRequest || new Request(url, options);
   const headers: HeadersInit = {
-    "User-Agent": userAgent,
+    "User-Agent": userAgent
   };
   const defaultOptions: RequestInit = {
     headers,
-    redirect: "manual",
+    redirect: "manual"
   };
   const url2: string = `${url}`;
   const url1: URL = new URL(url2);
@@ -46,18 +48,15 @@ export async function fetchWithCookies(
       if (key === "set-cookie") {
         await cookieJar.setCookie(value, url2);
         if (parsedArgs.verbose) {
-          console.log(blue(`Set-Cookie: ${yellow(value)} ${yellow(url2)}`));
+          console.log(blue(`Set-Cookie:`), yellow(value), yellow(url2));
         }
-        // const cookie = tough.parse(value);
-        // if (cookie instanceof Cookie) {
-        //   await memoryCookieStore.putCookie(cookie);
-        // }
       }
     }
 
-    const newUrl: string = res.headers.get("location") as string;
+    const newUrl: string = res.headers.get("location") ?? res.url;
+    const sameHost = new URL(newUrl).host === url1.host;
     if (res.status == 301 || res.status == 302) {
-      // const sameHost = new URL(newUrl).host === url1.host;
+      // follow the redirect
       if (newUrl && newUrl !== url2) {
         if (parsedArgs.verbose) {
           console.log(blue(`Redirected to `), yellow(newUrl));
@@ -66,10 +65,36 @@ export async function fetchWithCookies(
           //
           newUrl,
           newOptions1,
-          fetch
+          fetch,
+          originalRequest1
           //
         );
       }
+    }
+    if (res.status == 303 && newUrl && newUrl !== url2) {
+      // follow the redirect with GET
+      let newOptions2: RequestInit = {};
+      switch (newOptions1.method) {
+        case "POST":
+        case "PUT":
+        case "DELETE":
+          merge(newOptions2, newOptions1, { method: "GET" });
+          break;
+        default:
+          merge(newOptions2, newOptions1);
+          break;
+      }
+      if (parsedArgs.verbose) {
+        console.log(blue(`Redirected to `), yellow(newUrl));
+      }
+      return fetchWithCookies(
+        //
+        newUrl,
+        newOptions2,
+        fetch,
+        originalRequest1
+        //
+      );
     }
 
     const arrayBuffer1: Promise<ArrayBuffer> = res.arrayBuffer();
@@ -83,11 +108,11 @@ export async function fetchWithCookies(
     }
 
     async function text(): Promise<string> {
-      return buffer().then((buffer) => buffer.toString("utf8"));
+      return buffer().then((buffer: Buffer) => buffer.toString("utf8"));
     }
 
     async function json(): Promise<any> {
-      return text().then((text) => destr(text));
+      return text().then((text: string) => destr(text));
     }
 
     async function formData(): Promise<FormData> {
@@ -107,7 +132,7 @@ export async function fetchWithCookies(
       text,
       json,
       buffer,
-      formData,
+      formData
       //
     };
     return merge(res1, source2);

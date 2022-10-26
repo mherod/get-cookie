@@ -27,11 +27,11 @@ export async function fetchWithCookies(
 ): Promise<Response> {
   const originalRequest1 = originalRequest || { url, options };
   const headers: HeadersInit = {
-    "User-Agent": userAgent,
+    "User-Agent": userAgent
   };
   const defaultOptions: RequestInit = {
     headers,
-    redirect: "manual",
+    redirect: "manual"
   };
   const url2: string = `${url}`;
   const url1: URL = new URL(url2);
@@ -83,7 +83,11 @@ export async function fetchWithCookies(
         case "POST":
         case "PUT":
         case "DELETE":
-          merge(newOptions2, newOptions1, { method: "GET" });
+          merge(newOptions2, newOptions1, {
+            method: "GET",
+            body: undefined
+          });
+          newOptions2.body = undefined; // TODO: is this needed?
           break;
         default:
           merge(newOptions2, newOptions1);
@@ -137,7 +141,7 @@ export async function fetchWithCookies(
       text,
       json,
       buffer,
-      formData,
+      formData
       //
     };
     return merge(res1, source2);

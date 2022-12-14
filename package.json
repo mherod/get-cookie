@@ -12,23 +12,22 @@
   },
   "scripts": {
     "clean": "git clean -fdX && rm -rf node_modules dist && yarn install",
-    "build": "parcel build",
-    "postbuild": "npm run check",
+    "build": "tsc && parcel build",
     "prepare": "npm run build && npm run prettier",
     "test": "jest",
     "prepublish": "npm run build",
-    "install:global": "npm run build && npm install --force --global .",
-    "prettier": "prettier --write 'src/{**/*,*}.{js,json,ts}'",
-    "check": "tsc --noEmit"
+    "install:global": "npm run build && npm install --global .",
+    "prettier": "prettier --write ."
   },
   "targets": {
+    "types": {},
     "main": {},
     "library": {
       "source": "src/index.ts",
       "distDir": "dist",
       "isLibrary": true,
       "engines": {
-        "node": "16"
+        "node": ">= 16"
       },
       "sourceMap": true,
       "includeNodeModules": false
@@ -38,9 +37,10 @@
       "distDir": "dist",
       "isLibrary": false,
       "engines": {
-        "node": "16"
+        "node": ">= 16"
       },
       "sourceMap": false,
+      "optimize": false,
       "includeNodeModules": [
         "colorette"
       ]
@@ -51,7 +51,7 @@
     "inlineEnvironment": true
   },
   "engines": {
-    "node": "16"
+    "node": ">= 16"
   },
   "keywords": [],
   "author": "Matthew Herod",
@@ -62,11 +62,11 @@
     "destr": "^1.2.0",
     "jsonwebtoken": "^8.5.1",
     "lodash": "^4.17.21",
+    "lodash-es": "^4.17.21",
     "lru-cache": "^7.14.0",
     "minimist": "^1.2.7",
     "sqlite3": "^5.1.2",
     "tough-cookie": "^4.1.2",
-    "tough-cookie-file-store": "^2.0.3",
     "user-agents": "^1.0.1178"
   },
   "devDependencies": {

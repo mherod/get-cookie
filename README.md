@@ -28,6 +28,6 @@ The output of the command will be the value of the cookie.
 The library can also be used as a module.
 
 ```javascript
-const {getCookie} = require('@mherod/get-cookie');
-getCookie('auth', 'www.example.com').then(console.log);
+const { getCookie } = require("@mherod/get-cookie");
+getCookie("auth", "www.example.com").then(console.log);
 ```

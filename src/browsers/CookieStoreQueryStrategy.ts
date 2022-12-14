@@ -1,8 +1,8 @@
 import CookieQueryStrategy from "./CookieQueryStrategy";
 import CookieSpec from "../CookieSpec";
 import ExportedCookie from "../ExportedCookie";
-import { Cookie } from "tough-cookie";
-import { cookieJar, cookieStore } from "../CookieStore";
+import { Cookie, Store } from "tough-cookie";
+import { cookieJarPromise, cookieStorePromise } from "../CookieStore";
 import { stringToRegex } from "../StringToRegex";
 
 export default class CookieStoreQueryStrategy implements CookieQueryStrategy {
@@ -66,29 +66,34 @@ export default class CookieStoreQueryStrategy implements CookieQueryStrategy {
     };
   }
 
-  #getCookies(url: string): Promise<Cookie[]> {
+  async #getCookies(url: string): Promise<Cookie[]> {
+    const cookieJar = await cookieJarPromise;
     return new Promise((resolve, reject) => {
-      // @ts-ignore
-      return cookieJar.getCookies(url, (err, cookies) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(cookies ?? []);
+      return cookieJar.getCookies(
+        url,
+        (err: Error | null, cookies: Cookie[]) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(cookies ?? []);
+          }
         }
-      });
+      );
     });
   }
 
-  #getAllCookies(): Promise<Cookie[]> {
+  async #getAllCookies(): Promise<Cookie[]> {
+    const cookieStore: Store = await cookieStorePromise;
     return new Promise((resolve, reject) => {
-      // @ts-ignore
-      return cookieStore.getAllCookies((err, cookies) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(cookies ?? []);
+      return cookieStore.getAllCookies(
+        (err: Error | null, cookies: Cookie[]) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(cookies ?? []);
+          }
         }
-      });
+      );
     });
   }
 }

@@ -4,10 +4,10 @@ import { fetch as fetchImpl } from "cross-fetch";
 import { merge } from "lodash";
 // noinspection SpellCheckingInspection
 import destr from "destr";
-import { cookieJar } from "./CookieStore";
+import { cookieJarPromise } from "./CookieStore";
 import UserAgent from "user-agents";
 import { parsedArgs } from "./argv";
-import { blue, yellow } from "colorette";
+import { blue, redBright, yellow } from "colorette";
 import { getMergedRenderedCookies } from "./getMergedRenderedCookies";
 import { cookieSpecsFromUrl } from "./cookieSpecsFromUrl";
 import CookieSpec from "./CookieSpec";
@@ -40,6 +40,7 @@ export async function fetchWithCookies(
     () => ""
   );
   if (parsedArgs["dump-request-headers"]) {
+    console.log(redBright("Request URL:"), url1.href);
     console.log(blue("Request headers:"), headers);
   }
   const newOptions1: RequestInit = merge(defaultOptions, { headers }, options);
@@ -51,7 +52,8 @@ export async function fetchWithCookies(
     });
     for (const [key, value] of headers) {
       if (key === "set-cookie") {
-        await cookieJar.setCookie(value, url2);
+        const cookieJar1 = await cookieJarPromise;
+        await cookieJar1.setCookie(value, url2);
         if (parsedArgs.verbose) {
           console.log(blue(`Set-Cookie:`), yellow(value), yellow(url2));
         }
@@ -63,7 +65,7 @@ export async function fetchWithCookies(
     if (res.status == 301 || res.status == 302) {
       // follow the redirect
       if (newUrl && newUrl !== url2) {
-        if (parsedArgs.verbose) {
+        if (parsedArgs.verbose || parsedArgs["dump-response-headers"]) {
           console.log(blue(`Redirected to `), yellow(newUrl));
         }
         return fetchWithCookies(

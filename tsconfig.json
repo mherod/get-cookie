@@ -1,23 +1,17 @@
 {
-  "include": [
-    "src/**.ts",
-    "src/**.tsx",
-    "src/**.js",
-    "src/**.jsx"
-  ],
+  "include": ["src/**.ts", "src/**.tsx", "src/**.js", "src/**.jsx"],
   "compilerOptions": {
     "moduleResolution": "node",
     "target": "es2021",
-    "types": [
-      "node"
-    ],
-    "lib": [
-      "es2015",
-      "es2017",
-      "es2021",
-      "dom"
-    ],
+    "types": ["node"],
+    "lib": ["es2015", "es2017", "es2021", "dom"],
     "strict": true,
     "allowSyntheticDefaultImports": true,
+    "emitDeclarationOnly": true,
+    "declaration": true,
+    "esModuleInterop": true,
+    "module": "commonjs",
+    "outDir": "dist",
+    "outFile": "dist/types.d.ts"
   }
 }

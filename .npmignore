@@ -1,4 +1,4 @@
 .idea/**/workspace.xml
-.parcel-cache
-.github
-.fleet
+.parcel-cache/*
+.github/*
+.fleet/*

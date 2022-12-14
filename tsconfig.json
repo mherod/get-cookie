@@ -6,6 +6,8 @@
     "types": ["node"],
     "lib": ["es2015", "es2017", "es2021", "dom"],
     "strict": true,
+    "skipDefaultLibCheck": true,
+    "skipLibCheck": true,
     "allowSyntheticDefaultImports": true,
     "emitDeclarationOnly": true,
     "declaration": true,

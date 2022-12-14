@@ -13,6 +13,7 @@
   "scripts": {
     "clean": "git clean -fdX && rm -rf node_modules dist && yarn install",
     "build": "tsc && parcel build",
+    "install": "npm run build",
     "prepare": "npm run build && npm run prettier",
     "test": "jest",
     "prepublish": "npm run build",

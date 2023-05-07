@@ -17,7 +17,3 @@ export {
   fetchWithCookies,
   //
 };
-
-export * from "./CookieSpec";
-export * from "./CookieRow";
-export * from "./ExportedCookie";

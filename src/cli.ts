@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env ts-node
 
 import { argv, parsedArgs } from "./argv";
 import { groupBy } from "lodash";
@@ -9,21 +9,22 @@ import { unpackHeaders } from "./unpackHeaders";
 import CookieSpec from "./CookieSpec";
 import { comboQueryCookieSpec } from "./comboQueryCookieSpec";
 import { cookieSpecsFromUrl } from "./cookieSpecsFromUrl";
+import logger from "./logger";
 
 async function cliQueryCookies(cookieSpec: CookieSpec | CookieSpec[]) {
   try {
     const results = await comboQueryCookieSpec(cookieSpec);
     if (results == null || results.length == 0) {
-      console.error(red("No results"));
+      logger.error(red("No results"));
       return;
     }
     if (parsedArgs["dump"] || parsedArgs["d"]) {
-      console.log(results);
+      logger.log(results);
       return;
     }
     if (parsedArgs["dump-grouped"] || parsedArgs["D"]) {
       const groupedByFile = groupBy(results, (r) => r.meta?.file);
-      console.log(green(JSON.stringify(groupedByFile, null, 2)));
+      logger.log(green(JSON.stringify(groupedByFile, null, 2)));
       return;
     }
     if (
@@ -31,34 +32,34 @@ async function cliQueryCookies(cookieSpec: CookieSpec | CookieSpec[]) {
       parsedArgs["render-merged"] ||
       parsedArgs["r"]
     ) {
-      console.log(yellow(resultsRendered(results)));
+      logger.log(yellow(resultsRendered(results)));
       return;
     }
     if (parsedArgs["render-grouped"] || parsedArgs["R"]) {
       const groupedByFile = groupBy(results, (r) => r.meta?.file);
       for (const file of Object.keys(groupedByFile)) {
         let results = groupedByFile[file];
-        console.log(green(file) + ": ", yellow(resultsRendered(results)));
+        logger.log(green(file) + ": ", yellow(resultsRendered(results)));
       }
       return;
     }
     for (const result of results) {
-      console.log(result.value);
+      logger.log(result.value);
     }
   } catch (e) {
-    console.error(e);
+    logger.error(e);
   }
 }
 
 async function main() {
   if (parsedArgs["help"] || parsedArgs["h"]) {
-    console.log(`Usage: ${argv[1]} [name] [domain] [options] `);
-    console.log(`Options:`);
-    console.log(`  -h, --help: Show this help`);
-    console.log(`  -v, --verbose: Show verbose output`);
-    console.log(`  -d, --dump: Dump all results`);
-    console.log(`  -D, --dump-grouped: Dump all results, grouped by profile`);
-    console.log(`  -r, --render: Render all results`);
+    logger.log(`Usage: ${argv[1]} [name] [domain] [options] `);
+    logger.log(`Options:`);
+    logger.log(`  -h, --help: Show this help`);
+    logger.log(`  -v, --verbose: Show verbose output`);
+    logger.log(`  -d, --dump: Dump all results`);
+    logger.log(`  -D, --dump-grouped: Dump all results, grouped by profile`);
+    logger.log(`  -r, --render: Render all results`);
     return;
   }
 
@@ -70,7 +71,7 @@ async function main() {
     try {
       url = new URL(<string>fetchUrl);
     } catch (e) {
-      console.error("Invalid URL", fetchUrl);
+      logger.error("Invalid URL", fetchUrl);
       return;
     }
     const headerArgs: string[] | string = parsedArgs["H"];
@@ -78,12 +79,12 @@ async function main() {
     const onfulfilled = (res: Response) => {
       if (parsedArgs["dump-response-headers"]) {
         res.headers.forEach((value: string, key: string) => {
-          console.log(`${key}: ${value}`);
+          logger.log(`${key}: ${value}`);
         });
       }
       if (parsedArgs["dump-response-body"]) {
         res.text().then((r) => {
-          console.log(r);
+          logger.log(r);
         });
       }
       return;
@@ -97,7 +98,7 @@ async function main() {
       //
     ).then(
       onfulfilled,
-      console.error
+      logger.error
       //
     );
     return;
@@ -117,10 +118,10 @@ async function main() {
   }
 
   if (parsedArgs.verbose) {
-    console.log("cookieSpecs", cookieSpecs);
+    logger.log("cookieSpecs", cookieSpecs);
   }
 
-  await cliQueryCookies(cookieSpecs).catch(console.error);
+  await cliQueryCookies(cookieSpecs).catch(logger.error);
 }
 
-main().then((r) => r, console.error);
+main().then((r) => r, logger.error);

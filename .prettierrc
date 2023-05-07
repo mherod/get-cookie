@@ -1,0 +1,12 @@
+{
+  "useTabs": false,
+  "overrides": [
+    {
+      "files": [".prettierrc", ".parcelrc"],
+      "options": {
+        "parser": "json",
+        "tabWidth": 2
+      }
+    }
+  ]
+}

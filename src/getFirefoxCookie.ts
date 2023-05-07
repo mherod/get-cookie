@@ -6,7 +6,7 @@ import FirefoxCookieQueryStrategy from "./browsers/FirefoxCookieQueryStrategy";
 export async function getFirefoxCookie(
   params: CookieSpec
 ): Promise<ExportedCookie | undefined> {
-  const cookies = await queryCookies(
+  const cookies: ExportedCookie[] = await queryCookies(
     params,
     new FirefoxCookieQueryStrategy()
     //

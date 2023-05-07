@@ -1,11 +1,11 @@
 import jsonwebtoken, { JwtPayload } from "jsonwebtoken";
 import { parsedArgs } from "./argv";
 
-export default function isValidJwt(token: any) {
+export default function isValidJwt(token: string) {
   try {
     const result = jsonwebtoken.decode(token, { complete: true });
     if (parsedArgs.verbose && result) {
-      console.log(result);
+      console.debug(result);
     }
     const payload: JwtPayload = result?.payload as JwtPayload;
     if (payload) {

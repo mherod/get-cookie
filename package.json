@@ -13,9 +13,8 @@
   "scripts": {
     "clean": "git clean -fdX && rm -rf node_modules dist && yarn install",
     "lintfix": "prettier --write \"src/**/*.ts\"",
-    "typescript": "tsc",
     "prebuild": "npm run lintfix",
-    "build": "tsc && parcel build",
+    "build": "parcel build",
     "prepare": "npm run build && npm run prettier",
     "test": "jest",
     "prepublish": "npm run build",
@@ -24,8 +23,7 @@
   },
   "targets": {
     "types": {},
-    "main": {},
-    "library": {
+    "main": {
       "source": "src/index.ts",
       "distDir": "dist",
       "isLibrary": true,
@@ -64,7 +62,7 @@
     "consola": "^3.1.0",
     "cross-fetch": "^3.1.5",
     "destr": "^1.2.0",
-    "jsonwebtoken": "^8.5.1",
+    "jsonwebtoken": "9.0.0",
     "lodash": "^4.17.21",
     "lodash-es": "^4.17.21",
     "lru-cache": "^7.14.0",

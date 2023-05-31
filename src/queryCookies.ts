@@ -9,9 +9,9 @@ import ExportedCookie from "./ExportedCookie";
 export async function queryCookies(
   {
     name,
-    domain
-    //
-  }: CookieSpec,
+    domain,
+  }: //
+  CookieSpec,
   strategy: CookieQueryStrategy = new CompositeCookieQueryStrategy()
 ): Promise<ExportedCookie[]> {
   //

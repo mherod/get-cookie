@@ -6,6 +6,7 @@ import CompositeCookieQueryStrategy from "./browsers/CompositeCookieQueryStrateg
 export async function getCookie(
   params: CookieSpec
 ): Promise<ExportedCookie | undefined> {
+  //
   const cookies = await queryCookies(
     params,
     new CompositeCookieQueryStrategy()

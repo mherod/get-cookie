@@ -2,8 +2,8 @@ import { Cookie, MemoryCookieStore, Store } from "tough-cookie";
 import { existsSync, writeFile } from "fs";
 import destr from "destr";
 import { merge } from "lodash";
-import consola from "consola";
 import { readFile } from "fs/promises";
+import logger from "./logger";
 
 export class FileCookieStore extends Store {
   private readonly internalStore: Store;
@@ -22,7 +22,7 @@ export class FileCookieStore extends Store {
     this.filePath = filePath;
     this.internalStore = internalStore ?? new MemoryCookieStore();
 
-    consola.debug("Importing cookies from", filePath, internalStore);
+    logger.debug("Importing cookies from", filePath, internalStore);
 
     this.tasks.push(
       this.importSaved(filePath, internalStore).then(console.log, console.error)
@@ -37,7 +37,7 @@ export class FileCookieStore extends Store {
         .flatMap((domainCookies: any) => Object.values(domainCookies))
         .flatMap((domainCookies: any) => Object.values(domainCookies));
       if (process.env["DEBUG"]) {
-        consola.start("Importing", cookies.length, "cookies");
+        logger.start("Importing", cookies.length, "cookies");
       }
       const array = Array.isArray(cookies) ? cookies : Object.values(cookies);
       const put = await Promise.all(
@@ -119,7 +119,7 @@ export class FileCookieStore extends Store {
   }
 
   waitUntilIdle() {
-    return Promise.allSettled(this.tasks).catch(consola.error);
+    return Promise.allSettled(this.tasks).catch(logger.error);
   }
 
   private async putCookieInternal(
@@ -158,9 +158,9 @@ export class FileCookieStore extends Store {
         merge(idx, {
           [domain]: {
             [path]: {
-              [key]: cookie.toJSON()
-            }
-          }
+              [key]: cookie.toJSON(),
+            },
+          },
         });
       }
     }

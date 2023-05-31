@@ -31,7 +31,15 @@
         "node": ">= 16"
       },
       "sourceMap": true,
-      "includeNodeModules": false
+      "optimize": false,
+      "includeNodeModules": [
+        "colorette",
+        "cross-fetch",
+        "node-fetch",
+        "destr",
+        "lodash",
+        "jsonwebtoken"
+      ]
     },
     "cli": {
       "source": "src/cli.ts",
@@ -41,7 +49,7 @@
         "node": ">= 16"
       },
       "sourceMap": false,
-      "optimize": false,
+      "optimize": true,
       "includeNodeModules": [
         "colorette"
       ]

@@ -12,7 +12,6 @@ import { getMergedRenderedCookies } from "./getMergedRenderedCookies";
 import { cookieSpecsFromUrl } from "./cookieSpecsFromUrl";
 import CookieSpec from "./CookieSpec";
 import consola from "consola";
-import logger from "./logger";
 
 if (typeof fetchImpl !== "function") {
   consola.error("fetch is not a function");
@@ -48,12 +47,9 @@ export async function fetchWithCookies(
   const url2: string = `${url}`;
   const url1: URL = new URL(url2);
   const cookieSpecs: CookieSpec[] = cookieSpecsFromUrl(url1);
-  consola.info("cookieSpecs", cookieSpecs);
-  const renderedCookie = await getMergedRenderedCookies(cookieSpecs).catch(
+  headers["Cookie"] = await getMergedRenderedCookies(cookieSpecs).catch(
     () => ""
   );
-  consola.info("renderedCookie", renderedCookie);
-  headers["Cookie"] = renderedCookie;
   if (parsedArgs["dump-request-headers"]) {
     consola.info(redBright("Request URL:"), url1.href);
     consola.info(blue("Request headers:"), headers);

@@ -7,13 +7,6 @@ import consola from "consola";
 export async function getMergedRenderedCookies(
   cookieSpec: MultiCookieSpec
 ): Promise<string> {
-  consola.info("cookieSpec", cookieSpec);
   const cookies: ExportedCookie[] = await comboQueryCookieSpec(cookieSpec);
-  if (cookies.length > 0) {
-    consola.info("cookies", cookies);
-    return resultsRendered(cookies);
-  } else {
-    consola.info("cookies", cookies);
-    return "";
-  }
+  return cookies.length > 0 ? resultsRendered(cookies) : "";
 }

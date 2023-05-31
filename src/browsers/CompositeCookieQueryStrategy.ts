@@ -9,8 +9,11 @@ import { red } from "colorette";
 import { merge } from "lodash";
 import { parsedArgs } from "../argv";
 
-const cache = new LRUCache<string, ExportedCookie[]>({
-  ttl: 1000 * 2,
+const cache: LRUCache<string, ExportedCookie[]> = new LRUCache<
+  string,
+  ExportedCookie[]
+>({
+  ttl: 1000 * 10,
   max: 10,
 });
 
@@ -23,7 +26,7 @@ export default class CompositeCookieQueryStrategy
 
   constructor() {
     this.#strategies = [
-      CookieStoreQueryStrategy,
+      // CookieStoreQueryStrategy,
       ChromeCookieQueryStrategy,
       FirefoxCookieQueryStrategy,
       SafariCookieQueryStrategy,

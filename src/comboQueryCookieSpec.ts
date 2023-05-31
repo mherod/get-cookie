@@ -1,4 +1,4 @@
-import CookieSpec, { MultiCookieSpec } from "./CookieSpec";
+import { MultiCookieSpec } from "./CookieSpec";
 import ExportedCookie from "./ExportedCookie";
 import { queryCookies } from "./queryCookies";
 import { uniqBy } from "lodash";

@@ -11,6 +11,13 @@ import { blue, redBright, yellow } from "colorette";
 import { getMergedRenderedCookies } from "./getMergedRenderedCookies";
 import { cookieSpecsFromUrl } from "./cookieSpecsFromUrl";
 import CookieSpec from "./CookieSpec";
+import consola from "consola";
+import logger from "./logger";
+
+if (typeof fetchImpl !== "function") {
+  consola.error("fetch is not a function");
+  throw new Error("fetch is not a function");
+}
 
 const userAgent = new UserAgent().toString();
 
@@ -22,9 +29,14 @@ interface FetchRequestInit {
 export async function fetchWithCookies(
   url: RequestInfo | URL | string,
   options: RequestInit | undefined = {},
-  fetch: Function = fetchImpl,
+  fetch: Function = fetchImpl as Function,
   originalRequest: FetchRequestInit | undefined = undefined
 ): Promise<Response> {
+  if (typeof fetch !== "function") {
+    const message = "fetch is not a function";
+    consola.error(message);
+    throw new Error(message);
+  }
   const originalRequest1 = originalRequest || { url, options };
   const headers: HeadersInit = {
     "User-Agent": userAgent,
@@ -36,12 +48,15 @@ export async function fetchWithCookies(
   const url2: string = `${url}`;
   const url1: URL = new URL(url2);
   const cookieSpecs: CookieSpec[] = cookieSpecsFromUrl(url1);
-  headers["Cookie"] = await getMergedRenderedCookies(cookieSpecs).catch(
+  consola.info("cookieSpecs", cookieSpecs);
+  const renderedCookie = await getMergedRenderedCookies(cookieSpecs).catch(
     () => ""
   );
+  consola.info("renderedCookie", renderedCookie);
+  headers["Cookie"] = renderedCookie;
   if (parsedArgs["dump-request-headers"]) {
-    console.log(redBright("Request URL:"), url1.href);
-    console.log(blue("Request headers:"), headers);
+    consola.info(redBright("Request URL:"), url1.href);
+    consola.info(blue("Request headers:"), headers);
   }
   const newOptions1: RequestInit = merge(defaultOptions, { headers }, options);
   try {

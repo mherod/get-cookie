@@ -74,6 +74,7 @@ async function main() {
       logger.error("Invalid URL", fetchUrl);
       return;
     }
+    logger.start("Fetching", url.href);
     const headerArgs: string[] | string = parsedArgs["H"];
     const headers = unpackHeaders(headerArgs);
     const onfulfilled = (res: Response) => {
@@ -89,7 +90,7 @@ async function main() {
       }
       return;
     };
-    fetchWithCookies(
+    return fetchWithCookies(
       url,
       {
         //
@@ -97,11 +98,13 @@ async function main() {
       }
       //
     ).then(
-      onfulfilled,
+      (res) => {
+        logger.debug("Response", res);
+        onfulfilled(res);
+      },
       logger.error
       //
     );
-    return;
   }
 
   const cookieSpecs: CookieSpec[] = [];

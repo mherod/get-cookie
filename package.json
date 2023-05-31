@@ -30,16 +30,14 @@
       "engines": {
         "node": ">= 16"
       },
-      "sourceMap": true,
-      "optimize": false,
-      "includeNodeModules": [
-        "colorette",
-        "cross-fetch",
-        "node-fetch",
-        "destr",
-        "lodash",
-        "jsonwebtoken"
-      ]
+      "sourceMap": false,
+      "optimize": true,
+      "includeNodeModules": {
+        "sqlite3": false,
+        "colorette": false,
+        "minimist": false,
+        "tough-cookie": false
+      }
     },
     "cli": {
       "source": "src/cli.ts",
@@ -50,9 +48,12 @@
       },
       "sourceMap": false,
       "optimize": true,
-      "includeNodeModules": [
-        "colorette"
-      ]
+      "includeNodeModules": {
+        "sqlite3": false,
+        "colorette": false,
+        "minimist": false,
+        "tough-cookie": false
+      }
     }
   },
   "@parcel/transformer-js": {

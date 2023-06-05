@@ -32,12 +32,7 @@
       },
       "sourceMap": false,
       "optimize": true,
-      "includeNodeModules": {
-        "sqlite3": false,
-        "colorette": false,
-        "minimist": false,
-        "tough-cookie": false
-      }
+      "includeNodeModules": false
     },
     "cli": {
       "source": "src/cli.ts",
@@ -48,12 +43,7 @@
       },
       "sourceMap": false,
       "optimize": true,
-      "includeNodeModules": {
-        "sqlite3": false,
-        "colorette": false,
-        "minimist": false,
-        "tough-cookie": false
-      }
+      "includeNodeModules": false
     }
   },
   "@parcel/transformer-js": {

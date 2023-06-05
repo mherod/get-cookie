@@ -46,9 +46,13 @@ export async function fetchWithCookies(
   };
   const url2: string = `${url}`;
   const url1: URL = new URL(url2);
+  consola.start("fetchWithCookies", url2);
   const cookieSpecs: CookieSpec[] = cookieSpecsFromUrl(url1);
   headers["Cookie"] = await getMergedRenderedCookies(cookieSpecs).catch(
-    () => ""
+    (err) => {
+      consola.error(err);
+      return "";
+    }
   );
   if (parsedArgs["dump-request-headers"]) {
     consola.info(redBright("Request URL:"), url1.href);
@@ -57,19 +61,20 @@ export async function fetchWithCookies(
   const newOptions1: RequestInit = merge(defaultOptions, { headers }, options);
   try {
     const res: Response = await fetch(url1, newOptions1);
+    // noinspection JSMismatchedCollectionQueryUpdate
     const headers: [string, string][] = [];
     res.headers.forEach((value, key) => {
       headers.push([key, value]);
     });
-    for (const [key, value] of headers) {
-      if (key === "set-cookie") {
-        const cookieJar1 = await cookieJarPromise;
-        await cookieJar1.setCookie(value, url2);
-        if (parsedArgs.verbose) {
-          console.log(blue(`Set-Cookie:`), yellow(value), yellow(url2));
-        }
-      }
-    }
+    // for (const [key, value] of headers) {
+    //   if (key === "set-cookie") {
+    //     const cookieJar1 = await cookieJarPromise;
+    //     await cookieJar1.setCookie(value, url2);
+    //     if (parsedArgs.verbose) {
+    //       console.log(blue(`Set-Cookie:`), yellow(value), yellow(url2));
+    //     }
+    //   }
+    // }
 
     const newUrl: string = res.headers.get("location") ?? res.url;
     // const sameHost = new URL(newUrl).host === url1.host;

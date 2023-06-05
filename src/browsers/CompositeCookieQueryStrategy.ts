@@ -4,7 +4,6 @@ import SafariCookieQueryStrategy from "./SafariCookieQueryStrategy";
 import CookieQueryStrategy from "./CookieQueryStrategy";
 import ExportedCookie from "../ExportedCookie";
 import LRUCache from "lru-cache";
-import CookieStoreQueryStrategy from "./CookieStoreQueryStrategy";
 import { red } from "colorette";
 import { merge } from "lodash";
 import { parsedArgs } from "../argv";

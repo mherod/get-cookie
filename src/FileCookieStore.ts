@@ -33,6 +33,7 @@ export class FileCookieStore extends Store {
     const cookies: Cookie[] = [];
     if (existsSync(filePath)) {
       const data: string = await readFile(filePath, "utf8");
+      // @ts-ignore
       const cookies: any[] = Object.values(destr(data))
         .flatMap((domainCookies: any) => Object.values(domainCookies))
         .flatMap((domainCookies: any) => Object.values(domainCookies));

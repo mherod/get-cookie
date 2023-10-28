@@ -1,6 +1,5 @@
 // noinspection JSUnusedGlobalSymbols
-
-import { Response } from "cross-fetch";
+import type { Response } from "cross-fetch";
 
 export default interface FetchResponse extends Response {
   status: number;

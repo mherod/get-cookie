@@ -1,65 +1,38 @@
-import * as fs from "fs";
-import { readdir } from "fs/promises";
+import { existsSync } from "fs";
 import { parsedArgs } from "./argv";
 import consola from "consola";
+import { sync } from "fast-glob";
 
-export async function findAllFiles({
-  path,
-  name,
-  maxDepth = 2,
-}: //
-{
+type FindFilesOptions = {
   path: string;
   name: string;
   maxDepth?: number;
-}): //
-Promise<string[]> {
-  const rootSegments = path.split("/").length;
-  const files: string[] = [];
-  let readdirSync;
-  try {
-    readdirSync = await readdir(path);
-  } catch (e) {
-    if (parsedArgs.verbose) {
-      consola.error(`Error reading ${path}`, e);
-    }
-    return [];
+};
+
+export function findAllFiles(
+  //
+  { path, name, maxDepth = 2 }: FindFilesOptions
+): //
+string[] {
+  if (!existsSync(path)) {
+    throw new Error(`Path ${path} does not exist`);
   }
-  for (const file of readdirSync) {
-    const filePath = path + "/" + file;
-    let stat;
-    try {
-      stat = fs.statSync(filePath);
-    } catch (e) {
-      if (parsedArgs.verbose) {
-        consola.error(`Error getting stat for ${filePath}`, e);
-      }
-      continue;
-    }
-    if (stat.isDirectory()) {
-      if (filePath.split("/").length < rootSegments + maxDepth) {
-        try {
-          const subFiles = await findAllFiles({
-            path: filePath,
-            name: name,
-            maxDepth: 2,
-          });
-          files.push(...subFiles);
-        } catch (e) {
-          if (parsedArgs.verbose) {
-            consola.error(e);
-          }
-        }
-      }
-    } else if (file === name) {
-      files.push(filePath);
-    }
+
+  if (parsedArgs.verbose) {
+    consola.start(`Searching for ${name} files in ${path}`);
   }
+
+  const files: string[] = sync(`${path}/**/${name}`, {
+    onlyFiles: true,
+    deep: maxDepth,
+  });
+
   if (parsedArgs.verbose) {
     if (files.length > 0) {
-      consola.log(`Found ${files.length} ${name} files`);
-      consola.log(files);
+      consola.success(`Found ${files.length} ${name} files`);
+      consola.info(files);
     }
   }
+
   return files;
 }

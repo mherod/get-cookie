@@ -1,5 +1,4 @@
-#!/usr/bin/env node
-// noinspection JSUnusedGlobalSymbols
+#!/usr/bin/env bun run
 
 import { getCookie } from "./getCookie";
 import { getChromeCookie } from "./getChromeCookie";

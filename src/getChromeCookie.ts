@@ -2,7 +2,7 @@ import CookieSpec from "./CookieSpec";
 import ExportedCookie from "./ExportedCookie";
 import { queryCookies } from "./queryCookies";
 import ChromeCookieQueryStrategy from "./browsers/ChromeCookieQueryStrategy";
-import { isExportedCookie } from "./IsExportedCookie";
+import { isExportedCookie } from "./ExportedCookie";
 
 export async function getChromeCookie(
   params: CookieSpec

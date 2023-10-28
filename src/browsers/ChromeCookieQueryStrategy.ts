@@ -1,19 +1,20 @@
 import CookieQueryStrategy from "./CookieQueryStrategy";
-import { execSimple } from "../utils";
-import { env, HOME } from "../global";
-import fs, { existsSync } from "fs";
+import { env } from "../global";
+import { existsSync } from "fs";
 import { findAllFiles } from "../findAllFiles";
-import * as crypto from "crypto";
-import * as path from "path";
+import { join } from "path";
 import { merge } from "lodash";
 import { isCookieRow } from "../IsCookieRow";
-import { isExportedCookie } from "../IsExportedCookie";
+import { isExportedCookie } from "../ExportedCookie";
 import CookieRow from "../CookieRow";
 import ExportedCookie from "../ExportedCookie";
 import { stringToRegex } from "../StringToRegex";
 import { parsedArgs } from "../argv";
-import * as sqlite3 from "sqlite3";
-import { DoSqliteQuery1Params } from "../doSqliteQuery1Params";
+import consola from "consola";
+import { getChromePassword } from "./getChromePassword";
+import { chromeApplicationSupport } from "./ChromeApplicationSupport";
+import { decrypt } from "./decrypt";
+import { doSqliteQueryWithTransform } from "./DoSqliteQueryWithTransform";
 
 export default class ChromeCookieQueryStrategy implements CookieQueryStrategy {
   browserName = "Chrome";
@@ -55,7 +56,7 @@ async function getPromise1(
 async function getPromise(name: string, domain: string): Promise<CookieRow[]> {
   try {
     const files: string[] = await findAllFiles({
-      path: chromeLocal,
+      path: chromeApplicationSupport,
       name: "Cookies",
     });
     const promises: Promise<CookieRow[]>[] = files.map((file) =>
@@ -131,18 +132,10 @@ Promise<ExportedCookie[]> {
   return results;
 }
 
-const chromeLocal = path.join(
-  HOME,
-  "Library",
-  "Application Support",
-  "Google",
-  "Chrome"
-);
-
 async function getEncryptedChromeCookie({
   name,
   domain,
-  file = path.join(chromeLocal, "Default", "Cookies"),
+  file = join(chromeApplicationSupport, "Default", "Cookies"),
 }: //
 {
   name: string;
@@ -154,38 +147,47 @@ async function getEncryptedChromeCookie({
   }
   if (parsedArgs.verbose) {
     const s = file.split("/").slice(-3).join("/");
-    console.log(`Trying Chrome (at ${s}) cookie ${name} for domain ${domain}`);
+    consola.start(
+      `Trying Chrome (at ${s}) cookie ${name} for domain ${domain}`
+    );
   }
   let sql;
   //language=SQL
-  sql = "SELECT * FROM cookies";
-  // sql = "SELECT encrypted_value, name, host_key FROM cookies";
-
+  sql = "SELECT encrypted_value, name, host_key, expires_utc FROM cookies";
+  // Define a regular expression to match wildcard characters
   const wildcardRegexp = /^([*%])$/i;
+  // Check if the name does not contain wildcard characters
   const specifiedName = name.match(wildcardRegexp) == null;
+  // Check if the domain does not contain wildcard characters
   const specifiedDomain = domain.match(wildcardRegexp) == null;
+  // Check if the domain contains wildcard characters
   const wildcardDomain = domain.match(/[%*]/) != null;
+  // Determine if we should query the domain based on the previous checks
   const queryDomain = specifiedDomain && !wildcardDomain;
   // if we have a wildcard domain, we need to use a regexp
+  // If the name is specified or we need to query the domain, we add a WHERE clause to the SQL query
   if (specifiedName || queryDomain) {
     sql += ` WHERE `;
+    // If the name is specified, we add a condition to the SQL query to match the name
     if (specifiedName) {
       sql += `name = '${name}'`;
+      // If we also need to query the domain, we add an AND operator to the SQL query
       if (queryDomain) {
         sql += ` AND `;
       }
     }
+    // If we need to query the domain, we add a condition to the SQL query to match the domain
     if (queryDomain) {
-      // leading dot replaced with % to match subdomains
+      // The leading dot is replaced with % to match subdomains
       const sqlEmbedDomain = domain.replace(/^[.%]?/, "%");
       sql += `host_key LIKE '${sqlEmbedDomain}';`;
     }
   }
   if (parsedArgs.verbose) {
-    console.log("sql", sql);
+    consola.info("Querying:", sql);
   }
   const domainRegexp: RegExp = stringToRegex(domain);
-  const sqliteQuery1: CookieRow[] = await doChromeSqliteQuery1({
+  const sqliteQuery1: CookieRow[] = await doSqliteQueryWithTransform({
     file: file,
     sql: sql,
     rowFilter: (row) => {
@@ -199,157 +201,13 @@ async function getEncryptedChromeCookie({
         value: row["encrypted_value"],
       };
       if (parsedArgs.verbose) {
-        console.log("CookieRow", cookieRow);
+        consola.info("Found", cookieRow);
       }
       return cookieRow;
     },
   });
   return sqliteQuery1.filter((row) => {
+    // TODO: is this needed?
     return row.domain.match(domainRegexp) != null;
-  });
-}
-
-async function getChromePassword(): Promise<string> {
-  return execSimple(
-    'security find-generic-password -w -s "Chrome Safe Storage"'
-  );
-}
-
-async function decrypt(
-  password: crypto.BinaryLike,
-  encryptedData: Buffer
-): Promise<string> {
-  if (typeof password !== "string") {
-    throw new Error("password must be a string: " + password);
-  }
-  let encryptedData1: any;
-  encryptedData1 = encryptedData;
-  if (encryptedData1 == null || typeof encryptedData1 !== "object") {
-    throw new Error("encryptedData must be a object: " + encryptedData1);
-  }
-  if (!(encryptedData1 instanceof Buffer)) {
-    if (Array.isArray(encryptedData1) && encryptedData1[0] instanceof Buffer) {
-      [encryptedData1] = encryptedData1;
-      if (parsedArgs.verbose) {
-        console.log(
-          `encryptedData is an array of buffers, selected first: ${encryptedData1}`
-        );
-      }
-    } else {
-      throw new Error("encryptedData must be a Buffer: " + encryptedData1);
-    }
-    encryptedData1 = Buffer.from(encryptedData1);
-  }
-  if (parsedArgs.verbose) {
-    console.log(`Trying to decrypt with password ${password}`);
-  }
-  return new Promise((resolve, reject) => {
-    crypto.pbkdf2(password, "saltysalt", 1003, 16, "sha1", (error, buffer) => {
-      try {
-        if (error) {
-          if (parsedArgs.verbose) {
-            console.log("Error doing pbkdf2", error);
-          }
-          reject(error);
-          return;
-        }
-
-        if (buffer.length !== 16) {
-          if (parsedArgs.verbose) {
-            console.log(
-              "Error doing pbkdf2, buffer length is not 16",
-              buffer.length
-            );
-          }
-          reject(new Error("Buffer length is not 16"));
-          return;
-        }
-
-        const str = new Array(17).join(" ");
-        const iv = Buffer.from(str, "binary");
-        const decipher = crypto.createDecipheriv("aes-128-cbc", buffer, iv);
-        decipher.setAutoPadding(false);
-
-        if (encryptedData1 && encryptedData1.slice) {
-          encryptedData1 = encryptedData1.slice(3);
-        }
-
-        if (encryptedData1.length % 16 !== 0) {
-          if (parsedArgs.verbose) {
-            console.log(
-              "Error doing pbkdf2, encryptedData length is not a multiple of 16",
-              encryptedData1.length
-            );
-          }
-          reject(new Error("encryptedData length is not a multiple of 16"));
-          return;
-        }
-
-        let decoded = decipher.update(encryptedData1);
-        try {
-          decipher.final("utf-8");
-        } catch (e) {
-          if (parsedArgs.verbose) {
-            console.log("Error doing decipher.final()", e);
-          }
-          reject(e);
-          return;
-        }
-
-        const padding = decoded[decoded.length - 1];
-        if (padding) {
-          decoded = decoded.slice(0, 0 - padding);
-        }
-        // noinspection JSCheckFunctionSignatures
-        const decodedString = decoded.toString("utf8");
-        resolve(decodedString);
-      } catch (e) {
-        reject(e);
-      }
-    });
-  });
-}
-
-export async function doChromeSqliteQuery1({
-  file,
-  sql,
-  rowFilter = () => true,
-  rowTransform,
-}: DoSqliteQuery1Params): Promise<CookieRow[]> {
-  if (!file || (file && !fs.existsSync(file))) {
-    throw new Error(`doSqliteQuery1: file ${file} does not exist`);
-  }
-  const db = new sqlite3.Database(file);
-  return new Promise((resolve, reject) => {
-    db.all(sql, (err: Error, rows: any[]) => {
-      if (err) {
-        reject(err);
-        return;
-      }
-      const rows1: any[] = rows;
-      if (rows1 == null || rows1.length === 0) {
-        resolve([]);
-        return;
-      }
-      if (Array.isArray(rows1)) {
-        const cookieRows: CookieRow[] = rows1
-          .filter(rowFilter)
-          .map((row: any) => {
-            const newVar = {
-              meta: {
-                file: file,
-              },
-            };
-            const cookieRow: CookieRow = rowTransform(row);
-            return merge(newVar, cookieRow);
-          });
-        resolve(cookieRows);
-        return;
-      }
-      if (parsedArgs.verbose) {
-        console.log(`doSqliteQuery1: rows ${JSON.stringify(rows1)}`);
-      }
-      resolve([rows1]);
-    });
   });
 }

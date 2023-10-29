@@ -31,11 +31,9 @@
       "engines": {
         "node": ">= 16"
       },
-      "sourceMap": false,
-      "optimize": true,
-      "includeNodeModules": {
-        "@mapbox/node-pre-gyp": false
-      }
+      "sourceMap": true,
+      "optimize": false,
+      "includeNodeModules": false
     },
     "cli": {
       "source": "src/cli.ts",

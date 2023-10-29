@@ -1,21 +1,29 @@
-import { MultiCookieSpec } from "./CookieSpec";
+import CookieSpec, { MultiCookieSpec } from "./CookieSpec";
 import ExportedCookie from "./ExportedCookie";
 import { queryCookies } from "./queryCookies";
-import { uniqBy } from "lodash";
-import { flatMapAsync } from "./util/flatMapAsync";
+import { flatMapAsync } from "./util";
+import CookieQueryStrategy from "./browsers/CookieQueryStrategy";
+import { CookieQueryOptions, mergedWithDefaults } from "./cookieQueryOptions";
+import { processBeforeReturn } from "./processBeforeReturn";
 
 export async function comboQueryCookieSpec(
   cookieSpec: MultiCookieSpec,
+  options?: CookieQueryOptions<CookieQueryStrategy>
 ): Promise<ExportedCookie[]> {
+
+  const optsWithDefaults: CookieQueryOptions<CookieQueryStrategy> = mergedWithDefaults(options);
+  const fn = (cs: CookieSpec) => queryCookies(cs, optsWithDefaults);
+
   if (Array.isArray(cookieSpec)) {
-    const cookiesForMultiSpec: ExportedCookie[] = //
-      await flatMapAsync(cookieSpec, async (cs) => {
-        return await queryCookies(cs);
-      });
-    return uniqBy(cookiesForMultiSpec, JSON.stringify);
+    const cookiesForMultiSpec: ExportedCookie[] = await flatMapAsync(
+      cookieSpec,
+      async (cs: CookieSpec) => {
+        return await fn(cs);
+      }
+    );
+    return processBeforeReturn(cookiesForMultiSpec, options);
   } else {
-    const cookiesForSingleSpec: ExportedCookie[] = //
-      await queryCookies(cookieSpec);
-    return uniqBy(cookiesForSingleSpec, JSON.stringify);
+    const cookiesForSingleSpec: ExportedCookie[] = await fn(cookieSpec);
+    return processBeforeReturn(cookiesForSingleSpec, options);
   }
 }

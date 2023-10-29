@@ -1,5 +1,6 @@
 import { getMergedRenderedCookies } from "./getMergedRenderedCookies";
 import { MultiCookieSpec } from "./CookieSpec";
+import MockCookieQueryStrategy from "./browsers/mock/MockCookieQueryStrategy";
 
 describe("getMergedRenderedCookies", () => {
   it("should return empty string if no cookies are present", async () => {
@@ -19,7 +20,24 @@ describe("getMergedRenderedCookies", () => {
         domain: "www.example.com",
       },
     ];
-    const result = await getMergedRenderedCookies(cookieSpec);
+    const result = await getMergedRenderedCookies(
+      cookieSpec,
+      new MockCookieQueryStrategy([
+        {
+          name: "sessionCookie",
+          value: "sessionCookieValue",
+          domain: "www.example.com",
+        },
+        {
+          name: "persistentCookie",
+          value: "persistentCookieValue",
+          domain: "www.example.com",
+        },
+      ]),
+      //
+    );
     expect(result).not.toBe("");
+    expect(result).toContain("sessionCookie=sessionCookieValue");
+    expect(result).toContain("persistentCookie=persistentCookieValue");
   });
 });

@@ -1,7 +1,7 @@
 import CookieSpec from "./CookieSpec";
 import ExportedCookie from "./ExportedCookie";
 import { queryCookies } from "./queryCookies";
-import ChromeCookieQueryStrategy from "./browsers/ChromeCookieQueryStrategy";
+import ChromeCookieQueryStrategy from "./browsers/chrome/ChromeCookieQueryStrategy";
 import { isExportedCookie } from "./ExportedCookie";
 
 export async function getChromeCookie(
@@ -9,7 +9,9 @@ export async function getChromeCookie(
 ): Promise<ExportedCookie | undefined> {
   const cookies = await queryCookies(
     params,
-    new ChromeCookieQueryStrategy(),
+    {
+      strategy: new ChromeCookieQueryStrategy(),
+    },
     //
   );
   if (cookies.length == 0) {

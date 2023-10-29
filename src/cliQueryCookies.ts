@@ -1,20 +1,10 @@
 import CookieSpec from "./CookieSpec";
+import ExportedCookie from "./ExportedCookie";
 import { comboQueryCookieSpec } from "./comboQueryCookieSpec";
+import { groupBy } from "lodash";
 import logger from "./logger";
 import { parsedArgs } from "./argv";
-import { groupBy } from "lodash";
 import { resultsRendered } from "./resultsRendered";
-import ExportedCookie from "./ExportedCookie";
-import { createConsola } from "consola";
-
-const consola = createConsola({
-  fancy: true,
-  formatOptions: {
-    colors: true,
-    date: false,
-  },
-});
-consola.wrapConsole();
 
 export async function cliQueryCookies(
   cookieSpec: CookieSpec | CookieSpec[],
@@ -23,18 +13,21 @@ export async function cliQueryCookies(
   //
 ) {
   try {
-    const results: ExportedCookie[] = await comboQueryCookieSpec(cookieSpec);
+    const results: ExportedCookie[] = await comboQueryCookieSpec(cookieSpec, {
+      limit,
+      removeExpired,
+    });
     if (results == null || results.length == 0) {
-      consola.error("No results");
+      logger.error("No results");
       return;
     }
     if (parsedArgs["dump"] || parsedArgs["d"]) {
-      consola.log(results);
+      logger.log(results);
       return;
     }
     if (parsedArgs["dump-grouped"] || parsedArgs["D"]) {
       const groupedByFile = groupBy(results, (r) => r.meta?.file);
-      consola.log(JSON.stringify(groupedByFile, null, 2));
+      logger.log(JSON.stringify(groupedByFile, null, 2));
       return;
     }
     if (
@@ -42,14 +35,14 @@ export async function cliQueryCookies(
       parsedArgs["render-merged"] ||
       parsedArgs["r"]
     ) {
-      consola.log(resultsRendered(results));
+      logger.log(resultsRendered(results));
       return;
     }
     if (parsedArgs["render-grouped"] || parsedArgs["R"]) {
       const groupedByFile = groupBy(results, (r) => r.meta?.file);
       for (const file of Object.keys(groupedByFile)) {
         let results = groupedByFile[file];
-        consola.log(file, ": ", resultsRendered(results));
+        logger.log(file, ": ", resultsRendered(results));
       }
       return;
     }

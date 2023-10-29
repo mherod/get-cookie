@@ -1,5 +1,5 @@
 import { sync } from "fast-glob";
-import { chromeApplicationSupport } from "./browsers/ChromeApplicationSupport";
+import { chromeApplicationSupport } from "./browsers/chrome/ChromeApplicationSupport";
 import { dirname } from "path";
 import { readFile } from "fs/promises";
 import { flatMapAsync } from "./util/flatMapAsync";

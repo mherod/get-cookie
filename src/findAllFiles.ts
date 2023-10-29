@@ -9,11 +9,11 @@ type FindFilesOptions = {
   maxDepth?: number;
 };
 
-export function findAllFiles(
-  //
-  { path, name, maxDepth = 2 }: FindFilesOptions,
-): //
-string[] {
+export function findAllFiles({
+  path,
+  name,
+  maxDepth = 2,
+}: FindFilesOptions): string[] {
   if (!existsSync(path)) {
     throw new Error(`Path ${path} does not exist`);
   }

@@ -1,5 +1,5 @@
 import { join } from "path";
-import { HOME } from "../global";
+import { HOME } from "../../global";
 
 export const chromeApplicationSupport: string = join(
   HOME,

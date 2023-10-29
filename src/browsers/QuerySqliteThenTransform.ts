@@ -3,9 +3,9 @@ import fs from "fs";
 import { Database } from "sqlite3";
 import { merge } from "lodash";
 import { parsedArgs } from "../argv";
-import consola from "consola";
+import consola from "../logger";
 
-export interface DoSqliteQueryWithTransformOptions {
+interface FnOptions {
   file: string;
   sql: string;
   rowFilter?: (row: any) => boolean;
@@ -18,7 +18,7 @@ function checkFileExistence(file: string) {
   }
 }
 
-function createDatabase(file: string) {
+function createDatabase(file: string): Database {
   return new Database(file);
 }
 
@@ -43,7 +43,7 @@ function transformRows(
   });
 }
 
-export async function doSqliteQueryWithTransform(
+export async function querySqliteThenTransform(
   //
   {
     //
@@ -51,7 +51,7 @@ export async function doSqliteQueryWithTransform(
     sql,
     rowFilter = () => true,
     rowTransform,
-  }: DoSqliteQueryWithTransformOptions,
+  }: FnOptions,
 ): //
 Promise<CookieRow[]> {
   checkFileExistence(file);

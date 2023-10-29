@@ -7,9 +7,11 @@ export async function getCookie(
   params: CookieSpec,
 ): Promise<ExportedCookie | undefined> {
   //
-  const cookies = await queryCookies(
+  const cookies: ExportedCookie[] = await queryCookies(
     params,
-    new CompositeCookieQueryStrategy(),
+    {
+      strategy: new CompositeCookieQueryStrategy(),
+    },
     //
   );
   if (Array.isArray(cookies) && cookies.length > 0) {

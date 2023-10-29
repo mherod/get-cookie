@@ -1,6 +1,6 @@
 import { BinaryLike, createDecipheriv, pbkdf2 } from "crypto";
-import { parsedArgs } from "../argv";
-import consola from "consola";
+import { parsedArgs } from "../../argv";
+import consola from "../../logger";
 
 // Function to decrypt encrypted data using a password
 export async function decrypt(

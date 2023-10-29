@@ -11,23 +11,34 @@ import CookieSpec from "./CookieSpec";
 import consola from "consola";
 
 if (typeof fetchImpl !== "function") {
-  consola.error("fetch is not a function");
   throw new Error("fetch is not a function");
 }
 
-const userAgent =
-  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36";
+function constructUserAgent(
+  platform = "Macintosh; Intel Mac OS X 10_15_7",
+  engine = "AppleWebKit/537.36 (KHTML, like Gecko)",
+  browser = "Chrome/118.0.0.0",
+  layout = "Safari/537.36",
+): string {
+  return [platform, engine, browser, layout].join(" ");
+}
+
+const userAgent = constructUserAgent();
 
 interface FetchRequestInit {
   url: RequestInfo | URL | string;
   options?: RequestInit;
 }
 
+export type FetchFn =
+  | typeof fetchImpl
+  | ((url: URL, options?: RequestInit) => Promise<Response>);
+
 export async function fetchWithCookies(
   url: RequestInfo | URL | string,
   options: RequestInit | undefined = {},
-  fetch: Function = fetchImpl as Function,
-  originalRequest: FetchRequestInit | undefined = undefined,
+  fetch: FetchFn = fetchImpl as FetchFn,
+  originalRequest?: FetchRequestInit,
 ): Promise<Response> {
   if (typeof fetch !== "function") {
     const message = "fetch is not a function";
@@ -46,12 +57,17 @@ export async function fetchWithCookies(
   const url1: URL = new URL(url2);
   consola.start("fetchWithCookies", url2);
   const cookieSpecs: CookieSpec[] = cookieSpecsFromUrl(url1);
-  headers["Cookie"] = await getMergedRenderedCookies(cookieSpecs).catch(
+  const renderedCookie = await getMergedRenderedCookies(cookieSpecs).catch(
     (err) => {
       consola.error(err);
       return "";
     },
   );
+  if (renderedCookie) {
+    headers["Cookie"] = renderedCookie;
+  } else {
+    consola.info("No cookies found for this request");
+  }
   if (parsedArgs["dump-request-headers"]) {
     consola.info("Request URL:", url1.href);
     consola.info("Request headers:", headers);
@@ -80,7 +96,7 @@ export async function fetchWithCookies(
       // follow the redirect
       if (newUrl && newUrl !== url2) {
         if (parsedArgs.verbose || parsedArgs["dump-response-headers"]) {
-          console.log(`Redirected to `, newUrl);
+          consola.info(`Redirected to `, newUrl);
         }
         return fetchWithCookies(
           //
@@ -124,22 +140,26 @@ export async function fetchWithCookies(
       );
     }
 
-    const arrayBuffer1: Promise<ArrayBuffer> = res.arrayBuffer();
+    // all deserialize functions will use the arraybuffer
+    const arrayBufferPromise: Promise<ArrayBuffer> = res.arrayBuffer();
+    const bufferPromise = arrayBufferPromise.then(Buffer.from);
 
     async function arrayBuffer(): Promise<ArrayBuffer> {
-      return arrayBuffer1;
+      return arrayBufferPromise;
     }
 
     async function buffer(): Promise<Buffer> {
-      return arrayBuffer().then(Buffer.from);
+      return bufferPromise;
     }
 
     async function text(): Promise<string> {
-      return buffer().then((buffer: Buffer) => buffer.toString("utf8"));
+      const buffer1 = await bufferPromise;
+      return buffer1.toString("utf8");
     }
 
     async function json(): Promise<any> {
-      return text().then((text: string) => destr(text));
+      const text1 = await text();
+      return destr(text1);
     }
 
     async function formData(): Promise<FormData> {

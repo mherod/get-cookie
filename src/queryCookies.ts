@@ -3,20 +3,20 @@ import { parsedArgs } from "./argv";
 import CompositeCookieQueryStrategy from "./browsers/CompositeCookieQueryStrategy";
 import CookieQueryStrategy from "./browsers/CookieQueryStrategy";
 import isValidJwt from "./isValidJwt";
-import CookieSpec from "./CookieSpec";
+import CookieSpec, { MultiCookieSpec } from "./CookieSpec";
 import ExportedCookie from "./ExportedCookie";
+import { CookieQueryOptions } from "./cookieQueryOptions";
 
 export async function queryCookies(
   {
     name,
     domain,
-    limit,
   }: //
-  CookieSpec & {
-    limit?: number;
-  },
-  strategy: CookieQueryStrategy = new CompositeCookieQueryStrategy(),
+  CookieSpec,
+  options?: CookieQueryOptions<CookieQueryStrategy>,
 ): Promise<ExportedCookie[]> {
+  const strategy: CookieQueryStrategy =
+    options?.strategy || new CompositeCookieQueryStrategy();
   //
   const results: ExportedCookie[] = await strategy.queryCookies(name, domain);
   const allCookies: ExportedCookie[] = uniqBy(results, JSON.stringify);

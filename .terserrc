@@ -21,6 +21,6 @@
   },
   "format": {
     "comments": false,
-    "beautify": true,
+    "beautify": false,
   }
 }

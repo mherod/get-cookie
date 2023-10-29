@@ -8,13 +8,13 @@ export type CookieQueryOptions<T extends CookieQueryStrategy> = {
   removeExpired?: boolean;
 };
 
-export const defaultCookieQueryOptions: CookieQueryOptions<CookieQueryStrategy> = {
-  strategy: new CompositeCookieQueryStrategy(),
-};
+export const defaultCookieQueryOptions: CookieQueryOptions<CookieQueryStrategy> =
+  {
+    strategy: new CompositeCookieQueryStrategy(),
+  };
 
 export function mergedWithDefaults<T extends CookieQueryStrategy>(
   options?: CookieQueryOptions<T>,
 ): CookieQueryOptions<T> {
-  return merge(defaultCookieQueryOptions, options)
+  return merge(defaultCookieQueryOptions, options);
 }
-

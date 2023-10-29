@@ -8,10 +8,10 @@ import { processBeforeReturn } from "./processBeforeReturn";
 
 export async function comboQueryCookieSpec(
   cookieSpec: MultiCookieSpec,
-  options?: CookieQueryOptions<CookieQueryStrategy>
+  options?: CookieQueryOptions<CookieQueryStrategy>,
 ): Promise<ExportedCookie[]> {
-
-  const optsWithDefaults: CookieQueryOptions<CookieQueryStrategy> = mergedWithDefaults(options);
+  const optsWithDefaults: CookieQueryOptions<CookieQueryStrategy> =
+    mergedWithDefaults(options);
   const fn = (cs: CookieSpec) => queryCookies(cs, optsWithDefaults);
 
   if (Array.isArray(cookieSpec)) {
@@ -19,7 +19,7 @@ export async function comboQueryCookieSpec(
       cookieSpec,
       async (cs: CookieSpec) => {
         return await fn(cs);
-      }
+      },
     );
     return processBeforeReturn(cookiesForMultiSpec, options);
   } else {

@@ -5,7 +5,7 @@ import ExportedCookie from "./ExportedCookie";
 import { comboQueryCookieSpec } from "./comboQueryCookieSpec";
 
 export async function getGroupedRenderedCookies(
-  cookieSpec: MultiCookieSpec
+  cookieSpec: MultiCookieSpec,
 ): Promise<string[]> {
   const cookies: ExportedCookie[] = await comboQueryCookieSpec(cookieSpec);
   if (cookies.length == 0) {

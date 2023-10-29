@@ -27,7 +27,7 @@ function transformRows(
   rows: any[],
   rowFilter: (row: any) => boolean,
   rowTransform: (row: any) => CookieRow,
-  file: string
+  file: string,
   //
 ): CookieRow[] {
   return rows.filter(rowFilter).map((row: any) => {
@@ -51,7 +51,7 @@ export async function doSqliteQueryWithTransform(
     sql,
     rowFilter = () => true,
     rowTransform,
-  }: DoSqliteQueryWithTransformOptions
+  }: DoSqliteQueryWithTransformOptions,
 ): //
 Promise<CookieRow[]> {
   checkFileExistence(file);
@@ -72,7 +72,7 @@ Promise<CookieRow[]> {
         rows,
         rowFilter,
         rowTransform,
-        file
+        file,
       );
 
       if (parsedArgs.verbose) {

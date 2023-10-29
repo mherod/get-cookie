@@ -77,7 +77,7 @@ export default class CookieStoreQueryStrategy implements CookieQueryStrategy {
           } else {
             resolve(cookies ?? []);
           }
-        }
+        },
       );
     });
   }
@@ -92,7 +92,7 @@ export default class CookieStoreQueryStrategy implements CookieQueryStrategy {
           } else {
             resolve(cookies ?? []);
           }
-        }
+        },
       );
     });
   }

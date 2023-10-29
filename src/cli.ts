@@ -1,55 +1,12 @@
 #!/usr/bin/env ts-node
 
 import { argv, parsedArgs } from "./argv";
-import { groupBy } from "lodash";
-import { green, red, yellow } from "colorette";
-import { resultsRendered } from "./resultsRendered";
 import { fetchWithCookies } from "./fetchWithCookies";
 import { unpackHeaders } from "./unpackHeaders";
 import CookieSpec from "./CookieSpec";
-import { comboQueryCookieSpec } from "./comboQueryCookieSpec";
 import { cookieSpecsFromUrl } from "./cookieSpecsFromUrl";
 import logger from "./logger";
-
-async function cliQueryCookies(cookieSpec: CookieSpec | CookieSpec[]) {
-  try {
-    const results = await comboQueryCookieSpec(cookieSpec);
-    if (results == null || results.length == 0) {
-      logger.error(red("No results"));
-      return;
-    }
-    if (parsedArgs["dump"] || parsedArgs["d"]) {
-      logger.log(results);
-      return;
-    }
-    if (parsedArgs["dump-grouped"] || parsedArgs["D"]) {
-      const groupedByFile = groupBy(results, (r) => r.meta?.file);
-      logger.log(green(JSON.stringify(groupedByFile, null, 2)));
-      return;
-    }
-    if (
-      parsedArgs["render"] ||
-      parsedArgs["render-merged"] ||
-      parsedArgs["r"]
-    ) {
-      logger.log(yellow(resultsRendered(results)));
-      return;
-    }
-    if (parsedArgs["render-grouped"] || parsedArgs["R"]) {
-      const groupedByFile = groupBy(results, (r) => r.meta?.file);
-      for (const file of Object.keys(groupedByFile)) {
-        let results = groupedByFile[file];
-        logger.log(green(file) + ": ", yellow(resultsRendered(results)));
-      }
-      return;
-    }
-    for (const result of results) {
-      logger.log(result.value);
-    }
-  } catch (e) {
-    logger.error(e);
-  }
-}
+import { cliQueryCookies } from "./cliQueryCookies";
 
 async function main() {
   if (parsedArgs["help"] || parsedArgs["h"]) {
@@ -95,14 +52,14 @@ async function main() {
       {
         //
         headers,
-      }
+      },
       //
     ).then(
       (res) => {
         logger.debug("Response", res);
         onfulfilled(res);
       },
-      logger.error
+      logger.error,
       //
     );
   }

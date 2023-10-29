@@ -36,7 +36,7 @@ export default class FirefoxCookieQueryStrategy implements CookieQueryStrategy {
   }
 
   async #getFirefoxCookie(
-    { name, domain }: CookieSpec //
+    { name, domain }: CookieSpec, //
   ) {
     const files: string[] = findAllFiles({
       path: path.join(
@@ -44,7 +44,7 @@ export default class FirefoxCookieQueryStrategy implements CookieQueryStrategy {
         "Library",
         "Application Support",
         "Firefox",
-        "Profiles"
+        "Profiles",
       ),
       name: "cookies.sqlite",
     });
@@ -59,7 +59,7 @@ export default class FirefoxCookieQueryStrategy implements CookieQueryStrategy {
   async #queryCookiesDb(
     file: string,
     name: string,
-    domain: string
+    domain: string,
   ): Promise<CookieRow[]> {
     if (file && !existsSync(file)) {
       throw new Error(`File ${file} does not exist`);

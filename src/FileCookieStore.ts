@@ -15,7 +15,7 @@ export class FileCookieStore extends Store {
 
   constructor(
     filePath: string,
-    internalStore: Store = new MemoryCookieStore()
+    internalStore: Store = new MemoryCookieStore(),
   ) {
     super();
 
@@ -25,7 +25,10 @@ export class FileCookieStore extends Store {
     logger.debug("Importing cookies from", filePath, internalStore);
 
     this.tasks.push(
-      this.importSaved(filePath, internalStore).then(console.log, console.error)
+      this.importSaved(filePath, internalStore).then(
+        console.log,
+        console.error,
+      ),
     );
   }
 
@@ -47,7 +50,7 @@ export class FileCookieStore extends Store {
           if (fromJSON) {
             return this.putCookieInternal(fromJSON, store);
           }
-        })
+        }),
       );
       cookies.push(...put);
     }
@@ -58,7 +61,7 @@ export class FileCookieStore extends Store {
     domain: string,
     path: string,
     key: string,
-    cb: (err: Error | null, cookie: Cookie | null) => void
+    cb: (err: Error | null, cookie: Cookie | null) => void,
   ) {
     this.waitUntilIdle().finally(() => {
       this.internalStore.findCookie(domain, path, key, cb);
@@ -69,7 +72,7 @@ export class FileCookieStore extends Store {
     domain: string,
     path: string,
     allowSpecialUseDomain: boolean,
-    cb: (err: Error | null, cookie: Cookie[]) => void
+    cb: (err: Error | null, cookie: Cookie[]) => void,
   ) {
     this.waitUntilIdle().finally(() => {
       this.internalStore.findCookies(domain, path, allowSpecialUseDomain, cb);
@@ -86,7 +89,7 @@ export class FileCookieStore extends Store {
   updateCookie(
     oldCookie: Cookie,
     newCookie: Cookie,
-    cb: (err: Error | null) => void
+    cb: (err: Error | null) => void,
   ) {
     this.internalStore.updateCookie(oldCookie, newCookie, cb);
     this.internalStore.getAllCookies((err, cookies) => {
@@ -98,7 +101,7 @@ export class FileCookieStore extends Store {
     domain: string,
     path: string,
     key: string,
-    cb: (err: Error | null) => void
+    cb: (err: Error | null) => void,
   ) {
     this.internalStore.removeCookie(domain, path, key, cb);
     this.internalStore.getAllCookies((err, cookies) => {
@@ -125,13 +128,13 @@ export class FileCookieStore extends Store {
 
   private async putCookieInternal(
     cookie: Cookie,
-    store: Store
+    store: Store,
   ): Promise<Cookie> {
     await this.waitUntilIdle();
     return await new Promise<Cookie>(
       (
         resolve: (value: PromiseLike<Cookie> | Cookie) => void,
-        reject: (reason?: any) => void
+        reject: (reason?: any) => void,
       ) => {
         store.putCookie(cookie, (err: Error | null) => {
           if (err) {
@@ -140,7 +143,7 @@ export class FileCookieStore extends Store {
             resolve(cookie);
           }
         });
-      }
+      },
     );
   }
 

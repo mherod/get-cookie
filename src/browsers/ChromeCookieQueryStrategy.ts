@@ -37,7 +37,7 @@ export default class ChromeCookieQueryStrategy implements CookieQueryStrategy {
 async function getPromise1(
   name: string,
   domain: string,
-  file: string
+  file: string,
 ): Promise<CookieRow[]> {
   try {
     return await getEncryptedChromeCookie({
@@ -60,7 +60,7 @@ async function getPromise(name: string, domain: string): Promise<CookieRow[]> {
       name: "Cookies",
     });
     const promises: Promise<CookieRow[]>[] = files.map((file) =>
-      getPromise1(name, domain, file)
+      getPromise1(name, domain, file),
     );
     const results1: CookieRow[][] = await Promise.all(promises);
     return results1.flat().filter(isCookieRow);
@@ -124,7 +124,7 @@ Promise<ExportedCookie[]> {
       return exportedCookie;
     });
   const results: ExportedCookie[] = (await Promise.all(decrypted)).filter(
-    isExportedCookie
+    isExportedCookie,
   );
   if (parsedArgs.verbose) {
     console.log("results", results);
@@ -148,7 +148,7 @@ async function getEncryptedChromeCookie({
   if (parsedArgs.verbose) {
     const s = file.split("/").slice(-3).join("/");
     consola.start(
-      `Trying Chrome (at ${s}) cookie ${name} for domain ${domain}`
+      `Trying Chrome (at ${s}) cookie ${name} for domain ${domain}`,
     );
   }
   let sql;

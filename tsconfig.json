@@ -1,9 +1,16 @@
 {
-  "include": ["src/**.ts", "src/**.tsx", "src/**.js", "src/**.jsx"],
+  "include": [
+    "src/**.ts",
+    "src/**.tsx",
+    "src/**.js",
+    "src/**.jsx",
+    "src/**.test.ts",
+    "src/**.test.js"
+  ],
   "compilerOptions": {
     "moduleResolution": "node",
     "target": "es6",
-    "types": ["node"],
+    "types": ["node", "jest"],
     "lib": ["es2015", "es2017", "es2021", "dom"],
     "strict": true,
     "skipDefaultLibCheck": true,

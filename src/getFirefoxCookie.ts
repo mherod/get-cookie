@@ -4,11 +4,11 @@ import { queryCookies } from "./queryCookies";
 import FirefoxCookieQueryStrategy from "./browsers/FirefoxCookieQueryStrategy";
 
 export async function getFirefoxCookie(
-  params: CookieSpec
+  params: CookieSpec,
 ): Promise<ExportedCookie | undefined> {
   const cookies: ExportedCookie[] = await queryCookies(
     params,
-    new FirefoxCookieQueryStrategy()
+    new FirefoxCookieQueryStrategy(),
     //
   );
   if (Array.isArray(cookies) && cookies.length > 0) {

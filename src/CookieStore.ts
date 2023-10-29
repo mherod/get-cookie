@@ -12,7 +12,7 @@ async function getCookieStore(): Promise<Store> {
   }
   const fileCookieStore = new FileCookieStore(
     `${env["HOME"]}/cookie-star.json`,
-    memoryCookieStore
+    memoryCookieStore,
   );
   await fileCookieStore.waitUntilIdle();
   return fileCookieStore;

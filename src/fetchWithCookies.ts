@@ -4,10 +4,7 @@ import { fetch as fetchImpl } from "cross-fetch";
 import { merge } from "lodash";
 // noinspection SpellCheckingInspection
 import destr from "destr";
-import { cookieJarPromise } from "./CookieStore";
-import UserAgent from "user-agents";
 import { parsedArgs } from "./argv";
-import { blue, redBright, yellow } from "colorette";
 import { getMergedRenderedCookies } from "./getMergedRenderedCookies";
 import { cookieSpecsFromUrl } from "./cookieSpecsFromUrl";
 import CookieSpec from "./CookieSpec";
@@ -18,7 +15,8 @@ if (typeof fetchImpl !== "function") {
   throw new Error("fetch is not a function");
 }
 
-const userAgent = new UserAgent().toString();
+const userAgent =
+  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36";
 
 interface FetchRequestInit {
   url: RequestInfo | URL | string;
@@ -29,7 +27,7 @@ export async function fetchWithCookies(
   url: RequestInfo | URL | string,
   options: RequestInit | undefined = {},
   fetch: Function = fetchImpl as Function,
-  originalRequest: FetchRequestInit | undefined = undefined
+  originalRequest: FetchRequestInit | undefined = undefined,
 ): Promise<Response> {
   if (typeof fetch !== "function") {
     const message = "fetch is not a function";
@@ -52,11 +50,11 @@ export async function fetchWithCookies(
     (err) => {
       consola.error(err);
       return "";
-    }
+    },
   );
   if (parsedArgs["dump-request-headers"]) {
-    consola.info(redBright("Request URL:"), url1.href);
-    consola.info(blue("Request headers:"), headers);
+    consola.info("Request URL:", url1.href);
+    consola.info("Request headers:", headers);
   }
   const newOptions1: RequestInit = merge(defaultOptions, { headers }, options);
   try {
@@ -82,14 +80,14 @@ export async function fetchWithCookies(
       // follow the redirect
       if (newUrl && newUrl !== url2) {
         if (parsedArgs.verbose || parsedArgs["dump-response-headers"]) {
-          console.log(blue(`Redirected to `), yellow(newUrl));
+          console.log(`Redirected to `, newUrl);
         }
         return fetchWithCookies(
           //
           newUrl,
           newOptions1,
           fetch,
-          originalRequest1
+          originalRequest1,
           //
         );
       }
@@ -114,14 +112,14 @@ export async function fetchWithCookies(
           break;
       }
       if (parsedArgs.verbose) {
-        console.log(blue(`Redirected to `), yellow(newUrl));
+        console.log(`Redirected to `, newUrl);
       }
       return fetchWithCookies(
         //
         newUrl,
         newOptions2,
         fetch,
-        originalRequest1
+        originalRequest1,
         //
       );
     }
@@ -146,7 +144,7 @@ export async function fetchWithCookies(
 
     async function formData(): Promise<FormData> {
       const urlSearchParams: URLSearchParams = await text().then(
-        (text) => new URLSearchParams(text)
+        (text) => new URLSearchParams(text),
       );
       const formData = new FormData();
       for (const [key, value] of urlSearchParams.entries()) {

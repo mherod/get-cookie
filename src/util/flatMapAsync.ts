@@ -4,7 +4,7 @@
 export async function flatMapAsync<T, O>(
   array: T[], // The input array to transform.
   callback: (value: T, index: number, array: T[]) => Promise<O[]>, // The async function to apply to each input array element.,
-  or?: O[] | ((error: any) => O[] | Promise<O[]>) // An optional callback to handle errors.
+  or?: O[] | ((error: any) => O[] | Promise<O[]>), // An optional callback to handle errors.
 ): Promise<O[]> {
   if (or) {
     return flatMapAsync(
@@ -15,7 +15,7 @@ export async function flatMapAsync<T, O>(
         } catch (error) {
           return typeof or == "function" ? or(error) : or;
         }
-      }
+      },
       //
     );
   }

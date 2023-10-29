@@ -2,23 +2,20 @@ import { MultiCookieSpec } from "./CookieSpec";
 import ExportedCookie from "./ExportedCookie";
 import { queryCookies } from "./queryCookies";
 import { uniqBy } from "lodash";
+import { flatMapAsync } from "./util/flatMapAsync";
 
 export async function comboQueryCookieSpec(
-  cookieSpec: MultiCookieSpec
+  cookieSpec: MultiCookieSpec,
 ): Promise<ExportedCookie[]> {
-  const cookies: ExportedCookie[] = [];
   if (Array.isArray(cookieSpec)) {
-    const results: Awaited<ExportedCookie[]>[] = await Promise.all(
-      cookieSpec.map((cs) => {
-        return queryCookies(cs);
-      })
-    );
-    for (const exportedCookie of results.flat()) {
-      cookies.push(exportedCookie);
-    }
+    const cookiesForMultiSpec: ExportedCookie[] = //
+      await flatMapAsync(cookieSpec, async (cs) => {
+        return await queryCookies(cs);
+      });
+    return uniqBy(cookiesForMultiSpec, JSON.stringify);
   } else {
-    const singleQuery: ExportedCookie[] = await queryCookies(cookieSpec);
-    cookies.push(...singleQuery);
+    const cookiesForSingleSpec: ExportedCookie[] = //
+      await queryCookies(cookieSpec);
+    return uniqBy(cookiesForSingleSpec, JSON.stringify);
   }
-  return uniqBy(cookies, JSON.stringify);
 }

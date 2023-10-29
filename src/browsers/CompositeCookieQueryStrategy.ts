@@ -4,15 +4,16 @@ import SafariCookieQueryStrategy from "./SafariCookieQueryStrategy";
 import CookieQueryStrategy from "./CookieQueryStrategy";
 import ExportedCookie from "../ExportedCookie";
 import LRUCache from "lru-cache";
-import { red } from "colorette";
 import { merge } from "lodash";
 import { parsedArgs } from "../argv";
+import consola from "consola";
+import { flatMapAsync } from "../util/flatMapAsync";
 
 const cache: LRUCache<string, ExportedCookie[]> = new LRUCache<
   string,
   ExportedCookie[]
 >({
-  ttl: 1000 * 10,
+  ttl: 1000 * 10, // 10 seconds
   max: 10,
 });
 
@@ -21,10 +22,10 @@ export default class CompositeCookieQueryStrategy
 {
   browserName = "all";
 
-  #strategies;
+  private readonly strategies;
 
   constructor() {
-    this.#strategies = [
+    this.strategies = [
       // CookieStoreQueryStrategy,
       ChromeCookieQueryStrategy,
       FirefoxCookieQueryStrategy,
@@ -37,38 +38,33 @@ export default class CompositeCookieQueryStrategy
   async queryCookies(name: string, domain: string): Promise<ExportedCookie[]> {
     // domain = domain.match(/(\w+.+\w+)/gi)?.pop() ?? domain;
     const key = `${name}:${domain}`;
-    const cached = cache.get(key);
-    if (cached) {
-      return cached;
+    if (cache.has(key)) {
+      const cached = cache.get(key);
+      if (cached) {
+        return cached;
+      }
     }
     if (parsedArgs.verbose) {
-      console.log("Querying cookies:", name, domain);
+      consola.log("Querying cookies:", name, domain);
     }
-    const results: ExportedCookie[][] = await Promise.all(
-      this.#strategies.map(async (strategy: CookieQueryStrategy) => {
-        // @ts-ignore
-        return strategy
-          .queryCookies(name, domain)
-          .then((cookies: ExportedCookie[]) => {
-            return cookies.map((cookie: ExportedCookie) => {
-              return merge(cookie, {
-                meta: {
-                  browser: strategy.browserName,
-                },
-              });
+    const results = await flatMapAsync(this.strategies, async (strategy) => {
+      return strategy
+        .queryCookies(name, domain)
+        .then((cookies: ExportedCookie[]) => {
+          return cookies.map((cookie: ExportedCookie) => {
+            return merge(cookie, {
+              meta: {
+                browser: strategy.browserName,
+              },
             });
-          })
-          .catch((e) => {
-            console.log(
-              red(`Error querying ${strategy.browserName} cookies`),
-              e
-            );
-            return [];
           });
-      })
-    );
-    const flat: ExportedCookie[] = results.flat();
-    cache.set(`${name}:${domain}`, flat);
-    return flat;
+        })
+        .catch((e) => {
+          consola.error(`Error querying ${strategy.browserName} cookies`, e);
+          return [];
+        });
+    });
+    cache.set(`${name}:${domain}`, results);
+    return results;
   }
 }

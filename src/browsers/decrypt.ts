@@ -5,7 +5,7 @@ import consola from "consola";
 // Function to decrypt encrypted data using a password
 export async function decrypt(
   password: BinaryLike, // The password to use for decryption
-  encryptedData: Buffer // The data to decrypt
+  encryptedData: Buffer, // The data to decrypt
 ): Promise<string> {
   // Returns a promise that resolves with the decrypted string
   // Check if password is a string
@@ -25,7 +25,7 @@ export async function decrypt(
       // Log if encryptedData is an array of buffers
       if (parsedArgs.verbose) {
         console.log(
-          `encryptedData is an array of buffers, selected first: ${encryptedData1}`
+          `encryptedData is an array of buffers, selected first: ${encryptedData1}`,
         );
       }
     } else {
@@ -56,7 +56,7 @@ export async function decrypt(
           if (parsedArgs.verbose) {
             console.log(
               "Error doing pbkdf2, buffer length is not 16",
-              buffer.length
+              buffer.length,
             );
           }
           reject(new Error("Buffer length is not 16"));
@@ -80,7 +80,7 @@ export async function decrypt(
           if (parsedArgs.verbose) {
             console.log(
               "Error doing pbkdf2, encryptedData length is not a multiple of 16",
-              encryptedData1.length
+              encryptedData1.length,
             );
           }
           reject(new Error("encryptedData length is not a multiple of 16"));

@@ -11,7 +11,7 @@ type FindFilesOptions = {
 
 export function findAllFiles(
   //
-  { path, name, maxDepth = 2 }: FindFilesOptions
+  { path, name, maxDepth = 2 }: FindFilesOptions,
 ): //
 string[] {
   if (!existsSync(path)) {

@@ -6,5 +6,5 @@ export const chromeApplicationSupport: string = join(
   "Library",
   "Application Support",
   "Google",
-  "Chrome"
+  "Chrome",
 );

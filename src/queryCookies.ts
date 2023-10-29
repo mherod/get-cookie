@@ -10,9 +10,12 @@ export async function queryCookies(
   {
     name,
     domain,
+    limit,
   }: //
-  CookieSpec,
-  strategy: CookieQueryStrategy = new CompositeCookieQueryStrategy()
+  CookieSpec & {
+    limit?: number;
+  },
+  strategy: CookieQueryStrategy = new CompositeCookieQueryStrategy(),
 ): Promise<ExportedCookie[]> {
   //
   const results: ExportedCookie[] = await strategy.queryCookies(name, domain);

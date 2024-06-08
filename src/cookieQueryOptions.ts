@@ -11,10 +11,17 @@ export type CookieQueryOptions<T extends CookieQueryStrategy> = {
 export const defaultCookieQueryOptions: CookieQueryOptions<CookieQueryStrategy> =
   {
     strategy: new CompositeCookieQueryStrategy(),
+    limit: undefined,
+    removeExpired: undefined,
   };
 
 export function mergedWithDefaults<T extends CookieQueryStrategy>(
   options?: CookieQueryOptions<T>,
 ): CookieQueryOptions<T> {
-  return merge(defaultCookieQueryOptions, options);
+  const mergedOptions: CookieQueryOptions<T> = merge(
+    {},
+    defaultCookieQueryOptions,
+    options,
+  );
+  return mergedOptions;
 }

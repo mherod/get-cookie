@@ -11,11 +11,16 @@ export async function getFirefoxCookie(
     {
       strategy: new FirefoxCookieQueryStrategy(),
     },
-    //
   );
-  if (Array.isArray(cookies) && cookies.length > 0) {
-    return cookies.find((cookie) => cookie != null);
-  } else {
+
+  if (!Array.isArray(cookies) || cookies.length === 0) {
     throw new Error("Cookie not found");
   }
+
+  const validCookie: ExportedCookie | undefined = cookies.find((cookie) => cookie != null);
+  if (!validCookie) {
+    throw new Error("Cookie not found");
+  }
+
+  return validCookie;
 }

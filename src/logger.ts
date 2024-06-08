@@ -8,6 +8,5 @@ const consola = createConsola({
     date: false,
   },
 });
-consola.wrapConsole();
 
 export default consola;

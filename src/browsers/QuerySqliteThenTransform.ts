@@ -1,9 +1,7 @@
 import CookieRow from "../CookieRow";
 import fs from "fs";
-import { Database } from "sqlite3";
 import { merge } from "lodash";
-import { parsedArgs } from "../argv";
-import consola from "../logger";
+import { Database } from "bun:sqlite";
 
 interface FnOptions {
   file: string;
@@ -12,74 +10,37 @@ interface FnOptions {
   rowTransform: (row: any) => CookieRow;
 }
 
-function checkFileExistence(file: string) {
-  if (!file || !fs.existsSync(file)) {
+async function checkFileExistence(file: string): Promise<void> {
+  if (!file || !fs.existsSync(file))
     throw new Error(`File ${file} does not exist`);
-  }
 }
 
-function createDatabase(file: string): Database {
-  return new Database(file);
-}
-
-function transformRows(
-  //
+async function transformRows(
   rows: any[],
   rowFilter: (row: any) => boolean,
   rowTransform: (row: any) => CookieRow,
   file: string,
-  //
-): CookieRow[] {
-  return rows.filter(rowFilter).map((row: any) => {
-    const metaData = {
-      meta: {
-        file: file,
-      },
-    };
-
-    const cookieRow: CookieRow = rowTransform(row);
-
-    return merge(metaData, cookieRow);
-  });
+): Promise<CookieRow[]> {
+  const filteredRows = rows.filter(rowFilter);
+  const transformedRows = filteredRows.map((row) => merge({ meta: { file } }, rowTransform(row)));
+  return transformedRows;
 }
 
-export async function querySqliteThenTransform(
-  //
-  {
-    //
-    file,
-    sql,
-    rowFilter = () => true,
-    rowTransform,
-  }: FnOptions,
-): //
-Promise<CookieRow[]> {
-  checkFileExistence(file);
+export async function querySqliteThenTransform({
+  file,
+  sql,
+  rowFilter = () => true,
+  rowTransform,
+}: FnOptions): Promise<CookieRow[]> {
+  await checkFileExistence(file);
+  const db = new Database(file);
 
-  const db: Database = createDatabase(file);
+  try {
+    const rows: any[] = db.query(sql).all();
+    if (!rows || rows.length === 0) return [];
 
-  return new Promise((resolve, reject) => {
-    db.all(sql, (err: Error, rows: any[]) => {
-      if (err) {
-        return reject(err);
-      }
-
-      if (!rows || rows.length === 0) {
-        return resolve([]);
-      }
-
-      const cookieRows: CookieRow[] = transformRows(
-        rows,
-        rowFilter,
-        rowTransform,
-        file,
-      );
-
-      if (parsedArgs.verbose) {
-        consola.log(`Rows: ${JSON.stringify(rows)}`);
-      }
-
-      return resolve(cookieRows);
-    });
-  });
+    return await transformRows(rows, rowFilter, rowTransform, file);
+  } catch (err: any) {
+    throw err;
+  }
 }

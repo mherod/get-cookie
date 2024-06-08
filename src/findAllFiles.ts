@@ -9,6 +9,16 @@ type FindFilesOptions = {
   maxDepth?: number;
 };
 
+/**
+ * Finds all files matching the specified name within a given path and depth.
+ *
+ * @param {FindFilesOptions} options - The options for finding files.
+ * @param {string} options.path - The path to search within.
+ * @param {string} options.name - The name of the files to search for.
+ * @param {number} [options.maxDepth=2] - The maximum depth to search within.
+ * @returns {string[]} An array of file paths that match the search criteria.
+ * @throws Will throw an error if the specified path does not exist.
+ */
 export function findAllFiles({
   path,
   name,

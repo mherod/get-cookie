@@ -16,116 +16,120 @@ import logger from "../../logger";
 export const consola = logger.withTag("ChromeCookieQueryStrategy");
 
 export default class ChromeCookieQueryStrategy implements CookieQueryStrategy {
-  browserName = "Chrome";
+  browserName: string = "Chrome";
 
   async queryCookies(name: string, domain: string): Promise<ExportedCookie[]> {
-    if (process.platform !== "darwin") {
-      throw new Error("This only works on macOS");
-    }
+    this.ensurePlatformIsMacOS();
     if (env.FIREFOX_ONLY) {
       return [];
     }
-    return getChromeCookies({
+    return this.getChromeCookies({
       requireJwt: false,
       name,
       domain,
     });
   }
-}
 
-async function getPromise1(
-  name: string,
-  domain: string,
-  file: string,
-): Promise<CookieRow[]> {
-  try {
-    return await getEncryptedChromeCookie({
-      name: name,
-      domain: domain,
-      file: file,
-    });
-  } catch (e) {
-    if (parsedArgs.verbose) {
-      console.log("Error getting encrypted cookie", e);
+  private ensurePlatformIsMacOS(): void {
+    if (process.platform !== "darwin") {
+      throw new Error("This only works on macOS");
     }
-    return [];
   }
-}
 
-async function getPromise(name: string, domain: string): Promise<CookieRow[]> {
-  try {
-    const files: string[] = findAllFiles({
-      path: chromeApplicationSupport,
-      name: "Cookies",
-    });
-    const results1: CookieRow[] = await flatMapAsync(files, async (file) => {
-      return await getPromise1(name, domain, file);
-    });
-    return results1.filter(isCookieRow);
-  } catch (error) {
-    if (parsedArgs.verbose) {
-      console.log("error", error);
+  private async getChromeCookies({
+    name,
+    domain = "%",
+    requireJwt = false,
+  }: {
+    name: string;
+    domain: string;
+    requireJwt: boolean | undefined;
+  }): Promise<ExportedCookie[]> {
+    const encryptedDataItems: CookieRow[] = await this.getEncryptedCookies(name, domain);
+
+    const password: string = await getChromePassword();
+    const decryptedCookies: ExportedCookie[] = await this.decryptCookies(encryptedDataItems, password);
+
+    return decryptedCookies;
+  }
+
+  private async getEncryptedCookies(name: string, domain: string): Promise<CookieRow[]> {
+    try {
+      const files: string[] = findAllFiles({
+        path: chromeApplicationSupport,
+        name: "Cookies",
+      });
+
+      const results: CookieRow[] = await flatMapAsync(files, async (file) => {
+        return await this.getCookiesFromFile(name, domain, file);
+      });
+
+      return results.filter(isCookieRow);
+    } catch (error) {
+      consola.warn("Error finding encrypted cookies", error);
+      return [];
     }
-    return [];
   }
-}
 
-async function decryptValue(password: string, encryptedValue: Buffer) {
-  let d: string | null;
-  try {
-    d = await decrypt(password, encryptedValue);
-  } catch (e) {
-    if (parsedArgs.verbose) {
-      console.log("Error decrypting cookie", e);
+  private async getCookiesFromFile(
+    name: string,
+    domain: string,
+    file: string,
+  ): Promise<CookieRow[]> {
+    try {
+      return await getEncryptedChromeCookie({
+        name: name,
+        domain: domain,
+        file: file,
+      });
+    } catch (e) {
+      consola.warn("Error getting encrypted cookie from file", e);
+      return [];
     }
-    d = null;
   }
-  return d ?? encryptedValue.toString("utf-8");
-}
 
-async function getChromeCookies({
-  name,
-  domain = "%",
-  requireJwt = false,
-}: {
-  name: string;
-  domain: string;
-  requireJwt: boolean | undefined;
-  //
-}): //
-Promise<ExportedCookie[]> {
-  const encryptedDataItems: CookieRow[] = await getPromise(name, domain);
-  const password: string = await getChromePassword();
-  const decrypted: Promise<ExportedCookie | null>[] = encryptedDataItems
-    .filter(({ value }) => value != null && value.length > 0)
-    .map(async (cookieRow: CookieRow) => {
-      const encryptedValue: Buffer = cookieRow.value;
-      const decryptedValue = await decryptValue(password, encryptedValue);
-      const meta = {};
-      merge(meta, cookieRow.meta ?? {});
-      const exportedCookie: ExportedCookie = {
-        domain: cookieRow.domain,
-        name: cookieRow.name,
-        value: decryptedValue,
-        meta: meta,
-      };
-      const expiry = cookieRow.expiry;
-      const mergeExpiry =
-        expiry != null && expiry > 0
-          ? {
-              expiry: new Date(expiry),
-            }
-          : {
-              expiry: "Infinity",
-            };
-      merge(exportedCookie, mergeExpiry);
-      return exportedCookie;
-    });
-  const results: ExportedCookie[] = (await Promise.all(decrypted)).filter(
-    isExportedCookie,
-  );
-  if (parsedArgs.verbose) {
-    console.log("results", results);
+  private async decryptCookies(encryptedDataItems: CookieRow[], password: string): Promise<ExportedCookie[]> {
+    const decrypted: Promise<ExportedCookie | null>[] = encryptedDataItems
+      .filter(({ value }) => value != null && value.length > 0)
+      .map(async (cookieRow: CookieRow) => {
+        const encryptedValue: Uint8Array | Buffer = cookieRow.value;
+        const decryptedValue = await this.decryptValue(password, encryptedValue);
+        return this.createExportedCookie(cookieRow, decryptedValue);
+      });
+    return (await Promise.all(decrypted)).filter(isExportedCookie);
   }
-  return results;
+
+  private async decryptValue(password: string, encryptedValue: Uint8Array | Buffer): Promise<string> {
+    let decrypted: string | null;
+    try {
+      const bufferValue = Buffer.isBuffer(encryptedValue) ? encryptedValue : Buffer.from(encryptedValue);
+      decrypted = await decrypt(password, bufferValue);
+    } catch (e) {
+      consola.warn("Error decrypting cookie", e);
+      decrypted = null;
+    }
+    return decrypted ?? encryptedValue.toString("utf-8");
+  }
+
+  private createExportedCookie(cookieRow: CookieRow, decryptedValue: string): ExportedCookie {
+    const meta = {};
+    merge(meta, cookieRow.meta ?? {});
+    const exportedCookie: ExportedCookie = {
+      domain: cookieRow.domain,
+      name: cookieRow.name,
+      value: decryptedValue,
+      meta: meta,
+    };
+    const expiry = cookieRow.expiry;
+    const mergeExpiry =
+      expiry != null && expiry > 0
+        ? {
+            expiry: new Date(expiry),
+          }
+        : {
+            expiry: "Infinity",
+          };
+    merge(exportedCookie, mergeExpiry);
+    return exportedCookie;
+  }
 }

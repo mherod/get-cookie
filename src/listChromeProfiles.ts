@@ -6,23 +6,32 @@ import { flatMapAsync } from "./util/flatMapAsync";
 import destr from "destr";
 
 export async function listChromeProfilePaths(): Promise<string[]> {
-  return sync(`./**/Cookies`, {
+  const files: string[] = sync(`./**/Cookies`, {
     cwd: chromeApplicationSupport,
     absolute: true,
     onlyFiles: true,
     deep: 2,
-  }).map((f) => {
-    // parent dir
-    return dirname(f);
   });
+
+  const directories: string[] = [];
+  for (const file of files) {
+    directories.push(dirname(file));
+  }
+
+  return directories;
 }
 
 export async function listChromeProfiles(): Promise<ChromeProfile[]> {
-  const paths = await listChromeProfilePaths();
-  return await flatMapAsync(paths, async (p) => {
-    const content = await readFile(`${p}/Preferences`, "utf-8");
-    return await destr(content);
-  });
+  const paths: string[] = await listChromeProfilePaths();
+  const profiles: ChromeProfile[] = [];
+
+  for (const path of paths) {
+    const content: string = await readFile(`${path}/Preferences`, "utf-8");
+    const profile: ChromeProfile = await destr(content);
+    profiles.push(profile);
+  }
+
+  return profiles;
 }
 
 export type ChromeProfileAccountInfo = {

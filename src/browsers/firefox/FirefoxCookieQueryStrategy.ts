@@ -11,7 +11,7 @@ import { parsedArgs } from "../../argv";
 import { querySqliteThenTransform } from "../QuerySqliteThenTransform";
 
 export default class FirefoxCookieQueryStrategy implements CookieQueryStrategy {
-  browserName = "Firefox";
+  browserName: string = "Firefox";
 
   async queryCookies(name: string, domain: string): Promise<ExportedCookie[]> {
     if (process.platform !== "darwin") {
@@ -21,13 +21,13 @@ export default class FirefoxCookieQueryStrategy implements CookieQueryStrategy {
     if (parsedArgs.browser !== "firefox") {
       return [];
     }
-    const cookies = await this.#getFirefoxCookie({ name, domain });
+    const cookies: CookieRow[] = await this.getFirefoxCookie({ name, domain });
     if (Array.isArray(cookies)) {
       return cookies.map((cookie: CookieRow) => {
         return {
           domain: cookie.domain,
           name: cookie.name,
-          value: cookie.value.toString("utf8"),
+          value: Buffer.isBuffer(cookie.value) ? cookie.value.toString("utf8") : Buffer.from(cookie.value).toString("utf8"),
         };
       });
     } else {
@@ -35,9 +35,12 @@ export default class FirefoxCookieQueryStrategy implements CookieQueryStrategy {
     }
   }
 
-  async #getFirefoxCookie(
+  private async getFirefoxCookie(
     { name, domain }: CookieSpec, //
-  ) {
+  ): Promise<CookieRow[]> {
+    if (!HOME) {
+      throw new Error("HOME environment variable is not set");
+    }
     const files: string[] = findAllFiles({
       path: path.join(
         HOME,
@@ -48,23 +51,24 @@ export default class FirefoxCookieQueryStrategy implements CookieQueryStrategy {
       ),
       name: "cookies.sqlite",
     });
-    const fn: (file: string) => Promise<CookieRow[]> = async (file: string) => {
-      return await this.#queryCookiesDb(file, name, domain);
-    };
-    const all: CookieRow[][] = await Promise.all(files.map(fn));
+    const all: CookieRow[][] = await Promise.all(
+      files.map(async (file: string) => {
+        return await this.queryCookiesDb(file, name, domain);
+      }),
+    );
     // flatten
     return all.flat();
   }
 
-  async #queryCookiesDb(
+  private async queryCookiesDb(
     file: string,
     name: string,
     domain: string,
   ): Promise<CookieRow[]> {
-    if (file && !existsSync(file)) {
+    if (!existsSync(file)) {
       throw new Error(`File ${file} does not exist`);
     }
-    let sql;
+    let sql: string;
     //language=SQL
     sql = "SELECT value, name, host FROM moz_cookies";
     const { specifiedName, specifiedDomain } = specialCases({ name, domain });
@@ -80,7 +84,7 @@ export default class FirefoxCookieQueryStrategy implements CookieQueryStrategy {
         sql += `host LIKE '${domain}';`;
       }
     }
-    const rowTransform = (row: any) => {
+    const rowTransform = (row: any): CookieRow => {
       // row is object key by column name
       const value = row.value as string;
       return {

@@ -13,15 +13,52 @@ export function cookieSpecsFromUrl(url: URL | string): CookieSpec[] {
     return [];
   }
 
-  const urlObj = typeof url === "string" ? new URL(url) : url;
-  const hostnameParts = urlObj.hostname.split(".");
-  const topLevelDomain = hostnameParts.slice(-2).join(".");
+  const urlObj: URL = parseUrl(url);
+  const hostnameParts: string[] = splitHostname(urlObj.hostname);
+  const topLevelDomain: string = getTopLevelDomain(hostnameParts);
 
-  const cookieSpecs: CookieSpec[] = [
+  const cookieSpecs: CookieSpec[] = createCookieSpecs(urlObj.hostname, topLevelDomain);
+
+  return uniqBy(cookieSpecs, (spec: CookieSpec) => `${spec.name}:${spec.domain}`);
+}
+
+/**
+ * Parses the input URL string or URL object and returns a URL object.
+ * @param url - The URL to parse.
+ * @returns A URL object.
+ */
+function parseUrl(url: URL | string): URL {
+  return typeof url === "string" ? new URL(url) : url;
+}
+
+/**
+ * Splits the hostname into its constituent parts.
+ * @param hostname - The hostname to split.
+ * @returns An array of strings representing the parts of the hostname.
+ */
+function splitHostname(hostname: string): string[] {
+  return hostname.split(".");
+}
+
+/**
+ * Extracts the top-level domain from the hostname parts.
+ * @param hostnameParts - The parts of the hostname.
+ * @returns A string representing the top-level domain.
+ */
+function getTopLevelDomain(hostnameParts: string[]): string {
+  return hostnameParts.slice(-2).join(".");
+}
+
+/**
+ * Creates cookie specifications based on the hostname and top-level domain.
+ * @param hostname - The full hostname.
+ * @param topLevelDomain - The top-level domain.
+ * @returns An array of CookieSpec objects.
+ */
+function createCookieSpecs(hostname: string, topLevelDomain: string): CookieSpec[] {
+  return [
     { name: "%", domain: `%.${topLevelDomain}` },
-    { name: "%", domain: urlObj.hostname },
+    { name: "%", domain: hostname },
     { name: "%", domain: topLevelDomain },
   ];
-
-  return uniqBy(cookieSpecs, JSON.stringify);
 }

@@ -1,24 +1,42 @@
-// Define the CookieSpec interface with domain and name properties
+/**
+ * Define the CookieSpec interface with domain and name properties
+ */
 export default interface CookieSpec {
   domain: string;
   name: string;
 }
 
-// Function to check if an object is of type CookieSpec
-export function isCookieSpec(obj: any): obj is CookieSpec {
-  return (
-    // Check if domain and name properties are of type string
-    typeof obj.domain === "string" && typeof obj.name === "string"
-  );
+/**
+ * Function to check if an object is of type CookieSpec
+ * @param obj - The object to check
+ * @returns True if the object is of type CookieSpec, otherwise false
+ */
+export function isCookieSpec(obj: unknown): obj is CookieSpec {
+  const cookie = obj as CookieSpec;
+  return typeof cookie.domain === "string" && typeof cookie.name === "string";
 }
 
-// Define a type that can be either a single CookieSpec or an array of CookieSpecs
+/**
+ * Define a type that can be either a single CookieSpec or an array of CookieSpecs
+ */
 export type MultiCookieSpec = CookieSpec | CookieSpec[];
 
-// Function to check if an object is of type MultiCookieSpec
-export function isMultiCookieSpec(obj: any): obj is MultiCookieSpec {
-  return (
-    // Check if the object is a CookieSpec or an array of CookieSpecs
-    isCookieSpec(obj) || (Array.isArray(obj) && obj.every(isCookieSpec))
-  );
+/**
+ * Function to check if an object is of type MultiCookieSpec
+ * @param obj - The object to check
+ * @returns True if the object is of type MultiCookieSpec, otherwise false
+ */
+export function isMultiCookieSpec(obj: unknown): obj is MultiCookieSpec {
+  if (isCookieSpec(obj)) {
+    return true;
+  }
+  if (Array.isArray(obj)) {
+    for (let i = 0; i < obj.length; i++) {
+      if (!isCookieSpec(obj[i])) {
+        return false;
+      }
+    }
+    return true;
+  }
+  return false;
 }

@@ -10,20 +10,15 @@ export async function comboQueryCookieSpec(
   cookieSpec: MultiCookieSpec,
   options?: CookieQueryOptions<CookieQueryStrategy>,
 ): Promise<ExportedCookie[]> {
-  const optsWithDefaults: CookieQueryOptions<CookieQueryStrategy> =
-    mergedWithDefaults(options);
-  const fn = (cs: CookieSpec) => queryCookies(cs, optsWithDefaults);
+  const optsWithDefaults: CookieQueryOptions<CookieQueryStrategy> = mergedWithDefaults(options);
+  const queryFn = async (cs: CookieSpec): Promise<ExportedCookie[]> => queryCookies(cs, optsWithDefaults);
 
+  let cookies: ExportedCookie[];
   if (Array.isArray(cookieSpec)) {
-    const cookiesForMultiSpec: ExportedCookie[] = await flatMapAsync(
-      cookieSpec,
-      async (cs: CookieSpec) => {
-        return await fn(cs);
-      },
-    );
-    return processBeforeReturn(cookiesForMultiSpec, options);
+    cookies = await flatMapAsync(cookieSpec, queryFn);
   } else {
-    const cookiesForSingleSpec: ExportedCookie[] = await fn(cookieSpec);
-    return processBeforeReturn(cookiesForSingleSpec, options);
+    cookies = await queryFn(cookieSpec);
   }
+
+  return processBeforeReturn(cookies, options);
 }

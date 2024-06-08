@@ -1,11 +1,24 @@
 import { orderBy, uniqBy } from "lodash";
 import ExportedCookie from "./ExportedCookie";
 
-export function resultsRendered(results: ExportedCookie[]) {
-  // sort by name and expiry descending
-  // takes the latest expiry for each name
-  const orderedResults = orderBy(results, ["name", "expiry"], ["asc", "desc"]);
-  return uniqBy(orderedResults, (r: ExportedCookie) => r.name)
-    .map((r: ExportedCookie) => r.name + "=" + r.value)
-    .join("; ");
+function sortResults(results: ExportedCookie[]): ExportedCookie[] {
+  return orderBy(results, ["name", "expiry"], ["asc", "desc"]);
+}
+
+function getUniqueResults(results: ExportedCookie[]): ExportedCookie[] {
+  return uniqBy(results, "name");
+}
+
+function formatResults(results: ExportedCookie[]): string {
+  const resultStrings: string[] = [];
+  for (const result of results) {
+    resultStrings.push(`${result.name}=${result.value}`);
+  }
+  return resultStrings.join("; ");
+}
+
+export function resultsRendered(results: ExportedCookie[]): string {
+  const orderedResults: ExportedCookie[] = sortResults(results);
+  const uniqueResults: ExportedCookie[] = getUniqueResults(orderedResults);
+  return formatResults(uniqueResults);
 }

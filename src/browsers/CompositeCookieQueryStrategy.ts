@@ -5,9 +5,8 @@ import CookieQueryStrategy from "./CookieQueryStrategy";
 import ExportedCookie from "../ExportedCookie";
 import LRUCache from "lru-cache";
 import { merge } from "lodash";
-import { parsedArgs } from "../argv";
-import consola from "consola";
 import { flatMapAsync } from "../util/flatMapAsync";
+import consola from "../logger";
 
 const cache: LRUCache<string, ExportedCookie[]> = new LRUCache<
   string,
@@ -20,51 +19,51 @@ const cache: LRUCache<string, ExportedCookie[]> = new LRUCache<
 export default class CompositeCookieQueryStrategy
   implements CookieQueryStrategy
 {
-  browserName = "all";
+  browserName: string = "all";
 
-  private readonly strategies;
+  private readonly strategies: CookieQueryStrategy[];
 
   constructor() {
     this.strategies = [
-      // CookieStoreQueryStrategy,
       ChromeCookieQueryStrategy,
       FirefoxCookieQueryStrategy,
       SafariCookieQueryStrategy,
-    ].map((strategy) => {
-      return new strategy();
-    });
+    ].map((Strategy) => new Strategy());
   }
 
   async queryCookies(name: string, domain: string): Promise<ExportedCookie[]> {
-    // domain = domain.match(/(\w+.+\w+)/gi)?.pop() ?? domain;
-    const key = `${name}:${domain}`;
+    const key: string = `${name}:${domain}`;
+    consola.info(`Querying cookies for name: ${name}, domain: ${domain}`);
     if (cache.has(key)) {
-      const cached = cache.get(key);
+      const cached: ExportedCookie[] | undefined = cache.get(key);
       if (cached) {
+        consola.info(`Cache hit for key: ${key}, returning ${cached.length} cookies`);
         return cached;
       }
     }
-    if (parsedArgs.verbose) {
-      consola.log("Querying cookies:", name, domain);
-    }
-    const results = await flatMapAsync(this.strategies, async (strategy) => {
-      return strategy
-        .queryCookies(name, domain)
-        .then((cookies: ExportedCookie[]) => {
-          return cookies.map((cookie: ExportedCookie) => {
-            return merge(cookie, {
+    const results: ExportedCookie[] = await flatMapAsync(
+      this.strategies,
+      async (strategy) => {
+        try {
+          const cookies: ExportedCookie[] = await strategy.queryCookies(
+            name,
+            domain,
+          );
+          return cookies.map((cookie: ExportedCookie) =>
+            merge(cookie, {
               meta: {
                 browser: strategy.browserName,
               },
-            });
-          });
-        })
-        .catch((e) => {
-          consola.error(`Error querying ${strategy.browserName} cookies`, e);
+            }),
+          );
+        } catch (e) {
+          consola.error(`Error querying cookies for ${name} on ${domain} using ${strategy.browserName}`, e);
           return [];
-        });
-    });
-    cache.set(`${name}:${domain}`, results);
+        }
+      },
+    );
+    cache.set(key, results);
+    consola.info(`Query result size for key: ${key} is ${results.length} cookies`);
     return results;
   }
 }

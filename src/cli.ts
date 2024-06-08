@@ -1,4 +1,4 @@
-#!/usr/bin/env ts-node
+#!/usr/bin/env bun
 
 import { argv, parsedArgs } from "./argv";
 import { fetchWithCookies } from "./fetchWithCookies";
@@ -10,13 +10,17 @@ import { cliQueryCookies } from "./cliQueryCookies";
 
 async function main() {
   if (parsedArgs["help"] || parsedArgs["h"]) {
-    logger.log(`Usage: ${argv[1]} [name] [domain] [options] `);
+    logger.log(`Usage: ${argv[1]} [name] [domain] [options]`);
     logger.log(`Options:`);
-    logger.log(`  -h, --help: Show this help`);
-    logger.log(`  -v, --verbose: Show verbose output`);
+    logger.log(`  -h, --help: Show this help message`);
+    logger.log(`  -v, --verbose: Enable verbose output`);
     logger.log(`  -d, --dump: Dump all results`);
     logger.log(`  -D, --dump-grouped: Dump all results, grouped by profile`);
     logger.log(`  -r, --render: Render all results`);
+    logger.log(`  -F, --fetch <url>: Fetch data from the specified URL`);
+    logger.log(`  -H <header>: Specify headers for the fetch request`);
+    logger.log(`  --dump-response-headers: Dump response headers from fetch request`);
+    logger.log(`  --dump-response-body: Dump response body from fetch request`);
     return;
   }
 
@@ -26,7 +30,7 @@ async function main() {
   if (fetchUrl) {
     let url: URL;
     try {
-      url = new URL(<string>fetchUrl);
+      url = new URL(fetchUrl);
     } catch (e) {
       logger.error("Invalid URL", fetchUrl);
       return;
@@ -34,34 +38,25 @@ async function main() {
     logger.start("Fetching", url.href);
     const headerArgs: string[] | string = parsedArgs["H"];
     const headers = unpackHeaders(headerArgs);
-    const onfulfilled = (res: Response) => {
+    const onfulfilled = async (res: Response) => {
       if (parsedArgs["dump-response-headers"]) {
-        res.headers.forEach((value: string, key: string) => {
+        for (const [key, value] of Object.entries(res.headers)) {
           logger.log(`${key}: ${value}`);
-        });
+        }
       }
       if (parsedArgs["dump-response-body"]) {
-        res.text().then((r) => {
-          logger.log(r);
-        });
+        const responseBody = await res.text();
+        logger.log(responseBody);
       }
-      return;
     };
-    return fetchWithCookies(
-      url,
-      {
-        //
-        headers,
-      },
-      //
-    ).then(
-      (res) => {
-        logger.debug("Response", res);
-        onfulfilled(res);
-      },
-      logger.error,
-      //
-    );
+    try {
+      const res = await fetchWithCookies(url, { headers });
+      logger.debug("Response", res);
+      await onfulfilled(res);
+    } catch (error) {
+      logger.error(error);
+    }
+    return;
   }
 
   const cookieSpecs: CookieSpec[] = [];
@@ -81,7 +76,14 @@ async function main() {
     logger.log("cookieSpecs", cookieSpecs);
   }
 
-  await cliQueryCookies(cookieSpecs).catch(logger.error);
+  try {
+    await cliQueryCookies(cookieSpecs);
+  } catch (error) {
+    logger.error(error);
+  }
 }
 
-main().then((r) => r, logger.error);
+main().then(() => process.exit(0), (error) => {
+  logger.error(error);
+  process.exit(1);
+});

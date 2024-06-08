@@ -1,11 +1,26 @@
 import { execSimple } from "../../execSimple";
 
-// top level so it's only called once and cached
-const chromePassword: Promise<string> =
+interface PasswordRetriever {
+  retrievePassword(): Promise<string>;
+}
+
+class MacOSPasswordRetriever implements PasswordRetriever {
+  async retrievePassword(): Promise<string> {
+    return execSimple('security find-generic-password -w -s "Chrome Safe Storage"');
+  }
+}
+
+class UnsupportedPlatformPasswordRetriever implements PasswordRetriever {
+  async retrievePassword(): Promise<string> {
+    return Promise.reject(new Error("This only works on macOS"));
+  }
+}
+
+const passwordRetriever: PasswordRetriever =
   process.platform == "darwin"
-    ? execSimple('security find-generic-password -w -s "Chrome Safe Storage"')
-    : Promise.reject(new Error("This only works on macOS"));
+    ? new MacOSPasswordRetriever()
+    : new UnsupportedPlatformPasswordRetriever();
 
 export async function getChromePassword(): Promise<string> {
-  return await chromePassword;
+  return await passwordRetriever.retrievePassword();
 }

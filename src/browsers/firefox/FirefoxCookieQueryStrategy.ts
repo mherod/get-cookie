@@ -27,7 +27,9 @@ export default class FirefoxCookieQueryStrategy implements CookieQueryStrategy {
         return {
           domain: cookie.domain,
           name: cookie.name,
-          value: Buffer.isBuffer(cookie.value) ? cookie.value.toString("utf8") : Buffer.from(cookie.value).toString("utf8"),
+          value: Buffer.isBuffer(cookie.value)
+            ? cookie.value.toString("utf8")
+            : Buffer.from(cookie.value).toString("utf8"),
         };
       });
     } else {

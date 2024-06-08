@@ -10,8 +10,10 @@ export async function comboQueryCookieSpec(
   cookieSpec: MultiCookieSpec,
   options?: CookieQueryOptions<CookieQueryStrategy>,
 ): Promise<ExportedCookie[]> {
-  const optsWithDefaults: CookieQueryOptions<CookieQueryStrategy> = mergedWithDefaults(options);
-  const queryFn = async (cs: CookieSpec): Promise<ExportedCookie[]> => queryCookies(cs, optsWithDefaults);
+  const optsWithDefaults: CookieQueryOptions<CookieQueryStrategy> =
+    mergedWithDefaults(options);
+  const queryFn = async (cs: CookieSpec): Promise<ExportedCookie[]> =>
+    queryCookies(cs, optsWithDefaults);
 
   let cookies: ExportedCookie[];
   if (Array.isArray(cookieSpec)) {

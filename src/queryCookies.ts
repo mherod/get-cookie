@@ -20,7 +20,10 @@ export async function queryCookies(
   const results: ExportedCookie[] = await strategy.queryCookies(name, domain);
   const allCookies: ExportedCookie[] = uniqBy(results, JSON.stringify);
 
-  const filterCookies = (cookies: ExportedCookie[], filterFn: (value: string) => boolean): ExportedCookie[] => {
+  const filterCookies = (
+    cookies: ExportedCookie[],
+    filterFn: (value: string) => boolean,
+  ): ExportedCookie[] => {
     const filteredCookies: ExportedCookie[] = [];
     for (const cookie of cookies) {
       if (filterFn(cookie.value)) {

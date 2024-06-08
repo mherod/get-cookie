@@ -34,7 +34,7 @@ export function isCookieRow(obj: any): obj is CookieRow {
     return false;
   }
 
-  if (!(value instanceof Uint8Array) && !(Buffer.isBuffer(value))) {
+  if (!(value instanceof Uint8Array) && !Buffer.isBuffer(value)) {
     consola.warn("Value is not a Uint8Array or Buffer:", value);
     return false;
   }

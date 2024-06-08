@@ -19,7 +19,9 @@ async function main() {
     logger.log(`  -r, --render: Render all results`);
     logger.log(`  -F, --fetch <url>: Fetch data from the specified URL`);
     logger.log(`  -H <header>: Specify headers for the fetch request`);
-    logger.log(`  --dump-response-headers: Dump response headers from fetch request`);
+    logger.log(
+      `  --dump-response-headers: Dump response headers from fetch request`,
+    );
     logger.log(`  --dump-response-body: Dump response body from fetch request`);
     return;
   }
@@ -83,7 +85,10 @@ async function main() {
   }
 }
 
-main().then(() => process.exit(0), (error) => {
-  logger.error(error);
-  process.exit(1);
-});
+main().then(
+  () => process.exit(0),
+  (error) => {
+    logger.error(error);
+    process.exit(1);
+  },
+);

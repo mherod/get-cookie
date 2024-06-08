@@ -31,7 +31,7 @@ class UserAgentBuilder {
     platform: string = "Macintosh; Intel Mac OS X 10_15_7",
     engine: string = "AppleWebKit/537.36 (KHTML, like Gecko)",
     browser: string = "Chrome/118.0.0.0",
-    layout: string = "Safari/537.36"
+    layout: string = "Safari/537.36",
   ) {
     this.platform = platform;
     this.engine = engine;
@@ -87,7 +87,9 @@ class FetchWithCookies {
   private async getHeaders(url: URL): Promise<HeadersInit> {
     const headers: HeadersInit = { "User-Agent": this.userAgent };
     const cookieSpecs: CookieSpec[] = cookieSpecsFromUrl(url);
-    const renderedCookie: string = await getMergedRenderedCookies(cookieSpecs).catch(() => "");
+    const renderedCookie: string = await getMergedRenderedCookies(
+      cookieSpecs,
+    ).catch(() => "");
 
     if (renderedCookie) {
       headers["Cookie"] = renderedCookie;
@@ -108,16 +110,24 @@ class FetchWithCookies {
     res: Response,
     url: URL,
     options: RequestInit,
-    originalRequest: FetchRequestInit
+    originalRequest: FetchRequestInit,
   ): Promise<Response> {
     const newUrl: string = res.headers.get("location") ?? res.url;
 
-    if ([301, 302].includes(res.status) && newUrl && newUrl !== url.toString()) {
+    if (
+      [301, 302].includes(res.status) &&
+      newUrl &&
+      newUrl !== url.toString()
+    ) {
       return this.fetchWithCookies(newUrl, options, originalRequest);
     }
 
     if (res.status === 303 && newUrl && newUrl !== url.toString()) {
-      const newOptions: RequestInit = { ...options, method: "GET", body: undefined };
+      const newOptions: RequestInit = {
+        ...options,
+        method: "GET",
+        body: undefined,
+      };
       return this.fetchWithCookies(newUrl, newOptions, originalRequest);
     }
 
@@ -139,7 +149,9 @@ class FetchWithCookies {
     const text = async (): Promise<string> => originalText;
     const json = async (): Promise<any> => destr(originalText);
     const formData = async (): Promise<FormData> => {
-      const urlSearchParams: URLSearchParams = new URLSearchParams(originalText);
+      const urlSearchParams: URLSearchParams = new URLSearchParams(
+        originalText,
+      );
       const formData: FormData = new FormData();
       for (const [key, value] of urlSearchParams.entries()) {
         formData.append(key, value);
@@ -160,9 +172,12 @@ class FetchWithCookies {
   public async fetchWithCookies(
     url: RequestInfo | URL | string,
     options: RequestInit | undefined = {},
-    originalRequest?: FetchRequestInit
+    originalRequest?: FetchRequestInit,
   ): Promise<Response> {
-    const originalRequest1: FetchRequestInit = originalRequest || { url, options };
+    const originalRequest1: FetchRequestInit = originalRequest || {
+      url,
+      options,
+    };
     const url1: URL = new URL(`${url}`);
     const headers: HeadersInit = await this.getHeaders(url1);
     const defaultOptions: RequestInit = { headers, redirect: "manual" };
@@ -170,7 +185,12 @@ class FetchWithCookies {
 
     try {
       const res: Response = await this.fetch(url1, newOptions);
-      const redirectedRes: Response = await this.handleRedirects(res, url1, newOptions, originalRequest1);
+      const redirectedRes: Response = await this.handleRedirects(
+        res,
+        url1,
+        newOptions,
+        originalRequest1,
+      );
       return this.enhanceResponse(redirectedRes);
     } catch (e) {
       throw e;
@@ -190,7 +210,7 @@ export async function fetchWithCookies(
   url: RequestInfo | URL | string,
   options: RequestInit | undefined = {},
   fetch: FetchFn = fetchImpl as FetchFn,
-  originalRequest?: FetchRequestInit
+  originalRequest?: FetchRequestInit,
 ): Promise<Response> {
   const fetcher = new FetchWithCookies(fetch, userAgent);
   return fetcher.fetchWithCookies(url, options, originalRequest);

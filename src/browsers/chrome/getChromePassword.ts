@@ -6,7 +6,9 @@ interface PasswordRetriever {
 
 class MacOSPasswordRetriever implements PasswordRetriever {
   async retrievePassword(): Promise<string> {
-    return execSimple('security find-generic-password -w -s "Chrome Safe Storage"');
+    return execSimple(
+      'security find-generic-password -w -s "Chrome Safe Storage"',
+    );
   }
 }
 

@@ -3,10 +3,15 @@ import ExportedCookie from "./ExportedCookie";
 import { queryCookies } from "./queryCookies";
 import CompositeCookieQueryStrategy from "./browsers/CompositeCookieQueryStrategy";
 
-const queryStrategy: CompositeCookieQueryStrategy = new CompositeCookieQueryStrategy();
+const queryStrategy: CompositeCookieQueryStrategy =
+  new CompositeCookieQueryStrategy();
 
-export async function getCookie(params: CookieSpec): Promise<ExportedCookie | undefined> {
-  const cookies: ExportedCookie[] = await queryCookies(params, { strategy: queryStrategy });
+export async function getCookie(
+  params: CookieSpec,
+): Promise<ExportedCookie | undefined> {
+  const cookies: ExportedCookie[] = await queryCookies(params, {
+    strategy: queryStrategy,
+  });
   if (Array.isArray(cookies) && cookies.length > 0) {
     return cookies.find((cookie) => cookie != null);
   } else {

@@ -17,9 +17,15 @@ export function cookieSpecsFromUrl(url: URL | string): CookieSpec[] {
   const hostnameParts: string[] = splitHostname(urlObj.hostname);
   const topLevelDomain: string = getTopLevelDomain(hostnameParts);
 
-  const cookieSpecs: CookieSpec[] = createCookieSpecs(urlObj.hostname, topLevelDomain);
+  const cookieSpecs: CookieSpec[] = createCookieSpecs(
+    urlObj.hostname,
+    topLevelDomain,
+  );
 
-  return uniqBy(cookieSpecs, (spec: CookieSpec) => `${spec.name}:${spec.domain}`);
+  return uniqBy(
+    cookieSpecs,
+    (spec: CookieSpec) => `${spec.name}:${spec.domain}`,
+  );
 }
 
 /**
@@ -55,7 +61,10 @@ function getTopLevelDomain(hostnameParts: string[]): string {
  * @param topLevelDomain - The top-level domain.
  * @returns An array of CookieSpec objects.
  */
-function createCookieSpecs(hostname: string, topLevelDomain: string): CookieSpec[] {
+function createCookieSpecs(
+  hostname: string,
+  topLevelDomain: string,
+): CookieSpec[] {
   return [
     { name: "%", domain: `%.${topLevelDomain}` },
     { name: "%", domain: hostname },

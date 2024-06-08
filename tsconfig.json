@@ -5,7 +5,7 @@
     "src/**.js",
     "src/**.jsx",
     "src/**.test.ts",
-    "src/**.test.js"
+    "src/**.test.js",
   ],
   "compilerOptions": {
     "moduleResolution": "node",
@@ -21,6 +21,6 @@
     "esModuleInterop": true,
     "module": "commonjs",
     "outDir": "dist",
-    "outFile": "dist/types.d.ts"
-  }
+    "outFile": "dist/types.d.ts",
+  },
 }

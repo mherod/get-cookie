@@ -22,7 +22,9 @@ class SqlQueryBuilder implements SqlQueryBuilderInterface {
   private baseQuery: string;
   private conditions: string[];
 
-  constructor(baseQuery: string = "SELECT encrypted_value, name, host_key, expires_utc FROM cookies") {
+  constructor(
+    baseQuery: string = "SELECT encrypted_value, name, host_key, expires_utc FROM cookies",
+  ) {
     this.baseQuery = baseQuery;
     this.conditions = [];
   }

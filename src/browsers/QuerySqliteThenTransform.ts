@@ -22,7 +22,9 @@ async function transformRows(
   file: string,
 ): Promise<CookieRow[]> {
   const filteredRows = rows.filter(rowFilter);
-  const transformedRows = filteredRows.map((row) => merge({ meta: { file } }, rowTransform(row)));
+  const transformedRows = filteredRows.map((row) =>
+    merge({ meta: { file } }, rowTransform(row)),
+  );
   return transformedRows;
 }
 

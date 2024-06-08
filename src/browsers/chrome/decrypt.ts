@@ -9,13 +9,17 @@ interface Decryptor {
 class BufferDecryptor implements Decryptor {
   async decrypt(password: string, encryptedData: Buffer): Promise<string> {
     this.validatePassword(password);
-    const preparedData: Buffer = this.validateAndPrepareEncryptedData(encryptedData);
+    const preparedData: Buffer =
+      this.validateAndPrepareEncryptedData(encryptedData);
 
     if (parsedArgs.verbose) {
       consola.start(`Trying to decrypt with password: ${password}`);
     }
 
-    const decryptedData: string = await this.performDecryption(password, preparedData);
+    const decryptedData: string = await this.performDecryption(
+      password,
+      preparedData,
+    );
 
     if (parsedArgs.verbose) {
       consola.success(`Decryption successful: ${decryptedData}`);
@@ -31,21 +35,35 @@ class BufferDecryptor implements Decryptor {
   }
 
   private validateAndPrepareEncryptedData(encryptedData: Buffer): Buffer {
-    if (encryptedData == null || !(encryptedData instanceof Buffer || (Array.isArray(encryptedData) && Buffer.isBuffer(encryptedData[0])))) {
-      throw new Error("encryptedData must be a Buffer or an array of Buffers: " + encryptedData);
+    if (
+      encryptedData == null ||
+      !(
+        encryptedData instanceof Buffer ||
+        (Array.isArray(encryptedData) && Buffer.isBuffer(encryptedData[0]))
+      )
+    ) {
+      throw new Error(
+        "encryptedData must be a Buffer or an array of Buffers: " +
+          encryptedData,
+      );
     }
 
     if (Array.isArray(encryptedData) && Buffer.isBuffer(encryptedData[0])) {
       encryptedData = encryptedData[0];
       if (parsedArgs.verbose) {
-        consola.info(`encryptedData is an array of buffers, selected first: ${encryptedData}`);
+        consola.info(
+          `encryptedData is an array of buffers, selected first: ${encryptedData}`,
+        );
       }
     }
 
     return Buffer.from(encryptedData);
   }
 
-  private performDecryption(password: string, encryptedData: Buffer): Promise<string> {
+  private performDecryption(
+    password: string,
+    encryptedData: Buffer,
+  ): Promise<string> {
     return new Promise((resolve, reject) => {
       this.deriveKey(password)
         .then((key) => this.decryptData(key, encryptedData))
@@ -56,21 +74,31 @@ class BufferDecryptor implements Decryptor {
 
   private deriveKey(password: string): Promise<Buffer> {
     return new Promise((resolve, reject) => {
-      pbkdf2(password, "saltysalt", 1003, 16, "sha1", (error: Error | null, buffer: Buffer) => {
-        if (error) {
-          this.logError("Error doing pbkdf2", error);
-          reject(error);
-          return;
-        }
+      pbkdf2(
+        password,
+        "saltysalt",
+        1003,
+        16,
+        "sha1",
+        (error: Error | null, buffer: Buffer) => {
+          if (error) {
+            this.logError("Error doing pbkdf2", error);
+            reject(error);
+            return;
+          }
 
-        if (buffer.length !== 16) {
-          this.logError("Error doing pbkdf2, buffer length is not 16", buffer.length);
-          reject(new Error("Buffer length is not 16"));
-          return;
-        }
+          if (buffer.length !== 16) {
+            this.logError(
+              "Error doing pbkdf2, buffer length is not 16",
+              buffer.length,
+            );
+            reject(new Error("Buffer length is not 16"));
+            return;
+          }
 
-        resolve(buffer);
-      });
+          resolve(buffer);
+        },
+      );
     });
   }
 
@@ -83,7 +111,10 @@ class BufferDecryptor implements Decryptor {
       const slicedData: Buffer = encryptedData.slice(3);
 
       if (slicedData.length % 16 !== 0) {
-        this.logError("Error, encryptedData length is not a multiple of 16", slicedData.length);
+        this.logError(
+          "Error, encryptedData length is not a multiple of 16",
+          slicedData.length,
+        );
         reject(new Error("encryptedData length is not a multiple of 16"));
         return;
       }
@@ -115,6 +146,9 @@ class BufferDecryptor implements Decryptor {
 
 export const decryptor: Decryptor = new BufferDecryptor();
 
-export async function decrypt(password: string, encryptedData: Buffer): Promise<string> {
+export async function decrypt(
+  password: string,
+  encryptedData: Buffer,
+): Promise<string> {
   return decryptor.decrypt(password, encryptedData);
 }

@@ -37,7 +37,9 @@ export default class CompositeCookieQueryStrategy
     if (cache.has(key)) {
       const cached: ExportedCookie[] | undefined = cache.get(key);
       if (cached) {
-        consola.info(`Cache hit for key: ${key}, returning ${cached.length} cookies`);
+        consola.info(
+          `Cache hit for key: ${key}, returning ${cached.length} cookies`,
+        );
         return cached;
       }
     }
@@ -57,13 +59,18 @@ export default class CompositeCookieQueryStrategy
             }),
           );
         } catch (e) {
-          consola.error(`Error querying cookies for ${name} on ${domain} using ${strategy.browserName}`, e);
+          consola.error(
+            `Error querying cookies for ${name} on ${domain} using ${strategy.browserName}`,
+            e,
+          );
           return [];
         }
       },
     );
     cache.set(key, results);
-    consola.info(`Query result size for key: ${key} is ${results.length} cookies`);
+    consola.info(
+      `Query result size for key: ${key} is ${results.length} cookies`,
+    );
     return results;
   }
 }

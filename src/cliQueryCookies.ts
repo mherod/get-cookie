@@ -33,7 +33,11 @@ export async function cliQueryCookies(
       return;
     }
 
-    if (parsedArgs["render"] || parsedArgs["render-merged"] || parsedArgs["r"]) {
+    if (
+      parsedArgs["render"] ||
+      parsedArgs["render-merged"] ||
+      parsedArgs["r"]
+    ) {
       logger.log(resultsRendered(results));
       return;
     }

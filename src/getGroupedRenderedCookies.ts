@@ -12,7 +12,9 @@ export async function getGroupedRenderedCookies(
   return renderGroupedCookies(groupedByFile);
 }
 
-async function fetchCookies(cookieSpec: MultiCookieSpec): Promise<ExportedCookie[]> {
+async function fetchCookies(
+  cookieSpec: MultiCookieSpec,
+): Promise<ExportedCookie[]> {
   const cookies: ExportedCookie[] = await comboQueryCookieSpec(cookieSpec);
   if (cookies.length === 0) {
     throw new Error("Cookie not found");
@@ -20,11 +22,15 @@ async function fetchCookies(cookieSpec: MultiCookieSpec): Promise<ExportedCookie
   return cookies;
 }
 
-function groupCookiesByFile(cookies: ExportedCookie[]): Record<string, ExportedCookie[]> {
+function groupCookiesByFile(
+  cookies: ExportedCookie[],
+): Record<string, ExportedCookie[]> {
   return groupBy(cookies, (r: ExportedCookie) => r.meta?.file);
 }
 
-function renderGroupedCookies(groupedByFile: Record<string, ExportedCookie[]>): string[] {
+function renderGroupedCookies(
+  groupedByFile: Record<string, ExportedCookie[]>,
+): string[] {
   const renderedResults: string[] = [];
   for (const file in groupedByFile) {
     if (groupedByFile.hasOwnProperty(file)) {

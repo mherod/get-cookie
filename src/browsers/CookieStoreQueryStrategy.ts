@@ -9,7 +9,10 @@ export default class CookieStoreQueryStrategy implements CookieQueryStrategy {
   browserName: string = "internal";
 
   async queryCookies(name: string, domain: string): Promise<ExportedCookie[]> {
-    const exportedCookies: ExportedCookie[] = await this.getAllExportedCookies(name, domain);
+    const exportedCookies: ExportedCookie[] = await this.getAllExportedCookies(
+      name,
+      domain,
+    );
 
     const wildcardRegexp: RegExp = /^([*%])$/i;
     if (name.match(wildcardRegexp) && domain.match(wildcardRegexp)) {
@@ -17,30 +20,49 @@ export default class CookieStoreQueryStrategy implements CookieQueryStrategy {
     }
 
     if (domain !== "%") {
-      const domainCookies: ExportedCookie[] = await this.getDomainCookies(name, domain);
+      const domainCookies: ExportedCookie[] = await this.getDomainCookies(
+        name,
+        domain,
+      );
       exportedCookies.push(...domainCookies);
     }
 
     return this.filterCookies(exportedCookies, name, domain);
   }
 
-  private async getAllExportedCookies(name: string, domain: string): Promise<ExportedCookie[]> {
+  private async getAllExportedCookies(
+    name: string,
+    domain: string,
+  ): Promise<ExportedCookie[]> {
     const cookies: Cookie[] = await this.getAllCookies();
-    return cookies.map((cookie: Cookie) => this.extractCookie(cookie, { name, domain }));
+    return cookies.map((cookie: Cookie) =>
+      this.extractCookie(cookie, { name, domain }),
+    );
   }
 
-  private async getDomainCookies(name: string, domain: string): Promise<ExportedCookie[]> {
+  private async getDomainCookies(
+    name: string,
+    domain: string,
+  ): Promise<ExportedCookie[]> {
     const path: string = "/";
     const domain1: string = domain.match(/(\w+.+\w+)/gi)?.pop() ?? domain;
     const url: URL = new URL("https://" + domain1);
     url.pathname = path;
     const cookies: Cookie[] = await this.getCookies(url.href);
-    return cookies.map((cookie: Cookie) => this.extractCookie(cookie, { domain, name }));
+    return cookies.map((cookie: Cookie) =>
+      this.extractCookie(cookie, { domain, name }),
+    );
   }
 
-  private filterCookies(exportedCookies: ExportedCookie[], name: string, domain: string): ExportedCookie[] {
+  private filterCookies(
+    exportedCookies: ExportedCookie[],
+    name: string,
+    domain: string,
+  ): ExportedCookie[] {
     if (name === "%") {
-      return exportedCookies.filter((cookie: ExportedCookie) => cookie.domain.match(stringToRegex(domain)));
+      return exportedCookies.filter((cookie: ExportedCookie) =>
+        cookie.domain.match(stringToRegex(domain)),
+      );
     }
 
     return exportedCookies.filter(
@@ -50,7 +72,10 @@ export default class CookieStoreQueryStrategy implements CookieQueryStrategy {
     );
   }
 
-  private extractCookie(cookie: Cookie, cookieSpec: CookieSpec): ExportedCookie {
+  private extractCookie(
+    cookie: Cookie,
+    cookieSpec: CookieSpec,
+  ): ExportedCookie {
     return {
       domain: cookie.domain ?? cookieSpec.domain,
       name: cookie.key ?? cookieSpec.name,

@@ -45,15 +45,24 @@ export default class ChromeCookieQueryStrategy implements CookieQueryStrategy {
     domain: string;
     requireJwt: boolean | undefined;
   }): Promise<ExportedCookie[]> {
-    const encryptedDataItems: CookieRow[] = await this.getEncryptedCookies(name, domain);
+    const encryptedDataItems: CookieRow[] = await this.getEncryptedCookies(
+      name,
+      domain,
+    );
 
     const password: string = await getChromePassword();
-    const decryptedCookies: ExportedCookie[] = await this.decryptCookies(encryptedDataItems, password);
+    const decryptedCookies: ExportedCookie[] = await this.decryptCookies(
+      encryptedDataItems,
+      password,
+    );
 
     return decryptedCookies;
   }
 
-  private async getEncryptedCookies(name: string, domain: string): Promise<CookieRow[]> {
+  private async getEncryptedCookies(
+    name: string,
+    domain: string,
+  ): Promise<CookieRow[]> {
     try {
       const files: string[] = findAllFiles({
         path: chromeApplicationSupport,
@@ -88,21 +97,32 @@ export default class ChromeCookieQueryStrategy implements CookieQueryStrategy {
     }
   }
 
-  private async decryptCookies(encryptedDataItems: CookieRow[], password: string): Promise<ExportedCookie[]> {
+  private async decryptCookies(
+    encryptedDataItems: CookieRow[],
+    password: string,
+  ): Promise<ExportedCookie[]> {
     const decrypted: Promise<ExportedCookie | null>[] = encryptedDataItems
       .filter(({ value }) => value != null && value.length > 0)
       .map(async (cookieRow: CookieRow) => {
         const encryptedValue: Uint8Array | Buffer = cookieRow.value;
-        const decryptedValue = await this.decryptValue(password, encryptedValue);
+        const decryptedValue = await this.decryptValue(
+          password,
+          encryptedValue,
+        );
         return this.createExportedCookie(cookieRow, decryptedValue);
       });
     return (await Promise.all(decrypted)).filter(isExportedCookie);
   }
 
-  private async decryptValue(password: string, encryptedValue: Uint8Array | Buffer): Promise<string> {
+  private async decryptValue(
+    password: string,
+    encryptedValue: Uint8Array | Buffer,
+  ): Promise<string> {
     let decrypted: string | null;
     try {
-      const bufferValue = Buffer.isBuffer(encryptedValue) ? encryptedValue : Buffer.from(encryptedValue);
+      const bufferValue = Buffer.isBuffer(encryptedValue)
+        ? encryptedValue
+        : Buffer.from(encryptedValue);
       decrypted = await decrypt(password, bufferValue);
     } catch (e) {
       consola.warn("Error decrypting cookie", e);
@@ -111,7 +131,10 @@ export default class ChromeCookieQueryStrategy implements CookieQueryStrategy {
     return decrypted ?? encryptedValue.toString("utf-8");
   }
 
-  private createExportedCookie(cookieRow: CookieRow, decryptedValue: string): ExportedCookie {
+  private createExportedCookie(
+    cookieRow: CookieRow,
+    decryptedValue: string,
+  ): ExportedCookie {
     const meta = {};
     merge(meta, cookieRow.meta ?? {});
     const exportedCookie: ExportedCookie = {

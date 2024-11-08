@@ -1,17 +1,15 @@
-import CookieQueryStrategy from "../CookieQueryStrategy";
-import CookieRow, { isCookieRow } from "../../CookieRow";
-import ExportedCookie from "../../ExportedCookie";
+import CookieQueryStrategy from "@browsers/CookieQueryStrategy";
+import CookieRow, { isCookieRow } from "@/CookieRow";
+import ExportedCookie, { isExportedCookie } from "@/ExportedCookie";
 import { chromeApplicationSupport } from "./ChromeApplicationSupport";
 import { decrypt } from "./decrypt";
-import { env } from "../../global";
-import { findAllFiles } from "../../findAllFiles";
+import { env } from "@/global";
+import { findAllFiles } from "@/findAllFiles";
 import { getChromePassword } from "./getChromePassword";
-import { isExportedCookie } from "../../ExportedCookie";
 import { merge } from "lodash";
-import { parsedArgs } from "../../argv";
-import { flatMapAsync } from "../../util/flatMapAsync";
-import { getEncryptedChromeCookie } from "../getEncryptedChromeCookie";
-import logger from "../../logger";
+import { flatMapAsync } from "@/util/flatMapAsync";
+import { getEncryptedChromeCookie } from "@browsers/getEncryptedChromeCookie";
+import logger from "@/logger";
 
 export const consola = logger.withTag("ChromeCookieQueryStrategy");
 

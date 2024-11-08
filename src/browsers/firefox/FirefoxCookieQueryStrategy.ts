@@ -1,14 +1,14 @@
 import * as path from "path";
-import CookieQueryStrategy from "../CookieQueryStrategy";
-import { HOME } from "../../global";
+import CookieQueryStrategy from "@browsers/CookieQueryStrategy";
+import { HOME } from "@/global";
 import { existsSync } from "fs";
-import { findAllFiles } from "../../findAllFiles";
-import ExportedCookie from "../../ExportedCookie";
-import CookieRow from "../../CookieRow";
-import CookieSpec from "../../CookieSpec";
-import { specialCases } from "../../SpecialCases";
-import { parsedArgs } from "../../argv";
-import { querySqliteThenTransform } from "../QuerySqliteThenTransform";
+import { findAllFiles } from "@/findAllFiles";
+import ExportedCookie from "@/ExportedCookie";
+import CookieRow from "@/CookieRow";
+import CookieSpec from "@/CookieSpec";
+import { specialCases } from "@/SpecialCases";
+import { parsedArgs } from "@/argv";
+import { querySqliteThenTransform } from "@browsers/QuerySqliteThenTransform";
 
 export default class FirefoxCookieQueryStrategy implements CookieQueryStrategy {
   browserName: string = "Firefox";

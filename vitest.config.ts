@@ -1,19 +1,23 @@
 import { defineConfig } from 'vitest/config';
-import CustomReporter from './src/test/CustomReporter';
+import { resolve } from 'path';
 
 export default defineConfig({
-  test: {
-    globals: true,
-    environment: 'node',
-    coverage: {
-      provider: 'v8',
-      reporter: ['text', 'json', 'html'],
-    },
-    setupFiles: ['./src/__mocks__/bun-sqlite.ts'],
-    mockReset: true,
-    deps: {
-      inline: [/bun:sqlite/]
-    },
-    reporters: [new CustomReporter(), 'default'] as const,
+  resolve: {
+    alias: {
+      '@': resolve(__dirname, './src'),
+      '@browsers': resolve(__dirname, './src/browsers'),
+      '@db': resolve(__dirname, './src/db'),
+      '@types': resolve(__dirname, './src/types.ts'),
+      '@utils': resolve(__dirname, './src/utils')
+    }
   },
+  test: {
+    root: './src',
+    environment: 'node',
+    include: ['**/__tests__/**/*.[jt]s?(x)', '**/?(*.)+(spec|test).[jt]s?(x)'],
+    coverage: {
+      reporter: ['lcov', 'text-summary']
+    },
+    globals: true
+  }
 });

@@ -75,10 +75,10 @@
     "@types/node": "^22.5.1",
     "@types/tough-cookie": "^4.0.2",
     "@types/user-agents": "^1.0.2",
-    "@vitest/coverage-v8": "^2.0.5",
+    "@vitest/coverage-v8": "^2.1.4",
     "prettier": "^3.0.3",
     "ts-node": "^10.9.1",
     "typescript": "^5.1.6",
-    "vitest": "^2.0.5"
+    "vitest": "^2.1.4"
   }
 }

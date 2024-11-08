@@ -2,6 +2,15 @@ import { defineConfig } from 'vite';
 import { resolve } from 'path';
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      '@': resolve(__dirname, './src'),
+      '@browsers': resolve(__dirname, './src/browsers'),
+      '@db': resolve(__dirname, './src/db'),
+      '@types': resolve(__dirname, './src/types.ts'),
+      '@utils': resolve(__dirname, './src/utils')
+    }
+  },
   build: {
     target: 'node16',
     lib: {
@@ -9,7 +18,7 @@ export default defineConfig({
         index: resolve(__dirname, 'src/index.ts'),
         cli: resolve(__dirname, 'src/cli.ts')
       },
-      formats: ['cjs', 'es'],
+      formats: ['es', 'cjs'],
       fileName: (format, entryName) => `${entryName}.${format === 'es' ? 'mjs' : 'js'}`
     },
     rollupOptions: {
@@ -42,14 +51,5 @@ export default defineConfig({
     sourcemap: true,
     minify: false,
     outDir: 'dist'
-  },
-  test: {
-    globals: true,
-    environment: 'node',
-    setupFiles: ['./vitest.setup.ts'],
-    coverage: {
-      provider: 'v8',
-      reporter: ['text', 'json', 'html']
-    }
   }
 });

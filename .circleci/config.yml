@@ -1,0 +1,86 @@
+version: 2.1
+
+orbs:
+  node: circleci/node@5.1.0
+
+executors:
+  macos-executor:
+    macos:
+      xcode: 15.1.0
+    resource_class: macos.m1.medium
+    environment:
+      NODE_VERSION: "20.10.0"
+
+commands:
+  setup-workspace:
+    steps:
+      - checkout
+      - run:
+          name: Install Node.js
+          command: |
+            brew install node@20
+            echo 'export PATH="/opt/homebrew/opt/node@20/bin:$PATH"' >> $BASH_ENV
+      - run:
+          name: Install pnpm
+          command: |
+            corepack enable
+            corepack prepare pnpm@latest --activate
+      - node/install-packages:
+          pkg-manager: pnpm
+          cache-path: node_modules
+          override-ci-command: pnpm install --frozen-lockfile
+      - run:
+          name: Install SQLite
+          command: brew install sqlite3
+
+jobs:
+  test:
+    executor: macos-executor
+    steps:
+      - setup-workspace
+      - run:
+          name: Run Tests
+          command: pnpm test
+          environment:
+            VITEST_MAX_THREADS: 2
+            VITEST_MIN_THREADS: 1
+      - store_test_results:
+          path: coverage/lcov-report
+      - store_artifacts:
+          path: coverage
+          destination: coverage-report
+
+  lint:
+    executor: macos-executor
+    steps:
+      - setup-workspace
+      - run:
+          name: Run ESLint
+          command: pnpm lint
+      - run:
+          name: Run Type Check
+          command: pnpm type-check
+
+  build:
+    executor: macos-executor
+    steps:
+      - setup-workspace
+      - run:
+          name: Build Project
+          command: pnpm build
+      - persist_to_workspace:
+          root: .
+          paths:
+            - dist
+            - package.json
+
+workflows:
+  version: 2
+  test-lint-build:
+    jobs:
+      - test
+      - lint
+      - build:
+          requires:
+            - test
+            - lint

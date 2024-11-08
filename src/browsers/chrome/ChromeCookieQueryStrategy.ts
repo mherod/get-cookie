@@ -9,9 +9,7 @@ import { getChromePassword } from "./getChromePassword";
 import { merge } from "lodash";
 import { flatMapAsync } from "@/util/flatMapAsync";
 import { getEncryptedChromeCookie } from "@browsers/getEncryptedChromeCookie";
-import logger from "@/logger";
-
-export const consola = logger.withTag("ChromeCookieQueryStrategy");
+import { logger } from '@/utils/logger';
 
 export default class ChromeCookieQueryStrategy implements CookieQueryStrategy {
   browserName: string = "Chrome";
@@ -73,7 +71,7 @@ export default class ChromeCookieQueryStrategy implements CookieQueryStrategy {
 
       return results.filter(isCookieRow);
     } catch (error) {
-      consola.warn("Error finding encrypted cookies", error);
+      logger.warn("Error finding encrypted cookies", error);
       return [];
     }
   }
@@ -90,7 +88,7 @@ export default class ChromeCookieQueryStrategy implements CookieQueryStrategy {
         file: file,
       });
     } catch (e) {
-      consola.warn("Error getting encrypted cookie from file", e);
+      logger.warn("Error getting encrypted cookie from file", e);
       return [];
     }
   }
@@ -123,7 +121,7 @@ export default class ChromeCookieQueryStrategy implements CookieQueryStrategy {
         : Buffer.from(encryptedValue);
       decrypted = await decrypt(password, bufferValue);
     } catch (e) {
-      consola.warn("Error decrypting cookie", e);
+      logger.warn("Error decrypting cookie", e);
       decrypted = null;
     }
     return decrypted ?? encryptedValue.toString("utf-8");

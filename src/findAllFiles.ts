@@ -1,6 +1,6 @@
 import { existsSync } from "fs";
 import { parsedArgs } from "./argv";
-import consola from "consola";
+import { logger } from '@/utils/logger';
 import { sync } from "fast-glob";
 
 type FindFilesOptions = {
@@ -29,7 +29,7 @@ export function findAllFiles({
   }
 
   if (parsedArgs.verbose) {
-    consola.start(`Searching for ${name} files in ${path}`);
+    logger.start(`Searching for ${name} files in ${path}`);
   }
 
   const files: string[] = sync(`${path}/**/${name}`, {
@@ -39,8 +39,8 @@ export function findAllFiles({
 
   if (parsedArgs.verbose) {
     if (files.length > 0) {
-      consola.success(`Found ${files.length} ${name} files`);
-      consola.info(files);
+      logger.success(`Found ${files.length} ${name} files`);
+      logger.info(files);
     }
   }
 

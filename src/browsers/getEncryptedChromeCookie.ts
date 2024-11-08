@@ -5,7 +5,7 @@ import { join } from "path";
 import { parsedArgs } from "../argv";
 import { stringToRegex } from "../StringToRegex";
 import CookieRow from "../CookieRow";
-import consola from "../logger";
+import { logger } from '@/utils/logger';
 
 interface GetEncryptedChromeCookieParams {
   name: string;
@@ -54,7 +54,7 @@ class VerboseLogger implements LoggerInterface {
   log(file: string, name: string, domain: string, sql: string): void {
     if (parsedArgs.verbose) {
       const s = file.split("/").slice(-3).join("/");
-      consola.start(
+      logger.start(
         `Trying Chrome (at ${s}) cookie ${name} for domain ${domain}`,
       );
     }

@@ -1,6 +1,6 @@
 import { createDecipheriv, pbkdf2 } from "crypto";
 import { parsedArgs } from "../../argv";
-import consola from "../../logger";
+import { logger } from '@/utils/logger';
 
 interface Decryptor {
   decrypt(password: string, encryptedData: Buffer): Promise<string>;
@@ -13,7 +13,7 @@ class BufferDecryptor implements Decryptor {
       this.validateAndPrepareEncryptedData(encryptedData);
 
     if (parsedArgs.verbose) {
-      consola.start(`Trying to decrypt with password: ${password}`);
+      logger.start(`Trying to decrypt with password: ${password}`);
     }
 
     const decryptedData: string = await this.performDecryption(
@@ -22,7 +22,7 @@ class BufferDecryptor implements Decryptor {
     );
 
     if (parsedArgs.verbose) {
-      consola.success(`Decryption successful: ${decryptedData}`);
+      logger.success(`Decryption successful: ${decryptedData}`);
     }
 
     return decryptedData;
@@ -51,7 +51,7 @@ class BufferDecryptor implements Decryptor {
     if (Array.isArray(encryptedData) && Buffer.isBuffer(encryptedData[0])) {
       encryptedData = encryptedData[0];
       if (parsedArgs.verbose) {
-        consola.info(
+        logger.info(
           `encryptedData is an array of buffers, selected first: ${encryptedData}`,
         );
       }
@@ -82,13 +82,13 @@ class BufferDecryptor implements Decryptor {
         "sha1",
         (error: Error | null, buffer: Buffer) => {
           if (error) {
-            this.logError("Error doing pbkdf2", error);
+            logger.error("Error doing pbkdf2", error);
             reject(error);
             return;
           }
 
           if (buffer.length !== 16) {
-            this.logError(
+            logger.error(
               "Error doing pbkdf2, buffer length is not 16",
               buffer.length,
             );
@@ -111,7 +111,7 @@ class BufferDecryptor implements Decryptor {
       const slicedData: Buffer = encryptedData.slice(3);
 
       if (slicedData.length % 16 !== 0) {
-        this.logError(
+        logger.error(
           "Error, encryptedData length is not a multiple of 16",
           slicedData.length,
         );
@@ -123,7 +123,7 @@ class BufferDecryptor implements Decryptor {
       try {
         decipher.final("utf-8");
       } catch (e) {
-        this.logError("Error doing decipher.final()", e);
+        logger.error("Error doing decipher.final()", e);
         reject(e);
         return;
       }
@@ -139,7 +139,7 @@ class BufferDecryptor implements Decryptor {
 
   private logError(message: string, error: any): void {
     if (parsedArgs.verbose) {
-      consola.error(message, error);
+      logger.error(message, error);
     }
   }
 }

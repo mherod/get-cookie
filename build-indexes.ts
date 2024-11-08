@@ -6,6 +6,7 @@ import path from "path";
 import { existsSync, readFileSync, writeFileSync } from "fs";
 import { sync } from "fast-glob";
 import prettier from "prettier";
+import { logger } from '@/utils/logger';
 
 async function main() {
   // find all ts files in src and build indexes
@@ -105,4 +106,7 @@ async function main() {
   }
 }
 
-main().catch(consola.error);
+main().catch((error) => {
+  logger.error(error);
+  process.exit(1);
+});

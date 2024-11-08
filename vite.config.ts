@@ -31,7 +31,6 @@ export default defineConfig({
         'util',
         'fs/promises',
         'better-sqlite3',
-        'consola',
         'cross-fetch',
         'destr',
         'fast-glob',

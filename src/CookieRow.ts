@@ -1,4 +1,4 @@
-import consola from "./logger";
+import { logger } from '@/utils/logger';
 
 /**
  * The CookieRow interface represents the structure of a cookie row object.
@@ -18,24 +18,24 @@ export default interface CookieRow {
  */
 export function isCookieRow(obj: any): obj is CookieRow {
   if (typeof obj !== "object" || obj === null) {
-    consola.warn("Object is not an object or is null:", obj);
+    logger.warn("Object is not an object or is null:", obj);
     return false;
   }
 
   const { domain, name, value } = obj as CookieRow;
 
   if (typeof domain !== "string") {
-    consola.warn("Domain is not a string:", domain);
+    logger.warn("Domain is not a string:", domain);
     return false;
   }
 
   if (typeof name !== "string") {
-    consola.warn("Name is not a string:", name);
+    logger.warn("Name is not a string:", name);
     return false;
   }
 
   if (!(value instanceof Uint8Array) && !Buffer.isBuffer(value)) {
-    consola.warn("Value is not a Uint8Array or Buffer:", value);
+    logger.warn("Value is not a Uint8Array or Buffer:", value);
     return false;
   }
 

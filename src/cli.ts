@@ -5,11 +5,11 @@ import { fetchWithCookies } from "./fetchWithCookies";
 import { unpackHeaders } from "./unpackHeaders";
 import CookieSpec from "./CookieSpec";
 import { cookieSpecsFromUrl } from "./cookieSpecsFromUrl";
-import logger from "./logger";
+import { logger } from '@/utils/logger';
 import { cliQueryCookies } from "./cliQueryCookies";
 
 async function main() {
-  parsedArgs.verbose = Boolean(parsedArgs.verbose);
+  logger.setVerbose(Boolean(parsedArgs.verbose));
 
   const fetchUrl = parsedArgs.fetch;
   if (fetchUrl) {

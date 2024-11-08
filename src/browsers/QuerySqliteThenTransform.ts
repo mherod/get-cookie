@@ -1,7 +1,7 @@
 import CookieRow from "../CookieRow";
 import fs from "fs";
 import { merge } from "lodash";
-import { Database } from "bun:sqlite";
+import SqliteAdapter from "../db/SqliteAdapter";
 
 interface FnOptions {
   file: string;
@@ -35,14 +35,17 @@ export async function querySqliteThenTransform({
   rowTransform,
 }: FnOptions): Promise<CookieRow[]> {
   await checkFileExistence(file);
-  const db = new Database(file);
+  const db = new SqliteAdapter(file);
 
   try {
-    const rows: any[] = db.query(sql).all();
+    const result = await db.query(sql);
+    const rows: any[] = await result.all();
     if (!rows || rows.length === 0) return [];
 
     return await transformRows(rows, rowFilter, rowTransform, file);
   } catch (err: any) {
     throw err;
+  } finally {
+    await db.close();
   }
 }

@@ -10,7 +10,7 @@
   "compilerOptions": {
     "moduleResolution": "node",
     "target": "es6",
-    "types": ["node", "jest", "bun-types"],
+    "types": ["node", "bun-types", "vitest/globals"],
     "lib": ["es2015", "es2017", "es2021", "dom"],
     "strict": true,
     "skipDefaultLibCheck": true,
@@ -24,3 +24,4 @@
     "outFile": "dist/types.d.ts",
   },
 }
+

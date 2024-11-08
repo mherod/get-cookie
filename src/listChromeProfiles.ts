@@ -1,5 +1,5 @@
 import { sync } from "fast-glob";
-import { chromeApplicationSupport } from "./browsers/chrome/ChromeApplicationSupport";
+import { chromeApplicationSupport } from "./browsers";
 import { dirname } from "path";
 import { readFile } from "fs/promises";
 import destr from "destr";

@@ -1,32 +1,43 @@
 import { fetchWithCookies } from "./fetchWithCookies";
-import { FetchFn } from "./fetchWithCookies";
+import { vi, expect, describe, it, beforeEach, afterEach } from "vitest";
+
+const mockUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36";
 
 describe("fetchWithCookies", () => {
-  let mockFetch: FetchFn;
-  let mockResponse: Response;
-
   beforeEach(() => {
-    mockFetch = jest.fn();
-    mockResponse = new Response("mock body", { status: 200 });
-    (mockFetch as jest.Mock).mockResolvedValue(mockResponse);
+    vi.stubGlobal("fetch", vi.fn());
   });
 
-  // it("should call fetch with the correct arguments", async () => {
-  //   const url = "https://example.com/";
-  //   const options: RequestInit = {
-  //     method: "GET",
-  //     headers: { "User-Agent": userAgent },
-  //     redirect: "manual"
-  //     //
-  //   };
-  //   await fetchWithCookies(url, options, mockFetch);
-  //   expect(mockFetch).toBeCalledWith(url, options);
-  // });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("should call fetch with the correct arguments", async () => {
+    const url = "https://example.com/";
+    const options: RequestInit = {
+      method: "GET",
+      headers: { "User-Agent": mockUserAgent },
+    };
+
+    await fetchWithCookies(url, options);
+
+    expect(fetch).toHaveBeenCalledWith(url, {
+      ...options,
+      headers: {
+        ...options.headers,
+        "User-Agent": mockUserAgent,
+        Cookie: expect.any(String),
+      },
+    });
+  });
 
   it("should return the response from fetch", async () => {
+    const mockResponse = new Response("Test response");
+    vi.mocked(fetch).mockResolvedValue(mockResponse);
+
     const url = "https://example.com/";
-    const options = { method: "GET" };
-    const response = await fetchWithCookies(url, options, mockFetch);
+    const response = await fetchWithCookies(url);
+
     expect(response).toBe(mockResponse);
   });
 });

@@ -1,18 +1,17 @@
-export function unpackHeaders(
-  headerArgs: string[] | string | null,
-): Record<string, string> {
+export function unpackHeaders(headerArgs: string[] | undefined): Record<string, string> {
+  if (!headerArgs) {
+    return {};
+  }
+
   const headers: Record<string, string> = {};
-  if (headerArgs === null) {
-    return headers;
-  }
-  if (Array.isArray(headerArgs)) {
-    for (let i = 0; i < headerArgs.length; i++) {
-      const [key, value] = headerArgs[i].split("=");
-      headers[key] = value;
+
+  for (const header of headerArgs) {
+    const [key, ...valueParts] = header.split(':');
+    const value = valueParts.join(':').trim();
+    if (key && value) {
+      headers[key.trim()] = value;
     }
-  } else {
-    const [key, value] = headerArgs.split("=");
-    headers[key] = value;
   }
+
   return headers;
 }

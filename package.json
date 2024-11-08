@@ -54,6 +54,7 @@
   "license": "ISC",
   "dependencies": {
     "better-sqlite3": "^11.2.1",
+    "commander": "^12.1.0",
     "consola": "3.2.3",
     "cross-fetch": "^4.0.0",
     "destr": "2.0.2",

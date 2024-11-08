@@ -9,26 +9,9 @@ import logger from "./logger";
 import { cliQueryCookies } from "./cliQueryCookies";
 
 async function main() {
-  if (parsedArgs["help"] || parsedArgs["h"]) {
-    logger.log(`Usage: ${argv[1]} [name] [domain] [options]`);
-    logger.log(`Options:`);
-    logger.log(`  -h, --help: Show this help message`);
-    logger.log(`  -v, --verbose: Enable verbose output`);
-    logger.log(`  -d, --dump: Dump all results`);
-    logger.log(`  -D, --dump-grouped: Dump all results, grouped by profile`);
-    logger.log(`  -r, --render: Render all results`);
-    logger.log(`  -F, --fetch <url>: Fetch data from the specified URL`);
-    logger.log(`  -H <header>: Specify headers for the fetch request`);
-    logger.log(
-      `  --dump-response-headers: Dump response headers from fetch request`,
-    );
-    logger.log(`  --dump-response-body: Dump response body from fetch request`);
-    return;
-  }
+  parsedArgs.verbose = Boolean(parsedArgs.verbose);
 
-  parsedArgs["verbose"] = parsedArgs["verbose"] || parsedArgs["v"];
-
-  const fetchUrl: string = parsedArgs["fetch"] || parsedArgs["F"];
+  const fetchUrl = parsedArgs.fetch;
   if (fetchUrl) {
     let url: URL;
     try {
@@ -37,24 +20,26 @@ async function main() {
       logger.error("Invalid URL", fetchUrl);
       return;
     }
+
     logger.start("Fetching", url.href);
-    const headerArgs: string[] | string = parsedArgs["H"];
-    const headers = unpackHeaders(headerArgs);
-    const onfulfilled = async (res: Response) => {
-      if (parsedArgs["dump-response-headers"]) {
+    const headers = unpackHeaders(parsedArgs.H);
+
+    const handleResponse = async (res: Response) => {
+      if (parsedArgs.dumpResponseHeaders) {
         for (const [key, value] of Object.entries(res.headers)) {
           logger.log(`${key}: ${value}`);
         }
       }
-      if (parsedArgs["dump-response-body"]) {
+      if (parsedArgs.dumpResponseBody) {
         const responseBody = await res.text();
         logger.log(responseBody);
       }
     };
+
     try {
       const res = await fetchWithCookies(url, { headers });
       logger.debug("Response", res);
-      await onfulfilled(res);
+      await handleResponse(res);
     } catch (error) {
       logger.error(error);
     }
@@ -62,15 +47,12 @@ async function main() {
   }
 
   const cookieSpecs: CookieSpec[] = [];
-  const argUrl: string = parsedArgs["url"] || parsedArgs["u"];
-  if (argUrl) {
-    for (const cookieSpec of cookieSpecsFromUrl(argUrl)) {
-      cookieSpecs.push(cookieSpec);
-    }
+  if (parsedArgs.url) {
+    cookieSpecs.push(...cookieSpecsFromUrl(parsedArgs.url));
   } else {
     cookieSpecs.push({
-      name: parsedArgs["name"] || parsedArgs["_"][0] || "%",
-      domain: parsedArgs["domain"] || parsedArgs["_"][1] || "%",
+      name: parsedArgs.name || argv[0] || "%",
+      domain: parsedArgs.domain || argv[1] || "%",
     });
   }
 
@@ -85,10 +67,7 @@ async function main() {
   }
 }
 
-main().then(
-  () => process.exit(0),
-  (error) => {
-    logger.error(error);
-    process.exit(1);
-  },
-);
+main().catch((error) => {
+  logger.error(error);
+  process.exit(1);
+});

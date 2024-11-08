@@ -33,9 +33,9 @@ export async function queryCookies(
     return filteredCookies;
   };
 
-  const jwtCookies: ExportedCookie[] = parsedArgs["require-jwt"]
+  const jwtCookies: ExportedCookie[] = parsedArgs.requireJwt
     ? filterCookies(allCookies, isValidJwt)
     : allCookies;
 
-  return parsedArgs["single"] ? [jwtCookies[0]] : jwtCookies;
+  return parsedArgs.single ? [jwtCookies[0]] : jwtCookies;
 }

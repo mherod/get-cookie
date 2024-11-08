@@ -22,27 +22,23 @@ export async function cliQueryCookies(
       return;
     }
 
-    if (parsedArgs["dump"] || parsedArgs["d"]) {
+    if (parsedArgs.dump) {
       logger.log(results);
       return;
     }
 
-    if (parsedArgs["dump-grouped"] || parsedArgs["D"]) {
+    if (parsedArgs.dumpGrouped) {
       const groupedByFile = groupBy(results, (r) => r.meta?.file);
       logger.log(JSON.stringify(groupedByFile, null, 2));
       return;
     }
 
-    if (
-      parsedArgs["render"] ||
-      parsedArgs["render-merged"] ||
-      parsedArgs["r"]
-    ) {
+    if (parsedArgs.render || parsedArgs.renderMerged) {
       logger.log(resultsRendered(results));
       return;
     }
 
-    if (parsedArgs["render-grouped"] || parsedArgs["R"]) {
+    if (parsedArgs.renderGrouped) {
       const groupedByFile = groupBy(results, (r) => r.meta?.file);
       for (const file of Object.keys(groupedByFile)) {
         const fileResults = groupedByFile[file];
@@ -51,7 +47,7 @@ export async function cliQueryCookies(
       return;
     }
 
-    if (parsedArgs["output"] === "json") {
+    if (parsedArgs.output === "json") {
       logger.log(JSON.stringify(results, null, 2));
       return;
     }

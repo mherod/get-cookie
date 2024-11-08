@@ -1,63 +1,34 @@
 // noinspection JSUnusedGlobalSymbols,ExceptionCaughtLocallyJS
 
-import { fetch as fetchImpl } from "cross-fetch";
+import { fetch as fetchImpl } from "undici";
 import { merge } from "lodash";
-import destr from "destr";
 import { getMergedRenderedCookies } from "./getMergedRenderedCookies";
 import { cookieSpecsFromUrl } from "./cookieSpecsFromUrl";
 import CookieSpec from "./CookieSpec";
+import { UserAgentBuilder } from "./UserAgentBuilder";
+import { RequestInit, BodyInit as UndiciBodyInit } from "undici";
 
 if (typeof fetchImpl !== "function") {
   throw new Error("fetch is not a function");
 }
 
-/**
- * Class to build a User-Agent string.
- */
-class UserAgentBuilder {
-  private platform: string;
-  private engine: string;
-  private browser: string;
-  private layout: string;
-
-  /**
-   * Constructs a UserAgentBuilder instance.
-   * @param platform - The platform information.
-   * @param engine - The engine information.
-   * @param browser - The browser information.
-   * @param layout - The layout information.
-   */
-  constructor(
-    platform: string = "Macintosh; Intel Mac OS X 10_15_7",
-    engine: string = "AppleWebKit/537.36 (KHTML, like Gecko)",
-    browser: string = "Chrome/118.0.0.0",
-    layout: string = "Safari/537.36",
-  ) {
-    this.platform = platform;
-    this.engine = engine;
-    this.browser = browser;
-    this.layout = layout;
-  }
-
-  /**
-   * Builds the User-Agent string.
-   * @returns The User-Agent string.
-   */
-  build(): string {
-    return `${this.platform} ${this.engine} ${this.browser} ${this.layout}`;
-  }
-}
-
 const userAgent: string = new UserAgentBuilder().build();
 
-interface FetchRequestInit {
+export type FetchRequestInit = {
   url: RequestInfo | URL | string;
   options?: RequestInit;
-}
+};
 
-export type FetchFn =
-  | typeof fetchImpl
-  | ((url: URL, options?: RequestInit) => Promise<Response>);
+export type MergedRequestInit = Omit<RequestInit, 'body'> & {
+  headers?: Record<string, string | readonly string[]>;
+  body?: UndiciBodyInit;
+};
+
+export type ResponseType = Response & {
+  buffer: () => Promise<Buffer>;
+};
+
+export type FetchFn = typeof fetchImpl | ((url: URL, options?: RequestInit) => Promise<ResponseType>);
 
 /**
  * Class to handle fetch requests with cookies.
@@ -84,12 +55,10 @@ class FetchWithCookies {
    * @param url - The URL to get headers for.
    * @returns A promise that resolves to the headers.
    */
-  private async getHeaders(url: URL): Promise<HeadersInit> {
-    const headers: HeadersInit = { "User-Agent": this.userAgent };
+  private async getHeaders(url: URL): Promise<Record<string, string>> {
+    const headers: Record<string, string> = { "User-Agent": this.userAgent };
     const cookieSpecs: CookieSpec[] = cookieSpecsFromUrl(url);
-    const renderedCookie: string = await getMergedRenderedCookies(
-      cookieSpecs,
-    ).catch(() => "");
+    const renderedCookie: string = await getMergedRenderedCookies(cookieSpecs).catch(() => "");
 
     if (renderedCookie) {
       headers["Cookie"] = renderedCookie;
@@ -107,18 +76,14 @@ class FetchWithCookies {
    * @returns A promise that resolves to the final response.
    */
   private async handleRedirects(
-    res: Response,
+    res: ResponseType,
     url: URL,
     options: RequestInit,
     originalRequest: FetchRequestInit,
-  ): Promise<Response> {
+  ): Promise<ResponseType> {
     const newUrl: string = res.headers.get("location") ?? res.url;
 
-    if (
-      [301, 302].includes(res.status) &&
-      newUrl &&
-      newUrl !== url.toString()
-    ) {
+    if ([301, 302].includes(res.status) && newUrl && newUrl !== url.toString()) {
       return this.fetchWithCookies(newUrl, options, originalRequest);
     }
 
@@ -139,27 +104,16 @@ class FetchWithCookies {
    * @param res - The response to enhance.
    * @returns A promise that resolves to the enhanced response.
    */
-  private async enhanceResponse(res: Response): Promise<Response> {
-    const originalArrayBuffer: ArrayBuffer = await res.arrayBuffer();
-    const originalBuffer: Buffer = Buffer.from(originalArrayBuffer);
-    const originalText: string = originalBuffer.toString("utf8");
+  private async enhanceResponse(res: Response): Promise<ResponseType> {
+    // Clone response to allow multiple reads of the body
+    const clonedResponse = res.clone();
 
-    const arrayBuffer = async (): Promise<ArrayBuffer> => originalArrayBuffer;
-    const buffer = async (): Promise<Buffer> => originalBuffer;
-    const text = async (): Promise<string> => originalText;
-    const json = async (): Promise<any> => destr(originalText);
-    const formData = async (): Promise<FormData> => {
-      const urlSearchParams: URLSearchParams = new URLSearchParams(
-        originalText,
-      );
-      const formData: FormData = new FormData();
-      for (const [key, value] of urlSearchParams.entries()) {
-        formData.append(key, value);
-      }
-      return formData;
+    const buffer = async (): Promise<Buffer> => {
+      const arrayBuffer = await clonedResponse.arrayBuffer();
+      return Buffer.from(arrayBuffer);
     };
 
-    return merge(res, { arrayBuffer, text, json, buffer, formData });
+    return merge(res, { buffer });
   }
 
   /**
@@ -173,20 +127,17 @@ class FetchWithCookies {
     url: RequestInfo | URL | string,
     options: RequestInit | undefined = {},
     originalRequest?: FetchRequestInit,
-  ): Promise<Response> {
-    const originalRequest1: FetchRequestInit = originalRequest || {
-      url,
-      options,
-    };
+  ): Promise<ResponseType> {
+    const originalRequest1: FetchRequestInit = originalRequest || { url, options: options as RequestInit };
     const url1: URL = new URL(`${url}`);
-    const headers: HeadersInit = await this.getHeaders(url1);
+    const headers = await this.getHeaders(url1);
     const defaultOptions: RequestInit = { headers, redirect: "manual" };
     const newOptions: RequestInit = merge(defaultOptions, { headers }, options);
 
     try {
-      const res: Response = await this.fetch(url1, newOptions);
-      const redirectedRes: Response = await this.handleRedirects(
-        res,
+      const res = await this.fetch(url1, newOptions);
+      const redirectedRes = await this.handleRedirects(
+        res as ResponseType,
         url1,
         newOptions,
         originalRequest1,
@@ -211,7 +162,7 @@ export async function fetchWithCookies(
   options: RequestInit | undefined = {},
   fetch: FetchFn = fetchImpl as FetchFn,
   originalRequest?: FetchRequestInit,
-): Promise<Response> {
+): Promise<ResponseType> {
   const fetcher = new FetchWithCookies(fetch, userAgent);
   return fetcher.fetchWithCookies(url, options, originalRequest);
 }

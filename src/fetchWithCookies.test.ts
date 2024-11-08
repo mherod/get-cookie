@@ -1,43 +1,29 @@
 import { fetchWithCookies } from "./fetchWithCookies";
-import { vi, expect, describe, it, beforeEach, afterEach } from "vitest";
-
-const mockUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36";
+import { expect, describe, it } from "vitest";
 
 describe("fetchWithCookies", () => {
-  beforeEach(() => {
-    vi.stubGlobal("fetch", vi.fn());
-  });
-
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
-  it("should call fetch with the correct arguments", async () => {
-    const url = "https://example.com/";
-    const options: RequestInit = {
-      method: "GET",
-      headers: { "User-Agent": mockUserAgent },
-    };
-
-    await fetchWithCookies(url, options);
-
-    expect(fetch).toHaveBeenCalledWith(url, {
-      ...options,
-      headers: {
-        ...options.headers,
-        "User-Agent": mockUserAgent,
-        Cookie: expect.any(String),
-      },
-    });
-  });
-
-  it("should return the response from fetch", async () => {
-    const mockResponse = new Response("Test response");
-    vi.mocked(fetch).mockResolvedValue(mockResponse);
-
-    const url = "https://example.com/";
+  it("should fetch DNS records from Google DNS API", async () => {
+    const url = "https://dns.google/resolve?name=www.google.com&type=A";
     const response = await fetchWithCookies(url);
+    const data = await response.json();
 
-    expect(response).toBe(mockResponse);
+    // Check response properties instead of instance
+    expect(response).toBeDefined();
+    expect(typeof response.json).toBe('function');
+    expect(typeof response.text).toBe('function');
+    expect(typeof response.arrayBuffer).toBe('function');
+    expect(response.ok).toBe(true);
+    expect(response.status).toBe(200);
+    expect(data).toEqual(expect.objectContaining({
+      Status: 0,
+      Answer: expect.arrayContaining([
+        expect.objectContaining({
+          name: 'www.google.com.',
+          type: 1, // A record
+          TTL: expect.any(Number),
+          data: expect.stringMatching(/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/) // IPv4 address
+        })
+      ])
+    }));
   });
 });

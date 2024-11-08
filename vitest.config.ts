@@ -1,4 +1,5 @@
 import { defineConfig } from 'vitest/config';
+import CustomReporter from './src/test/CustomReporter';
 
 export default defineConfig({
   test: {
@@ -12,6 +13,7 @@ export default defineConfig({
     mockReset: true,
     deps: {
       inline: [/bun:sqlite/]
-    }
+    },
+    reporters: [new CustomReporter(), 'default'] as const,
   },
 });

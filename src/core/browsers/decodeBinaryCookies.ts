@@ -5,6 +5,7 @@ import { join } from "path";
 import type { BinaryCookieRow } from "../../types/schemas";
 import { BinaryCookieRowSchema } from "../../types/schemas";
 import { parseMacDate } from "../../utils/dates";
+import { logWarn } from "../../utils/logHelpers";
 
 // Cookie flag constants
 const _COOKIE_FLAGS = {
@@ -17,7 +18,7 @@ const _COOKIE_FLAGS = {
 // File structure constants
 const _FILE_HEADER_MAGIC = "cook";
 const _FILE_FOOTER = 0x28; // Safari 14+ uses this footer value
-const _FILE_FOOTER_LEGACY = 0x071720050000004b; // Pre-Safari 14 footer value
+const _FILE_FOOTER_LEGACY = 0x071720050000004bn; // Pre-Safari 14 footer value
 
 function readNullTerminatedString(
   buffer: Buffer,
@@ -131,7 +132,11 @@ function decodePage(
       cookies.push(cookie);
       currentOffset += size;
     } catch (error) {
-      console.warn(`Error decoding cookie at offset ${currentOffset}:`, error);
+      logWarn(
+        "BinaryCookies",
+        `Error decoding cookie at offset ${currentOffset}`,
+        { error },
+      );
       break;
     }
   }
@@ -153,7 +158,7 @@ function validateFooter(buffer: Buffer): boolean {
   }
 
   // Try reading as a 64-bit value (pre-Safari 14)
-  const footer = Number(buffer.readBigUInt64BE(buffer.length - 8));
+  const footer = buffer.readBigUInt64BE(buffer.length - 8);
   return footer === _FILE_FOOTER_LEGACY;
 }
 
@@ -192,7 +197,7 @@ export function decodeBinaryCookies(cookieDbPath: string): BinaryCookieRow[] {
       cookies.push(...pageCookies);
       offset += pageSizes[i];
     } catch (error) {
-      console.warn(`Error decoding page ${i}:`, error);
+      logWarn("BinaryCookies", `Error decoding page ${i}`, { error });
       offset += pageSizes[i];
     }
   }

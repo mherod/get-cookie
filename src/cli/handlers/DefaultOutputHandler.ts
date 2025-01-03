@@ -50,7 +50,9 @@ export class DefaultOutputHandler implements OutputHandler {
    * ```
    */
   public handle(results: ExportedCookie[]): void {
-    const uniqueValues = new Set(results.map((result) => result.value));
+    const uniqueValues = new Set(
+      results.map((result) => result.value as string),
+    );
     for (const value of uniqueValues) {
       logger.log(value);
     }

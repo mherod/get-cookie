@@ -36,9 +36,9 @@ function main(): void {
       consola.info(`\nCookie ${index + 1}:`);
       consola.info(`  Name: ${cookie.name}`);
       consola.info(`  Domain: ${cookie.domain}`);
-      const valueStr = cookie.value;
+      const valueStr = cookie.value as string;
       consola.info(
-        `  Value: ${valueStr.slice(0, 50)}${valueStr.length > 50 ? "..." : ""}`,
+        `  Value: ${valueStr.substring(0, 50)}${valueStr.length > 50 ? "..." : ""}`,
       );
       consola.info(`  Expiry: ${new Date(cookie.expiry * 1000).toISOString()}`);
     });

@@ -1,122 +1,112 @@
 import type {
-  BrowserName,
   CookieQueryStrategy,
   ExportedCookie,
 } from "../../../types/schemas";
 import { CompositeCookieQueryStrategy } from "../CompositeCookieQueryStrategy";
 
-class MockCookieQueryStrategy implements CookieQueryStrategy {
-  public constructor(
-    public readonly browserName: BrowserName,
-    private readonly mockCookies: ExportedCookie[] = [],
-  ) {}
+const createMockStrategy = (
+  browserType: "Chrome" | "Firefox" | "Safari" | "internal" | "unknown",
+  cookies: ExportedCookie[],
+): CookieQueryStrategy => ({
+  browserName: browserType,
+  queryCookies: async (
+    _name: string,
+    _domain: string,
+  ): Promise<ExportedCookie[]> => Promise.resolve(cookies),
+});
 
-  public async queryCookies(): Promise<ExportedCookie[]> {
-    return Promise.resolve(this.mockCookies);
-  }
-}
+const createTestCookies = (browser: string): ExportedCookie[] => [
+  {
+    name: `${browser}_cookie1`,
+    value: `${browser}_value1`,
+    domain: "example.com",
+    expiry: 1234567890,
+    meta: {
+      browser,
+      decrypted: true,
+      file: `/path/to/${browser}/cookies`,
+    },
+  },
+  {
+    name: `${browser}_cookie2`,
+    value: `${browser}_value2`,
+    domain: "example.org",
+    expiry: 1234567890,
+    meta: {
+      browser,
+      decrypted: true,
+      file: `/path/to/${browser}/cookies`,
+    },
+  },
+];
 
 describe("CompositeCookieQueryStrategy", () => {
   it("should combine results from multiple strategies", async () => {
-    const chromeCookies: ExportedCookie[] = [
-      {
-        name: "test-cookie",
-        value: "chrome-value",
-        domain: "example.com",
-        expiry: "Infinity",
-        meta: {
-          browser: "Chrome",
-          decrypted: true,
-          file: "/path/to/chrome/cookies",
-        },
-      },
-    ];
+    const chromeCookies = createTestCookies("chrome");
+    const firefoxCookies = createTestCookies("firefox");
+    const safariCookies = createTestCookies("safari");
 
-    const firefoxCookies: ExportedCookie[] = [
-      {
-        name: "test-cookie",
-        value: "firefox-value",
-        domain: "example.com",
-        expiry: new Date(Date.now() + 3600000),
-        meta: {
-          browser: "Firefox",
-          decrypted: false,
-          file: "/path/to/firefox/cookies",
-        },
-      },
-    ];
-
-    const chromeStrategy = new MockCookieQueryStrategy("Chrome", chromeCookies);
-    const firefoxStrategy = new MockCookieQueryStrategy(
-      "Firefox",
-      firefoxCookies,
-    );
+    const chromeStrategy = createMockStrategy("Chrome", chromeCookies);
+    const firefoxStrategy = createMockStrategy("Firefox", firefoxCookies);
+    const safariStrategy = createMockStrategy("Safari", safariCookies);
 
     const composite = new CompositeCookieQueryStrategy([
       chromeStrategy,
       firefoxStrategy,
+      safariStrategy,
     ]);
-    const cookies = await composite.queryCookies("test-cookie", "example.com");
 
-    expect(cookies).toHaveLength(2);
-    expect(cookies).toEqual(
-      expect.arrayContaining([...chromeCookies, ...firefoxCookies]),
+    const results = await composite.queryCookies("test-cookie", "example.com");
+    expect(results).toHaveLength(6);
+    expect(results).toEqual(
+      expect.arrayContaining([
+        ...chromeCookies,
+        ...firefoxCookies,
+        ...safariCookies,
+      ]),
     );
   });
 
   it("should handle empty results from strategies", async () => {
-    const chromeStrategy = new MockCookieQueryStrategy("Chrome", []);
-    const firefoxStrategy = new MockCookieQueryStrategy("Firefox", []);
-
     const composite = new CompositeCookieQueryStrategy([
-      chromeStrategy,
-      firefoxStrategy,
+      createMockStrategy("Chrome", []),
+      createMockStrategy("Firefox", []),
     ]);
-    const cookies = await composite.queryCookies("test-cookie", "example.com");
 
-    expect(cookies).toEqual([]);
+    const results = await composite.queryCookies("test-cookie", "example.com");
+    expect(results).toHaveLength(0);
   });
 
   it("should handle errors from individual strategies", async () => {
-    const workingStrategy = new MockCookieQueryStrategy("Chrome", [
-      {
-        name: "test-cookie",
-        value: "chrome-value",
-        domain: "example.com",
-        expiry: "Infinity",
-        meta: {
-          browser: "Chrome",
-          decrypted: true,
-          file: "/path/to/chrome/cookies",
-        },
-      },
-    ]);
-
+    const workingStrategy = createMockStrategy(
+      "Chrome",
+      createTestCookies("working"),
+    );
     const failingStrategy: CookieQueryStrategy = {
       browserName: "Firefox",
-      queryCookies: jest.fn().mockRejectedValue(new Error("Failed to query")),
+      queryCookies: (
+        _name: string,
+        _domain: string,
+      ): Promise<ExportedCookie[]> => {
+        throw new Error("Strategy failed");
+      },
     };
 
     const composite = new CompositeCookieQueryStrategy([
       workingStrategy,
       failingStrategy,
     ]);
-    const cookies = await composite.queryCookies("test-cookie", "example.com");
+    const results = await composite.queryCookies("test-cookie", "example.com");
 
-    // Should still return results from working strategy
-    expect(cookies).toHaveLength(1);
-    expect(cookies[0]).toBeDefined();
-    expect(cookies[0]).toMatchObject({
-      meta: {
-        browser: "Chrome",
-      },
-    });
+    expect(results).toHaveLength(2);
+    expect(results).toEqual(
+      expect.arrayContaining(createTestCookies("working")),
+    );
   });
 
   it("should handle empty strategy list", async () => {
     const composite = new CompositeCookieQueryStrategy([]);
-    const cookies = await composite.queryCookies("test-cookie", "example.com");
-
-    expect(cookies).toEqual([]);
+    const results = await composite.queryCookies("test-cookie", "example.com");
+    expect(results).toHaveLength(0);
   });
 });

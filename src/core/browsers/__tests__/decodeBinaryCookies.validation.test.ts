@@ -53,6 +53,20 @@ describe("decodeBinaryCookies - File Validation", () => {
     expect(cookies).toEqual([]);
   });
 
+  it("should throw on invalid footer value", () => {
+    const buffer = Buffer.alloc(20);
+    buffer.write("cook"); // Magic
+    buffer.writeUInt32BE(0, 4); // No pages
+    buffer.writeUInt32BE(20, 8); // File size
+    buffer.writeBigUInt64BE(BigInt(12), 12); // Different footer value
+
+    mockReadFileSync.mockReturnValue(buffer);
+
+    expect(() => {
+      decodeBinaryCookies("/path/to/cookies.binarycookies");
+    }).toThrow("Invalid cookie file format: wrong footer");
+  });
+
   it("should throw on invalid magic header", () => {
     const buffer = Buffer.alloc(20);
     buffer.write("invalid"); // Wrong magic

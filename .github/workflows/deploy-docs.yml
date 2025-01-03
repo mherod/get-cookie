@@ -46,10 +46,19 @@ jobs:
           sudo chmod +x /usr/bin/xdg-open
 
       - name: Build documentation
-        run: pnpm docs
+        run: |
+          pnpm docs || {
+            echo "Documentation build failed with exit code $?"
+            echo "Current directory contents:"
+            ls -la
+            echo "Docs directory contents:"
+            ls -la docs/
+            exit 1
+          }
         env:
           CI: true
           BROWSER: none
+          DEBUG: vitepress:*
 
       - name: List docs directory
         run: |

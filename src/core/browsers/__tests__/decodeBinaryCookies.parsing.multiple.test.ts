@@ -19,18 +19,18 @@ function createTestBuffer(): Buffer {
   // File header
   buffer.write("cook", 0);
   buffer.writeUInt32BE(1, 4); // One page
-  buffer.writeUInt32BE(200, 8); // Page size
+  buffer.writeUInt32BE(280, 8); // Page size (increased to accommodate both cookies)
 
   // Page header
   buffer.write("100Y", 12); // First 4 bytes of page header
   buffer.write("\0", 16); // Fifth byte
-  buffer.writeUInt32BE(32, 17); // Header length (32 bytes)
+  buffer.writeUInt32BE(20, 17); // Header length (20 bytes)
   buffer.writeUInt32BE(2, 21); // Two cookies
-  buffer.writeUInt32BE(44, 25); // First cookie offset
-  buffer.writeUInt32BE(120, 29); // Second cookie offset
+  buffer.writeUInt32BE(32, 25); // First cookie offset
+  buffer.writeUInt32BE(108, 29); // Second cookie offset
 
   // First cookie
-  let cookieOffset = 44;
+  let cookieOffset = 32;
   buffer.writeUInt32LE(76, cookieOffset); // Cookie size
   buffer.writeUInt32LE(1, cookieOffset + 4); // Version
   buffer.writeUInt32LE(1, cookieOffset + 8); // Flags (SECURE)
@@ -56,7 +56,7 @@ function createTestBuffer(): Buffer {
   buffer.write("abc123\0", cookieOffset + 85);
 
   // Second cookie
-  cookieOffset = 120;
+  cookieOffset = 108;
   buffer.writeUInt32LE(76, cookieOffset); // Cookie size
   buffer.writeUInt32LE(1, cookieOffset + 4); // Version
   buffer.writeUInt32LE(4, cookieOffset + 8); // Flags (HTTP_ONLY)

@@ -12,34 +12,44 @@ interface CookieRow {
   flags?: number;
 }
 
-function readNullTerminatedString(buffer: Buffer, offset: number): string {
+// The date offset for Safari cookies (until 2017)
+const SAFARI_DATE_OFFSET = 1706047360;
+
+function readNullTerminatedString(
+  buffer: Buffer,
+  offset: number,
+): [string, number] {
   let end = offset;
   while (end < buffer.length && buffer[end] !== 0) {
     end++;
   }
-  return buffer.toString("utf8", offset, end);
+  return [buffer.toString("utf8", offset, end), end + 1];
 }
 
 function decodeCookieHeader(
   buffer: Buffer,
-  pageStart: number,
-  cookieOffset: number,
+  offset: number,
 ): [CookieRow, number] {
-  const offset = pageStart + cookieOffset;
+  // First 4 bytes are the cookie size in little-endian
   const size = buffer.readUInt32LE(offset);
-  const flags = buffer.readUInt32LE(offset + 4);
-  const urlOffset = buffer.readUInt32LE(offset + 8);
-  const nameOffset = buffer.readUInt32LE(offset + 12);
-  const pathOffset = buffer.readUInt32LE(offset + 16);
-  const valueOffset = buffer.readUInt32LE(offset + 20);
-  const expiryDate = buffer.readDoubleLE(offset + 28);
-  const creationDate = buffer.readDoubleLE(offset + 36);
 
-  // Read strings using offsets relative to the start of this cookie record
-  const domain = readNullTerminatedString(buffer, offset + urlOffset);
-  const name = readNullTerminatedString(buffer, offset + nameOffset);
-  const path = readNullTerminatedString(buffer, offset + pathOffset);
-  const value = readNullTerminatedString(buffer, offset + valueOffset);
+  // Read the date at offset 0x2B (43 bytes from start)
+  const dateOffset = offset + 0x2b;
+  const date = buffer.readUInt32LE(dateOffset);
+  const timestamp = date - SAFARI_DATE_OFFSET;
+
+  // Dynamic fields start at offset 0x38 (56 bytes from start)
+  let currentOffset = offset + 0x38;
+  const [name, nextOffset] = readNullTerminatedString(buffer, currentOffset);
+  currentOffset = nextOffset;
+
+  const [value, nextOffset2] = readNullTerminatedString(buffer, currentOffset);
+  currentOffset = nextOffset2;
+
+  const [domain, nextOffset3] = readNullTerminatedString(buffer, currentOffset);
+  currentOffset = nextOffset3;
+
+  const [path, _] = readNullTerminatedString(buffer, currentOffset);
 
   return [
     {
@@ -47,51 +57,40 @@ function decodeCookieHeader(
       value,
       domain,
       path,
-      expiry: Math.floor(expiryDate),
-      creation: Math.floor(creationDate),
-      flags,
+      expiry: timestamp,
+      creation: timestamp, // We don't have creation time in this format
     },
     size,
   ];
 }
 
-const PAGE_MAGIC = 0x00000100;
+function decodePage(
+  buffer: Buffer,
+  offset: number,
+  pageSize: number,
+): CookieRow[] {
+  // Skip first 5 bytes
+  const headerLengthOffset = offset + 5;
+  // Next 4 bytes contain header length
+  const headerLength = buffer.readUInt32BE(headerLengthOffset);
 
-function decodePage(buffer: Buffer, offset: number): [CookieRow[], number] {
-  const pageMagic = buffer.readUInt32BE(offset);
-  if (pageMagic !== PAGE_MAGIC) {
-    throw new Error(`Invalid page magic bytes: ${pageMagic.toString(16)}`);
-  }
-
-  const numCookies = buffer.readUInt32LE(offset + 4);
+  let currentOffset = offset + headerLength;
   const cookies: CookieRow[] = [];
+  const pageEnd = offset + pageSize;
 
-  // Read cookie offsets
-  for (let i = 0; i < numCookies; i++) {
-    const cookieOffset = buffer.readUInt32LE(offset + 8 + i * 4);
+  // Read cookies until we reach the page end
+  while (currentOffset < pageEnd - 8) {
     try {
-      const [cookie] = decodeCookieHeader(buffer, offset, cookieOffset);
+      const [cookie, size] = decodeCookieHeader(buffer, currentOffset);
       cookies.push(cookie);
+      currentOffset += size;
     } catch (error) {
-      console.warn(
-        `Error decoding cookie ${i} at offset ${offset + cookieOffset}:`,
-        error,
-      );
+      console.warn(`Error decoding cookie at offset ${currentOffset}:`, error);
+      break;
     }
   }
 
-  // Calculate page size based on the last cookie's offset and size
-  const lastCookieOffset = buffer.readUInt32LE(
-    offset + 8 + (numCookies - 1) * 4,
-  );
-  const [_, lastCookieSize] = decodeCookieHeader(
-    buffer,
-    offset,
-    lastCookieOffset,
-  );
-  const pageSize = lastCookieOffset + lastCookieSize;
-
-  return [cookies, pageSize];
+  return cookies;
 }
 
 /**
@@ -102,25 +101,29 @@ function decodePage(buffer: Buffer, offset: number): [CookieRow[], number] {
  */
 export function decodeBinaryCookies(cookieDbPath: string): CookieRow[] {
   const buffer = readFileSync(cookieDbPath);
-  const magic = buffer.toString("utf8", 0, 4);
-  if (magic !== "cook") {
-    throw new Error("Invalid file magic bytes");
+
+  // Skip first 4 bytes (header)
+  const numPages = buffer.readUInt32BE(4);
+
+  // Read the page sizes array (4 bytes per page)
+  const pageSizes: number[] = [];
+  for (let i = 0; i < numPages; i++) {
+    pageSizes.push(buffer.readUInt32BE(8 + i * 4));
   }
 
-  const numPages = buffer.readUInt32BE(4);
-  let offset = 8 + numPages * 4; // Skip header and page sizes array
+  // Skip the page sizes array
+  let offset = 8 + numPages * 4;
   const cookies: CookieRow[] = [];
 
+  // Process each page
   for (let i = 0; i < numPages; i++) {
     try {
-      const [pageCookies, pageSize] = decodePage(buffer, offset);
+      const pageCookies = decodePage(buffer, offset, pageSizes[i]);
       cookies.push(...pageCookies);
-      offset += pageSize;
+      offset += pageSizes[i];
     } catch (error) {
       console.warn(`Error decoding page ${i}:`, error);
-      // Try to skip to the next page using the page sizes array
-      const pageSize = buffer.readUInt32BE(8 + i * 4);
-      offset += pageSize;
+      offset += pageSizes[i];
     }
   }
 

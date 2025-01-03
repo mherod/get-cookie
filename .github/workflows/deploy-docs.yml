@@ -51,6 +51,15 @@ jobs:
           CI: true
           BROWSER: none
 
+      - name: List docs directory
+        run: |
+          echo "Contents of docs directory:"
+          ls -la docs/
+          echo "Contents of docs/.vitepress directory:"
+          ls -la docs/.vitepress/ || true
+          echo "Contents of docs/.vitepress/dist directory:"
+          ls -la docs/.vitepress/dist/ || true
+
       - name: Restore xdg-open
         if: always()
         run: |

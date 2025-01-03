@@ -21,7 +21,7 @@ function createTestBuffer(): Buffer {
   buffer.writeUInt32BE(1, 4); // One page
   buffer.writeUInt32BE(280, 8); // Page size (increased to accommodate both cookies)
 
-  // Page header
+  // Page header (20 bytes total)
   buffer.write("100Y", 12); // First 4 bytes of page header
   buffer.write("\0", 16); // Fifth byte
   buffer.writeUInt32BE(20, 17); // Header length (20 bytes)
@@ -81,8 +81,8 @@ function createTestBuffer(): Buffer {
   buffer.write("xyz789\0", cookieOffset + 85);
 
   // Footer
-  buffer.writeUInt32BE(0x28, 292); // Safari 14+ footer value
-  buffer.writeUInt32BE(0x00, 296);
+  buffer.writeUInt32BE(0x28, 272); // Safari 14+ footer value
+  buffer.writeUInt32BE(0x00, 276);
 
   return buffer;
 }

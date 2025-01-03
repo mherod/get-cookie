@@ -40,7 +40,8 @@ export function validateTokenFormat(token: string): ValidationResult {
   if (!JWT_FORMAT_REGEX.test(token)) {
     return {
       isValid: false,
-      error: "Invalid JWT format - must be three dot-separated base64url-encoded strings",
+      error:
+        "Invalid JWT format - must be three dot-separated base64url-encoded strings",
     };
   }
   return { isValid: true };
@@ -133,11 +134,13 @@ function debugLog(message: string, data?: unknown): void {
  * @param token - The token to validate.
  * @returns ValidationResult for invalid tokens, null for valid ones.
  */
-function validateTokenInput(token: string | null | undefined): ValidationResult | null {
+function validateTokenInput(
+  token: string | null | undefined,
+): ValidationResult | null {
   if (token === null || token === undefined) {
     return { isValid: false, error: "Token is null or undefined" };
   }
-  if (typeof token !== 'string') {
+  if (typeof token !== "string") {
     return { isValid: false, error: "Token is not a string" };
   }
   if (token.trim().length === 0) {
@@ -182,10 +185,19 @@ function decodeAndValidatePayload(token: string): ValidationResult {
  * ```
  */
 export function validateToken(
-  token: string,
+  token: string | undefined,
   secretOrPublicKey?: string | Buffer,
 ): ValidationResult {
   try {
+    if (token === undefined) {
+      const errorMessage = "Unknown error during JWT validation";
+      logger.debug("JWT validation error: " + errorMessage);
+      return {
+        isValid: false,
+        error: errorMessage,
+      };
+    }
+
     const inputError = validateTokenInput(token);
     if (inputError !== null) {
       return inputError;
@@ -205,7 +217,10 @@ export function validateToken(
 
     return decodeAndValidatePayload(token);
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : "Unknown error during JWT validation";
+    const errorMessage =
+      error instanceof Error
+        ? error.message
+        : "Unknown error during JWT validation";
     logger.debug("JWT validation error: " + errorMessage);
     return {
       isValid: false,

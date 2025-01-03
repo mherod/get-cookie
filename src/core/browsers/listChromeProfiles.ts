@@ -2,7 +2,7 @@
 import { readFileSync } from "fs";
 import { join } from "path";
 
-import { sync } from "glob";
+import { sync } from "fast-glob";
 
 // Internal imports
 import logger from "@utils/logger";

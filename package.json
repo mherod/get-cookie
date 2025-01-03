@@ -43,7 +43,7 @@
     "docs:build": "pnpm docs:api && vitepress build docs"
   },
   "engines": {
-    "node": ">= 16"
+    "node": "^20.0.0 || ^22.0.0"
   },
   "keywords": [],
   "author": "Matthew Herod",
@@ -62,6 +62,8 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@commitlint/cli": "19.6.1",
+    "@commitlint/config-conventional": "19.6.0",
     "@jest/globals": "^29.7.0",
     "@types/better-sqlite3": "^7.6.12",
     "@types/jest": "^29.5.14",

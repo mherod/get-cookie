@@ -3,7 +3,10 @@ import type { CookieSpec } from "../../types/CookieSpec";
 /**
  * Generate cookie specifications from a URL by creating specs for both the exact domain
  * and its parent domains. This allows for proper cookie matching across domain levels.
- *
+ * @internal
+ * @param url - The URL to generate cookie specs from (e.g., 'https://example.com')
+ * @returns An array of cookie specifications for the URL and its parent domains
+ * @throws {Error} If the URL is invalid or cannot be parsed
  * @example
  * // Basic usage with a simple URL
  * cookieSpecsFromUrl('https://sub.example.com')
@@ -12,7 +15,6 @@ import type { CookieSpec } from "../../types/CookieSpec";
  * //   { name: '%', domain: '%.example.com' },
  * //   { name: '%', domain: 'example.com' }
  * // ]
- *
  * @example
  * // Error handling
  * try {
@@ -20,13 +22,6 @@ import type { CookieSpec } from "../../types/CookieSpec";
  * } catch (error) {
  *   console.error(error.message) // "Invalid URL"
  * }
- *
- * @internal
- * @param url - The URL to generate cookie specs from (e.g., 'https://example.com')
- *
- * @returns An array of cookie specifications for the URL and its parent domains
- *
- * @throws {Error} If the URL is invalid or cannot be parsed
  */
 export function cookieSpecsFromUrl(url: string): CookieSpec[] {
   if (!url) {

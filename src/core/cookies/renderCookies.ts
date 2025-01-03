@@ -6,35 +6,29 @@ import type { ExportedCookie } from "../../types/ExportedCookie";
 /**
  * Renders cookies as a string or array of strings based on the provided format option.
  * Supports merged format for single string output or grouped format for file-based grouping.
- *
  * @param cookies - The cookies to render
  * @param options - Options for rendering
+ * @param options.format - The output format ('merged' or 'grouped')
+ * @param options.showFilePaths - Whether to include file paths in grouped output
+ * @param options.separator - Custom separator for cookie values
  * @returns A string for merged format, or array of strings for grouped format
- *
- * @example Merged format (default)
- * ```ts
+ * @example
+ * ```typescript
+ * // Merged format (default)
  * const cookies = [
  *   { value: 'sessionId=abc123' },
  *   { value: 'theme=dark' }
  * ];
  * renderCookies(cookies);
  * // Returns: "sessionId=abc123; theme=dark"
- * ```
  *
- * @example Grouped format with file paths
- * ```ts
- * const cookies = [
+ * // Grouped format with file paths
+ * const groupedCookies = [
  *   { value: 'sessionId=abc123', meta: { file: 'auth.ts' } },
  *   { value: 'theme=dark', meta: { file: 'preferences.ts' } }
  * ];
- * renderCookies(cookies, { format: 'grouped', showFilePaths: true });
+ * renderCookies(groupedCookies, { format: 'grouped', showFilePaths: true });
  * // Returns: ["auth.ts: sessionId=abc123", "preferences.ts: theme=dark"]
- * ```
- *
- * @example Empty cookies handling
- * ```ts
- * renderCookies([], { format: 'merged' }); // Returns: ""
- * renderCookies([], { format: 'grouped' }); // Returns: []
  * ```
  */
 export function renderCookies(

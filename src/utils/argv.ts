@@ -1,11 +1,9 @@
 import { parseArgs } from "node:util";
 
 /**
- * Interface representing parsed command line arguments
- *
+ * Interface representing parsed command line arguments.
  * @property values - Record of option values parsed from command line
  * @property positionals - Array of positional arguments
- *
  * @example
  * ```typescript
  * const args: ParsedArgs = {
@@ -26,13 +24,10 @@ interface ParsedArgs {
 }
 
 /**
- * Parses command line arguments into a structured format
- *
+ * Parses command line arguments into a structured format.
  * @internal
- *
  * @param argv - Array of command line arguments to parse
  * @returns Parsed command line arguments object
- *
  * @example
  * ```typescript
  * // Basic usage

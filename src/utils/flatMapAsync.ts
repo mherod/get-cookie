@@ -1,12 +1,10 @@
 /**
  * Asynchronously maps over an array and flattens the result.
  * Similar to Array.prototype.flatMap but for async operations.
- *
- * @param array The input array to map over
- * @param callback The async mapping function to apply to each element
- * @param defaultValue The default value to return if the array is empty
+ * @param array - The input array to map over
+ * @param callback - The async mapping function to apply to each element
+ * @param defaultValue - The default value to return if the array is empty
  * @returns A flattened array of results
- *
  * @example
  * // Basic usage with number arrays
  * const numbers = [1, 2, 3];
@@ -15,7 +13,6 @@
  *   async (num) => [num, num * 2]
  * );
  * console.log(result); // [1, 2, 2, 4, 3, 6]
- *
  * @example
  * // Error handling with default value
  * const data = ['valid', 'invalid'];

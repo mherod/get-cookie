@@ -8,8 +8,10 @@ import { logError } from "@utils/logHelpers";
 const execPromise = promisify(exec);
 
 /**
- * Custom error class for command execution failures
- *
+ * Custom error class for command execution failures.
+ * @property {string} command - The command that failed to execute
+ * @property {Error} [originalError] - The underlying error that caused the failure
+ * @throws CommandExecutionError Always throws with appropriate error context
  * @example
  * ```typescript
  * throw new CommandExecutionError(
@@ -18,9 +20,6 @@ const execPromise = promisify(exec);
  *   originalError
  * );
  * ```
- *
- * @property {string} command - The command that failed to execute
- * @property {Error} [originalError] - The underlying error that caused the failure
  */
 class CommandExecutionError extends Error {
   public constructor(
@@ -34,8 +33,11 @@ class CommandExecutionError extends Error {
 }
 
 /**
- * Handles execution errors and throws appropriate CommandExecutionError
- *
+ * Handles execution errors and throws appropriate CommandExecutionError.
+ * @internal
+ * @param error - The error that occurred during command execution
+ * @param command - The command that was being executed when the error occurred
+ * @throws CommandExecutionError Always throws with appropriate error context
  * @example
  * ```typescript
  * try {
@@ -44,11 +46,6 @@ class CommandExecutionError extends Error {
  *   handleExecutionError(error, 'invalid-command');
  * }
  * ```
- *
- * @internal
- * @param error The error that occurred during command execution
- * @param command The command that was being executed when the error occurred
- * @throws CommandExecutionError Always throws with appropriate error context
  */
 function handleExecutionError(error: unknown, command: string): never {
   if (error instanceof CommandExecutionError) {
@@ -85,8 +82,11 @@ function handleExecutionError(error: unknown, command: string): never {
 }
 
 /**
- * Executes a shell command asynchronously and returns its output as a string
- *
+ * Executes a shell command asynchronously and returns its output as a string.
+ * @param command - The shell command to execute
+ * @param options - Optional execution options that override the defaults
+ * @returns A promise that resolves to the trimmed command output
+ * @throws CommandExecutionError if the command returns an empty result, times out, or fails to execute
  * @example
  * ```typescript
  * // Basic usage
@@ -104,11 +104,6 @@ function handleExecutionError(error: unknown, command: string): never {
  *   }
  * }
  * ```
- *
- * @param command The shell command to execute
- * @param options Optional execution options that override the defaults
- * @returns A promise that resolves to the trimmed command output
- * @throws CommandExecutionError if the command returns an empty result, times out, or fails to execute
  */
 export async function execSimple(
   command: string,

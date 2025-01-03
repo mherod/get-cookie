@@ -7,15 +7,13 @@ import { renderCookies } from "./renderCookies";
 
 /**
  * Retrieves and renders cookies in a grouped format based on their source files.
- *
- * @param cookieSpec - The cookie specification containing search criteria:
- *                     - name: The name of the cookie to search for
- *                     - domain: (optional) The domain to filter cookies by
- * @param options - Options for rendering the cookies:
- *                 - showFilePaths: Whether to include file paths in the output
- *                 - separator: Custom separator for cookie values
- * @returns An array of strings, each representing a group of cookies from a source file.
- *          Returns an empty array if no cookies are found or if an error occurs.
+ * @param cookieSpec - The cookie specification containing search criteria
+ * @param cookieSpec.name - The name of the cookie to search for
+ * @param cookieSpec.domain - (optional) The domain to filter cookies by
+ * @param options - Options for rendering the cookies
+ * @param options.showFilePaths - Whether to include file paths in the output
+ * @param options.separator - Custom separator for cookie values
+ * @returns An array of strings, each representing a group of cookies from a source file
  * @example
  * ```typescript
  * // Basic usage - get all cookies named "sessionId" grouped by source file
@@ -32,12 +30,6 @@ import { renderCookies } from "./renderCookies";
  *     separator: " | "
  *   }
  * );
- *
- * // Get cookies with wildcard name matching
- * const analyticsCookies = await getGroupedRenderedCookies({
- *   name: "analytics_*",
- *   domain: "analytics.example.com"
- * });
  * ```
  */
 export async function getGroupedRenderedCookies(
@@ -61,7 +53,6 @@ export async function getGroupedRenderedCookies(
 
 /**
  * Default export of the getGroupedRenderedCookies function
- *
  * @example
  * ```typescript
  * import getGroupedCookies from './getGroupedRenderedCookies';

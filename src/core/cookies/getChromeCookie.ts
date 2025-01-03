@@ -5,14 +5,12 @@ import { ChromeCookieQueryStrategy } from "../browsers/chrome/ChromeCookieQueryS
 
 /**
  * Retrieves cookies from Chrome browser storage that match the specified criteria.
- *
- * @param cookieSpec - The cookie specification containing search criteria:
- *                     - name: The name of the cookie to search for
- *                     - domain: (optional) The domain to filter cookies by
- * @returns An array of ExportedCookie objects that match the specification.
- *          Returns an empty array if no matches are found or if an error occurs.
+ * @param cookieSpec - The cookie specification containing search criteria
+ * @param cookieSpec.name - The name of the cookie to search for
+ * @param cookieSpec.domain - (optional) The domain to filter cookies by
+ * @returns An array of ExportedCookie objects that match the specification
  * @throws Will catch and handle any errors during cookie querying, logging a warning
- *         to the console without throwing to the caller.
+ * to the console without throwing to the caller
  * @example
  * ```typescript
  * // Get all cookies named "sessionId" from Chrome
@@ -22,18 +20,6 @@ import { ChromeCookieQueryStrategy } from "../browsers/chrome/ChromeCookieQueryS
  * const domainCookies = await getChromeCookie({
  *   name: "userPref",
  *   domain: "example.com"
- * });
- *
- * // Get authentication cookies from a specific subdomain
- * const authCookies = await getChromeCookie({
- *   name: "auth-token",
- *   domain: "auth.myapp.com"
- * });
- *
- * // Get tracking cookies from any .com domain
- * const trackingCookies = await getChromeCookie({
- *   name: "tracking-id",
- *   domain: ".com"
  * });
  * ```
  */
@@ -54,21 +40,14 @@ export async function getChromeCookie(
 }
 
 /**
- * Default export of the getChromeCookie function
- *
+ * Default export of the getChromeCookie function.
  * @example
  * ```typescript
  * import getChromeCookie from './getChromeCookie';
- *
- * // Get all instances of a cookie named "session"
- * const sessionCookies = await getChromeCookie({ name: "session" });
- *
- * // Get cookies from multiple domains
- * const promises = [
- *   getChromeCookie({ name: "userId", domain: "app1.example.com" }),
- *   getChromeCookie({ name: "userId", domain: "app2.example.com" })
- * ];
- * const [app1Cookies, app2Cookies] = await Promise.all(promises);
+ * const cookies = await getChromeCookie({
+ *   name: "sessionId",
+ *   domain: "example.com"
+ * });
  * ```
  */
 export default getChromeCookie;

@@ -51,6 +51,6 @@ async function example() {
 
 ## Next Steps
 
-- Check out the [API Reference](/reference/) for detailed documentation
+- Check out the [API Reference](/reference/index.html) for detailed documentation
 - Learn about browser-specific features
 - Explore advanced configuration options

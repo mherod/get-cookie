@@ -8,7 +8,9 @@ jest.mock("fs", () => ({
 }));
 
 describe("decodeBinaryCookies - File Validation", () => {
-  const mockReadFileSync = readFileSync as jest.MockedFunction<typeof readFileSync>;
+  const mockReadFileSync = readFileSync as jest.MockedFunction<
+    typeof readFileSync
+  >;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -21,7 +23,8 @@ describe("decodeBinaryCookies - File Validation", () => {
     buffer.writeUInt32BE(0, 4); // No pages
     buffer.writeUInt32BE(20, 8); // File size
     // Write the expected footer value
-    buffer.writeBigUInt64BE(BigInt("510912288576766000"), 12);
+    buffer.writeUInt32BE(0x28, 12); // Safari 14+ footer value
+    buffer.writeUInt32BE(0x00, 16);
 
     mockReadFileSync.mockReturnValue(buffer);
 

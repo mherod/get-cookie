@@ -11,16 +11,7 @@ jest.mock("../getEncryptedChromeCookie");
 jest.mock("./decrypt");
 
 // Mock the logger
-jest.mock("@utils/logger", () => ({
-  __esModule: true,
-  default: {
-    withTag: () => ({
-      debug: jest.fn(),
-      warn: jest.fn(),
-      error: jest.fn(),
-    }),
-  },
-}));
+jest.mock("@utils/logger");
 
 /**
  * Mock password used for testing

@@ -2,7 +2,8 @@ module.exports = {
   rootDir: "src",
   moduleFileExtensions: ["js", "ts", "json"],
   moduleNameMapper: {
-    "lodash-es": "lodash",
+    "^lodash-es$": "lodash",
+    "^lodash-es/(.*)$": "lodash/$1",
     "^@utils/(.*)$": "<rootDir>/utils/$1",
     "^@core/(.*)$": "<rootDir>/core/$1",
     "^@tests/(.*)$": "<rootDir>/tests/$1",

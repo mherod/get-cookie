@@ -1,8 +1,7 @@
 {
   "extends": "./tsconfig.json",
-  "include": ["build-indexes.ts", "jest.config.ts"],
+  "include": ["jest.config.ts", "tsup.*.ts"],
   "exclude": ["node_modules", "dist"],
-  "include": ["tsup.*.ts"],
   "compilerOptions": {
     "module": "ESNext",
     "moduleResolution": "bundler"

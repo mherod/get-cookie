@@ -103,7 +103,6 @@ function handleOutput(results: ExportedCookie[], args: ParsedArgs): void {
 
 /**
  * Query cookies from browsers using the CLI interface
- *
  * @param cookieSpec - Cookie specification(s) to query for
  * @param browsers - List of browsers to query from
  * @param profiles - List of browser profiles to query from

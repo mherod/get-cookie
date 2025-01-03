@@ -1,6 +1,5 @@
 /**
  * Mapping of module aliases to their corresponding import paths
- *
  * @example
  * // Access path aliases
  * console.log(paths.core); // '@core'
@@ -18,7 +17,6 @@ export const paths = {
 
 /**
  * Type representing the structure of the paths object
- *
  * @example
  * // Type usage in function parameters
  * function getPath(key: keyof Paths): string {
@@ -33,7 +31,6 @@ export type Paths = typeof paths;
 
 /**
  * Type representing the valid keys of the paths object
- *
  * @example
  * // Use as function parameter type
  * function validatePath(key: PathKeys): boolean {

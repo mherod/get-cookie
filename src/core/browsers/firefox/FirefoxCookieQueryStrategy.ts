@@ -18,7 +18,6 @@ interface FirefoxCookieRow {
 
 /**
  * Find all Firefox cookie database files
- *
  * @returns An array of file paths to Firefox cookie databases
  */
 function findFirefoxCookieFiles(): string[] {
@@ -49,7 +48,6 @@ function findFirefoxCookieFiles(): string[] {
 
 /**
  * Strategy for querying cookies from Firefox browser
- *
  * @example
  */
 export class FirefoxCookieQueryStrategy implements CookieQueryStrategy {
@@ -60,7 +58,6 @@ export class FirefoxCookieQueryStrategy implements CookieQueryStrategy {
 
   /**
    * Queries cookies from Firefox's cookie store
-   *
    * @param name - The name pattern to match cookies against
    * @param domain - The domain pattern to match cookies against
    * @returns A promise that resolves to an array of exported cookies

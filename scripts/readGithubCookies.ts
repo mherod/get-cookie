@@ -5,7 +5,6 @@ import logger from "../src/utils/logger";
 
 /**
  * Checks if a string matches the basic JWT format
- *
  * @param str - The string to check
  * @returns True if the string matches JWT format, false otherwise
  * @example
@@ -38,10 +37,14 @@ export function isJWT(str: string): boolean {
 }
 
 /**
- * Prints information about a single cookie
- *
+ * Prints information about a cookie and checks if it's a JWT
  * @param cookie - The cookie to print information about
  * @returns Whether this was a JWT cookie
+ * @example
+ * ```typescript
+ * const cookie = { name: 'session', value: 'xyz', domain: 'github.com' };
+ * const isJwt = printCookieInfo(cookie);
+ * ```
  */
 function printCookieInfo(cookie: ExportedCookie): boolean {
   logger.info("Name: %s", cookie.name);
@@ -67,10 +70,14 @@ function printCookieInfo(cookie: ExportedCookie): boolean {
 }
 
 /**
- * Prints a summary of the cookie search results
- *
+ * Prints a summary of found cookies and JWT count
  * @param cookies - The found cookies
  * @param jwtCount - Number of JWT cookies found
+ * @example
+ * ```typescript
+ * const cookies = [{ name: 'session', value: 'xyz' }];
+ * printSummary(cookies, 1);
+ * ```
  */
 function printSummary(cookies: ExportedCookie[], jwtCount: number): void {
   logger.info("\nSummary:");

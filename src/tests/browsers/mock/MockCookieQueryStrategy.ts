@@ -4,7 +4,6 @@ import type { ExportedCookie } from "../../../types/ExportedCookie";
 
 /**
  * Mock implementation of CookieQueryStrategy for testing
- *
  * @example
  */
 export default class MockCookieQueryStrategy implements CookieQueryStrategy {
@@ -15,14 +14,12 @@ export default class MockCookieQueryStrategy implements CookieQueryStrategy {
 
   /**
    * Creates a new instance of MockCookieQueryStrategy
-   *
    * @param mockCookies - Array of mock cookies to use for testing
    */
   public constructor(private mockCookies: ExportedCookie[]) {}
 
   /**
    * Queries mock cookies based on name and domain patterns
-   *
    * @param name - The name pattern to match cookies against
    * @param domain - The domain pattern to match cookies against
    * @returns A promise that resolves to an array of matching cookies

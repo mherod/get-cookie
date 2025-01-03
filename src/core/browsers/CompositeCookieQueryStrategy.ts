@@ -13,7 +13,6 @@ type CookieStrategyConstructor = new () => CookieQueryStrategy;
 /**
  * A composite strategy that combines multiple cookie query strategies
  * This allows querying cookies from multiple browsers simultaneously
- *
  * @example
  */
 export class CompositeCookieQueryStrategy implements CookieQueryStrategy {
@@ -37,7 +36,6 @@ export class CompositeCookieQueryStrategy implements CookieQueryStrategy {
 
   /**
    * Queries cookies from all registered strategies
-   *
    * @param name - The name pattern to match cookies against
    * @param domain - The domain pattern to match cookies against
    * @returns A promise that resolves to an array of exported cookies from all strategies

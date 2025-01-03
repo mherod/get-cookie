@@ -1,6 +1,5 @@
 /**
  * Specification for a cookie to query
- *
  * @example
  */
 export interface CookieSpec {
@@ -12,7 +11,6 @@ export interface CookieSpec {
 
 /**
  * Array of cookie specifications to query
- *
  * @example
  */
 export type MultiCookieSpec = CookieSpec[];

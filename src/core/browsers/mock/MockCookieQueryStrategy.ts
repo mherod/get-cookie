@@ -4,7 +4,6 @@ import type { ExportedCookie } from "../../../types/ExportedCookie";
 /**
  * A mock implementation of CookieQueryStrategy for testing purposes.
  * Provides a way to simulate cookie querying behavior without a real browser.
- *
  * @example
  * // Initialize with mock cookies
  * const mockCookies = [
@@ -23,25 +22,21 @@ import type { ExportedCookie } from "../../../types/ExportedCookie";
 export default class MockCookieQueryStrategy implements CookieQueryStrategy {
   /**
    * Name identifier for the mock browser implementation
-   *
-   * @readonly
    * @internal
+   * @readonly
    */
   public readonly browserName: string = "mock";
 
   /**
    * Internal storage for mock cookie data
-   *
-   * @private
    * @internal
+   * @private
    */
   private readonly mockCookies: ExportedCookie[];
 
   /**
    * Creates a new instance of MockCookieQueryStrategy
-   *
    * @param mockCookies - Array of cookies to use as mock data. Defaults to empty array if not provided.
-   *
    * @example
    * // Initialize with single cookie
    * const strategy = new MockCookieQueryStrategy([
@@ -63,11 +58,9 @@ export default class MockCookieQueryStrategy implements CookieQueryStrategy {
 
   /**
    * Queries cookies matching the given name and domain
-   *
    * @param name - The name of the cookie to query, or "*" for all names
    * @param domain - The domain of the cookie to query, or "*" for all domains
    * @returns Promise resolving to array of matching cookies
-   *
    * @example
    * const strategy = new MockCookieQueryStrategy([
    *   { name: 'session', domain: 'example.com', value: '123' }
@@ -94,9 +87,7 @@ export default class MockCookieQueryStrategy implements CookieQueryStrategy {
 
   /**
    * Returns all mock cookies
-   *
    * @returns Promise resolving to array of all mock cookies
-   *
    * @example
    * const strategy = new MockCookieQueryStrategy([
    *   { name: 'session', domain: 'example.com', value: '123' },

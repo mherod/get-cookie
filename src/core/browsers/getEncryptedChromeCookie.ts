@@ -30,7 +30,6 @@ interface SqlQuery {
 
 /**
  * Validates if a path is a valid, existing file
- *
  * @param path - Path to validate
  * @returns true if path is valid and file exists, false otherwise
  */
@@ -49,7 +48,6 @@ function isValidFilePath(path: unknown): path is string {
 
 /**
  * Get paths to Chrome cookie files
- *
  * @returns A promise that resolves to an array of file paths
  */
 async function getCookieFiles(): Promise<string[]> {
@@ -74,7 +72,6 @@ async function getCookieFiles(): Promise<string[]> {
 
 /**
  * Builds the SQL query for retrieving cookies
- *
  * @param name - Cookie name to search for
  * @param domain - Domain to filter by
  * @returns SQL query and parameters
@@ -91,7 +88,6 @@ function buildSqlQuery(name: string, domain: string): SqlQuery {
 
 /**
  * Processes a single cookie file to extract matching cookies
- *
  * @param cookieFile - Path to the cookie file
  * @param name - Cookie name to search for
  * @param domain - Domain to filter by
@@ -131,7 +127,6 @@ async function processCookieFile(
 
 /**
  * Retrieve encrypted cookies from Chrome's cookie store
- *
  * @param options - Options for querying Chrome cookies
  * @param options.name - The name of the cookie to retrieve
  * @param options.domain - The domain to retrieve cookies from

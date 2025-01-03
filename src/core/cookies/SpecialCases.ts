@@ -2,7 +2,6 @@ import type { CookieSpec } from "../../types/CookieSpec";
 
 /**
  * Check if a cookie specification contains wildcard patterns
- *
  * @param cookieSpec - The cookie specification to check
  * @returns True if the cookie spec contains wildcard patterns, false otherwise
  * @example

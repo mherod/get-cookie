@@ -42,7 +42,6 @@ const ToughCookieSchema = z
 /**
  * A strategy for querying cookies from an internal cookie store
  * This class implements the CookieQueryStrategy interface and provides access to cookies stored internally
- *
  * @example
  */
 export default class CookieStoreQueryStrategy implements CookieQueryStrategy {
@@ -53,7 +52,6 @@ export default class CookieStoreQueryStrategy implements CookieQueryStrategy {
 
   /**
    * Queries cookies from the internal cookie store
-   *
    * @param name - The name of the cookie to query
    * @param domain - The domain to query cookies from
    * @returns A promise that resolves to an array of exported cookies from the internal store

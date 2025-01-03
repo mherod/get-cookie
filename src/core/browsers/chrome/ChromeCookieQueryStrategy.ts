@@ -50,7 +50,6 @@ function createExportedCookie(
 
 /**
  * Strategy for querying cookies from Chrome browser
- *
  * @example
  */
 export class ChromeCookieQueryStrategy implements CookieQueryStrategy {
@@ -63,7 +62,6 @@ export class ChromeCookieQueryStrategy implements CookieQueryStrategy {
 
   /**
    * Queries cookies from Chrome's cookie store
-   *
    * @param name - The name pattern to match cookies against
    * @param domain - The domain pattern to match cookies against
    * @returns A promise that resolves to an array of exported cookies

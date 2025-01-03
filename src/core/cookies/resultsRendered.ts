@@ -3,11 +3,9 @@ import type { ExportedCookie } from "../../types/ExportedCookie";
 /**
  * Formats cookie query results into a human-readable string representation.
  * Supports both basic and verbose output formats.
- *
  * @param cookies - Array of cookie objects to format. Each cookie must have at least name and value properties
  * @param verbose - When true, includes additional details like domain, expiry, and metadata
  * @returns A formatted string with one cookie per line
- *
  * @example
  * // Basic usage
  * const cookies = [{ name: 'sessionId', value: '123abc' }];
@@ -15,7 +13,6 @@ import type { ExportedCookie } from "../../types/ExportedCookie";
  * // Returns:
  * // Found 1 cookie:
  * // - sessionId=123abc
- *
  * @example
  * // Verbose output with multiple cookies
  * const cookies = [{

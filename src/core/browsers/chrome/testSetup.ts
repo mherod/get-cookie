@@ -32,7 +32,6 @@ export const mockCookieData = {
 
 /**
  * Sets up a Chrome test environment with mocked dependencies
- *
  * @returns A configured ChromeCookieQueryStrategy instance
  */
 export function setupChromeTest(): ChromeCookieQueryStrategy {

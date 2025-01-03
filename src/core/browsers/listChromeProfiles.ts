@@ -13,7 +13,9 @@ const consola = logger.withTag("listChromeProfiles");
 
 /**
  * Lists all Chrome profile paths that contain cookie files
- *
+ * @internal
+ * @returns An array of absolute paths to Chrome cookie files
+ * @throws {Error} If Chrome's application support directory cannot be accessed
  * @example
  * ```typescript
  * // Get all Chrome cookie file paths
@@ -30,10 +32,6 @@ const consola = logger.withTag("listChromeProfiles");
  *   console.error('Failed to access Chrome profiles:', error);
  * }
  * ```
- *
- * @returns An array of absolute paths to Chrome cookie files
- * @throws {Error} If Chrome's application support directory cannot be accessed
- * @internal
  */
 export function listChromeProfilePaths(): string[] {
   const files: string[] = sync(`./**/Cookies`, {
@@ -47,7 +45,6 @@ export function listChromeProfilePaths(): string[] {
 
 /**
  * Chrome Local State file structure
- *
  * @internal
  */
 interface ChromeLocalState {
@@ -58,7 +55,6 @@ interface ChromeLocalState {
 
 /**
  * Chrome profile information structure
- *
  * @property {string} name - The name of the profile
  * @property {number} active_time - Unix timestamp of last profile activity
  * @property {string} account_id - Unique identifier for the Chrome profile
@@ -101,7 +97,9 @@ interface ChromeProfileInfo {
 
 /**
  * Lists all Chrome profiles and their associated information
- *
+ * @internal
+ * @returns An array of Chrome profile information objects. Returns empty array if profiles cannot be read
+ * @throws {Error} If Chrome's application support directory cannot be accessed
  * @example
  * ```typescript
  * // Get all Chrome profiles
@@ -122,10 +120,6 @@ interface ChromeProfileInfo {
  *   console.log('No Chrome profiles found or error occurred');
  * }
  * ```
- *
- * @returns An array of Chrome profile information objects. Returns empty array if profiles cannot be read
- * @throws {Error} If Chrome's application support directory cannot be accessed
- * @internal
  */
 export function listChromeProfiles(): ChromeProfileInfo[] {
   try {

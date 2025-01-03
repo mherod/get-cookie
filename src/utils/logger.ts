@@ -24,7 +24,6 @@ const consola = createConsola({
 /**
  * Configured consola logger instance with standardized formatting and colored output.
  * Used for consistent logging throughout the application.
- *
  * @example
  * // Basic usage
  * logger.info('Operation started');

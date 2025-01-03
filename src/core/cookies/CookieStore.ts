@@ -4,7 +4,6 @@ const cookieJar = new CookieJar();
 
 /**
  * Promise that resolves to a CookieJar instance for handling cookie operations
- *
  * @example
  * // Wait for cookie jar to be ready
  * const jar = await cookieJarPromise;
@@ -20,7 +19,6 @@ export const cookieJarPromise = Promise.resolve(cookieJar);
 
 /**
  * Promise that resolves to a CookieJar instance for cookie storage operations
- *
  * @example
  * // Wait for cookie store to be ready
  * const store = await cookieStorePromise;

@@ -4,10 +4,8 @@ import type { ExportedCookie } from "../../types/ExportedCookie";
 declare module "./getCookie" {
   /**
    * Retrieves browser cookies that match the specified cookie name and domain criteria
-   *
    * @param cookieSpec - The cookie specification containing search criteria
    * @returns A promise that resolves to an array of exported cookies
-   *
    * @example
    * ```typescript
    * import { getCookie } from 'get-cookie';
@@ -31,10 +29,8 @@ declare module "./getCookie" {
 declare module "./getChromeCookie" {
   /**
    * Retrieves Chrome browser cookies that match the specified cookie name and domain criteria
-   *
    * @param cookieSpec - The cookie specification containing search criteria
    * @returns A promise that resolves to an array of exported cookies
-   *
    * @example
    * ```typescript
    * import { getChromeCookie } from 'get-cookie';
@@ -60,10 +56,8 @@ declare module "./getChromeCookie" {
 declare module "./getFirefoxCookie" {
   /**
    * Retrieves Firefox browser cookies that match the specified cookie name and domain criteria
-   *
    * @param cookieSpec - The cookie specification containing search criteria
    * @returns A promise that resolves to an array of exported cookies
-   *
    * @example
    * ```typescript
    * import { getFirefoxCookie } from 'get-cookie';
@@ -89,10 +83,8 @@ declare module "./getFirefoxCookie" {
 declare module "./getGroupedRenderedCookies" {
   /**
    * Retrieves and renders cookies in a grouped format
-   *
    * @param cookieSpec - The cookie specification containing search criteria
    * @returns A promise that resolves to an array of rendered cookie strings
-   *
    * @example
    * ```typescript
    * import { getGroupedRenderedCookies } from 'get-cookie';
@@ -116,11 +108,9 @@ declare module "./getGroupedRenderedCookies" {
 declare module "./getMergedRenderedCookies" {
   /**
    * Retrieves and renders cookies in a merged format
-   *
    * @param cookieSpec - The cookie specification containing search criteria
    * @param options - Optional rendering options
    * @returns A promise that resolves to a single rendered cookie string
-   *
    * @example
    * ```typescript
    * import { getMergedRenderedCookies } from 'get-cookie';

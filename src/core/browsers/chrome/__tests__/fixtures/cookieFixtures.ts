@@ -1,7 +1,6 @@
 /**
  * Test password used for decryption tests
  * This is a real Chrome encryption password from a test environment
- *
  * @example
  */
 export const TEST_PASSWORD = "lQd+BkD+nBhODek1xUUxXw==";
@@ -9,7 +8,6 @@ export const TEST_PASSWORD = "lQd+BkD+nBhODek1xUUxXw==";
 /**
  * Test cookie data with encrypted and expected decrypted values
  * These are real cookies from GitHub with non-sensitive values
- *
  * @example
  */
 export const TEST_COOKIES = {
@@ -48,7 +46,6 @@ export const TEST_COOKIES = {
 /**
  * Test cases for error handling scenarios
  * Each case includes the input that should trigger an error and the expected error message
- *
  * @example
  */
 export const ERROR_CASES = [

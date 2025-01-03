@@ -3,7 +3,6 @@ import { z } from "zod";
 /**
  * Schema for cookie specification parameters
  * Defines the required fields for identifying a cookie
- *
  * @example
  * // Validate a cookie specification
  * const spec = {
@@ -35,7 +34,6 @@ export const CookieSpecSchema = z
 /**
  * Schema for exported cookie data
  * Represents a cookie with all its properties and metadata
- *
  * @example
  * // Validate an exported cookie
  * const cookie = {
@@ -82,7 +80,6 @@ export const ExportedCookieSchema = z
 /**
  * Type definition for cookie specification
  * Used for specifying which cookie to query
- *
  * @example
  * // Basic cookie spec
  * const spec: CookieSpec = {
@@ -106,7 +103,6 @@ export type CookieSpec = z.infer<typeof CookieSpecSchema>;
 /**
  * Type definition for exported cookie data
  * Represents the structure of a cookie after it has been retrieved
- *
  * @example
  * // Basic exported cookie
  * const cookie: ExportedCookie = {

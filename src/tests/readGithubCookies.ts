@@ -1,6 +1,5 @@
 /**
  * Checks if a string matches the basic JWT format
- *
  * @param str - The string to check
  * @returns True if the string matches JWT format, false otherwise
  * @example

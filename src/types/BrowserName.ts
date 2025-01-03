@@ -1,6 +1,5 @@
 /**
  * Valid browser names in the application
- *
  * @example
  * // Type usage in function parameters
  * function getBrowserCookies(browser: BrowserName): Promise<Cookie[]> {

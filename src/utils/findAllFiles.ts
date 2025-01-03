@@ -13,14 +13,18 @@ type FindFilesOptions = {
 
 /**
  * Finds all files matching the specified name within a given path and depth.
- *
+ * @param options - The options for finding files.
+ * @param options.path - The path to search within.
+ * @param options.name - The name of the files to search for.
+ * @param [options.maxDepth] - The maximum depth to search within.
+ * @returns An array of file paths that match the search criteria.
+ * @throws Will throw an error if the specified path does not exist.
  * @example
  * // Find all package.json files up to 2 levels deep
  * const files = findAllFiles({
  *   path: './src',
  *   name: 'package.json'
  * });
- *
  * @example
  * // Find all test files with custom depth
  * try {
@@ -33,14 +37,6 @@ type FindFilesOptions = {
  * } catch (error) {
  *   console.error('Failed to find test files:', error.message);
  * }
- *
- * @param options - The options for finding files.
- * @param options.path - The path to search within.
- * @param options.name - The name of the files to search for.
- * @param [options.maxDepth] - The maximum depth to search within.
- *
- * @returns An array of file paths that match the search criteria.
- * @throws Will throw an error if the specified path does not exist.
  */
 export function findAllFiles({
   path,

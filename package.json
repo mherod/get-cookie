@@ -30,7 +30,6 @@
   "license": "ISC",
   "dependencies": {
     "consola": "3.2.3",
-    "cross-fetch": "^4.0.0",
     "destr": "2.0.2",
     "fast-glob": "^3.3.1",
     "jsonwebtoken": "9.0.0",

@@ -2,10 +2,8 @@
 
 // Local imports - core
 import { cookieSpecsFromUrl } from "@core/cookies/cookieSpecsFromUrl";
-import { fetchWithCookies } from "@core/fetch/fetchWithCookies";
 import { parseArgv } from "@utils/argv";
 import logger from "@utils/logger";
-import { unpackHeaders } from "@utils/unpackHeaders";
 
 import type { CookieSpec } from "../types/CookieSpec";
 
@@ -24,11 +22,6 @@ interface ParsedArgs {
   D?: boolean;
   render?: boolean;
   r?: boolean;
-  fetch?: string;
-  F?: string;
-  H?: string[] | string;
-  "dump-response-headers"?: boolean;
-  "dump-response-body"?: boolean;
   url?: string;
   u?: string;
   name?: string;
@@ -44,48 +37,6 @@ function showHelp(): void {
   logger.log(`  -d, --dump: Dump all results`);
   logger.log(`  -D, --dump-grouped: Dump all results, grouped by profile`);
   logger.log(`  -r, --render: Render all results`);
-  logger.log(`  -F, --fetch <url>: Fetch data from the specified URL`);
-  logger.log(`  -H <header>: Specify headers for the fetch request`);
-  logger.log(
-    `  --dump-response-headers: Dump response headers from fetch request`,
-  );
-  logger.log(`  --dump-response-body: Dump response body from fetch request`);
-}
-
-async function handleFetch(parsedArgs: ParsedArgs, fetchUrl: string): Promise<void> {
-  let url: URL;
-  try {
-    url = new URL(fetchUrl);
-  } catch (_err) {
-    logger.error("Invalid URL", fetchUrl);
-    return;
-  }
-
-  logger.start("Fetching", url.href);
-  const headerArgs = parsedArgs.H ?? null;
-  const headers = unpackHeaders(headerArgs);
-
-  try {
-    const res = await fetchWithCookies(url, { headers });
-    logger.debug("Response", res);
-
-    if (parsedArgs["dump-response-headers"] === true) {
-      for (const [key, value] of Object.entries(res.headers)) {
-        logger.log(`${key}: ${String(value)}`);
-      }
-    }
-
-    if (parsedArgs["dump-response-body"] === true) {
-      const responseBody = await res.text();
-      logger.log(responseBody);
-    }
-  } catch (error) {
-    if (error instanceof Error) {
-      logger.error(error.message);
-    } else {
-      logger.error("An unknown error occurred");
-    }
-  }
 }
 
 function createCookieSpec(parsedArgs: ParsedArgs): CookieSpec {
@@ -136,13 +87,6 @@ async function main(): Promise<void> {
   }
 
   parsedArgs.verbose = parsedArgs.verbose ?? parsedArgs.v;
-
-  const fetchUrl = parsedArgs.fetch ?? parsedArgs.F;
-  if (typeof fetchUrl === 'string') {
-    await handleFetch(parsedArgs, fetchUrl);
-    return;
-  }
-
   await handleCookieQuery(parsedArgs);
 }
 

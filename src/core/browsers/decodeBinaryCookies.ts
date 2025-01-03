@@ -4,6 +4,7 @@ import { join } from "path";
 
 import type { BinaryCookieRow } from "../../types/schemas";
 import { BinaryCookieRowSchema } from "../../types/schemas";
+import { parseMacDate } from "../../utils/dates";
 
 // Cookie flag constants
 const _COOKIE_FLAGS = {
@@ -15,10 +16,8 @@ const _COOKIE_FLAGS = {
 
 // File structure constants
 const _FILE_HEADER_MAGIC = "cook";
-const _FILE_FOOTER = 0x071720050000004b;
-
-// The date offset for Safari cookies (until 2017)
-const _SAFARI_DATE_OFFSET = 978307200; // Difference between Unix epoch and Mac epoch (2001-01-01 00:00:00)
+const _FILE_FOOTER = 0x28; // Safari 14+ uses this footer value
+const _FILE_FOOTER_LEGACY = 0x071720050000004b; // Pre-Safari 14 footer value
 
 function readNullTerminatedString(
   buffer: Buffer,
@@ -53,9 +52,9 @@ function decodeCookieHeader(
   const commentOffset = buffer.readUInt32LE(offset + 32);
   const commentURLOffset = buffer.readUInt32LE(offset + 36);
 
-  // Read dates and adjust for Safari epoch
-  const expiryDate = buffer.readDoubleLE(offset + 40) + _SAFARI_DATE_OFFSET;
-  const creationDate = buffer.readDoubleLE(offset + 48) + _SAFARI_DATE_OFFSET;
+  // Read dates using parseMacDate
+  const expiryDate = Math.floor(parseMacDate(buffer.readDoubleLE(offset + 40)).getTime() / 1000);
+  const creationDate = Math.floor(parseMacDate(buffer.readDoubleLE(offset + 48)).getTime() / 1000);
 
   let currentOffset = offset + 56; // Fixed header size
 
@@ -137,6 +136,16 @@ function decodePage(
 }
 
 /**
+ * Validates the footer of a Safari cookie file.
+ * @param buffer - The buffer containing the cookie file data
+ * @returns true if the footer is valid
+ */
+function validateFooter(buffer: Buffer): boolean {
+  const footer = Number(buffer.readBigUInt64BE(buffer.length - 8));
+  return footer === _FILE_FOOTER || footer === _FILE_FOOTER_LEGACY;
+}
+
+/**
  * Decodes a Safari binary cookie file into an array of cookie objects.
  * @param cookieDbPath - Path to the Safari Cookies.binarycookies file
  * @returns Array of decoded cookie objects
@@ -177,9 +186,8 @@ export function decodeBinaryCookies(cookieDbPath: string): BinaryCookieRow[] {
   }
 
   // Validate footer
-  const footer = Number(buffer.readBigUInt64BE(buffer.length - 8));
-  if (footer !== _FILE_FOOTER) {
-    console.warn("Invalid cookie file format: wrong footer");
+  if (!validateFooter(buffer)) {
+    throw new Error("Invalid cookie file format: wrong footer");
   }
 
   return cookies;

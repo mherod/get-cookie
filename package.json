@@ -54,6 +54,7 @@
   "dependencies": {
     "better-sqlite3": "^11.7.0",
     "consola": "^3.3.3",
+    "date-fns": "4.1.0",
     "destr": "^2.0.3",
     "dotenv": "16.4.7",
     "fast-glob": "^3.3.2",

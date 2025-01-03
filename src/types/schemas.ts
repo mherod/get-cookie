@@ -50,10 +50,8 @@ export const CookieNameSchema = z
   .min(1, "Cookie name cannot be empty")
   .refine(
     (name) =>
-      /^[\x21\x23-\x27\x2A\x2B\x2D-\x2E\x30-\x39\x41-\x5A\x5E-\x7E]+$/.test(
-        name,
-      ),
-    "Invalid cookie name format - must contain only valid characters (letters, numbers, and certain symbols)",
+      name === "%" || /^[!#$%&'()*+\-.:0-9A-Z \^_`a-z|~]+$/.test(name),
+    "Invalid cookie name format - must contain only valid characters (letters, numbers, and certain symbols) or be '%' for wildcard",
   );
 
 /**
@@ -78,7 +76,7 @@ export const CookiePathSchema = z
   .min(1, "Path cannot be empty")
   .refine((path) => path.startsWith("/"), "Path must start with /")
   .refine(
-    (path) => /^\/[!#$%&'()*+,\-./:=@\w]*$/.test(path),
+    (path) => /^\/[!#$%&'()*+,\-./:=@\w~]*$/.test(path),
     "Invalid path format - must contain only valid URL path characters",
   )
   .default("/");

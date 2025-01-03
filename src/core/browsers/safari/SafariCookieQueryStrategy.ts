@@ -53,7 +53,9 @@ export class SafariCookieQueryStrategy implements CookieQueryStrategy {
       const cookies = decodeBinaryCookies(cookieDbPath);
       return cookies
         .filter(
-          (cookie) => cookie.name === name && cookie.domain.includes(domain),
+          (cookie) =>
+            (name === "%" || cookie.name === name) &&
+            (domain === "%" || cookie.domain.includes(domain)),
         )
         .map((cookie) => ({
           domain: cookie.domain,
@@ -106,6 +108,6 @@ export class SafariCookieQueryStrategy implements CookieQueryStrategy {
     }
 
     const cookieDbPath = this.getCookieDbPath(home);
-    return Promise.resolve(this.decodeCookies(cookieDbPath, name, domain));
+    return Promise.resolve(this.decodeCookies(cookieDbPath, name || "%", domain || "%"));
   }
 }

@@ -46,17 +46,21 @@ function decodeCookieHeader(
   const [value, nextOffset2] = readNullTerminatedString(buffer, currentOffset);
   currentOffset = nextOffset2;
 
-  const [domain, nextOffset3] = readNullTerminatedString(buffer, currentOffset);
+  // The fields are actually path, then domain (not domain, then path as we had before)
+  const [path, nextOffset3] = readNullTerminatedString(buffer, currentOffset);
   currentOffset = nextOffset3;
 
-  const [path, _] = readNullTerminatedString(buffer, currentOffset);
+  const [domain, _] = readNullTerminatedString(buffer, currentOffset);
+
+  // If domain is empty but name starts with a dot, use that as the domain
+  const effectiveDomain = domain || (name.startsWith(".") ? name : "");
 
   return [
     {
-      name,
+      name: name.startsWith(".") ? name.slice(1) : name,
       value,
-      domain,
-      path,
+      domain: effectiveDomain,
+      path: path || "/", // Default to root path if empty
       expiry: timestamp,
       creation: timestamp, // We don't have creation time in this format
     },

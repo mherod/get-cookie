@@ -4,7 +4,7 @@ import type { CookieSpec } from "../types/schemas";
 
 import { OutputHandlerFactory } from "./handlers/OutputHandlerFactory";
 import type { ParsedArgs } from "./handlers/types";
-import { CookieExpiryService } from "./services/CookieExpiryService";
+import { filterExpired } from "./services/CookieExpiryService";
 import { CookieQueryService } from "./services/CookieQueryService";
 import { CookieStrategyFactory } from "./services/CookieStrategyFactory";
 
@@ -44,7 +44,7 @@ export async function cliQueryCookies(
     let results = await queryService.queryCookiesWithLimit(specs, limit);
 
     if (removeExpired === true) {
-      results = CookieExpiryService.filterExpired(results);
+      results = filterExpired(results);
     }
 
     if (results.length === 0) {

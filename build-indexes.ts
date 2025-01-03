@@ -1,10 +1,11 @@
 //#!/usr/bin/env bun run
 
-import consola from "consola";
-import { groupBy, orderBy } from "lodash";
-import path from "path";
 import { existsSync, readFileSync, writeFileSync } from "fs";
+import path from "path";
+
+import consola from "consola";
 import { sync } from "fast-glob";
+import { groupBy, orderBy } from "lodash";
 import prettier from "prettier";
 
 async function main() {
@@ -53,7 +54,7 @@ async function main() {
         return `export * from './${name}';`;
       })
       .filter(Boolean)
-      .sort() as string[];
+      .sort();
 
     // then find subdirectories and build index for them
 

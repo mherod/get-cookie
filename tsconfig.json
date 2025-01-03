@@ -1,26 +1,28 @@
 {
-  "include": [
-    "src/**.ts",
-    "src/**.tsx",
-    "src/**.js",
-    "src/**.jsx",
-    "src/**.test.ts",
-    "src/**.test.js",
-  ],
+  "include": ["src/**/*", "scripts/**/*"],
   "compilerOptions": {
     "moduleResolution": "node",
-    "target": "es6",
-    "types": ["node", "jest", "bun-types"],
-    "lib": ["es2015", "es2017", "es2021", "dom"],
-    "strict": true,
-    "skipDefaultLibCheck": true,
-    "skipLibCheck": true,
-    "allowSyntheticDefaultImports": true,
-    "emitDeclarationOnly": true,
-    "declaration": true,
-    "esModuleInterop": true,
+    "target": "es2018",
     "module": "commonjs",
+    "lib": ["es2018", "es2019", "es2020", "es2021", "dom"],
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "declaration": true,
     "outDir": "dist",
-    "outFile": "dist/types.d.ts",
-  },
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@core/*": ["src/core/*"],
+      "@utils/*": ["src/utils/*"],
+      "@browsers/*": ["src/browsers/*"],
+      "@cli/*": ["src/cli/*"],
+      "@types/*": ["src/types/*"]
+    },
+    "types": ["node", "jest"],
+    "resolveJsonModule": true,
+    "allowJs": true,
+    "checkJs": true
+  }
 }

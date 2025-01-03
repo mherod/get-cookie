@@ -1,8 +1,12 @@
 import { isAfter } from "date-fns";
+
 import type { ExportedCookie } from "../../types/schemas";
 
 /**
  * Service class for handling cookie expiry checks
+ * @example
+ * // Filter expired cookies
+ * const validCookies = CookieExpiryService.filterExpired(cookieList);
  */
 export class CookieExpiryService {
   private constructor() {} // Prevent instantiation

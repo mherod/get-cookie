@@ -39,6 +39,8 @@ describe("decodeBinaryCookies - Error Handling", () => {
     buffer.write("cook");
     buffer.writeUInt32BE(1, 4); // One page
     buffer.writeUInt32BE(999999, 8); // Invalid page size
+    buffer.writeUInt32BE(0x28, 92); // Safari 14+ footer value
+    buffer.writeUInt32BE(0x00, 96);
 
     mockReadFileSync.mockReturnValue(buffer);
 

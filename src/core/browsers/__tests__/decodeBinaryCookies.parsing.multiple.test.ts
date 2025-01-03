@@ -75,7 +75,8 @@ function createTestBuffer(): Buffer {
   buffer.write("xyz789\0", cookieOffset + 85);
 
   // Footer
-  buffer.writeBigUInt64BE(BigInt("510912288576766000"), 292);
+  buffer.writeUInt32BE(0x28, 292); // Safari 14+ footer value
+  buffer.writeUInt32BE(0x00, 296);
 
   return buffer;
 }

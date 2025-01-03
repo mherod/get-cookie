@@ -1,4 +1,4 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 
 // Local imports - core
 import { cookieSpecsFromUrl } from "@core/cookies/cookieSpecsFromUrl";

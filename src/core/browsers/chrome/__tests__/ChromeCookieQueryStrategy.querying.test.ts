@@ -1,17 +1,12 @@
 import { getEncryptedChromeCookie } from "../../getEncryptedChromeCookie";
 import { decrypt } from "../decrypt";
-import { setupChromeTest, mockCookieData } from "../testSetup";
-
-jest.mock("../decrypt");
-jest.mock("../../getEncryptedChromeCookie");
+import { setupChromeTest, mockCookieData, mockPassword } from "../testSetup";
 
 describe("ChromeCookieQueryStrategy - Basic Functionality", () => {
-  const strategy = setupChromeTest();
+  let strategy: ReturnType<typeof setupChromeTest>;
 
   beforeEach(() => {
-    jest.resetAllMocks();
-    (decrypt as jest.Mock).mockResolvedValue("decrypted-value");
-    (getEncryptedChromeCookie as jest.Mock).mockResolvedValue([mockCookieData]);
+    strategy = setupChromeTest();
   });
 
   it("should query and decrypt cookies successfully", async () => {
@@ -22,7 +17,7 @@ describe("ChromeCookieQueryStrategy - Basic Functionality", () => {
       domain: "example.com",
       file: "/path/to/Cookies",
     });
-    expect(decrypt).toHaveBeenCalledWith(mockCookieData.value, "test-password");
+    expect(decrypt).toHaveBeenCalledWith(mockCookieData.value, mockPassword);
 
     expect(cookies).toHaveLength(1);
     expect(cookies[0]).toMatchObject({
@@ -39,15 +34,14 @@ describe("ChromeCookieQueryStrategy - Basic Functionality", () => {
 });
 
 describe("ChromeCookieQueryStrategy - Error Handling", () => {
-  const strategy = setupChromeTest();
+  let strategy: ReturnType<typeof setupChromeTest>;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    strategy = setupChromeTest();
   });
 
   it("should handle decryption failures gracefully", async () => {
     (decrypt as jest.Mock).mockRejectedValue(new Error("Decryption failed"));
-    (getEncryptedChromeCookie as jest.Mock).mockResolvedValue([mockCookieData]);
 
     const cookies = await strategy.queryCookies("test-cookie", "example.com");
 
@@ -76,10 +70,10 @@ describe("ChromeCookieQueryStrategy - Error Handling", () => {
 });
 
 describe("ChromeCookieQueryStrategy - Value Handling", () => {
-  const strategy = setupChromeTest();
+  let strategy: ReturnType<typeof setupChromeTest>;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    strategy = setupChromeTest();
   });
 
   it("should handle non-buffer cookie values", async () => {
@@ -90,11 +84,10 @@ describe("ChromeCookieQueryStrategy - Value Handling", () => {
     (getEncryptedChromeCookie as jest.Mock).mockResolvedValue([
       nonBufferCookie,
     ]);
-    (decrypt as jest.Mock).mockResolvedValue("decrypted-value");
 
     const cookies = await strategy.queryCookies("test-cookie", "example.com");
 
-    expect(decrypt).toHaveBeenCalledWith(expect.any(Buffer), "test-password");
+    expect(decrypt).toHaveBeenCalledWith(expect.any(Buffer), mockPassword);
     expect(cookies).toHaveLength(1);
     expect(cookies[0].value).toBe("decrypted-value");
   });

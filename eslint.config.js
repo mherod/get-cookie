@@ -9,11 +9,21 @@ export default [
     ignores: ["dist/**/*", "node_modules/**/*"],
   },
   {
+    files: ["**/*.js", "**/*.mjs"],
+    languageOptions: {
+      ecmaVersion: "latest",
+      sourceType: "module",
+      globals: {
+        ...globals.node,
+      },
+    },
+  },
+  {
     files: ["**/*.ts"],
     languageOptions: {
       parser: tsParser,
       parserOptions: {
-        ecmaVersion: 2022,
+        ecmaVersion: "latest",
         sourceType: "module",
         project: ["./tsconfig.json", "./tsconfig.build.json"],
         tsconfigRootDir: import.meta.dirname,

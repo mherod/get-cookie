@@ -1,5 +1,6 @@
 import { readFileSync } from "fs";
 
+import { logWarn } from "../../../utils/logHelpers";
 import { decodeBinaryCookies } from "../decodeBinaryCookies";
 
 // Mock fs module
@@ -7,10 +8,16 @@ jest.mock("fs", () => ({
   readFileSync: jest.fn(),
 }));
 
+// Mock logHelpers
+jest.mock("../../../utils/logHelpers", () => ({
+  logWarn: jest.fn(),
+}));
+
 describe("decodeBinaryCookies - File Validation", () => {
   const mockReadFileSync = readFileSync as jest.MockedFunction<
     typeof readFileSync
   >;
+  const mockLogWarn = logWarn as jest.MockedFunction<typeof logWarn>;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -42,7 +49,7 @@ describe("decodeBinaryCookies - File Validation", () => {
     }).toThrow("Failed to read file");
   });
 
-  it("should handle different footer values gracefully", () => {
+  it("should log warning on invalid footer value", () => {
     const buffer = Buffer.alloc(20);
     buffer.write("cook"); // Magic
     buffer.writeUInt32BE(0, 4); // No pages
@@ -51,23 +58,12 @@ describe("decodeBinaryCookies - File Validation", () => {
 
     mockReadFileSync.mockReturnValue(buffer);
 
-    // Should not throw and should process the file despite footer mismatch
     const cookies = decodeBinaryCookies("/path/to/cookies.binarycookies");
     expect(cookies).toEqual([]);
-  });
-
-  it("should throw on invalid footer value", () => {
-    const buffer = Buffer.alloc(20);
-    buffer.write("cook"); // Magic
-    buffer.writeUInt32BE(0, 4); // No pages
-    buffer.writeUInt32BE(20, 8); // File size
-    buffer.writeBigUInt64BE(BigInt(12), 12); // Different footer value
-
-    mockReadFileSync.mockReturnValue(buffer);
-
-    expect(() => {
-      decodeBinaryCookies("/path/to/cookies.binarycookies");
-    }).toThrow("Invalid cookie file format: wrong footer");
+    expect(mockLogWarn).toHaveBeenCalledWith(
+      "BinaryCookies",
+      "Invalid cookie file format: wrong footer",
+    );
   });
 
   it("should throw on invalid magic header", () => {

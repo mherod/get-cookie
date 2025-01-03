@@ -1,10 +1,16 @@
 import { readFileSync } from "fs";
 
+import { logWarn } from "../../../utils/logHelpers";
 import { decodeBinaryCookies } from "../decodeBinaryCookies";
 
 // Mock fs module
 jest.mock("fs", () => ({
   readFileSync: jest.fn(),
+}));
+
+// Mock logHelpers
+jest.mock("../../../utils/logHelpers", () => ({
+  logWarn: jest.fn(),
 }));
 
 function createTestBuffer(): Buffer {
@@ -82,7 +88,10 @@ function createTestBuffer(): Buffer {
 }
 
 describe("decodeBinaryCookies - Multiple Cookies Parsing", () => {
-  const mockReadFileSync = readFileSync as jest.MockedFunction<typeof readFileSync>;
+  const mockReadFileSync = readFileSync as jest.MockedFunction<
+    typeof readFileSync
+  >;
+  const mockLogWarn = logWarn as jest.MockedFunction<typeof logWarn>;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -99,14 +108,29 @@ describe("decodeBinaryCookies - Multiple Cookies Parsing", () => {
       value: "abc123",
       domain: "example.com",
       path: "/",
-      flags: 1
+      flags: 1,
     });
     expect(cookies[1]).toMatchObject({
       name: "auth-token",
       value: "xyz789",
       domain: "example.org",
       path: "/api/v1",
-      flags: 4
+      flags: 4,
     });
+  });
+
+  it("should return cookies even with invalid footer", () => {
+    const buffer = createTestBuffer();
+    // Corrupt the footer
+    buffer.writeUInt32BE(0x00, 292);
+    buffer.writeUInt32BE(0x00, 296);
+    mockReadFileSync.mockReturnValue(buffer);
+
+    const cookies = decodeBinaryCookies("/path/to/cookies.binarycookies");
+    expect(cookies).toHaveLength(2);
+    expect(mockLogWarn).toHaveBeenCalledWith(
+      "BinaryCookies",
+      "Invalid cookie file format: wrong footer",
+    );
   });
 });

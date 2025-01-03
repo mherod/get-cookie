@@ -1,7 +1,6 @@
 import { groupBy } from "lodash-es";
 
-import type { RenderOptions } from "../../types/CookieRender";
-import type { ExportedCookie } from "../../types/ExportedCookie";
+import { ExportedCookie, RenderOptions } from "../../types/schemas";
 
 /**
  * Renders cookies as a string or array of strings based on the provided format option.

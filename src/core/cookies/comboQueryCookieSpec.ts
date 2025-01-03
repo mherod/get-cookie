@@ -1,6 +1,9 @@
-import type { CookieQueryStrategy } from "../../types/CookieQueryStrategy";
-import type { CookieSpec, MultiCookieSpec } from "../../types/CookieSpec";
-import type { ExportedCookie } from "../../types/ExportedCookie";
+import {
+  CookieQueryStrategy,
+  CookieSpec,
+  ExportedCookie,
+  MultiCookieSpec,
+} from "../../types/schemas";
 import { CompositeCookieQueryStrategy } from "../browsers/CompositeCookieQueryStrategy";
 
 /**

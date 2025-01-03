@@ -4,9 +4,11 @@ import { sync } from "glob";
 
 import { logDebug, logWarn } from "@utils/logHelpers";
 
-import type { BrowserName } from "../../../types/BrowserName";
-import type { CookieQueryStrategy } from "../../../types/CookieQueryStrategy";
-import type { ExportedCookie } from "../../../types/ExportedCookie";
+import {
+  BrowserName,
+  CookieQueryStrategy,
+  ExportedCookie,
+} from "../../../types/schemas";
 import { querySqliteThenTransform } from "../QuerySqliteThenTransform";
 
 interface FirefoxCookieRow {

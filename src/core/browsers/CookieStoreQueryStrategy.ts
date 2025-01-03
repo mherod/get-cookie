@@ -5,14 +5,14 @@ import logger from "@utils/logger";
 import { stringToRegex } from "@utils/stringToRegex";
 
 import { cookieJarPromise } from "../../core/cookies/CookieStore";
-import type { BrowserName } from "../../types/BrowserName";
-import type { CookieQueryStrategy } from "../../types/CookieQueryStrategy";
 import {
+  BrowserName,
+  CookieQueryStrategy,
+  CookieSpec,
   CookieSpecSchema,
+  ExportedCookie,
   ExportedCookieSchema,
-} from "../../types/CookieSchema";
-import type { CookieSpec } from "../../types/CookieSpec";
-import type { ExportedCookie } from "../../types/ExportedCookie";
+} from "../../types/schemas";
 import { SafeParseResult, isParseSuccess } from "../../types/ZodUtils";
 
 const consola = logger.withTag("CookieStoreQueryStrategy");

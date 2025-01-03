@@ -58,7 +58,6 @@
     "fast-glob": "^3.3.2",
     "jsonwebtoken": "^9.0.2",
     "lodash-es": "^4.17.21",
-    "lru-cache": "^11.0.2",
     "minimist": "^1.2.8",
     "tsconfig-paths": "^4.2.0",
     "zod": "^3.24.1"

@@ -40,26 +40,23 @@ function decodeCookieHeader(
 
   // Dynamic fields start at offset 0x38 (56 bytes from start)
   let currentOffset = offset + 0x38;
-  const [name, nextOffset] = readNullTerminatedString(buffer, currentOffset);
+  const [domain, nextOffset] = readNullTerminatedString(buffer, currentOffset);
   currentOffset = nextOffset;
 
   const [value, nextOffset2] = readNullTerminatedString(buffer, currentOffset);
   currentOffset = nextOffset2;
 
-  // The fields are actually path, then domain (not domain, then path as we had before)
+  // The fields are path, then name
   const [path, nextOffset3] = readNullTerminatedString(buffer, currentOffset);
   currentOffset = nextOffset3;
 
-  const [domain, _] = readNullTerminatedString(buffer, currentOffset);
-
-  // If domain is empty but name starts with a dot, use that as the domain
-  const effectiveDomain = domain || (name.startsWith(".") ? name : "");
+  const [name, _] = readNullTerminatedString(buffer, currentOffset);
 
   return [
     {
-      name: name.startsWith(".") ? name.slice(1) : name,
+      name,
       value,
-      domain: effectiveDomain,
+      domain: domain.startsWith(".") ? domain.slice(1) : domain,
       path: path || "/", // Default to root path if empty
       expiry: timestamp,
       creation: timestamp, // We don't have creation time in this format

@@ -4,6 +4,7 @@ import { sync } from "glob";
 
 import { logDebug, logWarn } from "@utils/logHelpers";
 
+import { env } from "../../../config";
 import {
   BrowserName,
   CookieQueryStrategy,
@@ -24,7 +25,7 @@ interface FirefoxCookieRow {
  */
 function findFirefoxCookieFiles(): string[] {
   const files: string[] = [];
-  const homedir = process.env.HOME;
+  const homedir = env.HOME;
 
   if (typeof homedir !== "string" || homedir.length === 0) {
     logWarn("FirefoxCookieQuery", "HOME environment variable not set");

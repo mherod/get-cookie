@@ -2,6 +2,7 @@ import { join } from "path";
 
 import { logError } from "@utils/logHelpers";
 
+import { env } from "../../../config";
 import type {
   BrowserName,
   CookieQueryStrategy,
@@ -23,7 +24,7 @@ export class SafariCookieQueryStrategy implements CookieQueryStrategy {
    * @returns The home directory path or empty string if not found
    */
   private getHomeDir(): string {
-    const homeDir = process.env.HOME;
+    const homeDir = env.HOME;
     if (typeof homeDir !== "string" || homeDir.trim().length === 0) {
       logError(
         "SafariCookieQueryStrategy",

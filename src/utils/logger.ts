@@ -1,5 +1,7 @@
 import { createConsola } from "consola";
 
+import { env } from "../config";
+
 /**
  * Standard log levels and their usage:
  * - debug: Detailed information for debugging
@@ -19,12 +21,17 @@ const consola = createConsola({
     columns:
       typeof process.stdout.columns === "number" ? process.stdout.columns : 80,
   },
-  level:
-    typeof process.env.LOG_LEVEL === "string" &&
-    process.env.LOG_LEVEL === "debug"
-      ? 5
-      : 2,
+  level: env.LOG_LEVEL === "debug" ? 5 : 2,
 });
+
+/**
+ * Indicates whether debug logging is enabled
+ * @example
+ * if (isDebug) {
+ *   logger.debug("Detailed debugging information");
+ * }
+ */
+export const isDebug = env.LOG_LEVEL === "debug";
 
 /**
  * Configured consola logger instance with standardized formatting and colored output.

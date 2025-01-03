@@ -41,6 +41,9 @@ jobs:
 
       - name: Build documentation
         run: pnpm docs
+        env:
+          CI: true
+          BROWSER: none
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

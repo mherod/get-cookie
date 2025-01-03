@@ -39,11 +39,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
 
-      - name: Build TypeDoc API documentation
-        run: pnpm docs:api
-
-      - name: Build VitePress documentation
-        run: pnpm vitepress build docs
+      - name: Build documentation
+        run: pnpm docs:build
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

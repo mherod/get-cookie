@@ -1,5 +1,5 @@
 import { parseArgv } from "../argv";
-import { isValidJwt } from "../isValidJwt";
+import { validateToken } from "../isValidJwt";
 import logger from "../logger";
 
 // Mock logger and argv
@@ -26,7 +26,7 @@ describe("isValidJwt - Basic Validation", () => {
   });
 
   it("should validate a well-formed JWT", () => {
-    const result = isValidJwt(validToken);
+    const result = validateToken(validToken);
     expect(result.isValid).toBe(true);
     expect(result.error).toBeUndefined();
     expect(result.decodedPayload).toBeDefined();
@@ -34,19 +34,19 @@ describe("isValidJwt - Basic Validation", () => {
   });
 
   it("should reject an empty token", () => {
-    const result = isValidJwt("");
+    const result = validateToken("");
     expect(result.isValid).toBe(false);
     expect(result.error).toBe("Token is empty or whitespace");
   });
 
   it("should reject a whitespace token", () => {
-    const result = isValidJwt("   ");
+    const result = validateToken("   ");
     expect(result.isValid).toBe(false);
     expect(result.error).toBe("Token is empty or whitespace");
   });
 
   it("should handle null token", () => {
-    const result = isValidJwt("" as unknown as string);
+    const result = validateToken("" as unknown as string);
     expect(result.isValid).toBe(false);
     expect(result.error).toContain("Token is empty or whitespace");
   });
@@ -67,13 +67,13 @@ describe("isValidJwt - Format Validation", () => {
   ];
 
   it.each(invalidFormatTokens)("should reject token with invalid format: %s", (token) => {
-    const result = isValidJwt(token);
+    const result = validateToken(token);
     expect(result.isValid).toBe(false);
     expect(result.error).toBe("Invalid JWT format - must be three dot-separated base64url-encoded strings");
   });
 
   it.each(nonBase64Tokens)("should reject non-base64url encoded token: %s", (token) => {
-    const result = isValidJwt(token);
+    const result = validateToken(token);
     expect(result.isValid).toBe(false);
     expect(result.error).toBe("Failed to decode token");
   });
@@ -90,20 +90,20 @@ describe("isValidJwt - Expiration Validation", () => {
   });
 
   it("should accept a token with no expiration", () => {
-    const result = isValidJwt(validToken);
+    const result = validateToken(validToken);
     expect(result.isValid).toBe(true);
     expect(result.error).toBeUndefined();
   });
 
   it("should reject an expired token", () => {
-    const result = isValidJwt(expiredToken);
+    const result = validateToken(expiredToken);
     expect(result.isValid).toBe(false);
     expect(result.error).toBe("Token has expired");
   });
 
   it("should accept a token that expires in the future", () => {
     const futureToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiZXhwIjoxNzM1Njg5NjAwfQ.RxwB7uk4E7EhhR1wVg7kK8zGdM4_RnlHhF9U8gZEa0g";
-    const result = isValidJwt(futureToken);
+    const result = validateToken(futureToken);
     expect(result.isValid).toBe(true);
     expect(result.error).toBeUndefined();
   });
@@ -116,27 +116,27 @@ describe("isValidJwt - Signature Verification", () => {
   });
 
   it("should verify signature when secret key is provided", () => {
-    const result = isValidJwt(invalidSignatureToken, secretKey);
+    const result = validateToken(invalidSignatureToken, secretKey);
     expect(result.isValid).toBe(false);
     expect(result.error).toContain("invalid signature");
     expect(logger.debug).toHaveBeenCalledWith(expect.stringContaining("JWT verification failed"));
   });
 
   it("should skip signature verification when no secret key is provided", () => {
-    const result = isValidJwt(validToken);
+    const result = validateToken(validToken);
     expect(result.isValid).toBe(true);
     expect(result.error).toBeUndefined();
   });
 
   it("should handle non-string secret key", () => {
-    const result = isValidJwt(validToken, 123 as unknown as string);
+    const result = validateToken(validToken, 123 as unknown as string);
     expect(result.isValid).toBe(false);
     expect(result.error).toContain("secretOrPublicKey is not valid key material");
     expect(logger.debug).toHaveBeenCalled();
   });
 
   it("should handle valid Buffer secret key", () => {
-    const result = isValidJwt(validToken, Buffer.from(secretKey));
+    const result = validateToken(validToken, Buffer.from(secretKey));
     expect(result.isValid).toBe(true);
     expect(result.error).toBeUndefined();
   });
@@ -144,7 +144,7 @@ describe("isValidJwt - Signature Verification", () => {
 
 describe("isValidJwt - Payload and Header Information", () => {
   it("should return decoded payload and header for valid tokens", () => {
-    const result = isValidJwt(validToken);
+    const result = validateToken(validToken);
     expect(result.decodedPayload).toEqual({
       sub: "1234567890",
       name: "John Doe",
@@ -157,7 +157,7 @@ describe("isValidJwt - Payload and Header Information", () => {
   });
 
   it("should not return decoded information for invalid tokens", () => {
-    const result = isValidJwt("invalid.token.here");
+    const result = validateToken("invalid.token.here");
     expect(result.decodedPayload).toBeUndefined();
     expect(result.header).toBeUndefined();
   });
@@ -170,23 +170,23 @@ describe("isValidJwt - Verbose Logging", () => {
   });
 
   it("should log decoded token in verbose mode", () => {
-    isValidJwt(validToken);
+    validateToken(validToken);
     expect(logger.debug).toHaveBeenCalledWith("Decoded JWT token:", expect.any(Object));
   });
 
   it("should log failed decode in verbose mode", () => {
-    isValidJwt("invalid.token.here");
+    validateToken("invalid.token.here");
     expect(logger.debug).toHaveBeenCalledWith("Decoded JWT token:", "Failed to decode");
   });
 
   it("should log verification errors in verbose mode", () => {
-    isValidJwt(invalidSignatureToken, secretKey);
+    validateToken(invalidSignatureToken, secretKey);
     expect(logger.debug).toHaveBeenCalledWith(expect.stringContaining("JWT verification failed"));
   });
 
   it("should log general errors in verbose mode", () => {
     const invalidInput = undefined as unknown as string;
-    isValidJwt(invalidInput);
+    validateToken(invalidInput);
     expect(logger.debug).toHaveBeenCalledWith(
       "JWT validation error: Cannot read properties of undefined (reading 'trim')",
       undefined

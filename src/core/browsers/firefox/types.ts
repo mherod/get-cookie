@@ -1,38 +1,74 @@
 /**
- * Raw cookie data from Firefox's SQLite database
+ * Interface representing a cookie stored in Firefox's SQLite database.
+ * Maps directly to the 'moz_cookies' table structure.
+ *
+ * @remarks
+ * - Times are stored in microseconds since epoch
+ * - Boolean values are stored as integers (0 or 1)
+ * - Host format follows Firefox's cookie domain rules
  *
  * @example
- * // Example cookie row from Firefox database
- * const rawCookie: RawFirefoxCookie = {
- *   name: 'session',
- *   value: 'abc123',
- *   host: '.example.com',
- *   path: '/',
- *   expiry: 1735689600, // Unix timestamp
+ * ```typescript
+ * import { FirefoxCookie } from 'get-cookie';
+ *
+ * // Standard cookie example
+ * const standardCookie: FirefoxCookie = {
+ *   name: "sessionId",
+ *   value: "abc123",
+ *   host: "example.com",
+ *   path: "/",
+ *   expiry: 1735689600,  // 2024-12-31
  *   isSecure: 1,
  *   isHttpOnly: 1,
- *   creationTime: 1672531200000000,
+ *   creationTime: 1672531200000000,  // 2023-01-01 in microseconds
  *   lastAccessed: 1672531200000000
  * };
+ *
+ * // Session cookie (no expiry)
+ * const sessionCookie: FirefoxCookie = {
+ *   name: "temp",
+ *   value: "xyz789",
+ *   host: ".app.example.com",
+ *   path: "/dashboard",
+ *   expiry: 0,  // Session cookie
+ *   isSecure: 1,
+ *   isHttpOnly: 0,
+ *   creationTime: Date.now() * 1000,  // Current time in microseconds
+ *   lastAccessed: Date.now() * 1000
+ * };
+ *
+ * // Subdomain cookie with specific path
+ * const subdomainCookie: FirefoxCookie = {
+ *   name: "preferences",
+ *   value: "theme=dark",
+ *   host: ".example.com",  // Matches all subdomains
+ *   path: "/settings",
+ *   expiry: Math.floor(Date.now() / 1000) + 86400,  // 24 hours from now
+ *   isSecure: 0,
+ *   isHttpOnly: 0,
+ *   creationTime: Date.now() * 1000,
+ *   lastAccessed: Date.now() * 1000
+ * };
+ * ```
  */
-export interface RawFirefoxCookie {
-  /** Name of the cookie */
+export interface FirefoxCookie {
+  /** Name of the cookie - case-sensitive identifier */
   name: string;
-  /** Value of the cookie */
+  /** Value stored in the cookie - may be encrypted */
   value: string;
-  /** Host/domain of the cookie */
+  /** Host/domain of the cookie - may include leading dot for subdomain matching */
   host: string;
-  /** Path where the cookie is valid */
+  /** Path where the cookie is valid - must start with "/" */
   path: string;
-  /** Expiry time as Unix timestamp */
+  /** Expiry time as Unix timestamp (seconds since epoch) - 0 for session cookies */
   expiry: number;
-  /** Whether the cookie is secure (1 or 0) */
+  /** Whether the cookie requires HTTPS (1) or allows HTTP (0) */
   isSecure: number;
-  /** Whether the cookie is HTTP only (1 or 0) */
+  /** Whether the cookie is inaccessible to JavaScript (1) or accessible (0) */
   isHttpOnly: number;
-  /** Creation time in microseconds */
+  /** Creation time in microseconds since epoch */
   creationTime: number;
-  /** Last accessed time in microseconds */
+  /** Last accessed time in microseconds since epoch */
   lastAccessed: number;
 }
 

@@ -1,9 +1,10 @@
 import logger from "./logger";
 
 /**
- * Helper functions for common logging patterns
- *
+ * Helper functions for common logging patterns.
+ * @module
  * @example
+ * ```typescript
  * import { logOperationResult, logError } from './logHelpers';
  *
  * try {
@@ -12,6 +13,7 @@ import logger from "./logger";
  * } catch (error) {
  *   logError('Operation failed', error);
  * }
+ * ```
  */
 
 interface OperationContext {
@@ -19,11 +21,19 @@ interface OperationContext {
 }
 
 /**
- * Logs the result of an operation with consistent formatting
+ * Logs the result of an operation with consistent formatting.
+ * @param operation - Name of the operation.
+ * @param success - Whether the operation succeeded.
+ * @param [context] - Additional context about the operation.
+ * @returns Nothing.
+ * @example
+ * ```typescript
+ * logOperationResult('Database Backup', true, { size: '1.2GB' });
+ * // ✅ Database Backup succeeded
  *
- * @param operation - Name of the operation
- * @param success - Whether the operation succeeded
- * @param context - Additional context about the operation
+ * logOperationResult('File Upload', false, { error: 'Network timeout' });
+ * // ❌ File Upload failed
+ * ```
  */
 export function logOperationResult(
   operation: string,
@@ -41,11 +51,19 @@ export function logOperationResult(
 }
 
 /**
- * Logs an error with consistent formatting and context
- *
- * @param message - Error message
- * @param error - Error object
- * @param context - Additional context
+ * Logs an error with consistent formatting and context.
+ * @param message - Error message to display.
+ * @param error - Error object or error information.
+ * @param [context] - Additional context about the error.
+ * @returns Nothing.
+ * @example
+ * ```typescript
+ * try {
+ *   throw new Error('Connection failed');
+ * } catch (error) {
+ *   logError('Database error', error, { retries: 3 });
+ * }
+ * ```
  */
 export function logError(
   message: string,
@@ -68,11 +86,15 @@ export function logError(
 }
 
 /**
- * Logs debug information with consistent formatting
- *
- * @param component - Component or module name
- * @param message - Debug message
- * @param data - Debug data
+ * Logs debug information with consistent formatting.
+ * @param component - Component or module name.
+ * @param message - Debug message to log.
+ * @param [data] - Optional debug data to include.
+ * @returns Nothing.
+ * @example
+ * ```typescript
+ * logDebug('AuthService', 'Token refresh started', { userId: '123' });
+ * ```
  */
 export function logDebug(
   component: string,
@@ -84,10 +106,14 @@ export function logDebug(
 }
 
 /**
- * Creates a tagged logger with consistent naming
- *
- * @param component - Component or module name
- * @returns Tagged logger instance
+ * Creates a tagged logger with consistent naming.
+ * @param component - Component or module name.
+ * @returns A tagged logger instance.
+ * @example
+ * ```typescript
+ * const dbLogger = createTaggedLogger('Database');
+ * dbLogger.info('Connection established');
+ * ```
  */
 export function createTaggedLogger(
   component: string,
@@ -96,11 +122,15 @@ export function createTaggedLogger(
 }
 
 /**
- * Logs a warning with consistent formatting
- *
- * @param component - Component or module name
- * @param message - Warning message
- * @param context - Additional context
+ * Logs a warning with consistent formatting.
+ * @param component - Component or module name.
+ * @param message - Warning message to display.
+ * @param [context] - Additional context about the warning.
+ * @returns Nothing.
+ * @example
+ * ```typescript
+ * logWarn('Cache', 'Cache miss', { key: 'user-123' });
+ * ```
  */
 export function logWarn(
   component: string,

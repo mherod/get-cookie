@@ -1,5 +1,11 @@
 /**
- * Specification for identifying a cookie by its domain and name
+ * Specification for identifying a cookie by its domain and name.
+ * Used to query specific cookies from browser storage.
+ *
+ * @remarks
+ * - Domain matching is exact unless using wildcards
+ * - Name can be "*" to match all cookies for a domain
+ * - Leading dots in domains match all subdomains
  *
  * @example
  * ```typescript
@@ -11,16 +17,28 @@
  *   name: "sessionId"
  * };
  *
- * // Using wildcards
+ * // Using wildcards to match all cookies
  * const allCookies: CookieSpec = {
  *   domain: "example.com",
- *   name: "*"  // Match all cookies
+ *   name: "*"  // Match all cookies for example.com
  * };
  *
  * // Subdomain specification
  * const apiCookies: CookieSpec = {
  *   domain: "api.example.com",
  *   name: "auth"
+ * };
+ *
+ * // Match cookies across all subdomains
+ * const allSubdomainCookies: CookieSpec = {
+ *   domain: ".example.com",  // Note the leading dot
+ *   name: "tracking"
+ * };
+ *
+ * // Multiple domain levels
+ * const deepSubdomainCookie: CookieSpec = {
+ *   domain: "dev.api.example.com",
+ *   name: "debug"
  * };
  * ```
  */
@@ -32,7 +50,8 @@ export interface CookieSpec {
 }
 
 /**
- * Type guard to check if an object matches the CookieSpec interface
+ * Type guard to check if an object matches the CookieSpec interface.
+ * Used internally to validate cookie specifications before querying.
  *
  * @param obj - The object to check
  * @returns True if the object is a valid CookieSpec, false otherwise
@@ -41,16 +60,16 @@ export interface CookieSpec {
  * ```typescript
  * import { isCookieSpec } from 'get-cookie';
  *
- * // Valid cookie spec
- * const validSpec = { domain: "example.com", name: "sessionId" };
- * if (isCookieSpec(validSpec)) {
- *   console.log("Valid cookie spec:", validSpec.domain);
- * }
+ * // Valid cookie specs
+ * console.log(isCookieSpec({ domain: "example.com", name: "sessionId" })); // true
+ * console.log(isCookieSpec({ domain: ".example.com", name: "*" })); // true
  *
  * // Invalid examples
- * console.log(isCookieSpec({ domain: 123, name: "test" })); // false
- * console.log(isCookieSpec({ domain: "example.com" })); // false
+ * console.log(isCookieSpec({ domain: 123, name: "test" })); // false - invalid domain type
+ * console.log(isCookieSpec({ domain: "example.com" })); // false - missing name
+ * console.log(isCookieSpec({ name: "test" })); // false - missing domain
  * console.log(isCookieSpec(null)); // false
+ * console.log(isCookieSpec({})); // false - empty object
  * ```
  */
 export function isCookieSpec(obj: unknown): obj is CookieSpec {
@@ -59,7 +78,13 @@ export function isCookieSpec(obj: unknown): obj is CookieSpec {
 }
 
 /**
- * Type representing either a single cookie specification or an array of specifications
+ * Type representing either a single cookie specification or an array of specifications.
+ * Useful when you need to query multiple cookies in a single operation.
+ *
+ * @remarks
+ * - Can be used to batch multiple cookie queries
+ * - Supports mixing different domains and patterns
+ * - Order of specifications doesn't affect results
  *
  * @example
  * ```typescript
@@ -71,10 +96,11 @@ export function isCookieSpec(obj: unknown): obj is CookieSpec {
  *   name: "sessionId"
  * };
  *
- * // Multiple cookie specs
+ * // Multiple cookie specs with different patterns
  * const multiple: MultiCookieSpec = [
  *   { domain: "example.com", name: "sessionId" },
  *   { domain: "api.example.com", name: "authToken" },
+ *   { domain: ".example.com", name: "*" },  // All cookies on all subdomains
  *   { domain: "app.example.com", name: "theme" }
  * ];
  *

@@ -1,6 +1,12 @@
 /**
- * Interface representing a cookie that has been exported from a browser's storage
- * Contains all the essential properties of a browser cookie
+ * Interface representing a cookie that has been exported from a browser's storage.
+ * This is the core data structure used to represent cookies after they have been
+ * retrieved from various browser storage mechanisms (Chrome, Firefox, etc.).
+ *
+ * @remarks
+ * - All cookies must have domain, name, and value properties
+ * - Expiry is optional and can be a Date, "Infinity", or undefined
+ * - Meta information is useful for tracking the cookie's origin and state
  *
  * @example
  * ```typescript
@@ -22,16 +28,30 @@
  *   meta: {
  *     file: "Cookies.sqlite",
  *     browser: "Firefox",
- *     decrypted: true
+ *     decrypted: true,
+ *     secure: true,
+ *     httpOnly: true,
+ *     path: "/"
  *   }
  * };
  *
- * // Cookie with infinite expiry
+ * // Cookie with infinite expiry (session cookie)
  * const persistentCookie: ExportedCookie = {
  *   domain: "app.example.com",
  *   name: "preferences",
  *   value: "theme=dark",
  *   expiry: "Infinity"
+ * };
+ *
+ * // Subdomain cookie example
+ * const subdomainCookie: ExportedCookie = {
+ *   domain: ".example.com",  // Note the leading dot for all subdomains
+ *   name: "tracking",
+ *   value: "user123",
+ *   meta: {
+ *     browser: "Chrome",
+ *     decrypted: true
+ *   }
  * };
  * ```
  */

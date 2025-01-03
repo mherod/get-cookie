@@ -1,3 +1,5 @@
+import { homedir } from "os";
+
 import { config } from "dotenv";
 import { z } from "zod";
 
@@ -26,5 +28,5 @@ const EnvironmentSchema = z.object({
  */
 export const env = EnvironmentSchema.parse({
   LOG_LEVEL: process.env.LOG_LEVEL,
-  HOME: process.env.HOME,
+  HOME: homedir(),
 });

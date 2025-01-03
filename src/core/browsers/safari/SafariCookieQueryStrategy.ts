@@ -1,8 +1,8 @@
+import { homedir } from "os";
 import { join } from "path";
 
 import { logError } from "@utils/logHelpers";
 
-import { env } from "../../../config";
 import type {
   BrowserName,
   CookieQueryStrategy,
@@ -20,29 +20,13 @@ export class SafariCookieQueryStrategy implements CookieQueryStrategy {
   public readonly browserName: BrowserName = "Safari";
 
   /**
-   * Gets the user's home directory
-   * @returns The home directory path or empty string if not found
-   */
-  private getHomeDir(): string {
-    const homeDir = env.HOME;
-    if (typeof homeDir !== "string" || homeDir.trim().length === 0) {
-      logError(
-        "SafariCookieQueryStrategy",
-        "HOME environment variable not set",
-      );
-      return "";
-    }
-    return homeDir;
-  }
-
-  /**
    * Gets the path to Safari's cookie database
-   * @param homeDir - The user's home directory
+   * @param home - The user's home directory
    * @returns Path to the cookie database
    */
-  private getCookieDbPath(homeDir: string): string {
+  private getCookieDbPath(home: string): string {
     return join(
-      homeDir,
+      home,
       "Library",
       "Containers",
       "com.apple.Safari",
@@ -115,12 +99,13 @@ export class SafariCookieQueryStrategy implements CookieQueryStrategy {
     name: string,
     domain: string,
   ): Promise<ExportedCookie[]> {
-    const homeDir = this.getHomeDir();
-    if (typeof homeDir !== "string" || homeDir.length === 0) {
+    const home = homedir();
+    if (typeof home !== "string" || home.length === 0) {
+      logError("SafariCookieQueryStrategy", "Failed to get home directory");
       return Promise.resolve([]);
     }
 
-    const cookieDbPath = this.getCookieDbPath(homeDir);
+    const cookieDbPath = this.getCookieDbPath(home);
     return Promise.resolve(this.decodeCookies(cookieDbPath, name, domain));
   }
 }

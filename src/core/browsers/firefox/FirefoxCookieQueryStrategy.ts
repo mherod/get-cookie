@@ -1,10 +1,10 @@
+import { homedir } from "os";
 import { join } from "path";
 
 import { sync } from "glob";
 
 import { logDebug, logWarn } from "@utils/logHelpers";
 
-import { env } from "../../../config";
 import {
   BrowserName,
   CookieQueryStrategy,
@@ -24,22 +24,18 @@ interface FirefoxCookieRow {
  * @returns An array of file paths to Firefox cookie databases
  */
 function findFirefoxCookieFiles(): string[] {
-  const files: string[] = [];
-  const homedir = env.HOME;
-
-  if (typeof homedir !== "string" || homedir.length === 0) {
-    logWarn("FirefoxCookieQuery", "HOME environment variable not set");
-    return files;
+  const home = homedir();
+  if (!home) {
+    logWarn("FirefoxCookieQuery", "Failed to get home directory");
+    return [];
   }
 
   const patterns = [
-    join(
-      homedir,
-      "Library/Application Support/Firefox/Profiles/*/cookies.sqlite",
-    ),
-    join(homedir, ".mozilla/firefox/*/cookies.sqlite"),
+    join(home, "Library/Application Support/Firefox/Profiles/*/cookies.sqlite"),
+    join(home, ".mozilla/firefox/*/cookies.sqlite"),
   ];
 
+  const files: string[] = [];
   for (const pattern of patterns) {
     const matches = sync(pattern);
     files.push(...matches);

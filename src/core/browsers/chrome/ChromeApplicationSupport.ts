@@ -1,16 +1,15 @@
+import { homedir } from "os";
 import { join } from "path";
-
-import { HOME } from "../../../global";
 
 /**
  * The path to Chrome's application support directory on macOS
  * This constant is used to locate Chrome's profile and cookie storage directories
- * @example
+ * @throws {Error} If unable to determine user's home directory
  */
-export const chromeApplicationSupport = join(
-  HOME ?? "",
-  "Library",
-  "Application Support",
-  "Google",
-  "Chrome",
-);
+export const chromeApplicationSupport = (() => {
+  const home = homedir();
+  if (!home) {
+    throw new Error("Unable to determine user home directory");
+  }
+  return join(home, "Library", "Application Support", "Google", "Chrome");
+})();

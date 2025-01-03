@@ -29,24 +29,30 @@ Visit our [comprehensive documentation](https://mherod.github.io/get-cookie/) fo
 
 ## Installation 📦
 
-We recommend using [pnpm](https://pnpm.io/) for faster, more efficient package management:
+Install from npm registry using your preferred package manager:
 
 ```bash
-# Global installation with pnpm (recommended)
-pnpm add -g @mherod/get-cookie
-
-# Project installation with pnpm (recommended)
+# Using pnpm (recommended)
 pnpm add @mherod/get-cookie
+
+# Using npm
+npm install @mherod/get-cookie
+
+# Using yarn
+yarn add @mherod/get-cookie
 ```
 
-Alternatively, you can use npm:
+For global installation:
 
 ```bash
-# Global installation with npm
+# Using pnpm (recommended)
+pnpm add -g @mherod/get-cookie
+
+# Using npm
 npm install -g @mherod/get-cookie
 
-# Project installation with npm
-npm install @mherod/get-cookie
+# Using yarn
+yarn global add @mherod/get-cookie
 ```
 
 **Note: Currently only macOS is supported. Windows support is planned for a future release.** 🚧

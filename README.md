@@ -1,33 +1,163 @@
-# get-cookie
+# get-cookie 🍪
 
-## What is it?
+## What is it? 🤔
 
-get-cookie is a command line utility that allows you to get the value of a cookie from your locally installed browser.
-It is useful for testing web pages that require authentication.
+get-cookie is a powerful command-line utility and Node.js module that allows you to securely retrieve browser cookies from your locally installed browsers. Perfect for:
 
-## Installation
+- 🔐 Testing authenticated web applications
+- 🔍 Debugging cookie-related issues
+- 🤖 Automating browser cookie extraction
+- 🧪 Integration testing with real browser cookies
 
-To install get-cookie, run the following command:
+## Features ✨
 
-        $ npm install @mherod/get-cookie --global
+- 🌐 **Multi-Browser Support**: Works with Chrome, Firefox, and Safari
+- 🔒 **Secure**: Safe cookie extraction with proper encryption handling
+- 📝 **TypeScript Ready**: Built with TypeScript for excellent type safety
+- 🎯 **Flexible Querying**: Search by name, domain, or URL pattern
+- 🔄 **Multiple Output Formats**: JSON, rendered, or grouped results
+- 👥 **Profile Support**: Query cookies from different browser profiles
 
-**Note: Currently only macOS is supported. Windows support is planned for a future release.**
+## Installation 📦
 
-## How do I use it?
+We recommend using [pnpm](https://pnpm.io/) for faster, more efficient package management:
 
-To use get-cookie, run the following command:
+```bash
+# Global installation with pnpm (recommended)
+pnpm add -g @mherod/get-cookie
 
-        $ get-cookie <cookie-name> <domain>
-
-For example, to get the value of the `auth` cookie on the `www.example.com` domain, run the following command:
-
-        $ get-cookie auth www.example.com
-
-The output of the command will be the value of the cookie.
-
-The library can also be used as a module:
-
-```javascript
-const { getCookie } = require("@mherod/get-cookie");
-getCookie({ name: "auth", domain: "www.example.com" }).then(console.log);
+# Project installation with pnpm (recommended)
+pnpm add @mherod/get-cookie
 ```
+
+Alternatively, you can use npm:
+
+```bash
+# Global installation with npm
+npm install -g @mherod/get-cookie
+
+# Project installation with npm
+npm install @mherod/get-cookie
+```
+
+**Note: Currently only macOS is supported. Windows support is planned for a future release.** 🚧
+
+## How do I use it? 🚀
+
+### CLI Usage 💻
+
+Basic cookie retrieval:
+
+```bash
+# Get a specific cookie
+get-cookie auth example.com
+
+# Get all cookies for a domain
+get-cookie % example.com
+
+# Get cookies with output formatting
+get-cookie auth example.com --render
+get-cookie auth example.com --dump-grouped
+
+# Get cookies from a specific URL
+get-cookie --url https://example.com/path
+```
+
+### Node.js Module Usage 📚
+
+Basic usage:
+
+```typescript
+import { getCookie } from "@mherod/get-cookie";
+
+// Get a specific cookie
+const authCookies = await getCookie({
+  name: "auth",
+  domain: "example.com",
+});
+
+// Get all cookies for a domain
+const allCookies = await getCookie({
+  name: "%",
+  domain: "example.com",
+});
+
+// Get cookies from multiple specifications
+import { comboQueryCookieSpec } from "@mherod/get-cookie";
+
+const cookies = await comboQueryCookieSpec(
+  [
+    { name: "session", domain: "api.example.com" },
+    { name: "auth", domain: "auth.example.com" },
+  ],
+  {
+    removeExpired: true,
+    limit: 10,
+  },
+);
+```
+
+### Advanced Usage 🔧
+
+Using browser-specific strategies:
+
+```typescript
+import {
+  ChromeCookieQueryStrategy,
+  FirefoxCookieQueryStrategy,
+} from "@mherod/get-cookie";
+
+// Query Chrome cookies
+const chromeStrategy = new ChromeCookieQueryStrategy();
+const chromeCookies = await chromeStrategy.queryCookies(
+  "sessionId",
+  "example.com",
+);
+
+// Query Firefox cookies
+const firefoxStrategy = new FirefoxCookieQueryStrategy();
+const firefoxCookies = await firefoxStrategy.queryCookies(
+  "auth",
+  "example.com",
+);
+```
+
+Using URL-based cookie extraction:
+
+```typescript
+import { cookieSpecsFromUrl } from "@mherod/get-cookie";
+
+// Get all cookies needed for a specific URL
+const specs = cookieSpecsFromUrl("https://example.com/dashboard");
+const cookies = await comboQueryCookieSpec(specs);
+```
+
+## Output Formats 📊
+
+The CLI supports various output formats:
+
+```bash
+# Default output (just values)
+get-cookie auth example.com
+
+# JSON output
+get-cookie auth example.com --output json
+
+# Rendered output (human-readable)
+get-cookie auth example.com --render
+
+# Grouped by browser/profile
+get-cookie auth example.com --dump-grouped
+```
+
+## Contributing 🤝
+
+Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
+
+## License 📄
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Security 🛡️
+
+This tool handles sensitive data (cookies). Always be careful when extracting and storing cookie information. Never share your cookies or use this tool on untrusted machines.

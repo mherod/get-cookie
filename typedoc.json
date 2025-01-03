@@ -7,7 +7,7 @@
     "src/types/CookieSpec.ts",
     "src/types/CookieRender.ts"
   ],
-  "out": "docs/api",
+  "out": "docs/reference",
   "plugin": ["typedoc-plugin-markdown"],
   "readme": "none",
   "cleanOutputDir": true,

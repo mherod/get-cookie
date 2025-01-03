@@ -1,33 +1,38 @@
 import { defineConfig } from 'vitepress'
 
 export default defineConfig({
-  title: "Get Cookie Documentation",
-  description: "Documentation for the get-cookie Node.js module",
+  title: "get-cookie 🍪",
+  description: "Securely retrieve browser cookies from your local browsers",
   base: '/get-cookie/',
   themeConfig: {
     nav: [
-      { text: 'Home', link: '/' },
-      { text: 'Guide', link: '/guide/' },
-      { text: 'API', link: '/api/' },
+      { text: '🏠 Home', link: '/' },
+      { text: '📚 Guide', link: '/guide/' },
+      { text: '🔧 API Reference', link: '/reference/' }
     ],
     sidebar: [
       {
-        text: 'Guide',
+        text: '📚 Guide',
         items: [
-          { text: 'Introduction', link: '/guide/' },
-          { text: 'Getting Started', link: '/guide/getting-started' },
+          { text: '🤔 What is get-cookie?', link: '/guide/' },
+          { text: '🚀 Getting Started', link: '/guide/getting-started' }
         ]
       },
       {
-        text: 'API Reference',
+        text: '🔧 API Reference',
         items: [
-          { text: 'Core API', link: '/api/' },
-          { text: 'Browser Support', link: '/api/browsers' },
+          { text: '📖 Overview', link: '/reference/' },
+          { text: '⚙️ Core', link: '/reference/modules' },
+          { text: '📝 Types', link: '/reference/types' }
         ]
       }
     ],
     socialLinks: [
       { icon: 'github', link: 'https://github.com/mherod/get-cookie' }
-    ]
+    ],
+    footer: {
+      message: '🔒 Safe cookie extraction with proper encryption handling',
+      copyright: '© 2024 Matthew Herod'
+    }
   }
 })

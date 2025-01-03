@@ -9,6 +9,15 @@ get-cookie is a powerful command-line utility and Node.js module that allows you
 - 🤖 Automating browser cookie extraction
 - 🧪 Integration testing with real browser cookies
 
+## Documentation 📚
+
+Visit our [comprehensive documentation](https://mherod.github.io/get-cookie/) for:
+
+- Detailed API reference
+- Getting started guides
+- Advanced usage examples
+- TypeScript type definitions
+
 ## Features ✨
 
 - 🌐 **Multi-Browser Support**: Works with Chrome, Firefox, and Safari

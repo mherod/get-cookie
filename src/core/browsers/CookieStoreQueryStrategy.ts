@@ -1,7 +1,6 @@
 import { Cookie, CookieJar, Store } from "tough-cookie";
 import { z } from "zod";
 
-import { cookieJarPromise } from "../../core/cookies/CookieStore";
 import {
   BrowserName,
   CookieQueryStrategy,
@@ -9,10 +8,11 @@ import {
   CookieSpecSchema,
   ExportedCookie,
   ExportedCookieSchema,
-} from "../../types/schemas";
-import { SafeParseResult, isParseSuccess } from "../../types/ZodUtils";
-import logger from "../../utils/logger";
-import { stringToRegex } from "../../utils/stringToRegex";
+} from "@/types/schemas";
+import { SafeParseResult, isParseSuccess } from "@/types/ZodUtils";
+import { cookieJarPromise } from "@core/cookies/CookieStore";
+import logger from "@utils/logger";
+import { stringToRegex } from "@utils/stringToRegex";
 
 const consola = logger.withTag("CookieStoreQueryStrategy");
 

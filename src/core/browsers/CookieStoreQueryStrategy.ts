@@ -178,7 +178,7 @@ export default class CookieStoreQueryStrategy implements CookieQueryStrategy {
         if (err) {
           reject(err);
         } else {
-          resolve(cookies);
+          resolve(cookies ?? []);
         }
       });
     });
@@ -193,7 +193,7 @@ export default class CookieStoreQueryStrategy implements CookieQueryStrategy {
         if (err) {
           reject(err);
         } else {
-          resolve(cookies);
+          resolve(cookies ?? []);
         }
       });
     });

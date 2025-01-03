@@ -24,7 +24,7 @@ interface QueryOptions {
  * @internal
  */
 function convertExpiry(cookie: ExportedCookie): ExportedCookie {
-  if (cookie.expiry === "Infinity" || cookie.expiry === Infinity) {
+  if (cookie.expiry === "Infinity") {
     return { ...cookie, expiry: "Infinity" };
   }
   if (typeof cookie.expiry === "number") {

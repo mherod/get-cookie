@@ -9,7 +9,7 @@ const createTestCookie = (): ExportedCookie => ({
   name: "test",
   value: "test",
   domain: "example.com",
-  expiry: Infinity,
+  expiry: "Infinity",
 });
 
 describe("comboQueryCookieSpec basic functionality", () => {

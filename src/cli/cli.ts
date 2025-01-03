@@ -52,7 +52,7 @@ function createCookieSpec(parsedArgs: ParsedArgs): CookieSpec {
 function getCookieSpecs(parsedArgs: ParsedArgs): CookieSpec[] {
   const argUrl = parsedArgs.url ?? parsedArgs.u;
 
-  if (typeof argUrl === 'string') {
+  if (typeof argUrl === "string") {
     return cookieSpecsFromUrl(argUrl);
   }
 
@@ -67,7 +67,11 @@ async function handleCookieQuery(parsedArgs: ParsedArgs): Promise<void> {
   }
 
   try {
-    await cliQueryCookies(cookieSpecs);
+    await cliQueryCookies(
+      cookieSpecs,
+      ["chrome", "firefox", "safari"],
+      ["default"],
+    );
   } catch (error) {
     if (error instanceof Error) {
       logger.error("Error querying cookies:", error.message);
@@ -79,7 +83,9 @@ async function handleCookieQuery(parsedArgs: ParsedArgs): Promise<void> {
 
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
-  const { values: parsedArgs } = parseArgv(args) as unknown as { values: ParsedArgs };
+  const { values: parsedArgs } = parseArgv(args) as unknown as {
+    values: ParsedArgs;
+  };
 
   if (parsedArgs.help === true || parsedArgs.h === true) {
     showHelp();

@@ -1,0 +1,28 @@
+module.exports = {
+  extends: "../eslint.config.js",
+  parserOptions: {
+    project: "./tsconfig.json",
+  },
+  rules: {
+    "jsdoc/require-example": "off",
+    "jsdoc/require-description": "off",
+    "jsdoc/require-returns": "off",
+    "jsdoc/require-param-description": "off",
+    "jsdoc/require-property": "off",
+    "jsdoc/require-property-description": "off",
+    "jsdoc/require-property-name": "off",
+    "jsdoc/require-returns-description": "off",
+    "jsdoc/check-line-alignment": "off",
+    "jsdoc/check-syntax": "off",
+    "jsdoc/check-values": "off",
+    "jsdoc/check-types": "off",
+    "jsdoc/check-property-names": "off",
+    "jsdoc/check-indentation": "off",
+    "jsdoc/multiline-blocks": "off",
+    "jsdoc/require-hyphen-before-param-description": "off",
+    "jsdoc/require-throws": "off",
+    "jsdoc/require-yields": "off",
+    "jsdoc/sort-tags": "off",
+    "jsdoc/check-examples": "off",
+  },
+};

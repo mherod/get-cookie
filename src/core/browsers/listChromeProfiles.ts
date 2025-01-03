@@ -2,7 +2,7 @@
 import { readFileSync } from "fs";
 import { join } from "path";
 
-import { sync } from "fast-glob";
+import fg from "fast-glob";
 
 // Internal imports
 import logger from "@utils/logger";
@@ -34,7 +34,7 @@ const consola = logger.withTag("listChromeProfiles");
  * ```
  */
 export function listChromeProfilePaths(): string[] {
-  const files: string[] = sync(`./**/Cookies`, {
+  const files: string[] = fg.sync(`./**/Cookies`, {
     cwd: chromeApplicationSupport,
     absolute: true,
   });

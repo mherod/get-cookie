@@ -4,7 +4,7 @@ import { z } from "zod";
 // Load environment variables from .env file
 config();
 
-const envSchema = z.object({
+const EnvironmentSchema = z.object({
   LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),
   HOME: z.string().min(1),
 });
@@ -20,7 +20,7 @@ const envSchema = z.object({
  * // Accessing home directory
  * const cookiePath = join(env.HOME, "Library/Cookies");
  */
-export const env = envSchema.parse({
+export const env = EnvironmentSchema.parse({
   LOG_LEVEL: process.env.LOG_LEVEL,
   HOME: process.env.HOME,
 });

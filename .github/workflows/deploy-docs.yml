@@ -40,7 +40,7 @@ jobs:
         run: pnpm install --no-frozen-lockfile
 
       - name: Build documentation
-        run: pnpm docs:build
+        run: pnpm docs
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

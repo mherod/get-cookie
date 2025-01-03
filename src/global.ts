@@ -1,8 +1,7 @@
-import { merge } from "lodash";
+import merge from "lodash/merge";
 
 /**
  * Global environment variables object that merges with process.env
- *
  * @example
  * // Access environment variables
  * const nodeEnv = env.NODE_ENV; // 'development'
@@ -21,7 +20,6 @@ merge(env, process.env);
 
 /**
  * User's home directory path from environment variables
- *
  * @throws Error if HOME environment variable is not set
  * @example
  * // Access home directory path

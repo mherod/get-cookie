@@ -1,11 +1,10 @@
 // External imports
 import { createDecipheriv, pbkdf2 } from "crypto";
 
-import { memoize } from "lodash";
+import memoize from "lodash/memoize";
 
 /**
  * Removes the v10 prefix from the encrypted value if present
- *
  * @param value - The encrypted value
  * @returns The value without the v10 prefix
  */
@@ -27,7 +26,6 @@ const removeV10Prefix = memoize(
 
 /**
  * Removes PKCS7 padding from the decrypted value
- *
  * @param decrypted - The decrypted buffer
  * @returns The buffer without padding
  */
@@ -44,7 +42,6 @@ const removePadding = memoize(
 
 /**
  * Extracts the actual value from the decoded string by removing Chrome's prefixes
- *
  * @param decodedString - The decoded string to clean up
  * @returns The cleaned up value
  */
@@ -68,7 +65,6 @@ function extractValue(decodedString: string): string {
 
 /**
  * Decrypts Chrome's encrypted cookie values
- *
  * @param encryptedValue - The encrypted cookie value as a Buffer
  * @param password - The Chrome encryption password
  * @returns A promise that resolves to the decrypted cookie value

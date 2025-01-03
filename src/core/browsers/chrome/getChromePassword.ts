@@ -1,11 +1,10 @@
-import { memoize } from "lodash";
+import memoize from "lodash/memoize";
 
 import { logError, logDebug } from "@utils/logHelpers";
 
 /**
  * Retrieves the Chrome password for decrypting cookies
  * This is only supported on macOS
- *
  * @returns A promise that resolves to the Chrome password
  * @throws {Error} If the platform is not macOS or if password retrieval fails
  * @example

@@ -1,6 +1,6 @@
 // External imports
 import BetterSqlite3, { Database } from "better-sqlite3";
-import { memoize } from "lodash";
+import memoize from "lodash/memoize";
 
 // Internal imports
 import { logError } from "@utils/logHelpers";
@@ -38,7 +38,6 @@ function closeDatabase(db: Database): Promise<void> {
 
 /**
  * Executes a SQL query on a SQLite database file and transforms the results
- *
  * @param root0 - The options object containing query parameters
  * @param root0.file - The path to the SQLite database file
  * @param root0.sql - The SQL query to execute

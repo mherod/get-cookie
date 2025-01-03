@@ -204,7 +204,7 @@ export function decodeBinaryCookies(cookieDbPath: string): BinaryCookieRow[] {
 
   // Validate footer
   if (!validateFooter(buffer)) {
-    throw new Error("Invalid cookie file format: wrong footer");
+    logWarn("BinaryCookies", "Invalid cookie file format: wrong footer");
   }
 
   return cookies;

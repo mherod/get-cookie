@@ -116,3 +116,7 @@ docs/.vitepress/cache/
 docs/api/
 .vitepress/.temp/
 .vitepress/cache/
+
+# TypeDoc generated files
+docs/reference/*
+!docs/reference/index.md

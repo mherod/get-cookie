@@ -18,5 +18,17 @@
   "excludeExternals": true,
   "includeVersion": true,
   "categorizeByGroup": true,
-  "categoryOrder": ["Core", "Browsers", "CLI", "*"]
+  "categoryOrder": ["Core", "Browsers", "CLI", "*"],
+  "tsconfig": "tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@core/*": ["src/core/*"],
+      "@utils/*": ["src/utils/*"],
+      "@browsers/*": ["src/browsers/*"],
+      "@cli/*": ["src/cli/*"],
+      "@types/*": ["src/types/*"]
+    }
+  }
 }

@@ -13,14 +13,5 @@
   "includeVersion": true,
   "categorizeByGroup": true,
   "categoryOrder": ["Core", "Browsers", "CLI", "*"],
-  "tsconfig": "tsconfig.json",
-  "baseUrl": ".",
-  "paths": {
-    "@/*": ["src/*"],
-    "@core/*": ["src/core/*"],
-    "@utils/*": ["src/utils/*"],
-    "@browsers/*": ["src/browsers/*"],
-    "@cli/*": ["src/cli/*"],
-    "@types/*": ["src/types/*"]
-  }
+  "tsconfig": "tsconfig.json"
 }

@@ -6,6 +6,36 @@ import { join } from "path";
 
 import { consola } from "consola";
 
+function validateCookieOffsets(
+  buffer: Buffer,
+  offset: number,
+  numCookies: number,
+  bufferLength: number,
+): void {
+  const cookieOffsetsEnd = offset + 8 + numCookies * 4;
+  if (cookieOffsetsEnd > bufferLength) {
+    throw new Error(
+      `Invalid cookie offsets: end ${cookieOffsetsEnd} exceeds buffer length ${bufferLength}`,
+    );
+  }
+
+  consola.info("  Cookie offsets:");
+  for (let i = 0; i < numCookies; i++) {
+    const cookieOffsetBE = buffer.readUInt32BE(offset + 8 + i * 4);
+    const cookieOffsetLE = buffer.readUInt32LE(offset + 8 + i * 4);
+    const absoluteOffsetBE = offset + cookieOffsetBE;
+    const absoluteOffsetLE = offset + cookieOffsetLE;
+
+    consola.info(`    Cookie ${i}:`);
+    consola.info(
+      `      BE offset: ${cookieOffsetBE} (absolute: ${absoluteOffsetBE})${absoluteOffsetBE >= bufferLength ? " INVALID" : ""}`,
+    );
+    consola.info(
+      `      LE offset: ${cookieOffsetLE} (absolute: ${absoluteOffsetLE})${absoluteOffsetLE >= bufferLength ? " INVALID" : ""}`,
+    );
+  }
+}
+
 function validatePageHeader(
   buffer: Buffer,
   offset: number,
@@ -31,29 +61,37 @@ function validatePageHeader(
   // Try little-endian for number of cookies since big-endian gave an unreasonable value
   const numCookies = numCookiesLE;
 
-  // Validate cookie offsets
-  const cookieOffsetsEnd = offset + 8 + numCookies * 4;
-  if (cookieOffsetsEnd > bufferLength) {
-    throw new Error(
-      `Invalid cookie offsets: end ${cookieOffsetsEnd} exceeds buffer length ${bufferLength}`,
-    );
-  }
+  validateCookieOffsets(buffer, offset, numCookies, bufferLength);
+}
 
-  // Dump cookie offsets
-  consola.info("  Cookie offsets:");
-  for (let i = 0; i < numCookies; i++) {
-    // Try both endianness for cookie offsets
-    const cookieOffsetBE = buffer.readUInt32BE(offset + 8 + i * 4);
-    const cookieOffsetLE = buffer.readUInt32LE(offset + 8 + i * 4);
-    const absoluteOffsetBE = offset + cookieOffsetBE;
-    const absoluteOffsetLE = offset + cookieOffsetLE;
+function validateStringOffsets(
+  buffer: Buffer,
+  offset: number,
+  bufferLength: number,
+  urlOffset: number,
+  nameOffset: number,
+  pathOffset: number,
+  valueOffset: number,
+  commentOffset: number,
+): void {
+  const stringOffsets = [
+    { name: "URL", offset: urlOffset },
+    { name: "Name", offset: nameOffset },
+    { name: "Path", offset: pathOffset },
+    { name: "Value", offset: valueOffset },
+    { name: "Comment", offset: commentOffset },
+  ];
 
-    consola.info(`    Cookie ${i}:`);
+  for (const { name, offset: stringOffset } of stringOffsets) {
+    const absoluteOffset = offset + stringOffset;
+    if (absoluteOffset >= bufferLength) {
+      consola.warn(
+        `  ${name} offset: ${stringOffset} (absolute: ${absoluteOffset}) INVALID - exceeds buffer length`,
+      );
+      continue;
+    }
     consola.info(
-      `      BE offset: ${cookieOffsetBE} (absolute: ${absoluteOffsetBE})${absoluteOffsetBE >= bufferLength ? " INVALID" : ""}`,
-    );
-    consola.info(
-      `      LE offset: ${cookieOffsetLE} (absolute: ${absoluteOffsetLE})${absoluteOffsetLE >= bufferLength ? " INVALID" : ""}`,
+      `  ${name} offset: ${stringOffset} (absolute: ${absoluteOffset})`,
     );
   }
 }
@@ -87,27 +125,16 @@ function validateCookieHeader(
   consola.info(`  Size: ${size} bytes`);
   consola.info(`  Flags: 0x${flags.toString(16).padStart(8, "0")}`);
 
-  // Validate and display string offsets
-  const stringOffsets = [
-    { name: "URL", offset: urlOffset },
-    { name: "Name", offset: nameOffset },
-    { name: "Path", offset: pathOffset },
-    { name: "Value", offset: valueOffset },
-    { name: "Comment", offset: commentOffset },
-  ];
-
-  for (const { name, offset: stringOffset } of stringOffsets) {
-    const absoluteOffset = offset + stringOffset;
-    if (absoluteOffset >= bufferLength) {
-      consola.warn(
-        `  ${name} offset: ${stringOffset} (absolute: ${absoluteOffset}) INVALID - exceeds buffer length`,
-      );
-      continue;
-    }
-    consola.info(
-      `  ${name} offset: ${stringOffset} (absolute: ${absoluteOffset})`,
-    );
-  }
+  validateStringOffsets(
+    buffer,
+    offset,
+    bufferLength,
+    urlOffset,
+    nameOffset,
+    pathOffset,
+    valueOffset,
+    commentOffset,
+  );
 
   consola.info(`  Expiry date: ${new Date(expiryDate * 1000).toISOString()}`);
   consola.info(

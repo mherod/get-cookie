@@ -102,3 +102,4 @@ bun.lockb
 package.json
 bun.lockb
 /bun.lockb
+coverage/

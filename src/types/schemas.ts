@@ -1,4 +1,145 @@
+import destr from "destr";
 import { z } from "zod";
+
+/**
+ * Zod schema for cookie domain validation.
+ * Enforces standard cookie domain rules.
+ * @example
+ * ```typescript
+ * // Valid domains
+ * CookieDomainSchema.parse("example.com");     // OK
+ * CookieDomainSchema.parse(".example.com");    // OK - leading dot is valid
+ * CookieDomainSchema.parse("sub.example.com"); // OK
+ *
+ * // Invalid domains
+ * CookieDomainSchema.parse("");               // Error: Domain cannot be empty
+ * CookieDomainSchema.parse("invalid domain"); // Error: Invalid domain format
+ * ```
+ */
+export const CookieDomainSchema = z
+  .string()
+  .trim()
+  .min(1, "Domain cannot be empty")
+  .refine(
+    (domain) =>
+      /^\.?[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/.test(
+        domain,
+      ),
+    "Invalid domain format",
+  );
+
+/**
+ * Zod schema for cookie name validation.
+ * Enforces standard cookie name rules according to RFC 6265.
+ * @example
+ * ```typescript
+ * // Valid names
+ * CookieNameSchema.parse("session");          // OK
+ * CookieNameSchema.parse("auth_token");       // OK
+ * CookieNameSchema.parse("user-preference");  // OK
+ *
+ * // Invalid names
+ * CookieNameSchema.parse("");                 // Error: Cookie name cannot be empty
+ * CookieNameSchema.parse("session;");         // Error: Invalid cookie name format
+ * CookieNameSchema.parse("my cookie");        // Error: Invalid cookie name format
+ * ```
+ */
+export const CookieNameSchema = z
+  .string()
+  .trim()
+  .min(1, "Cookie name cannot be empty")
+  .refine(
+    (name) =>
+      /^[\x21\x23-\x27\x2A\x2B\x2D-\x2E\x30-\x39\x41-\x5A\x5E-\x7E]+$/.test(
+        name,
+      ),
+    "Invalid cookie name format - must contain only valid characters (letters, numbers, and certain symbols)",
+  );
+
+/**
+ * Zod schema for cookie path validation.
+ * Enforces standard cookie path rules according to RFC 6265.
+ * @example
+ * ```typescript
+ * // Valid paths
+ * CookiePathSchema.parse("/");              // OK
+ * CookiePathSchema.parse("/api");           // OK
+ * CookiePathSchema.parse("/path/to/page");  // OK
+ *
+ * // Invalid paths
+ * CookiePathSchema.parse("");               // Error: Path cannot be empty
+ * CookiePathSchema.parse("invalid");        // Error: Path must start with /
+ * CookiePathSchema.parse("/path?query");    // Error: Invalid path format
+ * ```
+ */
+export const CookiePathSchema = z
+  .string()
+  .trim()
+  .min(1, "Path cannot be empty")
+  .refine((path) => path.startsWith("/"), "Path must start with /")
+  .refine(
+    (path) => /^\/[!#$%&'()*+,\-./:=@\w]*$/.test(path),
+    "Invalid path format - must contain only valid URL path characters",
+  )
+  .default("/");
+
+/**
+ * Zod schema for cookie value.
+ * Attempts to parse JSON values using destr for better readability.
+ */
+export const CookieValueSchema = z
+  .string()
+  .trim()
+  .transform((value) => destr(value))
+  .pipe(z.any());
+
+/**
+ * Zod schema for Safari binary cookie row.
+ * Validates and enforces the structure of cookie data read from Safari's Cookies.binarycookies file.
+ * @example
+ * ```typescript
+ * const cookieData = {
+ *   name: "session",
+ *   value: "abc123",
+ *   domain: "example.com",
+ *   path: "/",
+ *   expiry: 1735689600,
+ *   creation: 1672531200,
+ *   flags: 0x5, // Secure + HTTPOnly
+ * };
+ * const validCookie = BinaryCookieRowSchema.parse(cookieData);
+ * ```
+ */
+export const BinaryCookieRowSchema = z.object({
+  name: CookieNameSchema,
+  value: CookieValueSchema,
+  domain: CookieDomainSchema,
+  path: CookiePathSchema,
+  expiry: z.number().int(),
+  creation: z.number().int(),
+  flags: z.number().optional(),
+  version: z.number().int().optional(),
+  port: z.number().int().optional(),
+  comment: z.string().optional(),
+  commentURL: z.string().optional(),
+});
+
+/**
+ * Type representing a decoded Safari binary cookie.
+ * This type is inferred from the BinaryCookieRowSchema and includes all cookie properties.
+ * @property name - The name of the cookie (non-empty string)
+ * @property value - The value stored in the cookie
+ * @property domain - The domain the cookie belongs to (non-empty string)
+ * @property path - The path where the cookie is valid (defaults to "/")
+ * @property expiry - Unix timestamp when the cookie expires
+ * @property creation - Unix timestamp when the cookie was created
+ * @property flags - Optional bit flags (e.g., Secure, HTTPOnly)
+ * @property version - Optional cookie version number
+ * @property port - Optional port number restriction
+ * @property comment - Optional cookie comment
+ * @property commentURL - Optional URL for the cookie's comment
+ */
+export type BinaryCookieRow = z.infer<typeof BinaryCookieRowSchema>;
 
 /**
  * Schema for cookie specification parameters
@@ -28,8 +169,8 @@ import { z } from "zod";
  */
 export const CookieSpecSchema = z
   .object({
-    name: z.string().trim().min(1, "Cookie name cannot be empty"),
-    domain: z.string().trim().min(1, "Domain cannot be empty"),
+    name: CookieNameSchema,
+    domain: CookieDomainSchema,
   })
   .strict();
 
@@ -68,7 +209,7 @@ export const CookieMetaSchema = z
     decrypted: z.boolean().optional(),
     secure: z.boolean().optional(),
     httpOnly: z.boolean().optional(),
-    path: z.string().optional(),
+    path: CookiePathSchema.optional(),
   })
   .catchall(z.unknown())
   .strict();
@@ -110,9 +251,9 @@ export type CookieMeta = z.infer<typeof CookieMetaSchema>;
  */
 export const ExportedCookieSchema = z
   .object({
-    domain: z.string().trim().min(1, "Domain cannot be empty"),
-    name: z.string().trim().min(1, "Cookie name cannot be empty"),
-    value: z.string(),
+    domain: CookieDomainSchema,
+    name: CookieNameSchema,
+    value: CookieValueSchema,
     expiry: z
       .union([
         z.literal("Infinity"),
@@ -163,8 +304,8 @@ export type ExportedCookie = z.infer<typeof ExportedCookieSchema>;
 export const CookieRowSchema = z
   .object({
     expiry: z.number().int().optional(),
-    domain: z.string().trim().min(1, "Domain cannot be empty"),
-    name: z.string().trim().min(1, "Cookie name cannot be empty"),
+    domain: CookieDomainSchema,
+    name: CookieNameSchema,
     value: z.union([z.string(), z.instanceof(Buffer)]),
   })
   .strict();

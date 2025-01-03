@@ -73,7 +73,9 @@ export class SafariCookieQueryStrategy implements CookieQueryStrategy {
         .map((cookie) => ({
           domain: cookie.domain,
           name: cookie.name,
-          value: cookie.value.toString(),
+          value: Buffer.isBuffer(cookie.value)
+            ? cookie.value.toString()
+            : String(cookie.value),
           expiry:
             typeof cookie.expiry === "number" && cookie.expiry > 0
               ? new Date(cookie.expiry * 1000)

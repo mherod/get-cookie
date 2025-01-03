@@ -25,15 +25,9 @@ importers:
       lodash-es:
         specifier: ^4.17.21
         version: 4.17.21
-      lru-cache:
-        specifier: ^11.0.2
-        version: 11.0.2
       minimist:
         specifier: ^1.2.8
         version: 1.2.8
-      tough-cookie:
-        specifier: ^5.0.0
-        version: 5.0.0
       tsconfig-paths:
         specifier: ^4.2.0
         version: 4.2.0
@@ -71,9 +65,6 @@ importers:
       "@types/node":
         specifier: ^22.10.4
         version: 22.10.4
-      "@types/tough-cookie":
-        specifier: ^4.0.5
-        version: 4.0.5
       "@typescript-eslint/eslint-plugin":
         specifier: ^8.19.0
         version: 8.19.0(@typescript-eslint/parser@8.19.0(eslint@9.17.0(jiti@2.4.2))(typescript@5.7.2))(eslint@9.17.0(jiti@2.4.2))(typescript@5.7.2)
@@ -2085,12 +2076,6 @@ packages:
     resolution:
       {
         integrity: sha512-9aEbYZ3TbYMznPdcdr3SmIrLXwC/AKZXQeCf9Pgao5CKb8CyHuEX5jzWPTkvregvhRJHcpRO6BFoGW9ycaOkYw==,
-      }
-
-  "@types/tough-cookie@4.0.5":
-    resolution:
-      {
-        integrity: sha512-/Ad8+nIOV7Rl++6f1BdKxFSMgmoqEoYbHRpPcx3JEfv8VRsQe9Z4mCXeJBzxs7mbHY/XOZZuXlRNfhpVPbs6ZA==,
       }
 
   "@types/unist@3.0.3":
@@ -5004,13 +4989,6 @@ packages:
         integrity: sha512-JNAzZcXrCt42VGLuYz0zfAzDfAvJWW6AfYlDBQyDV5DClI2m5sAmK+OIO7s59XfsRsWHp02jAJrRadPRGTt6SQ==,
       }
 
-  lru-cache@11.0.2:
-    resolution:
-      {
-        integrity: sha512-123qHRfJBmo2jXDbo/a5YOQrJoHF/GNQTLzQ5+IdK5pWpceK17yRc6ozlWd25FxvGKQbIUs91fDFkXmDHTKcyA==,
-      }
-    engines: { node: 20 || >=22 }
-
   lru-cache@5.1.1:
     resolution:
       {
@@ -6361,19 +6339,6 @@ packages:
       }
     engines: { node: ">=12.0.0" }
 
-  tldts-core@6.1.70:
-    resolution:
-      {
-        integrity: sha512-RNnIXDB1FD4T9cpQRErEqw6ZpjLlGdMOitdV+0xtbsnwr4YFka1zpc7D4KD+aAn8oSG5JyFrdasZTE04qDE9Yg==,
-      }
-
-  tldts@6.1.70:
-    resolution:
-      {
-        integrity: sha512-/W1YVgYVJd9ZDjey5NXadNh0mJXkiUMUue9Zebd0vpdo1sU+H4zFFTaJ1RKD4N6KFoHfcXy6l+Vu7bh+bdWCzA==,
-      }
-    hasBin: true
-
   tmpl@1.0.5:
     resolution:
       {
@@ -6386,13 +6351,6 @@ packages:
         integrity: sha512-65P7iz6X5yEr1cwcgvQxbbIw7Uk3gOy5dIdtZ4rDveLqhrdJP+Li/Hx6tyK0NEb+2GCyneCMJiGqrADCSNk8sQ==,
       }
     engines: { node: ">=8.0" }
-
-  tough-cookie@5.0.0:
-    resolution:
-      {
-        integrity: sha512-FRKsF7cz96xIIeMZ82ehjC3xW2E+O2+v11udrDYewUbszngYhsGa8z6YUMMzO9QJZzzyd0nGGXnML/TReX6W8Q==,
-      }
-    engines: { node: ">=16" }
 
   tr46@1.0.1:
     resolution:
@@ -8120,8 +8078,6 @@ snapshots:
       undici-types: 6.20.0
 
   "@types/stack-utils@2.0.3": {}
-
-  "@types/tough-cookie@4.0.5": {}
 
   "@types/unist@3.0.3": {}
 
@@ -10221,8 +10177,6 @@ snapshots:
 
   lru-cache@10.4.3: {}
 
-  lru-cache@11.0.2: {}
-
   lru-cache@5.1.1:
     dependencies:
       yallist: 3.1.1
@@ -11007,21 +10961,11 @@ snapshots:
       fdir: 6.4.2(picomatch@4.0.2)
       picomatch: 4.0.2
 
-  tldts-core@6.1.70: {}
-
-  tldts@6.1.70:
-    dependencies:
-      tldts-core: 6.1.70
-
   tmpl@1.0.5: {}
 
   to-regex-range@5.0.1:
     dependencies:
       is-number: 7.0.0
-
-  tough-cookie@5.0.0:
-    dependencies:
-      tldts: 6.1.70
 
   tr46@1.0.1:
     dependencies:

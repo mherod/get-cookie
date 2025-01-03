@@ -3,17 +3,31 @@ import type { CookieSpec, MultiCookieSpec } from "../../types/CookieSpec";
 import type { ExportedCookie } from "../../types/ExportedCookie";
 import { CompositeCookieQueryStrategy } from "../browsers/CompositeCookieQueryStrategy";
 
+/**
+ * Configuration options for cookie queries
+ *
+ * @property {CookieQueryStrategy} [strategy] - Strategy to use for querying cookies
+ * @property {number} [limit] - Maximum number of cookies to return
+ * @property {boolean} [removeExpired] - Whether to filter out expired cookies
+ */
 interface QueryOptions {
   strategy?: CookieQueryStrategy;
   limit?: number;
   removeExpired?: boolean;
 }
 
+/**
+ * Converts cookie expiry to consistent format
+ *
+ * @param cookie - The cookie object to convert expiry for
+ * @returns The cookie object with converted expiry
+ * @internal
+ */
 function convertExpiry(cookie: ExportedCookie): ExportedCookie {
   if (cookie.expiry === "Infinity" || cookie.expiry === Infinity) {
     return { ...cookie, expiry: "Infinity" };
   }
-  if (typeof cookie.expiry === 'number') {
+  if (typeof cookie.expiry === "number") {
     return { ...cookie, expiry: new Date(cookie.expiry * 1000) };
   }
   return cookie;
@@ -21,8 +35,27 @@ function convertExpiry(cookie: ExportedCookie): ExportedCookie {
 
 /**
  * Query cookies using multiple cookie specifications
+ *
+ * Allows querying cookies using either a single specification or multiple specifications
+ * in parallel. Handles expiry dates and provides filtering options.
+ *
  * @param cookieSpec - The cookie specification(s) to query
  * @param options - Optional configuration for the query operation
+ *
+ * @example
+ * // Query single cookie spec
+ * const cookies = await comboQueryCookieSpec({
+ *   name: "session",
+ *   domain: "example.com"
+ * });
+ *
+ * @example
+ * // Query multiple specs with expired cookie removal
+ * const cookies = await comboQueryCookieSpec([
+ *   { name: "auth", domain: "api.example.com" },
+ *   { name: "prefs", domain: "example.com" }
+ * ], { removeExpired: true });
+ *
  * @returns A promise that resolves to an array of matching cookies
  */
 export async function comboQueryCookieSpec(
@@ -44,13 +77,14 @@ export async function comboQueryCookieSpec(
 
   if (options.removeExpired === true) {
     const now = Date.now();
-    processed = processed.filter(cookie =>
-      cookie.expiry === "Infinity" ||
-      (cookie.expiry instanceof Date && cookie.expiry.getTime() > now)
+    processed = processed.filter(
+      (cookie) =>
+        cookie.expiry === "Infinity" ||
+        (cookie.expiry instanceof Date && cookie.expiry.getTime() > now),
     );
   }
 
-  if (typeof options.limit === 'number' && options.limit > 0) {
+  if (typeof options.limit === "number" && options.limit > 0) {
     processed = processed.slice(0, options.limit);
   }
 

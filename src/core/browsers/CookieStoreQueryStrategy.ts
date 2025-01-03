@@ -7,7 +7,10 @@ import { stringToRegex } from "@utils/StringToRegex";
 import { cookieJarPromise } from "../../core/cookies/CookieStore";
 import type { BrowserName } from "../../types/BrowserName";
 import type { CookieQueryStrategy } from "../../types/CookieQueryStrategy";
-import { CookieSpecSchema, ExportedCookieSchema } from "../../types/CookieSchema";
+import {
+  CookieSpecSchema,
+  ExportedCookieSchema,
+} from "../../types/CookieSchema";
 import type { CookieSpec } from "../../types/CookieSpec";
 import type { ExportedCookie } from "../../types/ExportedCookie";
 import { SafeParseResult, isParseSuccess } from "../../types/ZodUtils";
@@ -24,32 +27,45 @@ interface ParsedCookie {
   httpOnly?: boolean;
 }
 
-const ToughCookieSchema = z.object({
-  domain: z.string().nullable(),
-  key: z.string().nullable(),
-  value: z.string(),
-  expires: z.date().optional(),
-  path: z.string().optional(),
-  secure: z.boolean().optional(),
-  httpOnly: z.boolean().optional(),
-}).transform((data): ParsedCookie => data);
+const ToughCookieSchema = z
+  .object({
+    domain: z.string().nullable(),
+    key: z.string().nullable(),
+    value: z.string(),
+    expires: z.date().optional(),
+    path: z.string().optional(),
+    secure: z.boolean().optional(),
+    httpOnly: z.boolean().optional(),
+  })
+  .transform((data): ParsedCookie => data);
 
 /**
  * A strategy for querying cookies from an internal cookie store
  * This class implements the CookieQueryStrategy interface and provides access to cookies stored internally
+ *
+ * @example
  */
 export default class CookieStoreQueryStrategy implements CookieQueryStrategy {
+  /**
+   *
+   */
   public readonly browserName: BrowserName = "internal";
 
   /**
    * Queries cookies from the internal cookie store
+   *
    * @param name - The name of the cookie to query
    * @param domain - The domain to query cookies from
    * @returns A promise that resolves to an array of exported cookies from the internal store
    */
-  public async queryCookies(name: string, domain: string): Promise<ExportedCookie[]> {
+  public async queryCookies(
+    name: string,
+    domain: string,
+  ): Promise<ExportedCookie[]> {
     const cookieSpec = { name, domain } as const;
-    const result = CookieSpecSchema.safeParse(cookieSpec) as SafeParseResult<CookieSpec>;
+    const result = CookieSpecSchema.safeParse(
+      cookieSpec,
+    ) as SafeParseResult<CookieSpec>;
 
     if (!isParseSuccess(result)) {
       consola.warn("Invalid cookie spec:", result.error.format());
@@ -58,7 +74,9 @@ export default class CookieStoreQueryStrategy implements CookieQueryStrategy {
 
     const validatedSpec = result.data;
     const exportedCookies = await this.getAllExportedCookies(validatedSpec);
-    const isWildcard = /^([*%])$/i.test(validatedSpec.name) && /^([*%])$/i.test(validatedSpec.domain);
+    const isWildcard =
+      /^([*%])$/i.test(validatedSpec.name) &&
+      /^([*%])$/i.test(validatedSpec.domain);
 
     if (isWildcard) {
       return exportedCookies;
@@ -76,18 +94,23 @@ export default class CookieStoreQueryStrategy implements CookieQueryStrategy {
     cookieSpec: CookieSpec,
   ): Promise<ExportedCookie[]> {
     const cookies = await this.getAllCookies();
-    return cookies.map((cookie) => this.extractCookie(cookie, cookieSpec)).filter((cookie): cookie is ExportedCookie => cookie !== null);
+    return cookies
+      .map((cookie) => this.extractCookie(cookie, cookieSpec))
+      .filter((cookie): cookie is ExportedCookie => cookie !== null);
   }
 
   private async getDomainCookies(
     cookieSpec: CookieSpec,
   ): Promise<ExportedCookie[]> {
     const domainMatch = cookieSpec.domain.match(/(\w+.+\w+)/gi);
-    const cleanDomain = domainMatch?.[domainMatch.length - 1] ?? cookieSpec.domain;
+    const cleanDomain =
+      domainMatch?.[domainMatch.length - 1] ?? cookieSpec.domain;
     const url = new URL(`https://${cleanDomain}`);
 
     const cookies = await this.getCookies(url.href);
-    return cookies.map((cookie) => this.extractCookie(cookie, cookieSpec)).filter((cookie): cookie is ExportedCookie => cookie !== null);
+    return cookies
+      .map((cookie) => this.extractCookie(cookie, cookieSpec))
+      .filter((cookie): cookie is ExportedCookie => cookie !== null);
   }
 
   private filterCookies(
@@ -97,12 +120,15 @@ export default class CookieStoreQueryStrategy implements CookieQueryStrategy {
     const domainRegex = stringToRegex(cookieSpec.domain);
 
     if (cookieSpec.name === "%") {
-      return exportedCookies.filter((cookie) => domainRegex.test(cookie.domain));
+      return exportedCookies.filter((cookie) =>
+        domainRegex.test(cookie.domain),
+      );
     }
 
     const nameRegex = stringToRegex(cookieSpec.name);
-    return exportedCookies.filter((cookie) =>
-      nameRegex.test(cookie.name) && domainRegex.test(cookie.domain)
+    return exportedCookies.filter(
+      (cookie) =>
+        nameRegex.test(cookie.name) && domainRegex.test(cookie.domain),
     );
   }
 
@@ -110,7 +136,9 @@ export default class CookieStoreQueryStrategy implements CookieQueryStrategy {
     cookie: Cookie,
     cookieSpec: CookieSpec,
   ): ExportedCookie | null {
-    const parsedResult = ToughCookieSchema.safeParse(cookie) as SafeParseResult<ParsedCookie>;
+    const parsedResult = ToughCookieSchema.safeParse(
+      cookie,
+    ) as SafeParseResult<ParsedCookie>;
 
     if (!isParseSuccess(parsedResult)) {
       consola.warn("Invalid cookie format:", parsedResult.error.format());
@@ -128,10 +156,15 @@ export default class CookieStoreQueryStrategy implements CookieQueryStrategy {
       },
     } as const;
 
-    const exportedResult = ExportedCookieSchema.safeParse(exportedCookieData) as SafeParseResult<ExportedCookie>;
+    const exportedResult = ExportedCookieSchema.safeParse(
+      exportedCookieData,
+    ) as SafeParseResult<ExportedCookie>;
 
     if (!isParseSuccess(exportedResult)) {
-      consola.warn("Failed to create exported cookie:", exportedResult.error.format());
+      consola.warn(
+        "Failed to create exported cookie:",
+        exportedResult.error.format(),
+      );
       return null;
     }
 
@@ -142,8 +175,11 @@ export default class CookieStoreQueryStrategy implements CookieQueryStrategy {
     const cookieJar = await cookieJarPromise;
     return new Promise<Cookie[]>((resolve, reject) => {
       cookieJar.getCookies(url, (err, cookies) => {
-        if (err) {reject(err);}
-        else {resolve(cookies);}
+        if (err) {
+          reject(err);
+        } else {
+          resolve(cookies);
+        }
       });
     });
   }
@@ -154,8 +190,11 @@ export default class CookieStoreQueryStrategy implements CookieQueryStrategy {
 
     return new Promise<Cookie[]>((resolve, reject) => {
       store.getAllCookies((err, cookies) => {
-        if (err) {reject(err);}
-        else {resolve(cookies);}
+        if (err) {
+          reject(err);
+        } else {
+          resolve(cookies);
+        }
       });
     });
   }

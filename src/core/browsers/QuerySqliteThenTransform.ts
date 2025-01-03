@@ -37,13 +37,16 @@ function closeDatabase(db: Database): Promise<void> {
       return Promise.reject(error);
     } else {
       consola.error("Failed to close database: Unknown error");
-      return Promise.reject(new Error("Failed to close database: Unknown error"));
+      return Promise.reject(
+        new Error("Failed to close database: Unknown error"),
+      );
     }
   }
 }
 
 /**
  * Executes a SQL query on a SQLite database file and transforms the results
+ *
  * @param root0 - The options object containing query parameters
  * @param root0.file - The path to the SQLite database file
  * @param root0.sql - The SQL query to execute
@@ -51,6 +54,7 @@ function closeDatabase(db: Database): Promise<void> {
  * @param root0.rowFilter - Optional function to filter rows from the result set
  * @param root0.rowTransform - Optional function to transform each row before returning
  * @returns A promise that resolves to an array of transformed results
+ * @example
  */
 export async function querySqliteThenTransform<TRow, TResult>({
   file,

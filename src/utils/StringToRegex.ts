@@ -1,6 +1,7 @@
 /**
  * Converts a string pattern into a regular expression
  * Handles special characters: '.' is escaped, '%' and '*' are converted to '.*'
+ *
  * @param s The string pattern to convert
  * @returns A RegExp object that matches the pattern
  * @example

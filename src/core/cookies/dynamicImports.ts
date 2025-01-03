@@ -4,6 +4,15 @@ import type { ExportedCookie } from "../../types/ExportedCookie";
 
 /**
  * Dynamic import for the getCookie function
+ *
+ * @example
+ * ```typescript
+ * const getCookieFn = await getCookie();
+ * const cookies = await getCookieFn({ domain: 'example.com' });
+ * // Returns: [{ name: 'sessionId', value: 'abc123', domain: 'example.com' }, ...]
+ * ```
+ *
+ * @internal
  * @returns Promise resolving to the getCookie function
  */
 export const getCookie = (): Promise<
@@ -12,6 +21,15 @@ export const getCookie = (): Promise<
 
 /**
  * Dynamic import for Chrome-specific cookie retrieval
+ *
+ * @example
+ * ```typescript
+ * const chromeCookieFn = await getChromeCookie();
+ * const cookies = await chromeCookieFn({ domain: 'example.com', secure: true });
+ * // Returns Chrome-format cookies: [{ name: 'auth', value: 'xyz789', secure: true }, ...]
+ * ```
+ *
+ * @internal
  * @returns Promise resolving to the getChromeCookie function
  */
 export const getChromeCookie = (): Promise<
@@ -20,6 +38,15 @@ export const getChromeCookie = (): Promise<
 
 /**
  * Dynamic import for Firefox-specific cookie retrieval
+ *
+ * @example
+ * ```typescript
+ * const firefoxCookieFn = await getFirefoxCookie();
+ * const cookies = await firefoxCookieFn({ path: '/api' });
+ * // Returns Firefox-format cookies: [{ name: 'token', value: 'def456', path: '/api' }, ...]
+ * ```
+ *
+ * @internal
  * @returns Promise resolving to the getFirefoxCookie function
  */
 export const getFirefoxCookie = (): Promise<
@@ -28,6 +55,15 @@ export const getFirefoxCookie = (): Promise<
 
 /**
  * Dynamic import for retrieving grouped and rendered cookies
+ *
+ * @example
+ * ```typescript
+ * const groupedCookiesFn = await getGroupedRenderedCookies();
+ * const cookieStrings = await groupedCookiesFn({ domain: 'example.com' });
+ * // Returns: ['sessionId=abc123; Domain=example.com', 'auth=xyz789; Domain=example.com']
+ * ```
+ *
+ * @internal
  * @returns Promise resolving to the getGroupedRenderedCookies function
  */
 export const getGroupedRenderedCookies = (): Promise<
@@ -39,6 +75,18 @@ export const getGroupedRenderedCookies = (): Promise<
 
 /**
  * Dynamic import for retrieving merged and rendered cookies
+ *
+ * @example
+ * ```typescript
+ * const mergedCookiesFn = await getMergedRenderedCookies();
+ * const cookieString = await mergedCookiesFn(
+ *   { domain: 'example.com' },
+ *   { separator: '; ' }
+ * );
+ * // Returns: "sessionId=abc123; auth=xyz789"
+ * ```
+ *
+ * @internal
  * @returns Promise resolving to the getMergedRenderedCookies function
  */
 export const getMergedRenderedCookies = (): Promise<

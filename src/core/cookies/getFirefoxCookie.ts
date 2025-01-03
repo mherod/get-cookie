@@ -1,9 +1,11 @@
 import type { CookieSpec } from "../../types/CookieSpec";
 import type { ExportedCookie } from "../../types/ExportedCookie";
+import logger from "../../utils/logger";
 import { FirefoxCookieQueryStrategy } from "../browsers/firefox/FirefoxCookieQueryStrategy";
 
 /**
  * Retrieves cookies from Firefox browser storage that match the specified criteria.
+ *
  * @param cookieSpec - The cookie specification containing search criteria:
  *                     - name: The name of the cookie to search for
  *                     - domain: (optional) The domain to filter cookies by
@@ -21,20 +23,55 @@ import { FirefoxCookieQueryStrategy } from "../browsers/firefox/FirefoxCookieQue
  *   name: "userPref",
  *   domain: "example.com"
  * });
+ *
+ * // Get authentication cookies from a specific subdomain
+ * const authCookies = await getFirefoxCookie({
+ *   name: "auth_token",
+ *   domain: "auth.myapp.com"
+ * });
+ *
+ * // Get tracking cookies from any .com domain
+ * const trackingCookies = await getFirefoxCookie({
+ *   name: "_ga",
+ *   domain: ".com"
+ * });
  * ```
  */
-export async function getFirefoxCookie(cookieSpec: CookieSpec): Promise<ExportedCookie[]> {
+export async function getFirefoxCookie(
+  cookieSpec: CookieSpec,
+): Promise<ExportedCookie[]> {
   try {
     const strategy = new FirefoxCookieQueryStrategy();
-    const cookies = await strategy.queryCookies(cookieSpec.name, cookieSpec.domain);
+    const cookies = await strategy.queryCookies(
+      cookieSpec.name,
+      cookieSpec.domain,
+    );
     return cookies;
-  } catch (error) {
-    console.warn("Error querying Firefox cookies:", error);
+  } catch (error: unknown) {
+    logger.warn(
+      "Error querying Firefox cookies:",
+      error instanceof Error ? error.message : String(error),
+    );
     return [];
   }
 }
 
 /**
  * Default export of the getFirefoxCookie function
+ *
+ * @example
+ * ```typescript
+ * import getFirefoxCookie from './getFirefoxCookie';
+ *
+ * // Get all session cookies
+ * const sessionCookies = await getFirefoxCookie({ name: "PHPSESSID" });
+ *
+ * // Get cookies from multiple domains
+ * const promises = [
+ *   getFirefoxCookie({ name: "token", domain: "api.example.com" }),
+ *   getFirefoxCookie({ name: "token", domain: "auth.example.com" })
+ * ];
+ * const [apiCookies, authCookies] = await Promise.all(promises);
+ * ```
  */
 export default getFirefoxCookie;

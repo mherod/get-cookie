@@ -64,9 +64,7 @@ function shouldHandleGroupedDump(args: ParsedArgs): boolean {
 
 function shouldHandleRender(args: ParsedArgs): boolean {
   return (
-    args.render === true ||
-    args["render-merged"] === true ||
-    args.r === true
+    args.render === true || args["render-merged"] === true || args.r === true
   );
 }
 
@@ -104,13 +102,48 @@ function handleOutput(results: ExportedCookie[], args: ParsedArgs): void {
 }
 
 /**
- * Query cookies from various browser sources and return the results
- * @param cookieSpec - The cookie specification to query for
+ * Query cookies from browsers using the CLI interface
+ *
+ * @param cookieSpec - Cookie specification(s) to query for
+ * @param browsers - List of browsers to query from
+ * @param profiles - List of browser profiles to query from
  * @param limit - Optional limit on the number of results
  * @param removeExpired - Whether to remove expired cookies from results
+ * @example
+ * // Query cookies from all browsers for a specific domain
+ * const cookies = await cliQueryCookies(
+ *   { name: '*', domain: 'example.com' },
+ *   ['chrome', 'firefox'],
+ *   ['default'],
+ *   10,
+ *   true
+ * );
+ *
+ * // Query multiple cookie specs
+ * const multiCookies = await cliQueryCookies(
+ *   [
+ *     { name: 'session', domain: 'app.example.com' },
+ *     { name: 'auth', domain: 'auth.example.com' }
+ *   ],
+ *   ['chrome'],
+ *   ['default', 'profile1']
+ * );
+ *
+ * // Handle errors
+ * try {
+ *   const cookies = await cliQueryCookies(
+ *     { name: 'token', domain: 'api.example.com' },
+ *     ['chrome']
+ *   );
+ *   console.log(`Found ${cookies.length} cookies`);
+ * } catch (error) {
+ *   console.error('Failed to query cookies:', error);
+ * }
  */
 export async function cliQueryCookies(
   cookieSpec: CookieSpec | CookieSpec[],
+  browsers: string[],
+  profiles: string[],
   limit?: number,
   removeExpired?: boolean,
 ): Promise<void> {

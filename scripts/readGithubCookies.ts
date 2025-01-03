@@ -1,76 +1,102 @@
 // Internal imports
 import { ChromeCookieQueryStrategy } from "../src/core/browsers/chrome/ChromeCookieQueryStrategy";
 import type { ExportedCookie } from "../src/types/ExportedCookie";
+import logger from "../src/utils/logger";
 
 /**
  * Checks if a string matches the basic JWT format
+ *
  * @param str - The string to check
  * @returns True if the string matches JWT format, false otherwise
+ * @example
+ * // Valid JWT format
+ * isJWT('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U');
+ * // => true
+ *
+ * // Invalid format (not three parts)
+ * isJWT('not.a.valid.jwt');
+ * // => false
+ *
+ * // Invalid format (not base64url)
+ * isJWT('invalid!.token$.here#');
+ * // => false
  */
 export function isJWT(str: string): boolean {
-  if (!str || typeof str !== 'string') {return false;}
+  if (!str || typeof str !== "string") {
+    return false;
+  }
 
   // JWT consists of three parts separated by dots
-  const parts = str.split('.');
-  if (parts.length !== 3) {return false;}
+  const parts = str.split(".");
+  if (parts.length !== 3) {
+    return false;
+  }
 
   // Each part should be base64url encoded
   const base64UrlRegex = /^[A-Za-z0-9_-]+$/;
-  return parts.every(part => base64UrlRegex.test(part));
+  return parts.every((part) => base64UrlRegex.test(part));
 }
 
 /**
  * Prints information about a single cookie
+ *
  * @param cookie - The cookie to print information about
  * @returns Whether this was a JWT cookie
  */
 function printCookieInfo(cookie: ExportedCookie): boolean {
-  console.log("Name:", cookie.name);
-  console.log("Domain:", cookie.domain);
-  console.log("Value:", cookie.value);
-  console.log("Expiry:", cookie.expiry);
-  console.log("Browser:", cookie.meta?.browser ?? "Unknown");
-  console.log("Profile:", cookie.meta?.profile ?? "Unknown");
+  logger.info("Name: %s", cookie.name);
+  logger.info("Domain: %s", cookie.domain);
+  logger.info("Value: %s", cookie.value);
+  logger.info("Expiry: %s", cookie.expiry);
+  logger.info("Browser: %s", cookie.meta?.browser ?? "Unknown");
+  logger.info("Profile: %s", cookie.meta?.profile ?? "Unknown");
 
   if (cookie.meta?.decrypted === true) {
-    console.log("✅ Successfully decrypted");
+    logger.success("✅ Successfully decrypted");
   } else {
-    console.log("❌ Decryption failed");
+    logger.warn("❌ Decryption failed");
   }
 
   const isJwtCookie = isJWT(cookie.value);
   if (isJwtCookie) {
-    console.log("✅ Found JWT cookie");
+    logger.success("✅ Found JWT cookie");
   }
 
-  console.log("--------------------");
+  logger.info("--------------------");
   return isJwtCookie;
 }
 
 /**
  * Prints a summary of the cookie search results
+ *
  * @param cookies - The found cookies
  * @param jwtCount - Number of JWT cookies found
  */
 function printSummary(cookies: ExportedCookie[], jwtCount: number): void {
-  console.log("\nSummary:");
-  console.log("========");
-  console.log("Total cookies found:", cookies.length);
-  console.log("JWT cookies found:", jwtCount);
-  console.log("Browsers checked:", "Chrome");
-  console.log("Profiles checked:", "Default, Profile 2");
-  console.log("Decryption failed:", cookies.filter(c => c.meta?.decrypted === false).length);
-  console.log("Successfully decrypted:", cookies.filter(c => c.meta?.decrypted === true).length);
+  logger.info("\nSummary:");
+  logger.info("========");
+  logger.info("Total cookies found: %d", cookies.length);
+  logger.info("JWT cookies found: %d", jwtCount);
+  logger.info("Browsers checked: %s", "Chrome");
+  logger.info("Profiles checked: %s", "Default, Profile 2");
+  logger.info(
+    "Decryption failed: %d",
+    cookies.filter((c) => c.meta?.decrypted === false).length,
+  );
+  logger.info(
+    "Successfully decrypted: %d",
+    cookies.filter((c) => c.meta?.decrypted === true).length,
+  );
 }
 
 async function main(): Promise<void> {
-  console.log("\nSearching for GitHub cookies...");
-  console.log("==========================");
+  logger.info("\nSearching for GitHub cookies...");
+  logger.info("==========================");
 
   const strategy = new ChromeCookieQueryStrategy();
   const cookies = await strategy.queryCookies("%", "github.com");
 
-  console.log("\nFound", cookies.length, "GitHub cookies:\n");
+  logger.info("\nFound %d GitHub cookies:\n", cookies.length);
 
   let jwtCount = 0;
   for (const cookie of cookies) {
@@ -82,4 +108,7 @@ async function main(): Promise<void> {
   printSummary(cookies, jwtCount);
 }
 
-main().catch(console.error);
+main().catch((err) => {
+  logger.error("An error occurred:", err);
+  process.exit(1);
+});

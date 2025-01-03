@@ -1,11 +1,13 @@
 import type { CookieSpec } from "../../types/CookieSpec";
 import type { ExportedCookie } from "../../types/ExportedCookie";
+import logger from "../../utils/logger";
 
 import { queryCookies } from "./queryCookies";
 
 /**
  * Retrieves browser cookies that match the specified cookie name and domain criteria.
  * This function provides a way to search and filter cookies based on given specifications.
+ *
  * @param cookieSpec - The cookie specification containing search criteria:
  *                     - name: The name of the cookie to search for
  *                     - domain: (optional) The domain to filter cookies by
@@ -17,25 +19,53 @@ import { queryCookies } from "./queryCookies";
  * ```typescript
  * // Get all cookies named "sessionId"
  * const cookies = await getCookie({ name: "sessionId" });
- * 
+ * // Returns: [{ name: "sessionId", value: "abc123", domain: ".example.com", ... }]
+ *
  * // Get cookies named "userPref" from specific domain
- * const domainCookies = await getCookie({ 
+ * const domainCookies = await getCookie({
  *   name: "userPref",
  *   domain: "example.com"
  * });
+ * // Returns: [{ name: "userPref", value: "darkMode", domain: "example.com", ... }]
+ *
+ * // Get cookies with partial domain match
+ * const subdomainCookies = await getCookie({
+ *   name: "tracking",
+ *   domain: ".example.com"
+ * });
+ * // Returns cookies from example.com and its subdomains
  * ```
  */
-export async function getCookie(cookieSpec: CookieSpec): Promise<ExportedCookie[]> {
+export async function getCookie(
+  cookieSpec: CookieSpec,
+): Promise<ExportedCookie[]> {
   try {
     const cookies = await queryCookies(cookieSpec);
     return cookies;
-  } catch (error) {
-    console.warn("Error querying cookies:", error);
+  } catch (error: unknown) {
+    logger.warn(
+      "Error querying cookies:",
+      error instanceof Error ? error.message : String(error),
+    );
     return [];
   }
 }
 
 /**
  * Default export of the getCookie function
+ *
+ * @example
+ * ```typescript
+ * import getCookie from './getCookie';
+ *
+ * // Get authentication cookies
+ * const authCookies = await getCookie({
+ *   name: "auth-token",
+ *   domain: "api.example.com"
+ * });
+ *
+ * // Get all preference cookies across domains
+ * const prefCookies = await getCookie({ name: "preferences" });
+ * ```
  */
 export default getCookie;

@@ -8,8 +8,10 @@ const consola = logger.withTag("getChromePassword");
  * Retrieves the Chrome encryption password from the system keychain
  * This function is only supported on macOS and will reject on other platforms
  * The result is memoized to avoid repeated keychain access
+ *
  * @returns A promise that resolves to the Chrome encryption password string
  * @throws {Error} If not running on macOS or if password retrieval fails
+ * @example
  */
 export const getChromePassword = memoize(async (): Promise<string> => {
   if (process.platform !== "darwin") {
@@ -18,7 +20,9 @@ export const getChromePassword = memoize(async (): Promise<string> => {
   }
 
   try {
-    const { getChromePassword: getMacOSPassword } = await import("./macos/getChromePassword");
+    const { getChromePassword: getMacOSPassword } = await import(
+      "./macos/getChromePassword"
+    );
     const password = await getMacOSPassword();
     consola.debug("Retrieved Chrome password successfully");
     return password;

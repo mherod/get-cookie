@@ -3,6 +3,8 @@ import type { ExportedCookie } from "./ExportedCookie";
 /**
  * Interface for implementing browser-specific cookie query strategies.
  * This interface defines the contract for querying cookies from different browser implementations.
+ *
+ * @example
  */
 export interface CookieQueryStrategy {
   /**
@@ -12,6 +14,7 @@ export interface CookieQueryStrategy {
 
   /**
    * Query cookies from the browser's storage
+   *
    * @param name - The name of the cookie to query
    * @param domain - The domain to query cookies from
    * @returns A promise that resolves to an array of exported cookies

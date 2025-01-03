@@ -5,6 +5,7 @@ import { FirefoxCookieQueryStrategy } from "../browsers/firefox/FirefoxCookieQue
 
 /**
  * Queries cookies from both Chrome and Firefox browsers.
+ *
  * @param cookieSpec - The cookie specification containing search criteria:
  *                     - name: The name of the cookie to search for
  *                     - domain: (optional) The domain to filter cookies by
@@ -22,26 +23,55 @@ import { FirefoxCookieQueryStrategy } from "../browsers/firefox/FirefoxCookieQue
  * });
  * ```
  */
-export async function queryCookies(cookieSpec: CookieSpec): Promise<ExportedCookie[]> {
+export async function queryCookies(
+  cookieSpec: CookieSpec,
+): Promise<ExportedCookie[]> {
   const strategies = [
     new ChromeCookieQueryStrategy(),
-    new FirefoxCookieQueryStrategy()
+    new FirefoxCookieQueryStrategy(),
   ];
 
   const results = await Promise.allSettled(
-    strategies.map(strategy =>
-      strategy.queryCookies(cookieSpec.name, cookieSpec.domain)
-    )
+    strategies.map((strategy) =>
+      strategy.queryCookies(cookieSpec.name, cookieSpec.domain),
+    ),
   );
 
   return results
-    .filter((result): result is PromiseFulfilledResult<ExportedCookie[]> =>
-      result.status === "fulfilled"
+    .filter(
+      (result): result is PromiseFulfilledResult<ExportedCookie[]> =>
+        result.status === "fulfilled",
     )
-    .flatMap(result => result.value);
+    .flatMap((result) => result.value);
 }
 
 /**
  * Default export of the queryCookies function
+ *
+ * @example
+ * // Import the function
+ * import queryCookies from '@core/cookies/queryCookies';
+ *
+ * // Query cookies from Chrome
+ * const cookies = await queryCookies(
+ *   { name: 'session', domain: 'example.com' },
+ *   { strategy: new ChromeCookieQueryStrategy() }
+ * );
+ *
+ * // Query cookies with multiple specs
+ * const multiCookies = await queryCookies(
+ *   [
+ *     { name: 'auth', domain: 'api.example.com' },
+ *     { name: 'theme', domain: 'example.com' }
+ *   ],
+ *   {
+ *     strategy: new CompositeCookieQueryStrategy([
+ *       new ChromeCookieQueryStrategy(),
+ *       new FirefoxCookieQueryStrategy()
+ *     ]),
+ *     limit: 10,
+ *     removeExpired: true
+ *   }
+ * );
  */
 export default queryCookies;

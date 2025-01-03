@@ -19,7 +19,7 @@ interface DecryptionContext {
 }
 
 function getExpiryDate(expiry: number | undefined | null): Date | "Infinity" {
-  if (typeof expiry !== 'number' || expiry <= 0) {
+  if (typeof expiry !== "number" || expiry <= 0) {
     return "Infinity";
   }
   return new Date(expiry);
@@ -31,7 +31,7 @@ function createExportedCookie(
   value: string,
   expiry: number | undefined | null,
   file: string,
-  decrypted: boolean
+  decrypted: boolean,
 ): ExportedCookie {
   return {
     domain,
@@ -41,24 +41,33 @@ function createExportedCookie(
     meta: {
       file,
       browser: "Chrome",
-      decrypted
-    }
+      decrypted,
+    },
   };
 }
 
 /**
  * Strategy for querying cookies from Chrome browser
+ *
+ * @example
  */
 export class ChromeCookieQueryStrategy implements CookieQueryStrategy {
+  /**
+   *
+   */
   public readonly browserName: BrowserName = "Chrome";
 
   /**
    * Queries cookies from Chrome's cookie store
+   *
    * @param name - The name pattern to match cookies against
    * @param domain - The domain pattern to match cookies against
    * @returns A promise that resolves to an array of exported cookies
    */
-  public async queryCookies(name: string, domain: string): Promise<ExportedCookie[]> {
+  public async queryCookies(
+    name: string,
+    domain: string,
+  ): Promise<ExportedCookie[]> {
     if (process.platform !== "darwin") {
       consola.warn("Chrome cookie retrieval only works on macOS");
       return [];
@@ -66,13 +75,13 @@ export class ChromeCookieQueryStrategy implements CookieQueryStrategy {
 
     try {
       const profilePaths = listChromeProfilePaths();
-      const cookieFiles = profilePaths.map(path => path);
+      const cookieFiles = profilePaths.map((path) => path);
       const password = await getChromePassword();
 
       return flatMapAsync(
         cookieFiles,
-        file => this.processFile(file, name, domain, password),
-        []
+        (file) => this.processFile(file, name, domain, password),
+        [],
       );
     } catch (error) {
       if (error instanceof Error) {
@@ -88,24 +97,28 @@ export class ChromeCookieQueryStrategy implements CookieQueryStrategy {
     file: string,
     name: string,
     domain: string,
-    password: string
+    password: string,
   ): Promise<ExportedCookie[]> {
     const encryptedCookies = await getEncryptedChromeCookie({
       name,
       domain,
-      file
+      file,
     });
 
     const context: DecryptionContext = { file, password };
-    return Promise.all(encryptedCookies.map(cookie => this.processCookie(cookie, context)));
+    return Promise.all(
+      encryptedCookies.map((cookie) => this.processCookie(cookie, context)),
+    );
   }
 
   private async processCookie(
     cookie: CookieRow,
-    context: DecryptionContext
+    context: DecryptionContext,
   ): Promise<ExportedCookie> {
     try {
-      const bufferValue = Buffer.isBuffer(cookie.value) ? cookie.value : Buffer.from(cookie.value);
+      const bufferValue = Buffer.isBuffer(cookie.value)
+        ? cookie.value
+        : Buffer.from(cookie.value);
       const decryptedValue = await decrypt(bufferValue, context.password);
       return createExportedCookie(
         cookie.domain,
@@ -113,13 +126,18 @@ export class ChromeCookieQueryStrategy implements CookieQueryStrategy {
         decryptedValue,
         cookie.expiry,
         context.file,
-        true
+        true,
       );
     } catch (error) {
       if (error instanceof Error) {
-        consola.warn(`Error decrypting cookie, falling back to raw value:`, error.message);
+        consola.warn(
+          `Error decrypting cookie, falling back to raw value:`,
+          error.message,
+        );
       } else {
-        consola.warn(`Error decrypting cookie, falling back to raw value: Unknown error`);
+        consola.warn(
+          `Error decrypting cookie, falling back to raw value: Unknown error`,
+        );
       }
       const rawValue = Buffer.isBuffer(cookie.value)
         ? cookie.value.toString("utf-8")
@@ -130,7 +148,7 @@ export class ChromeCookieQueryStrategy implements CookieQueryStrategy {
         rawValue,
         cookie.expiry,
         context.file,
-        false
+        false,
       );
     }
   }

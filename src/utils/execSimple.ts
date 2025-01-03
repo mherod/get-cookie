@@ -10,20 +10,43 @@ const execPromise = promisify(exec);
 
 /**
  * Custom error class for command execution failures
+ *
+ * @example
+ * ```typescript
+ * throw new CommandExecutionError(
+ *   'Command timed out',
+ *   'git status',
+ *   originalError
+ * );
+ * ```
+ *
+ * @property {string} command - The command that failed to execute
+ * @property {Error} [originalError] - The underlying error that caused the failure
  */
 class CommandExecutionError extends Error {
   public constructor(
     message: string,
     public readonly command: string,
-    public readonly originalError?: Error
+    public readonly originalError?: Error,
   ) {
     super(message);
-    this.name = 'CommandExecutionError';
+    this.name = "CommandExecutionError";
   }
 }
 
 /**
  * Handles execution errors and throws appropriate CommandExecutionError
+ *
+ * @example
+ * ```typescript
+ * try {
+ *   await execPromise('invalid-command');
+ * } catch (error) {
+ *   handleExecutionError(error, 'invalid-command');
+ * }
+ * ```
+ *
+ * @internal
  * @param error The error that occurred during command execution
  * @param command The command that was being executed when the error occurred
  * @throws CommandExecutionError Always throws with appropriate error context
@@ -32,7 +55,7 @@ function handleExecutionError(error: unknown, command: string): never {
   if (error instanceof CommandExecutionError) {
     consola.error(`Command execution failed: ${error.message}`, {
       command: error.command,
-      originalError: error.originalError
+      originalError: error.originalError,
     });
     throw error;
   }
@@ -41,7 +64,7 @@ function handleExecutionError(error: unknown, command: string): never {
     const commandError = new CommandExecutionError(
       error.message,
       command,
-      error
+      error,
     );
     consola.error(`Failed to execute command`, {
       error: error.message,
@@ -53,18 +76,37 @@ function handleExecutionError(error: unknown, command: string): never {
 
   // Handle unknown error types
   const commandError = new CommandExecutionError(
-    'Unknown error occurred during command execution',
-    command
+    "Unknown error occurred during command execution",
+    command,
   );
   consola.error(`Failed to execute command`, {
     error,
-    command
+    command,
   });
   throw commandError;
 }
 
 /**
  * Executes a shell command asynchronously and returns its output as a string
+ *
+ * @example
+ * ```typescript
+ * // Basic usage
+ * const gitStatus = await execSimple('git status');
+ *
+ * // With custom timeout
+ * const output = await execSimple('long-running-command', { timeout: 60000 });
+ *
+ * // Error handling
+ * try {
+ *   const result = await execSimple('git push');
+ * } catch (error) {
+ *   if (error instanceof CommandExecutionError) {
+ *     console.error('Push failed:', error.message);
+ *   }
+ * }
+ * ```
+ *
  * @param command The shell command to execute
  * @param options Optional execution options that override the defaults
  * @returns A promise that resolves to the trimmed command output
@@ -72,10 +114,13 @@ function handleExecutionError(error: unknown, command: string): never {
  */
 export async function execSimple(
   command: string,
-  options: Partial<ExecOptions> = {}
+  options: Partial<ExecOptions> = {},
 ): Promise<string> {
-  if (!command || typeof command !== 'string') {
-    throw new CommandExecutionError('Command must be a non-empty string', command);
+  if (!command || typeof command !== "string") {
+    throw new CommandExecutionError(
+      "Command must be a non-empty string",
+      command,
+    );
   }
 
   const defaultOptions = {
@@ -95,10 +140,10 @@ export async function execSimple(
       if (stderr) {
         throw new CommandExecutionError(
           `Command failed with stderr: ${stderr}`,
-          command
+          command,
         );
       }
-      throw new CommandExecutionError('Command returned empty result', command);
+      throw new CommandExecutionError("Command returned empty result", command);
     }
 
     return result;

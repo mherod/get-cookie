@@ -21,13 +21,14 @@ interface ChromeCookieRow {
 
 /**
  * Get paths to Chrome cookie files
+ *
  * @returns A promise that resolves to an array of file paths
  */
 async function getCookieFiles(): Promise<string[]> {
   const patterns = [
     join(chromeApplicationSupport, "Default/Cookies"),
     join(chromeApplicationSupport, "Profile */Cookies"),
-    join(chromeApplicationSupport, "Profile Default/Cookies")
+    join(chromeApplicationSupport, "Profile Default/Cookies"),
   ];
 
   const files: string[] = [];
@@ -42,12 +43,14 @@ async function getCookieFiles(): Promise<string[]> {
 
 /**
  * Retrieve encrypted cookies from Chrome's cookie store
+ *
  * @param params - Parameters for querying Chrome cookies
  * @param params.name - The name of the cookie to retrieve
  * @param params.domain - The domain to retrieve cookies from
  * @param params.file - The path to Chrome's cookie file
  * @returns A promise that resolves to an array of encrypted cookies
  * @throws {Error} If the cookie file cannot be accessed or read
+ * @example
  */
 export async function getEncryptedChromeCookie({
   name,
@@ -72,9 +75,10 @@ export async function getEncryptedChromeCookie({
     }
 
     try {
-      const sql = name === "%"
-        ? `SELECT name, encrypted_value, host_key, expires_utc FROM cookies WHERE host_key LIKE ?`
-        : `SELECT name, encrypted_value, host_key, expires_utc FROM cookies WHERE name = ? AND host_key LIKE ?`;
+      const sql =
+        name === "%"
+          ? `SELECT name, encrypted_value, host_key, expires_utc FROM cookies WHERE host_key LIKE ?`
+          : `SELECT name, encrypted_value, host_key, expires_utc FROM cookies WHERE name = ? AND host_key LIKE ?`;
       const params = name === "%" ? [`%${domain}%`] : [name, `%${domain}%`];
 
       consola.info(`SQL query: ${sql}`);
@@ -86,8 +90,8 @@ export async function getEncryptedChromeCookie({
           name: row.name,
           domain: row.host_key,
           value: row.encrypted_value,
-          expiry: row.expires_utc
-        })
+          expiry: row.expires_utc,
+        }),
       });
       consola.info(`Found ${rows.length} cookies in ${cookieFile}`);
       results.push(...rows);

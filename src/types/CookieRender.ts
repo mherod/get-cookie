@@ -1,12 +1,10 @@
 /**
  * Configuration options for rendering cookie data in different formats.
  * Controls how cookies are formatted and displayed in output.
- *
  * @remarks
- * - Supports multiple output formats (JSON, text, etc.)
- * - Configurable separators for multi-cookie output
- * - Optional file path inclusion for traceability
- *
+ * - Supports multiple output formats (JSON, text, etc.).
+ * - Configurable separators for multi-cookie output.
+ * - Optional file path inclusion for traceability.
  * @example
  * ```typescript
  * import { CookieRenderOptions } from 'get-cookie';
@@ -40,21 +38,19 @@
  * ```
  */
 export interface CookieRenderOptions {
-  /** The format to use when rendering cookies (e.g., "json", "text") */
+  /** The format to use when rendering cookies (e.g., "json", "text"). */
   format: "json" | "text";
-  /** The separator to use between multiple cookies in the output */
+  /** The separator to use between multiple cookies in the output. */
   separator?: string;
-  /** Whether to include source file paths in the output for debugging */
+  /** Whether to include source file paths in the output for debugging. */
   showFilePaths?: boolean;
 }
 
 /**
  * Type guard to check if an object matches the CookieRenderOptions interface.
  * Used to validate render options before processing cookie output.
- *
- * @param obj - The object to check
- * @returns True if the object contains valid render options
- *
+ * @param obj - The object to check.
+ * @returns True if the object contains valid render options.
  * @example
  * ```typescript
  * import { isCookieRenderOptions } from 'get-cookie';
@@ -76,8 +72,7 @@ export interface CookieRenderOptions {
 export type RenderFormat = "merged" | "grouped";
 
 /**
- * Options for rendering cookies
- *
+ * Options for rendering cookies.
  * @example
  * ```typescript
  * import { RenderOptions } from 'get-cookie';
@@ -105,10 +100,10 @@ export type RenderFormat = "merged" | "grouped";
  * ```
  */
 export interface RenderOptions {
-  /** The format to use when rendering cookies */
+  /** The format to use when rendering cookies. */
   format?: RenderFormat;
-  /** The separator to use between cookies */
+  /** The separator to use between cookies. */
   separator?: string;
-  /** Whether to show file paths in the output */
+  /** Whether to show file paths in the output. */
   showFilePaths?: boolean;
 }

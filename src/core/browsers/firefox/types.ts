@@ -1,12 +1,10 @@
 /**
  * Interface representing a cookie stored in Firefox's SQLite database.
  * Maps directly to the 'moz_cookies' table structure.
- *
  * @remarks
- * - Times are stored in microseconds since epoch
- * - Boolean values are stored as integers (0 or 1)
- * - Host format follows Firefox's cookie domain rules
- *
+ * - Times are stored in microseconds since epoch.
+ * - Boolean values are stored as integers (0 or 1).
+ * - Host format follows Firefox's cookie domain rules.
  * @example
  * ```typescript
  * import { FirefoxCookie } from 'get-cookie';
@@ -52,29 +50,28 @@
  * ```
  */
 export interface FirefoxCookie {
-  /** Name of the cookie - case-sensitive identifier */
+  /** Name of the cookie - case-sensitive identifier. */
   name: string;
-  /** Value stored in the cookie - may be encrypted */
+  /** Value stored in the cookie - may be encrypted. */
   value: string;
-  /** Host/domain of the cookie - may include leading dot for subdomain matching */
+  /** Host/domain of the cookie - may include leading dot for subdomain matching. */
   host: string;
-  /** Path where the cookie is valid - must start with "/" */
+  /** Path where the cookie is valid - must start with "/". */
   path: string;
-  /** Expiry time as Unix timestamp (seconds since epoch) - 0 for session cookies */
+  /** Expiry time as Unix timestamp (seconds since epoch) - 0 for session cookies. */
   expiry: number;
-  /** Whether the cookie requires HTTPS (1) or allows HTTP (0) */
+  /** Whether the cookie requires HTTPS (1) or allows HTTP (0). */
   isSecure: number;
-  /** Whether the cookie is inaccessible to JavaScript (1) or accessible (0) */
+  /** Whether the cookie is inaccessible to JavaScript (1) or accessible (0). */
   isHttpOnly: number;
-  /** Creation time in microseconds since epoch */
+  /** Creation time in microseconds since epoch. */
   creationTime: number;
-  /** Last accessed time in microseconds since epoch */
+  /** Last accessed time in microseconds since epoch. */
   lastAccessed: number;
 }
 
 /**
- * Row transform function type for SQLite queries
- *
+ * Row transform function type for SQLite queries.
  * @example
  * // Define a transform function for Firefox cookies
  * const transform: RowTransform<RawFirefoxCookie> = (row) => ({

@@ -139,7 +139,7 @@ export default [
           exemptedBy: ["internal", "private", "test"],
         },
       ],
-      "jsdoc/require-description-complete-sentence": "error",
+      "jsdoc/require-description-complete-sentence": "off",
       "jsdoc/check-line-alignment": "error",
       "jsdoc/check-syntax": "error",
       "jsdoc/check-values": "error",
@@ -172,7 +172,15 @@ export default [
       "jsdoc/check-tag-names": [
         "error",
         {
-          definedTags: ["remarks", "internal", "private", "test", "throws", "yields", "example"],
+          definedTags: [
+            "remarks",
+            "internal",
+            "private",
+            "test",
+            "throws",
+            "yields",
+            "example",
+          ],
         },
       ],
       "jsdoc/require-param-type": "off",

@@ -2,12 +2,10 @@
  * Interface representing a cookie that has been exported from a browser's storage.
  * This is the core data structure used to represent cookies after they have been
  * retrieved from various browser storage mechanisms (Chrome, Firefox, etc.).
- *
  * @remarks
- * - All cookies must have domain, name, and value properties
- * - Expiry is optional and can be a Date, "Infinity", or undefined
- * - Meta information is useful for tracking the cookie's origin and state
- *
+ * - All cookies must have domain, name, and value properties.
+ * - Expiry is optional and can be a Date, "Infinity", or undefined.
+ * - Meta information is useful for tracking the cookie's origin and state.
  * @example
  * ```typescript
  * import { ExportedCookie } from 'get-cookie';
@@ -56,33 +54,32 @@
  * ```
  */
 export interface ExportedCookie {
-  /** The domain the cookie belongs to */
+  /** The domain the cookie belongs to. */
   domain: string;
-  /** The name of the cookie */
+  /** The name of the cookie. */
   name: string;
-  /** The value of the cookie */
+  /** The value of the cookie. */
   value: string;
-  /** When the cookie expires (Date object, "Infinity", or undefined) */
+  /** When the cookie expires (Date object, "Infinity", or undefined). */
   expiry?: Date | "Infinity";
-  /** Additional metadata about the cookie */
+  /** Additional metadata about the cookie. */
   meta?: {
-    /** Path to the file the cookie was exported from */
+    /** Path to the file the cookie was exported from. */
     file?: string;
-    /** Browser the cookie was exported from */
+    /** Browser the cookie was exported from. */
     browser?: string;
-    /** Whether the cookie value was decrypted */
+    /** Whether the cookie value was decrypted. */
     decrypted?: boolean;
-    /** Any additional metadata */
+    /** Any additional metadata. */
     [key: string]: unknown;
   };
 }
 
 /**
- * Validates that an object has all required string fields for an ExportedCookie
- *
+ * Validates that an object has all required string fields for an ExportedCookie.
  * @internal
- * @param obj - The object to validate
- * @returns True if the object has all required string fields, false otherwise
+ * @param obj - The object to validate.
+ * @returns True if the object has all required string fields, false otherwise.
  */
 function hasRequiredStringFields(obj: Record<string, unknown>): boolean {
   return (
@@ -93,11 +90,10 @@ function hasRequiredStringFields(obj: Record<string, unknown>): boolean {
 }
 
 /**
- * Validates the expiry field format for an ExportedCookie
- *
+ * Validates the expiry field format for an ExportedCookie.
  * @internal
- * @param expiry - The expiry value to validate
- * @returns True if the expiry is in a valid format, false otherwise
+ * @param expiry - The expiry value to validate.
+ * @returns True if the expiry is in a valid format, false otherwise.
  */
 function hasValidExpiry(expiry: unknown): boolean {
   return (
@@ -106,22 +102,19 @@ function hasValidExpiry(expiry: unknown): boolean {
 }
 
 /**
- * Validates the meta field format for an ExportedCookie
- *
+ * Validates the meta field format for an ExportedCookie.
  * @internal
- * @param meta - The meta value to validate
- * @returns True if the meta is in a valid format, false otherwise
+ * @param meta - The meta value to validate.
+ * @returns True if the meta is in a valid format, false otherwise.
  */
 function hasValidMeta(meta: unknown): boolean {
   return meta === undefined || (meta !== null && typeof meta === "object");
 }
 
 /**
- * Type guard to check if an object matches the ExportedCookie interface
- *
- * @param obj - The object to check
- * @returns True if the object is a valid ExportedCookie, false otherwise
- *
+ * Type guard to check if an object matches the ExportedCookie interface.
+ * @param obj - The object to check.
+ * @returns True if the object is a valid ExportedCookie, false otherwise.
  * @example
  * ```typescript
  * import { isExportedCookie } from 'get-cookie';

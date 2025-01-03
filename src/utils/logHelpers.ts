@@ -25,7 +25,6 @@ interface OperationContext {
  * @param operation - Name of the operation.
  * @param success - Whether the operation succeeded.
  * @param [context] - Additional context about the operation.
- * @returns Nothing.
  * @example
  * ```typescript
  * logOperationResult('Database Backup', true, { size: '1.2GB' });
@@ -55,7 +54,6 @@ export function logOperationResult(
  * @param message - Error message to display.
  * @param error - Error object or error information.
  * @param [context] - Additional context about the error.
- * @returns Nothing.
  * @example
  * ```typescript
  * try {
@@ -90,7 +88,6 @@ export function logError(
  * @param component - Component or module name.
  * @param message - Debug message to log.
  * @param [data] - Optional debug data to include.
- * @returns Nothing.
  * @example
  * ```typescript
  * logDebug('AuthService', 'Token refresh started', { userId: '123' });
@@ -126,7 +123,6 @@ export function createTaggedLogger(
  * @param component - Component or module name.
  * @param message - Warning message to display.
  * @param [context] - Additional context about the warning.
- * @returns Nothing.
  * @example
  * ```typescript
  * logWarn('Cache', 'Cache miss', { key: 'user-123' });
@@ -143,6 +139,6 @@ export function logWarn(
 
 // Re-export the base logger for direct usage
 /**
- *
+ * Re-export of the base logger for direct usage.
  */
 export { default as logger } from "./logger";

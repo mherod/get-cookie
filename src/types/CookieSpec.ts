@@ -1,12 +1,10 @@
 /**
  * Specification for identifying a cookie by its domain and name.
  * Used to query specific cookies from browser storage.
- *
  * @remarks
- * - Domain matching is exact unless using wildcards
- * - Name can be "*" to match all cookies for a domain
- * - Leading dots in domains match all subdomains
- *
+ * - Domain matching is exact unless using wildcards.
+ * - Name can be "*" to match all cookies for a domain.
+ * - Leading dots in domains match all subdomains.
  * @example
  * ```typescript
  * import { CookieSpec } from 'get-cookie';
@@ -43,19 +41,17 @@
  * ```
  */
 export interface CookieSpec {
-  /** The domain the cookie belongs to */
+  /** The domain the cookie belongs to. */
   domain: string;
-  /** The name of the cookie */
+  /** The name of the cookie. */
   name: string;
 }
 
 /**
  * Type guard to check if an object matches the CookieSpec interface.
  * Used internally to validate cookie specifications before querying.
- *
- * @param obj - The object to check
- * @returns True if the object is a valid CookieSpec, false otherwise
- *
+ * @param obj - The object to check.
+ * @returns True if the object is a valid CookieSpec, false otherwise.
  * @example
  * ```typescript
  * import { isCookieSpec } from 'get-cookie';
@@ -80,12 +76,10 @@ export function isCookieSpec(obj: unknown): obj is CookieSpec {
 /**
  * Type representing either a single cookie specification or an array of specifications.
  * Useful when you need to query multiple cookies in a single operation.
- *
  * @remarks
  * - Can be used to batch multiple cookie queries
  * - Supports mixing different domains and patterns
  * - Order of specifications doesn't affect results
- *
  * @example
  * ```typescript
  * import { MultiCookieSpec } from 'get-cookie';
@@ -111,11 +105,9 @@ export function isCookieSpec(obj: unknown): obj is CookieSpec {
 export type MultiCookieSpec = CookieSpec | CookieSpec[];
 
 /**
- * Type guard to check if an object matches the MultiCookieSpec type
- *
- * @param obj - The object to check
- * @returns True if the object is a valid MultiCookieSpec, false otherwise
- *
+ * Type guard to check if an object matches the MultiCookieSpec type.
+ * @param obj - The object to check.
+ * @returns True if the object is a valid MultiCookieSpec, false otherwise.
  * @example
  * ```typescript
  * import { isMultiCookieSpec } from 'get-cookie';

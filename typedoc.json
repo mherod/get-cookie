@@ -1,12 +1,6 @@
 {
   "$schema": "https://typedoc.org/schema.json",
-  "entryPoints": [
-    "src/index.ts",
-    "src/cli/cli.ts",
-    "src/types/ExportedCookie.ts",
-    "src/types/CookieSpec.ts",
-    "src/types/CookieRender.ts"
-  ],
+  "entryPoints": ["src/index.ts", "src/cli/cli.ts"],
   "out": "docs/reference",
   "plugin": ["typedoc-plugin-markdown"],
   "readme": "none",
@@ -19,16 +13,5 @@
   "includeVersion": true,
   "categorizeByGroup": true,
   "categoryOrder": ["Core", "Browsers", "CLI", "*"],
-  "tsconfig": "tsconfig.json",
-  "compilerOptions": {
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["src/*"],
-      "@core/*": ["src/core/*"],
-      "@utils/*": ["src/utils/*"],
-      "@browsers/*": ["src/browsers/*"],
-      "@cli/*": ["src/cli/*"],
-      "@types/*": ["src/types/*"]
-    }
-  }
+  "tsconfig": "tsconfig.json"
 }

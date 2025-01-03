@@ -39,11 +39,22 @@ jobs:
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
 
+      - name: Setup dummy xdg-open
+        run: |
+          sudo mv /usr/bin/xdg-open /usr/bin/xdg-open.bak || true
+          echo '#!/bin/sh' | sudo tee /usr/bin/xdg-open
+          sudo chmod +x /usr/bin/xdg-open
+
       - name: Build documentation
         run: pnpm docs
         env:
           CI: true
           BROWSER: none
+
+      - name: Restore xdg-open
+        if: always()
+        run: |
+          sudo mv /usr/bin/xdg-open.bak /usr/bin/xdg-open || true
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

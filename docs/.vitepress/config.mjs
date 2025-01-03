@@ -12,34 +12,75 @@ export default defineConfig({
     /\.\/README/
   ],
   themeConfig: {
+    logo: '🍪',
+    search: {
+      provider: 'local'
+    },
     nav: [
       { text: '🏠 Home', link: '/' },
       { text: '📚 Guide', link: '/guide/' },
-      { text: '🔧 API Reference', link: '/reference/' }
-    ],
-    sidebar: [
+      { text: '🔧 API Reference', link: '/reference/' },
       {
-        text: '📚 Guide',
+        text: '💡 More',
         items: [
-          { text: '🤔 What is get-cookie?', link: '/guide/' },
-          { text: '🚀 Getting Started', link: '/guide/getting-started' }
-        ]
-      },
-      {
-        text: '🔧 API Reference',
-        items: [
-          { text: '📖 Overview', link: '/reference/' },
-          { text: '⚙️ Core', link: '/reference/modules' },
-          { text: '📝 Types', link: '/reference/types' }
+          { text: '🐛 Report Bug', link: 'https://github.com/mherod/get-cookie/issues' },
+          { text: '⭐ Star Project', link: 'https://github.com/mherod/get-cookie' }
         ]
       }
     ],
+    sidebar: {
+      '/guide/': [
+        {
+          text: '📚 Guide',
+          items: [
+            { text: '🤔 What is get-cookie?', link: '/guide/' },
+            { text: '🚀 Getting Started', link: '/guide/getting-started' }
+          ]
+        }
+      ],
+      '/reference/': [
+        {
+          text: '🔧 API Reference',
+          items: [
+            { text: '📖 Overview', link: '/reference/' },
+            { text: '⚙️ Core', link: '/reference/modules' },
+            { text: '📝 Types', link: '/reference/types' }
+          ]
+        }
+      ]
+    },
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/mherod/get-cookie' }
+      { icon: 'github', link: 'https://github.com/mherod/get-cookie' },
+      { icon: 'npm', link: 'https://www.npmjs.com/package/@mherod/get-cookie' }
     ],
     footer: {
       message: '🔒 Safe cookie extraction with proper encryption handling',
       copyright: '© 2024 Matthew Herod'
+    },
+    carbonAds: {
+      code: 'your-carbon-code',
+      placement: 'your-carbon-placement'
+    },
+    outline: {
+      level: [2, 3],
+      label: 'On this page'
+    },
+    lastUpdated: {
+      text: 'Updated at',
+      formatOptions: {
+        dateStyle: 'full',
+        timeStyle: 'medium'
+      }
+    },
+    docFooter: {
+      prev: '👈 Previous page',
+      next: 'Next page 👉'
     }
-  }
+  },
+  head: [
+    ['link', { rel: 'icon', href: '/get-cookie/favicon.ico' }],
+    ['meta', { name: 'theme-color', content: '#3eaf7c' }],
+    ['meta', { name: 'apple-mobile-web-app-capable', content: 'yes' }],
+    ['meta', { name: 'apple-mobile-web-app-status-bar-style', content: 'black' }]
+  ]
 })

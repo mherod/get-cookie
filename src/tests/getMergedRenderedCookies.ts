@@ -1,4 +1,4 @@
-import { memoize } from "lodash";
+import { memoize } from "lodash-es";
 
 import type { CookieQueryStrategy } from "../types/CookieQueryStrategy";
 import type { ExportedCookie } from "../types/ExportedCookie";

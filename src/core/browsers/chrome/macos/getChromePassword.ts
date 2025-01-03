@@ -1,4 +1,4 @@
-import memoize from "lodash/memoize";
+import { memoize } from "lodash-es";
 
 import { execSimple } from "@utils/execSimple";
 
@@ -19,4 +19,6 @@ const getChromeSafeStoragePassword = async (): Promise<string> => {
  * @throws {Error} If the password cannot be retrieved from the keychain
  * @example
  */
-export const getChromePassword = memoize(getChromeSafeStoragePassword);
+export const getChromePassword: () => Promise<string> = memoize(
+  getChromeSafeStoragePassword,
+);

@@ -1,6 +1,6 @@
 // External imports
 import BetterSqlite3, { Database } from "better-sqlite3";
-import memoize from "lodash/memoize";
+import { memoize } from "lodash-es";
 
 // Internal imports
 import { logError } from "@utils/logHelpers";

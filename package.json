@@ -5,7 +5,9 @@
   "packageManager": "pnpm@9.15.2",
   "type": "module",
   "source": "src/index.ts",
-  "bin": "dist/cli/cli.js",
+  "bin": {
+    "get-cookie": "./dist/cli.cjs"
+  },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
@@ -24,8 +26,10 @@
     "access": "public"
   },
   "scripts": {
-    "clean": "rm -rf dist node_modules && pnpm install",
-    "build": "tsup src/index.ts src/cli/cli.ts --format cjs,esm --dts --clean --sourcemap --minify",
+    "clean": "rm -rf dist",
+    "build:lib": "tsup --config tsup.lib.ts",
+    "build:cli": "tsup --config tsup.cli.ts",
+    "build": "pnpm run build:lib && pnpm run build:cli",
     "test": "jest",
     "type-check": "tsc --noEmit",
     "lint": "eslint . --format=codeframe",
@@ -48,11 +52,11 @@
   "author": "Matthew Herod",
   "license": "ISC",
   "dependencies": {
+    "better-sqlite3": "^11.7.0",
     "consola": "^3.3.3",
     "destr": "^2.0.3",
     "fast-glob": "^3.3.2",
     "jsonwebtoken": "^9.0.2",
-    "lodash": "^4.17.21",
     "lodash-es": "^4.17.21",
     "lru-cache": "^11.0.2",
     "minimist": "^1.2.8",
@@ -68,12 +72,12 @@
     "@types/jest": "^29.5.14",
     "@types/jsonwebtoken": "^9.0.7",
     "@types/lodash": "^4.17.13",
+    "@types/lodash-es": "4.17.12",
     "@types/minimist": "^1.2.5",
     "@types/node": "^22.10.4",
     "@types/tough-cookie": "^4.0.5",
     "@typescript-eslint/eslint-plugin": "^8.19.0",
     "@typescript-eslint/parser": "^8.19.0",
-    "better-sqlite3": "^11.7.0",
     "eslint": "^9.17.0",
     "eslint-formatter-codeframe": "^7.32.1",
     "eslint-import-resolver-typescript": "^3.7.0",

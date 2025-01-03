@@ -12,13 +12,18 @@ import { createConsola } from "consola";
 const consola = createConsola({
   fancy: true,
   formatOptions: {
-    showLogLevel: true,
+    showLogLevel: false,
     colors: true,
-    date: true,
-    compact: false,
-    columns: process.stdout.columns || 80,
+    date: false,
+    compact: true,
+    columns:
+      typeof process.stdout.columns === "number" ? process.stdout.columns : 80,
   },
-  level: process.env.LOG_LEVEL === "debug" ? 5 : 3,
+  level:
+    typeof process.env.LOG_LEVEL === "string" &&
+    process.env.LOG_LEVEL === "debug"
+      ? 5
+      : 2,
 });
 
 /**

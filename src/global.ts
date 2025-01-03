@@ -1,4 +1,4 @@
-import merge from "lodash/merge";
+import { merge } from "lodash-es";
 
 /**
  * Global environment variables object that merges with process.env

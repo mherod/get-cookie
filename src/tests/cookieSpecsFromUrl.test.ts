@@ -1,4 +1,4 @@
-import { uniqBy } from "lodash";
+import { uniqBy } from "lodash-es";
 
 import { cookieSpecsFromUrl } from "../core/cookies/cookieSpecsFromUrl";
 import { isCookieSpec } from "../types/CookieSpec";

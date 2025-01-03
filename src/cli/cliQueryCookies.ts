@@ -1,5 +1,5 @@
 // Third-party imports
-import { groupBy } from "lodash";
+import { groupBy } from "lodash-es";
 
 // Local imports - types
 import { comboQueryCookieSpec } from "@core/cookies/comboQueryCookieSpec";
@@ -49,8 +49,9 @@ function handleJsonOutput(results: ExportedCookie[]): void {
 }
 
 function handleDefaultOutput(results: ExportedCookie[]): void {
-  for (const result of results) {
-    logger.log(result.value);
+  const uniqueValues = new Set(results.map((result) => result.value));
+  for (const value of uniqueValues) {
+    logger.log(value);
   }
 }
 

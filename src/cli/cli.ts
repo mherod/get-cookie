@@ -9,60 +9,48 @@ import type { CookieSpec } from "../types/CookieSpec";
 
 import { cliQueryCookies } from "./cliQueryCookies";
 
-// Type definitions
-interface ParsedArgs {
-  _: string[];
-  help?: boolean;
-  h?: boolean;
-  verbose?: boolean;
-  v?: boolean;
-  dump?: boolean;
-  d?: boolean;
-  "dump-grouped"?: boolean;
-  D?: boolean;
-  render?: boolean;
-  r?: boolean;
-  url?: string;
-  u?: string;
-  name?: string;
-  domain?: string;
-  [key: string]: unknown;
-}
-
 function showHelp(): void {
-  logger.log(`Usage: ${process.argv[1]} [name] [domain] [options]`);
+  logger.log(`Usage: get-cookie [name] [domain] [options]`);
   logger.log(`Options:`);
   logger.log(`  -h, --help: Show this help message`);
   logger.log(`  -v, --verbose: Enable verbose output`);
   logger.log(`  -d, --dump: Dump all results`);
   logger.log(`  -D, --dump-grouped: Dump all results, grouped by profile`);
   logger.log(`  -r, --render: Render all results`);
+  logger.log(`  -u, --url: URL to extract cookie specs from`);
+  logger.log(`  -n, --name: Cookie name pattern`);
+  logger.log(`  -d, --domain: Cookie domain pattern`);
 }
 
-function createCookieSpec(parsedArgs: ParsedArgs): CookieSpec {
-  const defaultName = parsedArgs._[0] ?? "%";
-  const defaultDomain = parsedArgs._[1] ?? "%";
-
+function createCookieSpec(name: string, domain: string): CookieSpec {
   return {
-    name: parsedArgs.name ?? defaultName,
-    domain: parsedArgs.domain ?? defaultDomain,
+    name: name || "%",
+    domain: domain || "%",
   };
 }
 
-function getCookieSpecs(parsedArgs: ParsedArgs): CookieSpec[] {
-  const argUrl = parsedArgs.url ?? parsedArgs.u;
+function getCookieSpecs(
+  values: Record<string, string | boolean | string[]>,
+  positionals: string[],
+): CookieSpec[] {
+  const url = values.url as string | undefined;
 
-  if (typeof argUrl === "string") {
-    return cookieSpecsFromUrl(argUrl);
+  if (typeof url === "string") {
+    return cookieSpecsFromUrl(url);
   }
 
-  return [createCookieSpec(parsedArgs)];
+  const name = (values.name as string) || positionals[0] || "%";
+  const domain = (values.domain as string) || positionals[1] || "%";
+  return [createCookieSpec(name, domain)];
 }
 
-async function handleCookieQuery(parsedArgs: ParsedArgs): Promise<void> {
-  const cookieSpecs = getCookieSpecs(parsedArgs);
+async function handleCookieQuery(
+  values: Record<string, string | boolean | string[]>,
+  positionals: string[],
+): Promise<void> {
+  const cookieSpecs = getCookieSpecs(values, positionals);
 
-  if (parsedArgs.verbose === true) {
+  if (values.verbose === true) {
     logger.log("cookieSpecs", cookieSpecs);
   }
 
@@ -83,17 +71,14 @@ async function handleCookieQuery(parsedArgs: ParsedArgs): Promise<void> {
 
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
-  const { values: parsedArgs } = parseArgv(args) as unknown as {
-    values: ParsedArgs;
-  };
+  const { values, positionals } = parseArgv(args);
 
-  if (parsedArgs.help === true || parsedArgs.h === true) {
+  if (values.help === true) {
     showHelp();
     return;
   }
 
-  parsedArgs.verbose = parsedArgs.verbose ?? parsedArgs.v;
-  await handleCookieQuery(parsedArgs);
+  await handleCookieQuery(values, positionals);
 }
 
 main().catch((error) => {

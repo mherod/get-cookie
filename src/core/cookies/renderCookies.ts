@@ -1,4 +1,4 @@
-import { groupBy } from "lodash";
+import { groupBy } from "lodash-es";
 
 import type { RenderOptions } from "../../types/CookieRender";
 import type { ExportedCookie } from "../../types/ExportedCookie";

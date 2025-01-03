@@ -1,4 +1,4 @@
-import memoize from "lodash/memoize";
+import { memoize } from "lodash-es";
 
 import { logError, logDebug } from "@utils/logHelpers";
 
@@ -9,7 +9,7 @@ import { logError, logDebug } from "@utils/logHelpers";
  * @throws {Error} If the platform is not macOS or if password retrieval fails
  * @example
  */
-export const getChromePassword = memoize(async (): Promise<string> => {
+export const getChromePassword: () => Promise<string> = memoize(async () => {
   if (process.platform !== "darwin") {
     logError(
       "Chrome password retrieval failed",

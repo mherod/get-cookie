@@ -1,7 +1,7 @@
 // External imports
 import { createDecipheriv, pbkdf2 } from "crypto";
 
-import memoize from "lodash/memoize";
+import { memoize } from "lodash-es";
 
 /**
  * Removes the v10 prefix from the encrypted value if present

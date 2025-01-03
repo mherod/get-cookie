@@ -7,6 +7,9 @@ settings:
 importers:
   .:
     dependencies:
+      better-sqlite3:
+        specifier: ^11.7.0
+        version: 11.7.0
       consola:
         specifier: ^3.3.3
         version: 3.3.3
@@ -19,9 +22,6 @@ importers:
       jsonwebtoken:
         specifier: ^9.0.2
         version: 9.0.2
-      lodash:
-        specifier: ^4.17.21
-        version: 4.17.21
       lodash-es:
         specifier: ^4.17.21
         version: 4.17.21
@@ -62,6 +62,9 @@ importers:
       "@types/lodash":
         specifier: ^4.17.13
         version: 4.17.13
+      "@types/lodash-es":
+        specifier: 4.17.12
+        version: 4.17.12
       "@types/minimist":
         specifier: ^1.2.5
         version: 1.2.5
@@ -77,9 +80,6 @@ importers:
       "@typescript-eslint/parser":
         specifier: ^8.19.0
         version: 8.19.0(eslint@9.17.0(jiti@2.4.2))(typescript@5.7.2)
-      better-sqlite3:
-        specifier: ^11.7.0
-        version: 11.7.0
       eslint:
         specifier: ^9.17.0
         version: 9.17.0(jiti@2.4.2)
@@ -2034,6 +2034,12 @@ packages:
     resolution:
       {
         integrity: sha512-sVDA58zAw4eWAffKOaQH5/5j3XeayukzDk+ewSsnv3p4yJEZHCCzMDiZM8e0OUrRvmpGZ85jf4yDHkHsgBNr9Q==,
+      }
+
+  "@types/lodash-es@4.17.12":
+    resolution:
+      {
+        integrity: sha512-0NgftHUcV4v34VhXm8QBSftKVXtbkBG3ViCjs6+eJ5a6y6Mi/jiFGPc1sC7QK+9BFhWrURE3EOggmWaSxL9OzQ==,
       }
 
   "@types/lodash@4.17.13":
@@ -4974,12 +4980,6 @@ packages:
     resolution:
       {
         integrity: sha512-sReKOYJIJf74dhJONhU4e0/shzi1trVbSWDOhKYE5XV2O+H7Sb2Dihwuc7xWxVl+DgFPyTqIN3zMfT9cq5iWDg==,
-      }
-
-  lodash@4.17.21:
-    resolution:
-      {
-        integrity: sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg==,
       }
 
   log-update@6.1.0:
@@ -8087,6 +8087,10 @@ snapshots:
 
   "@types/linkify-it@5.0.0": {}
 
+  "@types/lodash-es@4.17.12":
+    dependencies:
+      "@types/lodash": 4.17.13
+
   "@types/lodash@4.17.13": {}
 
   "@types/markdown-it@14.1.2":
@@ -10195,8 +10199,6 @@ snapshots:
   lodash.uniq@4.5.0: {}
 
   lodash.upperfirst@4.3.1: {}
-
-  lodash@4.17.21: {}
 
   log-update@6.1.0:
     dependencies:

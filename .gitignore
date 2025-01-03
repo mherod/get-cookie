@@ -103,3 +103,16 @@ package.json
 bun.lockb
 /bun.lockb
 coverage/
+
+# VitePress
+docs/.vitepress/dist
+docs/.vitepress/cache
+.vitepress/.temp
+.vitepress/cache
+
+# Documentation
+docs/.vitepress/dist/
+docs/.vitepress/cache/
+docs/api/
+.vitepress/.temp/
+.vitepress/cache/

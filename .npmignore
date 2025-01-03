@@ -17,3 +17,9 @@ scripts/
 *.log
 .vscode/
 .DS_Store
+
+# Documentation
+docs/
+.vitepress/
+*.md
+!README.md

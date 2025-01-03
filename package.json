@@ -35,7 +35,11 @@
     "lint": "tsc --noEmit && eslint . --ext .ts --format=codeframe",
     "lint:fix": "tsc --noEmit && eslint . --ext .ts --format=codeframe --fix",
     "read-github": "NODE_OPTIONS=\"-r tsconfig-paths/register\" ts-node -P scripts/tsconfig.json scripts/readGithubCookies.ts",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "docs:dev": "vitepress dev docs",
+    "docs:preview": "vitepress preview docs",
+    "docs:api": "typedoc",
+    "docs:build": "pnpm docs:api && vitepress build docs"
   },
   "engines": {
     "node": ">= 16"
@@ -63,7 +67,7 @@
     "@types/jsonwebtoken": "^8.5.9",
     "@types/lodash": "^4.14.186",
     "@types/minimist": "^1.2.2",
-    "@types/node": "^18.19.34",
+    "@types/node": "^18.19.69",
     "@types/tough-cookie": "^4.0.2",
     "@typescript-eslint/eslint-plugin": "8.19.0",
     "@typescript-eslint/parser": "8.19.0",
@@ -81,7 +85,10 @@
     "ts-node": "^10.9.1",
     "tsc-alias": "1.8.10",
     "tsup": "8.3.5",
-    "typescript": "^5.1.6"
+    "typedoc": "0.27.6",
+    "typedoc-plugin-markdown": "4.4.1",
+    "typescript": "^5.1.6",
+    "vitepress": "1.5.0"
   },
   "lint-staged": {
     "*.{js,ts}": [

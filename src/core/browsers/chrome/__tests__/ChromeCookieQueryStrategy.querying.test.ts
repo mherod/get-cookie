@@ -2,10 +2,14 @@ import { getEncryptedChromeCookie } from "../../getEncryptedChromeCookie";
 import { decrypt } from "../decrypt";
 import { setupChromeTest, mockCookieData, mockPassword } from "../testSetup";
 
+jest.mock("../../getEncryptedChromeCookie");
+jest.mock("../decrypt");
+
 describe("ChromeCookieQueryStrategy - Basic Functionality", () => {
   let strategy: ReturnType<typeof setupChromeTest>;
 
   beforeEach(() => {
+    jest.resetAllMocks();
     strategy = setupChromeTest();
   });
 
@@ -37,11 +41,12 @@ describe("ChromeCookieQueryStrategy - Error Handling", () => {
   let strategy: ReturnType<typeof setupChromeTest>;
 
   beforeEach(() => {
+    jest.resetAllMocks();
     strategy = setupChromeTest();
   });
 
   it("should handle decryption failures gracefully", async () => {
-    (decrypt as jest.Mock).mockRejectedValue(new Error("Decryption failed"));
+    jest.mocked(decrypt).mockRejectedValue(new Error("Decryption failed"));
 
     const cookies = await strategy.queryCookies("test-cookie", "example.com");
 
@@ -59,9 +64,9 @@ describe("ChromeCookieQueryStrategy - Error Handling", () => {
   });
 
   it("should handle cookie retrieval errors gracefully", async () => {
-    (getEncryptedChromeCookie as jest.Mock).mockRejectedValue(
-      new Error("Failed to get cookies"),
-    );
+    jest
+      .mocked(getEncryptedChromeCookie)
+      .mockRejectedValue(new Error("Failed to get cookies"));
 
     const cookies = await strategy.queryCookies("test-cookie", "example.com");
 
@@ -73,6 +78,7 @@ describe("ChromeCookieQueryStrategy - Value Handling", () => {
   let strategy: ReturnType<typeof setupChromeTest>;
 
   beforeEach(() => {
+    jest.resetAllMocks();
     strategy = setupChromeTest();
   });
 
@@ -81,9 +87,7 @@ describe("ChromeCookieQueryStrategy - Value Handling", () => {
       ...mockCookieData,
       value: "non-buffer-value",
     };
-    (getEncryptedChromeCookie as jest.Mock).mockResolvedValue([
-      nonBufferCookie,
-    ]);
+    jest.mocked(getEncryptedChromeCookie).mockResolvedValue([nonBufferCookie]);
 
     const cookies = await strategy.queryCookies("test-cookie", "example.com");
 

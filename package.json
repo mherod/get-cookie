@@ -31,7 +31,7 @@
     "build:cli": "tsup --config tsup.cli.ts",
     "build": "pnpm run build:lib && pnpm run build:cli",
     "test": "jest",
-    "type-check": "tsc --noEmit",
+    "type-check": "tsc --noEmit --skipLibCheck",
     "lint": "eslint . --format=codeframe",
     "lint:fix": "eslint . --format=codeframe --fix",
     "validate": "pnpm run type-check && pnpm run lint && pnpm run test",

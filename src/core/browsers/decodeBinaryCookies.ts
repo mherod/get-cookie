@@ -114,27 +114,33 @@ function decodeCookieHeader(
 function decodePage(
   buffer: Buffer,
   offset: number,
-  pageSize: number,
+  _pageSize: number,
 ): BinaryCookieRow[] {
-  // Skip first 5 bytes
-  const headerLengthOffset = offset + 5;
-  // Next 4 bytes contain header length
-  const headerLength = buffer.readUInt32BE(headerLengthOffset);
+  // Skip first 4 bytes of page header
+  const headerLengthOffset = offset + 4;
+  // Next byte is a null terminator
+  const _headerLength = buffer.readUInt32BE(headerLengthOffset + 1);
+  // Next 4 bytes contain number of cookies
+  const numCookies = buffer.readUInt32BE(headerLengthOffset + 5);
 
-  let currentOffset = offset + headerLength;
   const cookies: BinaryCookieRow[] = [];
-  const pageEnd = offset + pageSize;
 
-  // Read cookies until we reach the page end
-  while (currentOffset < pageEnd - 8) {
+  // Read cookie offsets
+  const cookieOffsets: number[] = [];
+  for (let i = 0; i < numCookies; i++) {
+    const cookieOffset = buffer.readUInt32BE(headerLengthOffset + 9 + i * 4);
+    cookieOffsets.push(cookieOffset);
+  }
+
+  // Read cookies at their offsets
+  for (const cookieOffset of cookieOffsets) {
     try {
-      const [cookie, size] = decodeCookieHeader(buffer, currentOffset);
+      const [cookie, _] = decodeCookieHeader(buffer, offset + cookieOffset);
       cookies.push(cookie);
-      currentOffset += size;
     } catch (error) {
       logWarn(
         "BinaryCookies",
-        `Error decoding cookie at offset ${currentOffset}`,
+        `Error decoding cookie at offset ${offset + cookieOffset}`,
         { error },
       );
       break;

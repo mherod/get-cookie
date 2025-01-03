@@ -1,6 +1,5 @@
 // External imports
 import BetterSqlite3, { Database } from "better-sqlite3";
-import { memoize } from "lodash-es";
 
 // Internal imports
 import { logError } from "@utils/logHelpers";
@@ -13,14 +12,14 @@ interface QuerySqliteThenTransformOptions<TRow, TResult> {
   rowTransform?: (row: TRow) => TResult;
 }
 
-const openDatabase = memoize((file: string): Promise<Database> => {
+function openDatabase(file: string): Database {
   try {
-    return Promise.resolve(new BetterSqlite3(file, { readonly: true }));
+    return new BetterSqlite3(file, { readonly: true, fileMustExist: true });
   } catch (error) {
     logError("Database open failed", error, { file });
     throw error;
   }
-});
+}
 
 function closeDatabase(db: Database): Promise<void> {
   try {
@@ -45,7 +44,6 @@ function closeDatabase(db: Database): Promise<void> {
  * @param root0.rowFilter - Optional function to filter rows from the result set
  * @param root0.rowTransform - Optional function to transform each row before returning
  * @returns A promise that resolves to an array of transformed results
- * @example
  */
 export async function querySqliteThenTransform<TRow, TResult>({
   file,
@@ -57,7 +55,7 @@ export async function querySqliteThenTransform<TRow, TResult>({
   let db: Database | undefined;
 
   try {
-    db = await openDatabase(file);
+    db = openDatabase(file);
     const stmt = db.prepare(sql);
     const rows = stmt.all(params) as TRow[];
 

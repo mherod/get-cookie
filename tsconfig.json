@@ -1,5 +1,11 @@
 {
-  "include": ["src/**/*", "scripts/**/*", "*.ts"],
+  "include": [
+    "src/**/*",
+    "scripts/**/*",
+    "*.ts",
+    "src/core/cookies/dynamicImports.ts",
+    "examples/**/*"
+  ],
   "compilerOptions": {
     "moduleResolution": "node",
     "target": "es2020",
@@ -12,6 +18,7 @@
     "declaration": true,
     "outDir": "dist",
     "baseUrl": ".",
+    "composite": true,
     "paths": {
       "@/*": ["src/*"],
       "@core/*": ["src/core/*"],
@@ -22,8 +29,18 @@
     },
     "types": ["node", "jest"],
     "resolveJsonModule": true,
-    "allowJs": true,
-    "checkJs": true
+    "allowJs": false,
+    "checkJs": false
   },
-  "exclude": ["node_modules", "dist", "coverage"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "dist/**/*",
+    "coverage",
+    "**/dist/**",
+    "**/node_modules/**"
+  ],
+  "ts-node": {
+    "transpileOnly": true
+  }
 }

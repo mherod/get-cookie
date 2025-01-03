@@ -2,7 +2,7 @@
   "include": ["src/**/*", "scripts/**/*", "*.ts"],
   "compilerOptions": {
     "moduleResolution": "node",
-    "target": "es2018",
+    "target": "es2020",
     "module": "commonjs",
     "lib": ["es2018", "es2019", "es2020", "es2021", "dom"],
     "strict": true,

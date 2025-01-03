@@ -2,14 +2,12 @@ import { join } from "path";
 
 import { sync } from "glob";
 
-import logger from "@utils/logger";
+import { logDebug, logWarn } from "@utils/logHelpers";
 
 import type { BrowserName } from "../../../types/BrowserName";
 import type { CookieQueryStrategy } from "../../../types/CookieQueryStrategy";
 import type { ExportedCookie } from "../../../types/ExportedCookie";
 import { querySqliteThenTransform } from "../QuerySqliteThenTransform";
-
-const consola = logger.withTag("FirefoxCookieQueryStrategy");
 
 interface FirefoxCookieRow {
   name: string;
@@ -28,7 +26,7 @@ function findFirefoxCookieFiles(): string[] {
   const homedir = process.env.HOME;
 
   if (typeof homedir !== "string" || homedir.length === 0) {
-    consola.warn("HOME environment variable not set");
+    logWarn("FirefoxCookieQuery", "HOME environment variable not set");
     return files;
   }
 
@@ -45,7 +43,7 @@ function findFirefoxCookieFiles(): string[] {
     files.push(...matches);
   }
 
-  consola.debug("Found Firefox cookie files:", files);
+  logDebug("FirefoxCookieQuery", "Found Firefox cookie files", { files });
   return files;
 }
 
@@ -99,13 +97,15 @@ export class FirefoxCookieQueryStrategy implements CookieQueryStrategy {
         results.push(...cookies);
       } catch (error) {
         if (error instanceof Error) {
-          consola.warn(
-            `Error reading Firefox cookie file ${file}:`,
-            error.message,
+          logWarn(
+            "FirefoxCookieQuery",
+            `Error reading Firefox cookie file ${file}`,
+            { error: error.message },
           );
         } else {
-          consola.warn(
-            `Error reading Firefox cookie file ${file}: Unknown error`,
+          logWarn(
+            "FirefoxCookieQuery",
+            `Error reading Firefox cookie file ${file}`,
           );
         }
       }

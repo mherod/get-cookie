@@ -3,9 +3,8 @@ import { exec, ExecOptions } from "child_process";
 import { promisify } from "util";
 
 // Internal imports
-import logger from "@utils/logger";
+import { logError } from "@utils/logHelpers";
 
-const consola = logger.withTag("execSimple");
 const execPromise = promisify(exec);
 
 /**
@@ -53,7 +52,7 @@ class CommandExecutionError extends Error {
  */
 function handleExecutionError(error: unknown, command: string): never {
   if (error instanceof CommandExecutionError) {
-    consola.error(`Command execution failed: ${error.message}`, {
+    logError("Command execution failed", error, {
       command: error.command,
       originalError: error.originalError,
     });
@@ -66,8 +65,7 @@ function handleExecutionError(error: unknown, command: string): never {
       command,
       error,
     );
-    consola.error(`Failed to execute command`, {
-      error: error.message,
+    logError("Failed to execute command", error, {
       command,
       stack: error.stack,
     });
@@ -79,7 +77,7 @@ function handleExecutionError(error: unknown, command: string): never {
     "Unknown error occurred during command execution",
     command,
   );
-  consola.error(`Failed to execute command`, {
+  logError("Failed to execute command", null, {
     error,
     command,
   });

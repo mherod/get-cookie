@@ -3,20 +3,48 @@ import { join } from "path";
 
 import glob from "fast-glob";
 
-import logger from "@utils/logger";
+import { logError, logDebug, logOperationResult } from "@utils/logHelpers";
 
 import type { CookieRow } from "../../types/CookieRow";
 
 import { chromeApplicationSupport } from "./chrome/ChromeApplicationSupport";
 import { querySqliteThenTransform } from "./QuerySqliteThenTransform";
 
-const consola = logger.withTag("getEncryptedChromeCookie");
-
 interface ChromeCookieRow {
   encrypted_value: Buffer;
   name: string;
   host_key: string;
   expires_utc: number;
+}
+
+interface GetEncryptedCookieOptions {
+  name: string;
+  domain: string;
+  file?: string;
+}
+
+interface SqlQuery {
+  sql: string;
+  params: string[];
+}
+
+/**
+ * Validates if a path is a valid, existing file
+ *
+ * @param path - Path to validate
+ * @returns true if path is valid and file exists, false otherwise
+ */
+function isValidFilePath(path: unknown): path is string {
+  if (typeof path !== "string") {
+    return false;
+  }
+
+  const trimmedPath = path.trim();
+  if (trimmedPath.length === 0) {
+    return false;
+  }
+
+  return existsSync(trimmedPath);
 }
 
 /**
@@ -37,69 +65,107 @@ async function getCookieFiles(): Promise<string[]> {
     files.push(...matches);
   }
 
-  consola.info(`Found ${files.length} Chrome cookie files:`, files);
+  logDebug("ChromeCookies", "Found cookie files", {
+    count: files.length,
+    files,
+  });
   return files;
+}
+
+/**
+ * Builds the SQL query for retrieving cookies
+ *
+ * @param name - Cookie name to search for
+ * @param domain - Domain to filter by
+ * @returns SQL query and parameters
+ */
+function buildSqlQuery(name: string, domain: string): SqlQuery {
+  const isWildcard = name === "%";
+  const sql = isWildcard
+    ? `SELECT name, encrypted_value, host_key, expires_utc FROM cookies WHERE host_key LIKE ?`
+    : `SELECT name, encrypted_value, host_key, expires_utc FROM cookies WHERE name = ? AND host_key LIKE ?`;
+  const params = isWildcard ? [`%${domain}%`] : [name, `%${domain}%`];
+
+  return { sql, params };
+}
+
+/**
+ * Processes a single cookie file to extract matching cookies
+ *
+ * @param cookieFile - Path to the cookie file
+ * @param name - Cookie name to search for
+ * @param domain - Domain to filter by
+ * @returns Array of matching cookies
+ */
+async function processCookieFile(
+  cookieFile: string,
+  name: string,
+  domain: string,
+): Promise<CookieRow[]> {
+  try {
+    const { sql, params } = buildSqlQuery(name, domain);
+    logDebug("ChromeCookies", "Executing query", { sql, params });
+
+    const rows = await querySqliteThenTransform<ChromeCookieRow, CookieRow>({
+      file: cookieFile,
+      sql,
+      params,
+      rowTransform: (row: ChromeCookieRow): CookieRow => ({
+        name: row.name,
+        domain: row.host_key,
+        value: row.encrypted_value,
+        expiry: row.expires_utc,
+      }),
+    });
+
+    logOperationResult("QueryCookies", true, {
+      file: cookieFile,
+      count: rows.length,
+    });
+    return rows;
+  } catch (error) {
+    logError("Failed to read cookie file", error, { file: cookieFile });
+    return [];
+  }
 }
 
 /**
  * Retrieve encrypted cookies from Chrome's cookie store
  *
- * @param params - Parameters for querying Chrome cookies
- * @param params.name - The name of the cookie to retrieve
- * @param params.domain - The domain to retrieve cookies from
- * @param params.file - The path to Chrome's cookie file
- * @returns A promise that resolves to an array of encrypted cookies
- * @throws {Error} If the cookie file cannot be accessed or read
- * @example
+ * @param options - Options for querying Chrome cookies
+ * @param options.name - The name of the cookie to retrieve
+ * @param options.domain - The domain to retrieve cookies from
+ * @param options.file - Optional specific cookie file to query
+ * @returns Promise resolving to array of encrypted cookies
  */
 export async function getEncryptedChromeCookie({
   name,
   domain,
   file,
-}: {
-  name: string;
-  domain: string;
-  file: string;
-}): Promise<CookieRow[]> {
-  const cookieFiles = file ? [file] : await getCookieFiles();
+}: GetEncryptedCookieOptions): Promise<CookieRow[]> {
+  const cookieFiles =
+    typeof file === "string" && file.length > 0
+      ? [file]
+      : await getCookieFiles();
+
   if (cookieFiles.length === 0) {
-    consola.warn("No Chrome cookie files found");
+    logDebug("ChromeCookies", "No cookie files found");
     return [];
   }
 
   const results: CookieRow[] = [];
   for (const cookieFile of cookieFiles) {
-    if (!existsSync(cookieFile)) {
-      consola.warn(`Cookie file does not exist: ${cookieFile}`);
+    if (!isValidFilePath(cookieFile)) {
+      logDebug("ChromeCookies", "Cookie file missing or invalid", {
+        file: cookieFile,
+      });
       continue;
     }
 
-    try {
-      const sql =
-        name === "%"
-          ? `SELECT name, encrypted_value, host_key, expires_utc FROM cookies WHERE host_key LIKE ?`
-          : `SELECT name, encrypted_value, host_key, expires_utc FROM cookies WHERE name = ? AND host_key LIKE ?`;
-      const params = name === "%" ? [`%${domain}%`] : [name, `%${domain}%`];
-
-      consola.info(`SQL query: ${sql}`);
-      const rows = await querySqliteThenTransform<ChromeCookieRow, CookieRow>({
-        file: cookieFile,
-        sql,
-        params,
-        rowTransform: (row: ChromeCookieRow): CookieRow => ({
-          name: row.name,
-          domain: row.host_key,
-          value: row.encrypted_value,
-          expiry: row.expires_utc,
-        }),
-      });
-      consola.info(`Found ${rows.length} cookies in ${cookieFile}`);
-      results.push(...rows);
-    } catch (error) {
-      consola.warn(`Error reading cookie file ${cookieFile}:`, error);
-    }
+    const cookies = await processCookieFile(cookieFile, name, domain);
+    results.push(...cookies);
   }
 
-  consola.info(`Total cookies found: ${results.length}`);
+  logDebug("ChromeCookies", "Query complete", { totalCookies: results.length });
   return results;
 }

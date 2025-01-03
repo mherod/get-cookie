@@ -1,3 +1,5 @@
+import { memoize } from "lodash";
+
 import type { CookieQueryStrategy } from "../types/CookieQueryStrategy";
 import type { ExportedCookie } from "../types/ExportedCookie";
 
@@ -9,9 +11,12 @@ import type { MultiCookieSpec } from "./CookieSpec";
  * @param cookies - Array of cookies to render
  * @returns A string containing all cookies in HTTP header format
  */
-function renderCookies(cookies: ExportedCookie[]): string {
-  return cookies.map((cookie) => `${cookie.name}=${cookie.value}`).join("; ");
-}
+const renderCookies = memoize(
+  (cookies: ExportedCookie[]): string => {
+    return cookies.map((cookie) => `${cookie.name}=${cookie.value}`).join("; ");
+  },
+  (cookies: ExportedCookie[]) => JSON.stringify(cookies),
+);
 
 /**
  * Queries and merges cookies based on multiple specifications

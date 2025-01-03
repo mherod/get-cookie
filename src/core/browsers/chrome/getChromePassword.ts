@@ -1,21 +1,24 @@
 import { memoize } from "lodash";
 
-import logger from "@utils/logger";
-
-const consola = logger.withTag("getChromePassword");
+import { logError, logDebug } from "@utils/logHelpers";
 
 /**
- * Retrieves the Chrome encryption password from the system keychain
- * This function is only supported on macOS and will reject on other platforms
- * The result is memoized to avoid repeated keychain access
+ * Retrieves the Chrome password for decrypting cookies
+ * This is only supported on macOS
  *
- * @returns A promise that resolves to the Chrome encryption password string
- * @throws {Error} If not running on macOS or if password retrieval fails
+ * @returns A promise that resolves to the Chrome password
+ * @throws {Error} If the platform is not macOS or if password retrieval fails
  * @example
  */
 export const getChromePassword = memoize(async (): Promise<string> => {
   if (process.platform !== "darwin") {
-    consola.error("Chrome password retrieval is only supported on macOS");
+    logError(
+      "Chrome password retrieval failed",
+      new Error("This only works on macOS"),
+      {
+        platform: process.platform,
+      },
+    );
     throw new Error("This only works on macOS");
   }
 
@@ -24,10 +27,12 @@ export const getChromePassword = memoize(async (): Promise<string> => {
       "./macos/getChromePassword"
     );
     const password = await getMacOSPassword();
-    consola.debug("Retrieved Chrome password successfully");
+    logDebug("ChromePassword", "Retrieved password successfully", {
+      platform: "macOS",
+    });
     return password;
   } catch (error) {
-    consola.error("Failed to get Chrome password:", error);
+    logError("Chrome password retrieval failed", error, { platform: "macOS" });
     throw error;
   }
 });

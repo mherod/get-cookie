@@ -1,24 +1,29 @@
 // External imports
 import { createDecipheriv, pbkdf2 } from "crypto";
 
+import { memoize } from "lodash";
+
 /**
  * Removes the v10 prefix from the encrypted value if present
  *
  * @param value - The encrypted value
  * @returns The value without the v10 prefix
  */
-function removeV10Prefix(value: Buffer): Buffer {
-  if (
-    value.length >= 3 &&
-    value[0] === 0x76 && // 'v'
-    value[1] === 0x31 && // '1'
-    value[2] === 0x30
-  ) {
-    // '0'
-    return value.slice(3);
-  }
-  return value;
-}
+const removeV10Prefix = memoize(
+  (value: Buffer): Buffer => {
+    if (
+      value.length >= 3 &&
+      value[0] === 0x76 && // 'v'
+      value[1] === 0x31 && // '1'
+      value[2] === 0x30
+    ) {
+      // '0'
+      return value.slice(3);
+    }
+    return value;
+  },
+  (value: Buffer) => value.toString("hex"),
+);
 
 /**
  * Removes PKCS7 padding from the decrypted value
@@ -26,13 +31,16 @@ function removeV10Prefix(value: Buffer): Buffer {
  * @param decrypted - The decrypted buffer
  * @returns The buffer without padding
  */
-function removePadding(decrypted: Buffer): Buffer {
-  const padding = decrypted[decrypted.length - 1];
-  if (padding && padding <= 16) {
-    return decrypted.slice(0, -padding);
-  }
-  return decrypted;
-}
+const removePadding = memoize(
+  (decrypted: Buffer): Buffer => {
+    const padding = decrypted[decrypted.length - 1];
+    if (padding && padding <= 16) {
+      return decrypted.slice(0, -padding);
+    }
+    return decrypted;
+  },
+  (decrypted: Buffer) => decrypted.toString("hex"),
+);
 
 /**
  * Extracts the actual value from the decoded string by removing Chrome's prefixes

@@ -1,5 +1,10 @@
 import { flatMapAsync } from "@utils/flatMapAsync";
 import logger from "@utils/logger";
+import {
+  createTaggedLogger,
+  logOperationResult,
+  logError,
+} from "@utils/logHelpers";
 
 import type { BrowserName } from "../../../types/BrowserName";
 import type { CookieQueryStrategy } from "../../../types/CookieQueryStrategy";
@@ -52,6 +57,8 @@ function createExportedCookie(
  * @example
  */
 export class ChromeCookieQueryStrategy implements CookieQueryStrategy {
+  private readonly logger = createTaggedLogger("ChromeCookieQueryStrategy");
+
   /**
    *
    */
@@ -68,27 +75,29 @@ export class ChromeCookieQueryStrategy implements CookieQueryStrategy {
     name: string,
     domain: string,
   ): Promise<ExportedCookie[]> {
-    if (process.platform !== "darwin") {
-      consola.warn("Chrome cookie retrieval only works on macOS");
-      return [];
-    }
-
     try {
+      this.logger.info("Querying cookies", { name, domain });
+
+      if (process.platform !== "darwin") {
+        this.logger.warn("Platform not supported", {
+          platform: process.platform,
+        });
+        return [];
+      }
+
       const profilePaths = listChromeProfilePaths();
       const cookieFiles = profilePaths.map((path) => path);
       const password = await getChromePassword();
 
-      return flatMapAsync(
+      const cookies = await flatMapAsync(
         cookieFiles,
         (file) => this.processFile(file, name, domain, password),
         [],
       );
+      logOperationResult("Cookie query", true, { count: cookies.length });
+      return cookies;
     } catch (error) {
-      if (error instanceof Error) {
-        consola.error("Failed to retrieve Chrome cookies:", error.message);
-      } else {
-        consola.error("Failed to retrieve Chrome cookies: Unknown error");
-      }
+      logError("Failed to query cookies", error, { name, domain });
       return [];
     }
   }

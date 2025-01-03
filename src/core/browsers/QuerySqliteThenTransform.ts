@@ -1,10 +1,9 @@
 // External imports
 import BetterSqlite3, { Database } from "better-sqlite3";
+import { memoize } from "lodash";
 
 // Internal imports
-import logger from "@utils/logger";
-
-const consola = logger.withTag("QuerySqliteThenTransform");
+import { logError } from "@utils/logHelpers";
 
 interface QuerySqliteThenTransformOptions<TRow, TResult> {
   file: string;
@@ -14,33 +13,26 @@ interface QuerySqliteThenTransformOptions<TRow, TResult> {
   rowTransform?: (row: TRow) => TResult;
 }
 
-function openDatabase(file: string): Promise<Database> {
+const openDatabase = memoize((file: string): Promise<Database> => {
   try {
     return Promise.resolve(new BetterSqlite3(file, { readonly: true }));
   } catch (error) {
-    if (error instanceof Error) {
-      consola.error(`Failed to open database ${file}:`, error.message);
-    } else {
-      consola.error(`Failed to open database ${file}: Unknown error`);
-    }
+    logError("Database open failed", error, { file });
     throw error;
   }
-}
+});
 
 function closeDatabase(db: Database): Promise<void> {
   try {
     db.close();
     return Promise.resolve();
   } catch (error) {
-    if (error instanceof Error) {
-      consola.error("Failed to close database:", error.message);
-      return Promise.reject(error);
-    } else {
-      consola.error("Failed to close database: Unknown error");
-      return Promise.reject(
-        new Error("Failed to close database: Unknown error"),
-      );
-    }
+    logError("Database close failed", error);
+    return Promise.reject(
+      error instanceof Error
+        ? error
+        : new Error("Failed to close database: Unknown error"),
+    );
   }
 }
 
@@ -77,11 +69,7 @@ export async function querySqliteThenTransform<TRow, TResult>({
 
     return transformedRows;
   } catch (error) {
-    if (error instanceof Error) {
-      consola.error(`Failed to query database ${file}:`, error.message);
-    } else {
-      consola.error(`Failed to query database ${file}: Unknown error`);
-    }
+    logError("Database query failed", error, { file, sql });
     throw error;
   } finally {
     if (db) {

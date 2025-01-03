@@ -114,7 +114,6 @@ export function checkExpiration(payload: JwtPayload): ValidationResult {
  * @internal
  * @param message - Debug message to log.
  * @param [data] - Optional data to log.
- * @returns Nothing.
  * @private
  */
 function debugLog(message: string, data?: unknown): void {
@@ -205,12 +204,12 @@ export function validateToken(
     }
 
     return decodeAndValidatePayload(token);
-  } catch (error) {
-    const errorMessage =
-      error instanceof Error
-        ? error.message
-        : "Unknown error during JWT validation";
-    debugLog(`JWT validation error: ${errorMessage}`);
-    return { isValid: false, error: errorMessage };
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : "Unknown error during JWT validation";
+    logger.debug("JWT validation error: " + errorMessage);
+    return {
+      isValid: false,
+      error: errorMessage,
+    };
   }
 }

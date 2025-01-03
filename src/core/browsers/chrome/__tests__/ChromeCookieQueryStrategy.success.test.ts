@@ -1,45 +1,61 @@
-import {
-  mockListChromeProfilePaths,
-  mockGetChromePassword,
-  mockGetEncryptedChromeCookie,
-  mockDecrypt,
-  setupChromeTest,
-  mockCookieData,
-  mockCookieFile,
-} from "../testSetup";
+import { jest } from "@jest/globals";
 
-describe("ChromeCookieQueryStrategy - Successful Querying", () => {
-  let strategy: ReturnType<typeof setupChromeTest>;
+import type { CookieRow } from "../../../../types/schemas";
+import { getEncryptedChromeCookie } from "../../getEncryptedChromeCookie";
+import { listChromeProfilePaths } from "../../listChromeProfiles";
+import { ChromeCookieQueryStrategy } from "../ChromeCookieQueryStrategy";
+import { decrypt } from "../decrypt";
+import { getChromePassword } from "../getChromePassword";
 
+jest.mock("../decrypt");
+jest.mock("../getChromePassword");
+jest.mock("../../getEncryptedChromeCookie");
+jest.mock("../../listChromeProfiles");
+
+const mockListChromeProfilePaths = jest.mocked(listChromeProfilePaths);
+const mockGetEncryptedChromeCookie = jest.mocked(getEncryptedChromeCookie);
+const mockGetChromePassword = jest.mocked(getChromePassword);
+const mockDecrypt = jest.mocked(decrypt);
+
+describe("ChromeCookieQueryStrategy - Success", () => {
   beforeEach(() => {
-    strategy = setupChromeTest();
+    jest.clearAllMocks();
   });
 
-  it("should query and decrypt cookies successfully", async () => {
-    const cookies = await strategy.queryCookies("test-cookie", "example.com");
+  it("should successfully query and decrypt cookies", async () => {
+    const mockCookieValue = Buffer.from("encrypted-cookie");
+    const mockPassword = "mock-password";
+    const mockDecryptedValue = "decrypted-value";
+
+    mockListChromeProfilePaths.mockReturnValue(["/path/to/profile"]);
+    mockGetChromePassword.mockResolvedValue(mockPassword);
+    mockGetEncryptedChromeCookie.mockResolvedValue([
+      {
+        name: "test-cookie",
+        value: mockCookieValue,
+        domain: "example.com",
+        expiry: Math.floor(Date.now() / 1000) + 86400, // 24 hours from now
+      } satisfies CookieRow,
+    ]);
+    mockDecrypt.mockResolvedValue(mockDecryptedValue);
+
+    const strategy = new ChromeCookieQueryStrategy();
+    const cookies = await strategy.queryCookies("%", "example.com");
+
+    expect(cookies).toHaveLength(1);
+    expect(cookies[0]).toMatchObject({
+      name: "test-cookie",
+      value: mockDecryptedValue,
+      domain: "example.com",
+    });
 
     expect(mockListChromeProfilePaths).toHaveBeenCalled();
     expect(mockGetChromePassword).toHaveBeenCalled();
     expect(mockGetEncryptedChromeCookie).toHaveBeenCalledWith({
-      name: "test-cookie",
+      name: "%",
       domain: "example.com",
-      file: mockCookieFile,
+      file: "/path/to/profile",
     });
-    expect(mockDecrypt).toHaveBeenCalledWith(
-      mockCookieData.value,
-      "test-password",
-    );
-
-    expect(cookies).toHaveLength(1);
-    expect(cookies[0]).toMatchObject({
-      name: mockCookieData.name,
-      value: "decrypted-value",
-      domain: mockCookieData.domain,
-      meta: {
-        file: mockCookieFile,
-        browser: "Chrome",
-        decrypted: true,
-      },
-    });
+    expect(mockDecrypt).toHaveBeenCalledWith(mockCookieValue, mockPassword);
   });
 });

@@ -1,6 +1,8 @@
-import type { RenderOptions } from "../../types/CookieRender";
-import type { CookieSpec } from "../../types/CookieSpec";
-import type { ExportedCookie } from "../../types/ExportedCookie";
+import type {
+  RenderOptions,
+  CookieSpec,
+  ExportedCookie,
+} from "../../types/schemas";
 
 /**
  * Dynamic import for the getCookie function.

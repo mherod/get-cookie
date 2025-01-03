@@ -1,12 +1,12 @@
-import { FirefoxCookieQueryStrategy } from '../FirefoxCookieQueryStrategy';
+import { FirefoxCookieQueryStrategy } from "../FirefoxCookieQueryStrategy";
 
-describe('FirefoxCookieQueryStrategy - Basic', () => {
+describe("FirefoxCookieQueryStrategy - Basic", () => {
   let strategy: FirefoxCookieQueryStrategy;
   const originalHome = process.env.HOME;
 
   beforeEach(() => {
     strategy = new FirefoxCookieQueryStrategy();
-    process.env.HOME = '/mock/home';
+    process.env.HOME = "/mock/home";
     jest.clearAllMocks();
   });
 
@@ -15,6 +15,6 @@ describe('FirefoxCookieQueryStrategy - Basic', () => {
   });
 
   it('should return "Firefox" as the browser name', () => {
-    expect(strategy.browserName).toBe('Firefox');
+    expect(strategy.browserName).toBe("Firefox");
   });
 });

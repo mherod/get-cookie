@@ -1,4 +1,4 @@
-import type { CookieSpec } from "../../types/CookieSpec";
+import type { CookieSpec } from "../../types/schemas";
 
 /**
  * Check if a cookie specification contains wildcard patterns

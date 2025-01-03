@@ -5,7 +5,7 @@ import glob from "fast-glob";
 
 import { logError, logDebug, logOperationResult } from "@utils/logHelpers";
 
-import type { CookieRow } from "../../types/CookieRow";
+import type { CookieRow } from "../../types/schemas";
 
 import { chromeApplicationSupport } from "./chrome/ChromeApplicationSupport";
 import { querySqliteThenTransform } from "./QuerySqliteThenTransform";

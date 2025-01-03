@@ -11,3 +11,4 @@ else
   # Linux version
   find docs/reference -name "*.md" -exec sed -i 's/README.md/index.html/g' {} \;
 fi
+

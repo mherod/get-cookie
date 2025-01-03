@@ -2,9 +2,11 @@ import { join } from "path";
 
 import { logError } from "@utils/logHelpers";
 
-import type { BrowserName } from "../../../types/BrowserName";
-import type { CookieQueryStrategy } from "../../../types/CookieQueryStrategy";
-import type { ExportedCookie } from "../../../types/ExportedCookie";
+import type {
+  BrowserName,
+  CookieQueryStrategy,
+  ExportedCookie,
+} from "../../../types/schemas";
 import { decodeBinaryCookies } from "../decodeBinaryCookies";
 
 /**
@@ -12,30 +14,30 @@ import { decodeBinaryCookies } from "../decodeBinaryCookies";
  */
 export class SafariCookieQueryStrategy implements CookieQueryStrategy {
   /**
-   *
+   * The browser name for this strategy
    */
   public readonly browserName: BrowserName = "Safari";
 
   /**
-   * Gets the user's home directory from environment variables
-   * @returns The home directory path or null if not set
+   * Gets the user's home directory
+   * @returns The home directory path or empty string if not found
    */
-  private getHomeDir(): string | null {
+  private getHomeDir(): string {
     const homeDir = process.env.HOME;
-    if (typeof homeDir !== "string" || homeDir.trim() === "") {
+    if (typeof homeDir !== "string" || homeDir.trim().length === 0) {
       logError(
         "SafariCookieQueryStrategy",
-        "HOME environment variable is not set",
+        "HOME environment variable not set",
       );
-      return null;
+      return "";
     }
     return homeDir;
   }
 
   /**
    * Gets the path to Safari's cookie database
-   * @param homeDir - User's home directory path
-   * @returns Path to Safari's cookie database
+   * @param homeDir - The user's home directory
+   * @returns Path to the cookie database
    */
   private getCookieDbPath(homeDir: string): string {
     return join(

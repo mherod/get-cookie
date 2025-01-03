@@ -1,5 +1,4 @@
-import type { CookieSpec } from "../../types/CookieSpec";
-import type { ExportedCookie } from "../../types/ExportedCookie";
+import type { CookieSpec, ExportedCookie } from "../../types/schemas";
 import logger from "../../utils/logger";
 import { ChromeCookieQueryStrategy } from "../browsers/chrome/ChromeCookieQueryStrategy";
 

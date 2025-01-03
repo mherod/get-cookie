@@ -1,6 +1,10 @@
 import { decrypt } from "../decrypt";
 
-import { TEST_PASSWORD, TEST_COOKIES, ERROR_CASES } from "./fixtures/cookieFixtures";
+import {
+  TEST_PASSWORD,
+  TEST_COOKIES,
+  ERROR_CASES,
+} from "./fixtures/cookieFixtures";
 
 describe("decrypt", () => {
   describe("successful decryption", () => {
@@ -10,23 +14,20 @@ describe("decrypt", () => {
         const encryptedValue = Buffer.from(cookie.encrypted, "hex");
         const decrypted = await decrypt(encryptedValue, TEST_PASSWORD);
 
-        if ('contains' in cookie) {
+        if ("contains" in cookie) {
           for (const value of cookie.contains) {
             expect(decrypted).toContain(value);
           }
         } else {
           expect(decrypted).toBe(cookie.decrypted);
         }
-      }
+      },
     );
   });
 
   describe("error handling", () => {
-    it.each(ERROR_CASES)(
-      "should reject if $name",
-      async ({ input, error }) => {
-        await expect(decrypt(input.value, input.password)).rejects.toThrow(error);
-      }
-    );
+    it.each(ERROR_CASES)("should reject if $name", async ({ input, error }) => {
+      await expect(decrypt(input.value, input.password)).rejects.toThrow(error);
+    });
   });
 });

@@ -3,18 +3,29 @@ import jsonwebtoken from "jsonwebtoken";
 import { parseArgv } from "./argv";
 import logger from "./logger";
 
-interface JwtPayload {
+/**
+ * Represents a JWT payload with optional standard claims
+ */
+export interface JwtPayload {
   exp?: number;
+  iat?: number;
+  sub?: string;
   [key: string]: unknown;
 }
 
-interface JwtHeader {
+/**
+ * Represents a JWT header
+ */
+export interface JwtHeader {
   alg: string;
   typ?: string;
   [key: string]: unknown;
 }
 
-interface ValidationResult {
+/**
+ * Result of JWT validation operations
+ */
+export interface ValidationResult {
   isValid: boolean;
   error?: string;
   decodedPayload?: JwtPayload;
@@ -25,18 +36,23 @@ interface ValidationResult {
 const JWT_FORMAT_REGEX = /^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]*$/;
 
 /**
- * Validates the basic format of a JWT token using regex pattern matching.
- * @param token - The JWT token to validate.
- * @returns The validation result indicating if the token format is valid.
- * @example
- * ```typescript
- * const result = validateTokenFormat('abc.def.ghi');
- * if (!result.isValid) {
- *   console.error(result.error);
- * }
- * ```
+ * Validates if a string matches the basic JWT format
+ * @param value - The value to check for JWT format
+ * @returns True if the value is a valid JWT format string, false otherwise
  */
-export function validateTokenFormat(token: string): ValidationResult {
+export function isJWT(value: unknown): boolean {
+  if (value === null || value === undefined || typeof value !== "string") {
+    return false;
+  }
+  return JWT_FORMAT_REGEX.test(value);
+}
+
+/**
+ * Validates the basic format of a JWT token using regex pattern matching.
+ * @param token - The JWT token string to validate
+ * @returns The validation result indicating if the token format is valid
+ */
+function validateTokenFormat(token: string): ValidationResult {
   if (!JWT_FORMAT_REGEX.test(token)) {
     return {
       isValid: false,
@@ -49,18 +65,11 @@ export function validateTokenFormat(token: string): ValidationResult {
 
 /**
  * Verifies JWT signature using the provided secret or public key.
- * @param token - The JWT token to verify.
- * @param secretOrPublicKey - The secret or public key to use for verification.
- * @returns The validation result if verification fails, null if successful.
- * @example
- * ```typescript
- * const result = verifySignature(token, 'secret-key');
- * if (result) {
- *   console.error('Signature verification failed:', result.error);
- * }
- * ```
+ * @param token - The JWT token to verify
+ * @param secretOrPublicKey - The secret or public key to use for verification
+ * @returns The validation result if verification fails, null if successful
  */
-export function verifySignature(
+function verifySignature(
   token: string,
   secretOrPublicKey: string | Buffer,
 ): ValidationResult | null {
@@ -82,18 +91,10 @@ export function verifySignature(
 
 /**
  * Checks if a JWT token has expired based on its exp claim.
- * @param payload - The decoded JWT payload to check for expiration.
- * @returns The validation result indicating if the token is expired.
- * @example
- * ```typescript
- * const payload = { exp: Math.floor(Date.now() / 1000) + 3600 };
- * const result = checkExpiration(payload);
- * if (!result.isValid) {
- *   console.error('Token expired:', result.error);
- * }
- * ```
+ * @param payload - The decoded JWT payload to check for expiration
+ * @returns The validation result indicating if the token is expired
  */
-export function checkExpiration(payload: JwtPayload): ValidationResult {
+function checkExpiration(payload: JwtPayload): ValidationResult {
   const exp = payload.exp;
   if (exp === undefined) {
     return {
@@ -113,9 +114,8 @@ export function checkExpiration(payload: JwtPayload): ValidationResult {
 /**
  * Internal utility for debug logging.
  * @internal
- * @param message - Debug message to log.
- * @param [data] - Optional data to log.
- * @private
+ * @param message - The debug message to log
+ * @param data - Optional data to log with the message
  */
 function debugLog(message: string, data?: unknown): void {
   try {
@@ -131,8 +131,8 @@ function debugLog(message: string, data?: unknown): void {
 /**
  * Validates input token string format.
  * @internal
- * @param token - The token to validate.
- * @returns ValidationResult for invalid tokens, null for valid ones.
+ * @param token - The token string to validate
+ * @returns ValidationResult for invalid tokens, null for valid ones
  */
 function validateTokenInput(
   token: string | null | undefined,
@@ -152,8 +152,8 @@ function validateTokenInput(
 /**
  * Decodes and validates JWT payload.
  * @internal
- * @param token - The token to decode.
- * @returns ValidationResult containing decoded information or error.
+ * @param token - The token to decode and validate
+ * @returns ValidationResult containing decoded information or error
  */
 function decodeAndValidatePayload(token: string): ValidationResult {
   const result = jsonwebtoken.decode(token, { complete: true });
@@ -172,15 +172,16 @@ function decodeAndValidatePayload(token: string): ValidationResult {
 
 /**
  * Validates a JWT token by checking its format, signature (if key provided), and expiration.
- * @param token - The JWT token to validate.
- * @param [secretOrPublicKey] - Optional secret or public key for signature verification.
- * @returns The validation result containing success status, error message, and decoded information.
+ * This is the main function that should be used for JWT validation.
+ * @param token - The JWT token to validate
+ * @param secretOrPublicKey - Optional secret or public key for signature verification
+ * @returns Validation result containing success status, error message, and decoded information
  * @example
  * ```typescript
- * // Validate token without signature verification
+ * // Basic validation without signature verification
  * const result = validateToken('your.jwt.token');
  *
- * // Validate token with signature verification
+ * // Validation with signature verification
  * const result = validateToken('your.jwt.token', 'your-secret-key');
  * ```
  */
@@ -190,7 +191,7 @@ export function validateToken(
 ): ValidationResult {
   try {
     if (token === undefined) {
-      const errorMessage = "Unknown error during JWT validation";
+      const errorMessage = "Token is undefined";
       logger.debug("JWT validation error: " + errorMessage);
       return {
         isValid: false,
@@ -226,5 +227,35 @@ export function validateToken(
       isValid: false,
       error: errorMessage,
     };
+  }
+}
+
+/**
+ * Decodes a JWT token without verifying its signature.
+ * Use this only when you don't need to verify the token's authenticity.
+ * @param token - The JWT token to decode
+ * @returns The decoded payload and header, or null if decoding fails
+ * @example
+ * ```typescript
+ * const decoded = decodeToken('your.jwt.token');
+ * if (decoded) {
+ *   console.log(decoded.payload.sub); // Access payload claims
+ * }
+ * ```
+ */
+export function decodeToken(
+  token: string,
+): { payload: JwtPayload; header: JwtHeader } | null {
+  try {
+    const result = jsonwebtoken.decode(token, { complete: true });
+    if (!result) {
+      return null;
+    }
+    return {
+      payload: result.payload as JwtPayload,
+      header: result.header as JwtHeader,
+    };
+  } catch {
+    return null;
   }
 }

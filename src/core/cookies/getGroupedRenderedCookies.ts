@@ -1,5 +1,9 @@
-import type { RenderOptions } from "../../types/CookieRender";
-import type { CookieSpec } from "../../types/CookieSpec";
+import type {
+  RenderOptions,
+  CookieSpec,
+  ExportedCookie,
+} from "../../types/schemas";
+import { ExportedCookieSchema } from "../../types/schemas";
 import logger from "../../utils/logger";
 
 import { getCookie } from "./getCookie";
@@ -38,7 +42,23 @@ export async function getGroupedRenderedCookies(
 ): Promise<string[]> {
   try {
     const cookies = await getCookie(cookieSpec);
-    return renderCookies(cookies, {
+    if (!Array.isArray(cookies)) {
+      return [];
+    }
+
+    // Validate each cookie against the schema
+    const validatedCookies = cookies.filter(
+      (cookie): cookie is ExportedCookie => {
+        const result = ExportedCookieSchema.safeParse(cookie);
+        if (!result.success) {
+          logger.warn("Invalid cookie format:", result.error.format());
+          return false;
+        }
+        return true;
+      },
+    );
+
+    return renderCookies(validatedCookies, {
       ...options,
       format: "grouped",
     }) as string[];

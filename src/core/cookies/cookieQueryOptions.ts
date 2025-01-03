@@ -1,4 +1,4 @@
-import type { CookieQueryStrategy } from "../../types/CookieQueryStrategy";
+import type { CookieQueryStrategy } from "../../types/schemas";
 
 /**
  * Options for querying cookies.

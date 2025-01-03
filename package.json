@@ -39,7 +39,7 @@
     "prepublishOnly": "pnpm run clean && pnpm run validate && pnpm run build",
     "format": "prettier --write .",
     "dev": "tsc -w -p tsconfig.json & tsc-alias -w -p tsconfig.json",
-    "read-github": "NODE_OPTIONS=\"-r tsconfig-paths/register\" tsx scripts/readGithubCookies.ts",
+    "read-github": "NODE_OPTIONS=\"-r tsconfig-paths/register\" tsx scripts/read-github-cookies.ts",
     "prepare": "husky install",
     "docs": "typedoc && ./scripts/fix-typedoc.sh && vitepress build docs",
     "docs:dev": "vitepress dev docs",

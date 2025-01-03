@@ -5,7 +5,7 @@ import { cookieSpecsFromUrl } from "@core/cookies/cookieSpecsFromUrl";
 import { parseArgv } from "@utils/argv";
 import logger from "@utils/logger";
 
-import type { CookieSpec } from "../types/CookieSpec";
+import type { CookieSpec } from "../types/schemas";
 
 import { cliQueryCookies } from "./cliQueryCookies";
 
@@ -37,7 +37,12 @@ function getCookieSpecs(
   const url = values.url as string | undefined;
 
   if (typeof url === "string") {
-    return cookieSpecsFromUrl(url);
+    const specs = cookieSpecsFromUrl(url);
+    if (!Array.isArray(specs)) {
+      logger.error("Invalid cookie specs from URL");
+      return [];
+    }
+    return specs;
   }
 
   const name = (values.name as string) || positionals[0] || "%";

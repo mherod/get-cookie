@@ -7,8 +7,10 @@ import {
   ExportedCookie,
 } from "../../../types/schemas";
 import { getEncryptedChromeCookie } from "../getEncryptedChromeCookie";
+import { listChromeProfilePaths } from "../listChromeProfiles";
 
 import { decrypt } from "./decrypt";
+import { getChromePassword } from "./getChromePassword";
 
 interface DecryptionContext {
   file: string;
@@ -85,9 +87,20 @@ export class ChromeCookieQueryStrategy implements CookieQueryStrategy {
         return [];
       }
 
-      // For now, return empty array as we need to implement Chrome profile path listing
-      await Promise.resolve(); // Add await to satisfy linter
-      return [];
+      const cookieFiles = listChromeProfilePaths();
+      if (cookieFiles.length === 0) {
+        this.logger.warn("No Chrome cookie files found");
+        return [];
+      }
+
+      const password = await getChromePassword();
+      const results = await Promise.all(
+        cookieFiles.map((file) =>
+          this.processFile(file, name, domain, password),
+        ),
+      );
+
+      return results.flat();
     } catch (error) {
       if (error instanceof Error) {
         logError("Failed to query cookies", error, { name, domain });
@@ -116,9 +129,7 @@ export class ChromeCookieQueryStrategy implements CookieQueryStrategy {
 
       const context: DecryptionContext = { file, password };
       const results = await Promise.allSettled(
-        encryptedCookies.map((cookie) =>
-          this.processCookie(cookie as CookieRow, context),
-        ),
+        encryptedCookies.map((cookie) => this.processCookie(cookie, context)),
       );
 
       return results

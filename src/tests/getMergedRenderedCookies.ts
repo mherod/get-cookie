@@ -1,44 +1,45 @@
 import { memoize } from "lodash-es";
 
-import type { CookieQueryStrategy } from "../types/CookieQueryStrategy";
-import type { ExportedCookie } from "../types/ExportedCookie";
-
-import type { MultiCookieSpec } from "./CookieSpec";
+import type {
+  CookieQueryStrategy,
+  CookieSpec,
+  ExportedCookie,
+} from "../types/schemas";
 
 /**
- * Renders multiple cookies into a single string suitable for use in HTTP headers
+ * Renders an array of cookies into a single string
  * @param cookies - Array of cookies to render
- * @returns A string containing all cookies in HTTP header format
+ * @returns Rendered cookie string
  */
 const renderCookies = memoize(
   (cookies: ExportedCookie[]): string => {
-    return cookies.map((cookie) => `${cookie.name}=${cookie.value}`).join("; ");
+    return cookies
+      .map((cookie: ExportedCookie) => `${cookie.name}=${cookie.value}`)
+      .join("; ");
   },
   (cookies: ExportedCookie[]) => JSON.stringify(cookies),
 );
 
 /**
- * Queries and merges cookies based on multiple specifications
- * @param cookieSpecs - Array of cookie specifications to query
- * @param strategy - Strategy to use for querying cookies
- * @returns A promise that resolves to a string containing all matched cookies
- * @example
+ * Gets and renders cookies from multiple cookie specs
+ * @param cookieSpecs - Array of cookie specs to query
+ * @param strategy - Optional strategy to use for querying cookies
+ * @returns Promise resolving to rendered cookie string
  */
 export async function getMergedRenderedCookies(
-  cookieSpecs: MultiCookieSpec,
+  cookieSpecs: CookieSpec[],
   strategy?: CookieQueryStrategy,
 ): Promise<string> {
-  if (!cookieSpecs.length) {
+  if (!Array.isArray(cookieSpecs)) {
     return "";
   }
 
-  const cookies = await Promise.all(
-    cookieSpecs.map(
-      (spec) =>
-        strategy?.queryCookies(spec.name, spec.domain) ?? Promise.resolve([]),
-    ),
+  const cookiePromises = cookieSpecs.map(
+    (spec) =>
+      strategy?.queryCookies(spec.name, spec.domain) ?? Promise.resolve([]),
   );
 
+  const cookies = await Promise.all(cookiePromises);
   const mergedCookies = cookies.flat();
   return renderCookies(mergedCookies);
 }

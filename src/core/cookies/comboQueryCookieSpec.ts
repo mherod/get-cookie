@@ -4,7 +4,10 @@ import {
   ExportedCookie,
   MultiCookieSpec,
 } from "../../types/schemas";
+import { ChromeCookieQueryStrategy } from "../browsers/chrome/ChromeCookieQueryStrategy";
 import { CompositeCookieQueryStrategy } from "../browsers/CompositeCookieQueryStrategy";
+import { FirefoxCookieQueryStrategy } from "../browsers/firefox/FirefoxCookieQueryStrategy";
+import { SafariCookieQueryStrategy } from "../browsers/safari/SafariCookieQueryStrategy";
 
 /**
  * Configuration options for cookie queries
@@ -25,12 +28,17 @@ interface QueryOptions {
  * @returns The cookie object with converted expiry
  */
 function convertExpiry(cookie: ExportedCookie): ExportedCookie {
-  if (cookie.expiry === "Infinity") {
-    return { ...cookie, expiry: "Infinity" };
+  if (cookie.expiry === undefined) {
+    return cookie;
   }
+
   if (typeof cookie.expiry === "number") {
-    return { ...cookie, expiry: new Date(cookie.expiry * 1000) };
+    return {
+      ...cookie,
+      expiry: new Date(cookie.expiry * 1000),
+    };
   }
+
   return cookie;
 }
 
@@ -59,7 +67,13 @@ export async function comboQueryCookieSpec(
   cookieSpec: MultiCookieSpec,
   options: QueryOptions = {},
 ): Promise<ExportedCookie[]> {
-  const strategy = options.strategy ?? new CompositeCookieQueryStrategy();
+  const strategy =
+    options.strategy ??
+    new CompositeCookieQueryStrategy([
+      new ChromeCookieQueryStrategy(),
+      new FirefoxCookieQueryStrategy(),
+      new SafariCookieQueryStrategy(),
+    ]);
 
   const queryFn = async (cs: CookieSpec): Promise<ExportedCookie[]> => {
     const cookies = await strategy.queryCookies(cs.name, cs.domain);

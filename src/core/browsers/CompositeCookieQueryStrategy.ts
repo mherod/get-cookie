@@ -1,64 +1,132 @@
 import { flatMapAsync } from "@utils/flatMapAsync";
-import logger from "@utils/logger";
+import { createTaggedLogger } from "@utils/logHelpers";
 
-import type { CookieQueryStrategy } from "../../types/CookieQueryStrategy";
-import type { ExportedCookie } from "../../types/ExportedCookie";
-
-import { ChromeCookieQueryStrategy } from "./chrome/ChromeCookieQueryStrategy";
-import { FirefoxCookieQueryStrategy } from "./firefox/FirefoxCookieQueryStrategy";
-import { SafariCookieQueryStrategy } from "./safari/SafariCookieQueryStrategy";
-
-type CookieStrategyConstructor = new () => CookieQueryStrategy;
+import type {
+  BrowserName,
+  CookieQueryStrategy,
+  ExportedCookie,
+} from "../../types/schemas";
 
 /**
- * A composite strategy that combines multiple cookie query strategies
- * This allows querying cookies from multiple browsers simultaneously
+ * A composite strategy that combines multiple cookie query strategies.
+ * This class implements the CookieQueryStrategy interface and allows querying cookies
+ * from multiple browser-specific strategies simultaneously.
  * @example
+ * ```typescript
+ * const strategy = new CompositeCookieQueryStrategy([
+ *   new ChromeCookieQueryStrategy(),
+ *   new FirefoxCookieQueryStrategy(),
+ *   new SafariCookieQueryStrategy()
+ * ]);
+ * const cookies = await strategy.queryCookies('sessionId', 'example.com');
+ * ```
  */
 export class CompositeCookieQueryStrategy implements CookieQueryStrategy {
-  /**
-   *
-   */
-  public browserName = "all";
-
-  private readonly strategies: CookieStrategyConstructor[];
+  private readonly logger = createTaggedLogger("CompositeCookieQueryStrategy");
 
   /**
-   * Initializes with an empty array of strategies that can be added later
+   * The browser name identifier for this strategy
+   * @remarks Always returns 'internal' as this is a composite strategy
    */
-  public constructor() {
-    this.strategies = [
-      ChromeCookieQueryStrategy,
-      FirefoxCookieQueryStrategy,
-      SafariCookieQueryStrategy,
-    ];
+  public readonly browserName: BrowserName = "internal";
+
+  /**
+   * Creates a new instance of CompositeCookieQueryStrategy
+   * @param strategies - Array of browser-specific strategies to use for querying cookies
+   * @remarks
+   * - Each strategy in the array should implement the CookieQueryStrategy interface
+   * - The order of strategies determines the order of cookie querying
+   * - Failed strategies will be gracefully handled and skipped
+   * @example
+   * ```typescript
+   * const strategy = new CompositeCookieQueryStrategy([
+   *   new ChromeCookieQueryStrategy(),
+   *   new FirefoxCookieQueryStrategy()
+   * ]);
+   * ```
+   */
+  public constructor(private strategies: CookieQueryStrategy[]) {}
+
+  /**
+   * Handles strategy-specific errors and logs them appropriately
+   * @internal
+   * @param error - The error that occurred during strategy execution
+   * @param strategy - The strategy that failed
+   */
+  private handleStrategyError(
+    error: unknown,
+    strategy: CookieQueryStrategy,
+  ): void {
+    if (error instanceof Error) {
+      this.logger.error("Strategy failed", { error, strategy });
+    } else {
+      this.logger.error("Strategy failed with unknown error", {
+        error: String(error),
+        strategy,
+      });
+    }
   }
 
   /**
-   * Queries cookies from all registered strategies
+   * Queries cookies using all available strategies in parallel
    * @param name - The name pattern to match cookies against
    * @param domain - The domain pattern to match cookies against
-   * @returns A promise that resolves to an array of exported cookies from all strategies
+   * @returns Promise resolving to combined array of cookies from all strategies
+   * @remarks
+   * - Failures in individual strategies are logged but don't affect other strategies
+   * - Results are combined from all successful strategy queries
+   * - Empty arrays are returned for failed strategy queries
+   * @example
+   * ```typescript
+   * const strategy = new CompositeCookieQueryStrategy([
+   *   new ChromeCookieQueryStrategy(),
+   *   new FirefoxCookieQueryStrategy()
+   * ]);
+   * const cookies = await strategy.queryCookies('sessionId', 'example.com');
+   * console.log(cookies); // Combined results from all browsers
+   * ```
    */
   public async queryCookies(
     name: string,
     domain: string,
   ): Promise<ExportedCookie[]> {
-    logger.info(`Querying cookies for name: ${name}, domain: ${domain}`);
+    try {
+      this.logger.info("Querying cookies from all strategies", {
+        name,
+        domain,
+        strategyCount: this.strategies.length,
+      });
 
-    return flatMapAsync(this.strategies, async (Strategy) => {
-      try {
-        const strategy = new Strategy();
-        const cookies = await strategy.queryCookies(name, domain);
-        return cookies;
-      } catch (error) {
-        if (error instanceof Error) {
-          logger.error(`Error querying ${Strategy.name}: ${error.message}`);
-        } else {
-          logger.error(`Error querying ${Strategy.name}: Unknown error`);
-        }
-        return [];
+      /**
+       * Use flatMapAsync to process strategies in sequence while collecting results
+       * This approach provides better error isolation than Promise.all
+       * Each strategy failure is handled independently
+       */
+      return await flatMapAsync(
+        this.strategies,
+        async (strategy) => {
+          try {
+            return await strategy.queryCookies(name, domain);
+          } catch (error) {
+            this.handleStrategyError(error, strategy);
+            return [];
+          }
+        },
+        [],
+      );
+    } catch (error) {
+      /**
+       * Handle top-level errors that may occur during strategy processing
+       * This ensures the function always returns an array, even in catastrophic failure
+       */
+      if (error instanceof Error) {
+        this.logger.error("Failed to query cookies", { error });
+      } else {
+        this.logger.error("Failed to query cookies with unknown error", {
+          error: String(error),
+        });
       }
-    });
+      return [];
+    }
   }
 }

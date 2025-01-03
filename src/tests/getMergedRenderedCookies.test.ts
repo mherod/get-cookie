@@ -1,5 +1,6 @@
+import type { MultiCookieSpec } from "../types/schemas";
+
 import MockCookieQueryStrategy from "./browsers/mock/MockCookieQueryStrategy";
-import { MultiCookieSpec } from "./CookieSpec";
 import { getMergedRenderedCookies } from "./getMergedRenderedCookies";
 
 describe("getMergedRenderedCookies", () => {

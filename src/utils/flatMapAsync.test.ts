@@ -3,7 +3,8 @@ import { flatMapAsync } from "./flatMapAsync";
 describe("flatMapAsync", () => {
   it("should apply callback to each element and flatten the array", async () => {
     const array = [1, 2, 3];
-    const callback = (value: number): Promise<number[]> => Promise.resolve([value, value * 2]);
+    const callback = (value: number): Promise<number[]> =>
+      Promise.resolve([value, value * 2]);
     const result = await flatMapAsync(array, callback);
     expect(result).toEqual([1, 2, 2, 4, 3, 6]);
   });
@@ -24,14 +25,16 @@ describe("flatMapAsync", () => {
 describe("flatMapAsync edge cases", () => {
   it("should return an empty array when input array is empty", async () => {
     const array: number[] = [];
-    const callback = (value: number): Promise<number[]> => Promise.resolve([value, value * 2]);
+    const callback = (value: number): Promise<number[]> =>
+      Promise.resolve([value, value * 2]);
     const result = await flatMapAsync(array, callback);
     expect(result).toEqual([]);
   });
 
   it("should return an array with single element when input array has one element", async () => {
     const array = [1];
-    const callback = (value: number): Promise<number[]> => Promise.resolve([value, value * 2]);
+    const callback = (value: number): Promise<number[]> =>
+      Promise.resolve([value, value * 2]);
     const result = await flatMapAsync(array, callback);
     expect(result).toEqual([1, 2]);
   });

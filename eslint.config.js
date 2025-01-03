@@ -6,7 +6,7 @@ import globals from "globals";
 
 export default [
   {
-    ignores: ["dist/**/*", "node_modules/**/*"],
+    ignores: ["dist/**/*", "node_modules/**/*", "coverage/**/*"],
   },
   {
     files: ["**/*.js", "**/*.mjs"],
@@ -238,6 +238,7 @@ export default [
     rules: {
       "jsdoc/require-example": "off",
       "jsdoc/require-description": "off",
+      "max-lines-per-function": ["error", { max: 100 }],
     },
   },
 ];

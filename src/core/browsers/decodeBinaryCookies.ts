@@ -43,14 +43,14 @@ function decodeCookieHeader(
   const [domain, nextOffset] = readNullTerminatedString(buffer, currentOffset);
   currentOffset = nextOffset;
 
-  const [value, nextOffset2] = readNullTerminatedString(buffer, currentOffset);
+  const [name, nextOffset2] = readNullTerminatedString(buffer, currentOffset);
   currentOffset = nextOffset2;
 
-  // The fields are path, then name
+  // The fields are path, then value
   const [path, nextOffset3] = readNullTerminatedString(buffer, currentOffset);
   currentOffset = nextOffset3;
 
-  const [name, _] = readNullTerminatedString(buffer, currentOffset);
+  const [value, _] = readNullTerminatedString(buffer, currentOffset);
 
   return [
     {

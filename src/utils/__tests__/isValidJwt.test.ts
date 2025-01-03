@@ -188,8 +188,7 @@ describe("isValidJwt - Verbose Logging", () => {
     const invalidInput = undefined as unknown as string;
     validateToken(invalidInput);
     expect(logger.debug).toHaveBeenCalledWith(
-      "JWT validation error: Cannot read properties of undefined (reading 'trim')",
-      undefined
+      "JWT validation error: Unknown error during JWT validation"
     );
   });
 });

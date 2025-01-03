@@ -125,25 +125,12 @@ function decodePage(
   const cookies: BinaryCookieRow[] = [];
   const pageEnd = offset + pageSize;
 
-  logWarn("BinaryCookies", "Decoding page", {
-    offset,
-    pageSize,
-    headerLength,
-    currentOffset,
-    pageEnd,
-  });
-
   // Read cookies until we reach the page end
   while (currentOffset < pageEnd - 8) {
     try {
       const [cookie, size] = decodeCookieHeader(buffer, currentOffset);
       cookies.push(cookie);
       currentOffset += size;
-      logWarn("BinaryCookies", "Successfully decoded cookie", {
-        currentOffset,
-        size,
-        cookie,
-      });
     } catch (error) {
       logWarn(
         "BinaryCookies",

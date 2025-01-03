@@ -20,6 +20,7 @@ function showHelp(): void {
   logger.log(`  -u, --url: URL to extract cookie specs from`);
   logger.log(`  -n, --name: Cookie name pattern`);
   logger.log(`  -d, --domain: Cookie domain pattern`);
+  logger.log(`  --output: Output format (e.g., json)`);
 }
 
 function createCookieSpec(name: string, domain: string): CookieSpec {
@@ -59,6 +60,7 @@ async function handleCookieQuery(
       cookieSpecs,
       ["chrome", "firefox", "safari"],
       ["default"],
+      { ...values },
     );
   } catch (error) {
     if (error instanceof Error) {

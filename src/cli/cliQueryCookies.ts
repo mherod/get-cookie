@@ -4,7 +4,6 @@ import { groupBy } from "lodash-es";
 // Local imports - types
 import { comboQueryCookieSpec } from "@core/cookies/comboQueryCookieSpec";
 import { resultsRendered } from "@core/cookies/resultsRendered";
-import { parseArgv } from "@utils/argv";
 import logger from "@utils/logger";
 
 import type { CookieSpec } from "../types/CookieSpec";
@@ -107,6 +106,7 @@ function handleOutput(results: ExportedCookie[], args: ParsedArgs): void {
  * @param cookieSpec - Cookie specification(s) to query for
  * @param browsers - List of browsers to query from
  * @param profiles - List of browser profiles to query from
+ * @param args - Parsed arguments
  * @param limit - Optional limit on the number of results
  * @param removeExpired - Whether to remove expired cookies from results
  * @example
@@ -144,6 +144,7 @@ export async function cliQueryCookies(
   cookieSpec: CookieSpec | CookieSpec[],
   browsers: string[],
   profiles: string[],
+  args: ParsedArgs,
   limit?: number,
   removeExpired?: boolean,
 ): Promise<void> {
@@ -158,8 +159,7 @@ export async function cliQueryCookies(
       return;
     }
 
-    const { values: args } = parseArgv(process.argv.slice(2));
-    handleOutput(results, args as ParsedArgs);
+    handleOutput(results, args);
   } catch (error) {
     if (error instanceof Error) {
       logger.error(error.message);

@@ -1,4 +1,4 @@
-import { parseArgs } from "node:util";
+import minimist from "minimist";
 
 /**
  * Interface representing parsed command line arguments.
@@ -43,43 +43,31 @@ interface ParsedArgs {
  * ```
  */
 export function parseArgv(argv: string[]): ParsedArgs {
-  const { values, positionals } = parseArgs({
-    args: argv,
-    options: {
-      browser: {
-        type: "string",
-        short: "b",
-      },
-      profile: {
-        type: "string",
-        short: "p",
-      },
-      url: {
-        type: "string",
-        short: "u",
-      },
-      domain: {
-        type: "string",
-        short: "d",
-      },
-      name: {
-        type: "string",
-        short: "n",
-      },
-      help: {
-        type: "boolean",
-        short: "h",
-      },
-      version: {
-        type: "boolean",
-        short: "v",
-      },
-      verbose: {
-        type: "boolean",
-      },
+  const parsed = minimist(argv, {
+    string: ["browser", "profile", "url", "domain", "name", "output"],
+    boolean: [
+      "help",
+      "version",
+      "verbose",
+      "dump",
+      "dump-grouped",
+      "render",
+      "render-grouped",
+    ],
+    alias: {
+      b: "browser",
+      p: "profile",
+      u: "url",
+      d: "domain",
+      n: "name",
+      h: "help",
+      v: "version",
+      D: "dump-grouped",
+      r: "render",
+      R: "render-grouped",
     },
-    allowPositionals: true,
   });
 
-  return { values, positionals };
+  const { _, ...values } = parsed;
+  return { values, positionals: _ };
 }

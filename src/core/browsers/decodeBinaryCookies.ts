@@ -53,8 +53,12 @@ function decodeCookieHeader(
   const commentURLOffset = buffer.readUInt32LE(offset + 36);
 
   // Read dates using parseMacDate
-  const expiryDate = Math.floor(parseMacDate(buffer.readDoubleLE(offset + 40)).getTime() / 1000);
-  const creationDate = Math.floor(parseMacDate(buffer.readDoubleLE(offset + 48)).getTime() / 1000);
+  const expiryDate = Math.floor(
+    parseMacDate(buffer.readDoubleLE(offset + 40)).getTime() / 1000,
+  );
+  const creationDate = Math.floor(
+    parseMacDate(buffer.readDoubleLE(offset + 48)).getTime() / 1000,
+  );
 
   let currentOffset = offset + 56; // Fixed header size
 
@@ -141,8 +145,16 @@ function decodePage(
  * @returns true if the footer is valid
  */
 function validateFooter(buffer: Buffer): boolean {
+  // Try reading as two 32-bit values first (Safari 14+)
+  const highFooter = buffer.readUInt32BE(buffer.length - 8);
+  const lowFooter = buffer.readUInt32BE(buffer.length - 4);
+  if (highFooter === _FILE_FOOTER && lowFooter === 0) {
+    return true;
+  }
+
+  // Try reading as a 64-bit value (pre-Safari 14)
   const footer = Number(buffer.readBigUInt64BE(buffer.length - 8));
-  return footer === _FILE_FOOTER || footer === _FILE_FOOTER_LEGACY;
+  return footer === _FILE_FOOTER_LEGACY;
 }
 
 /**

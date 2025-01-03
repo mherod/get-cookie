@@ -6,11 +6,15 @@ config();
 
 const EnvironmentSchema = z.object({
   LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),
-  HOME: z.string().min(1),
+  HOME: z
+    .string()
+    .optional()
+    .transform((val) => val ?? process.env.USERPROFILE ?? "")
+    .pipe(z.string().min(1)),
 });
 
 /**
- * Validated environment variables with type safety
+ * Validated environment variables with type safety and fallbacks
  * @example
  * // Using the environment variables
  * if (env.LOG_LEVEL === "debug") {

@@ -8,7 +8,9 @@ jest.mock("fs", () => ({
 }));
 
 describe("decodeBinaryCookies - Error Handling", () => {
-  const mockReadFileSync = readFileSync as jest.MockedFunction<typeof readFileSync>;
+  const mockReadFileSync = readFileSync as jest.MockedFunction<
+    typeof readFileSync
+  >;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -26,7 +28,8 @@ describe("decodeBinaryCookies - Error Handling", () => {
     buffer.write("corrupted", 44);
 
     // Footer
-    buffer.writeBigUInt64BE(BigInt("510912288576766000"), 92);
+    buffer.writeUInt32BE(0x28, 92); // Safari 14+ footer value
+    buffer.writeUInt32BE(0x00, 96);
 
     mockReadFileSync.mockReturnValue(buffer);
 

@@ -1,5 +1,4 @@
 import { flatMapAsync } from "@utils/flatMapAsync";
-import logger from "@utils/logger";
 import {
   createTaggedLogger,
   logOperationResult,
@@ -15,8 +14,6 @@ import { listChromeProfilePaths } from "../listChromeProfiles";
 
 import { decrypt } from "./decrypt";
 import { getChromePassword } from "./getChromePassword";
-
-const consola = logger.withTag("ChromeCookieQueryStrategy");
 
 interface DecryptionContext {
   file: string;
@@ -108,16 +105,25 @@ export class ChromeCookieQueryStrategy implements CookieQueryStrategy {
     domain: string,
     password: string,
   ): Promise<ExportedCookie[]> {
-    const encryptedCookies = await getEncryptedChromeCookie({
-      name,
-      domain,
-      file,
-    });
+    try {
+      const encryptedCookies = await getEncryptedChromeCookie({
+        name,
+        domain,
+        file,
+      });
 
-    const context: DecryptionContext = { file, password };
-    return Promise.all(
-      encryptedCookies.map((cookie) => this.processCookie(cookie, context)),
-    );
+      const context: DecryptionContext = { file, password };
+      const results = await Promise.allSettled(
+        encryptedCookies.map((cookie) => this.processCookie(cookie, context)),
+      );
+
+      return results
+        .map((result) => (result.status === "fulfilled" ? result.value : null))
+        .filter((cookie): cookie is ExportedCookie => cookie !== null);
+    } catch (error) {
+      this.logger.error("Failed to process cookie file", { error, file });
+      return [];
+    }
   }
 
   private async processCookie(
@@ -125,10 +131,11 @@ export class ChromeCookieQueryStrategy implements CookieQueryStrategy {
     context: DecryptionContext,
   ): Promise<ExportedCookie> {
     try {
-      const bufferValue = Buffer.isBuffer(cookie.value)
+      const value = Buffer.isBuffer(cookie.value)
         ? cookie.value
-        : Buffer.from(cookie.value);
-      const decryptedValue = await decrypt(bufferValue, context.password);
+        : Buffer.from(String(cookie.value));
+
+      const decryptedValue = await decrypt(value, context.password);
       return createExportedCookie(
         cookie.domain,
         cookie.name,
@@ -138,23 +145,11 @@ export class ChromeCookieQueryStrategy implements CookieQueryStrategy {
         true,
       );
     } catch (error) {
-      if (error instanceof Error) {
-        consola.warn(
-          `Error decrypting cookie, falling back to raw value:`,
-          error.message,
-        );
-      } else {
-        consola.warn(
-          `Error decrypting cookie, falling back to raw value: Unknown error`,
-        );
-      }
-      const rawValue = Buffer.isBuffer(cookie.value)
-        ? cookie.value.toString("utf-8")
-        : String(cookie.value);
+      this.logger.warn("Failed to decrypt cookie", { error });
       return createExportedCookie(
         cookie.domain,
         cookie.name,
-        rawValue,
+        cookie.value.toString("utf-8"),
         cookie.expiry,
         context.file,
         false,

@@ -1,43 +1,45 @@
 import {
+  mockListChromeProfilePaths,
+  mockGetChromePassword,
+  mockGetEncryptedChromeCookie,
+  mockDecrypt,
   setupChromeTest,
   mockCookieData,
   mockCookieFile,
-  mockPassword,
-  getEncryptedChromeCookie,
-  listChromeProfilePaths,
-  decrypt,
-  chromePassword
-} from '../testSetup';
+} from "../testSetup";
 
-describe('ChromeCookieQueryStrategy - Successful Querying', () => {
+describe("ChromeCookieQueryStrategy - Successful Querying", () => {
   let strategy: ReturnType<typeof setupChromeTest>;
 
   beforeEach(() => {
     strategy = setupChromeTest();
   });
 
-  it('should query and decrypt cookies successfully', async () => {
-    const cookies = await strategy.queryCookies('test-cookie', 'example.com');
+  it("should query and decrypt cookies successfully", async () => {
+    const cookies = await strategy.queryCookies("test-cookie", "example.com");
 
-    expect(listChromeProfilePaths).toHaveBeenCalled();
-    expect(chromePassword.getChromePassword).toHaveBeenCalled();
-    expect(getEncryptedChromeCookie).toHaveBeenCalledWith({
-      name: 'test-cookie',
-      domain: 'example.com',
-      file: mockCookieFile
+    expect(mockListChromeProfilePaths).toHaveBeenCalled();
+    expect(mockGetChromePassword).toHaveBeenCalled();
+    expect(mockGetEncryptedChromeCookie).toHaveBeenCalledWith({
+      name: "test-cookie",
+      domain: "example.com",
+      file: mockCookieFile,
     });
-    expect(decrypt).toHaveBeenCalledWith(mockCookieData.value, mockPassword);
+    expect(mockDecrypt).toHaveBeenCalledWith(
+      mockCookieData.value,
+      "test-password",
+    );
 
     expect(cookies).toHaveLength(1);
     expect(cookies[0]).toMatchObject({
       name: mockCookieData.name,
-      value: 'decrypted-value',
+      value: "decrypted-value",
       domain: mockCookieData.domain,
       meta: {
         file: mockCookieFile,
-        browser: 'Chrome',
-        decrypted: true
-      }
+        browser: "Chrome",
+        decrypted: true,
+      },
     });
   });
 });

@@ -32,8 +32,8 @@
     "install:global": "pnpm run build && pnpm install --global .",
     "prettier": "prettier --write .",
     "dev": "tsc -w -p tsconfig.json & tsc-alias -w -p tsconfig.json",
-    "lint": "eslint . --ext .ts --format codeframe",
-    "lint:fix": "eslint . --ext .ts --format codeframe --fix",
+    "lint": "tsc --noEmit && eslint . --ext .ts --format=codeframe",
+    "lint:fix": "tsc --noEmit && eslint . --ext .ts --format=codeframe --fix",
     "read-github": "NODE_OPTIONS=\"-r tsconfig-paths/register\" ts-node -P scripts/tsconfig.json scripts/readGithubCookies.ts",
     "prepare": "husky install"
   },
@@ -85,7 +85,7 @@
   },
   "lint-staged": {
     "*.{js,ts}": [
-      "eslint --fix",
+      "eslint --fix --format=codeframe",
       "prettier --write"
     ],
     "*.{json,md,yml,yaml}": [

@@ -1,34 +1,33 @@
-import * as getEncryptedChromeCookieModule from "../../getEncryptedChromeCookie";
-import * as decryptModule from "../decrypt";
-import { setupChromeTest, mockCookieData, mockPassword } from "../testSetup";
+import {
+  mockGetEncryptedChromeCookie,
+  mockDecrypt,
+  setupChromeTest,
+  mockCookieData,
+  mockPassword,
+} from "../testSetup";
 
 jest.mock("../../getEncryptedChromeCookie");
 jest.mock("../decrypt");
 
 describe("ChromeCookieQueryStrategy - Basic Functionality", () => {
   let strategy: ReturnType<typeof setupChromeTest>;
-  let getEncryptedChromeCookieSpy: jest.SpyInstance;
-  let decryptSpy: jest.SpyInstance;
 
   beforeEach(() => {
-    jest.resetAllMocks();
     strategy = setupChromeTest();
-    getEncryptedChromeCookieSpy = jest.spyOn(
-      getEncryptedChromeCookieModule,
-      "getEncryptedChromeCookie",
-    );
-    decryptSpy = jest.spyOn(decryptModule, "decrypt");
   });
 
   it("should query and decrypt cookies successfully", async () => {
     const cookies = await strategy.queryCookies("test-cookie", "example.com");
 
-    expect(getEncryptedChromeCookieSpy).toHaveBeenCalledWith({
+    expect(mockGetEncryptedChromeCookie).toHaveBeenCalledWith({
       name: "test-cookie",
       domain: "example.com",
       file: "/path/to/Cookies",
     });
-    expect(decryptSpy).toHaveBeenCalledWith(mockCookieData.value, mockPassword);
+    expect(mockDecrypt).toHaveBeenCalledWith(
+      mockCookieData.value,
+      mockPassword,
+    );
 
     expect(cookies).toHaveLength(1);
     expect(cookies[0]).toMatchObject({
@@ -46,21 +45,16 @@ describe("ChromeCookieQueryStrategy - Basic Functionality", () => {
 
 describe("ChromeCookieQueryStrategy - Error Handling", () => {
   let strategy: ReturnType<typeof setupChromeTest>;
-  let getEncryptedChromeCookieSpy: jest.SpyInstance;
-  let decryptSpy: jest.SpyInstance;
 
   beforeEach(() => {
-    jest.resetAllMocks();
     strategy = setupChromeTest();
-    getEncryptedChromeCookieSpy = jest.spyOn(
-      getEncryptedChromeCookieModule,
-      "getEncryptedChromeCookie",
-    );
-    decryptSpy = jest.spyOn(decryptModule, "decrypt");
+    mockGetEncryptedChromeCookie.mockClear();
+    mockDecrypt.mockClear();
   });
 
   it("should handle decryption failures gracefully", async () => {
-    decryptSpy.mockRejectedValue(new Error("Decryption failed"));
+    mockGetEncryptedChromeCookie.mockResolvedValueOnce([mockCookieData]);
+    mockDecrypt.mockRejectedValueOnce(new Error("Decryption failed"));
 
     const cookies = await strategy.queryCookies("test-cookie", "example.com");
 
@@ -78,7 +72,7 @@ describe("ChromeCookieQueryStrategy - Error Handling", () => {
   });
 
   it("should handle cookie retrieval errors gracefully", async () => {
-    getEncryptedChromeCookieSpy.mockRejectedValue(
+    mockGetEncryptedChromeCookie.mockRejectedValueOnce(
       new Error("Failed to get cookies"),
     );
 
@@ -90,17 +84,11 @@ describe("ChromeCookieQueryStrategy - Error Handling", () => {
 
 describe("ChromeCookieQueryStrategy - Value Handling", () => {
   let strategy: ReturnType<typeof setupChromeTest>;
-  let getEncryptedChromeCookieSpy: jest.SpyInstance;
-  let decryptSpy: jest.SpyInstance;
 
   beforeEach(() => {
-    jest.resetAllMocks();
     strategy = setupChromeTest();
-    getEncryptedChromeCookieSpy = jest.spyOn(
-      getEncryptedChromeCookieModule,
-      "getEncryptedChromeCookie",
-    );
-    decryptSpy = jest.spyOn(decryptModule, "decrypt");
+    mockGetEncryptedChromeCookie.mockClear();
+    mockDecrypt.mockClear();
   });
 
   it("should handle non-buffer cookie values", async () => {
@@ -108,11 +96,12 @@ describe("ChromeCookieQueryStrategy - Value Handling", () => {
       ...mockCookieData,
       value: "non-buffer-value",
     };
-    getEncryptedChromeCookieSpy.mockResolvedValue([nonBufferCookie]);
+    mockGetEncryptedChromeCookie.mockResolvedValueOnce([nonBufferCookie]);
+    mockDecrypt.mockResolvedValueOnce("decrypted-value");
 
     const cookies = await strategy.queryCookies("test-cookie", "example.com");
 
-    expect(decryptSpy).toHaveBeenCalledWith(expect.any(Buffer), mockPassword);
+    expect(mockDecrypt).toHaveBeenCalledWith(expect.any(Buffer), mockPassword);
     expect(cookies).toHaveLength(1);
     expect(cookies[0].value).toBe("decrypted-value");
   });

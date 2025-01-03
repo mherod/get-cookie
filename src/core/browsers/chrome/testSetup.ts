@@ -3,13 +3,12 @@ import { listChromeProfilePaths } from "../listChromeProfiles";
 
 import { ChromeCookieQueryStrategy } from "./ChromeCookieQueryStrategy";
 import { decrypt } from "./decrypt";
-import * as chromePassword from "./getChromePassword";
+import { getChromePassword } from "./getChromePassword";
 
-// Mock dependencies
-jest.mock("../listChromeProfiles");
-jest.mock("../getEncryptedChromeCookie");
 jest.mock("./decrypt");
 jest.mock("./getChromePassword");
+jest.mock("../getEncryptedChromeCookie");
+jest.mock("../listChromeProfiles");
 
 /**
  * Mock password used for testing
@@ -42,25 +41,35 @@ export function setupChromeTest(): ChromeCookieQueryStrategy {
     value: "darwin",
   });
 
-  // Setup mocks
-  jest.resetAllMocks();
-
-  (listChromeProfilePaths as jest.Mock).mockReturnValue([mockCookieFile]);
-  (chromePassword.getChromePassword as unknown as jest.Mock).mockResolvedValue(
-    mockPassword,
-  );
-  (getEncryptedChromeCookie as jest.Mock).mockResolvedValue([mockCookieData]);
-  (decrypt as jest.Mock).mockResolvedValue("decrypted-value");
+  // Setup default mock values without resetting
+  (listChromeProfilePaths as unknown as jest.Mock).mockReturnValue([
+    mockCookieFile,
+  ]);
+  (getChromePassword as unknown as jest.Mock).mockResolvedValue(mockPassword);
+  (getEncryptedChromeCookie as unknown as jest.Mock).mockResolvedValue([
+    mockCookieData,
+  ]);
+  (decrypt as unknown as jest.Mock).mockResolvedValue("decrypted-value");
 
   return strategy;
 }
 
+// Export mocked functions for test assertions
 /**
- * Re-export dependencies for convenience
+ *
  */
-export {
-  getEncryptedChromeCookie,
-  listChromeProfilePaths,
-  decrypt,
-  chromePassword,
-};
+export const mockListChromeProfilePaths =
+  listChromeProfilePaths as unknown as jest.Mock;
+/**
+ *
+ */
+export const mockGetChromePassword = getChromePassword as unknown as jest.Mock;
+/**
+ *
+ */
+export const mockGetEncryptedChromeCookie =
+  getEncryptedChromeCookie as unknown as jest.Mock;
+/**
+ *
+ */
+export const mockDecrypt = decrypt as unknown as jest.Mock;

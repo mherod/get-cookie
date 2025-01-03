@@ -18,7 +18,6 @@ export class SafariCookieQueryStrategy implements CookieQueryStrategy {
 
   /**
    * Gets the user's home directory from environment variables
-   *
    * @returns The home directory path or null if not set
    */
   private getHomeDir(): string | null {
@@ -35,7 +34,6 @@ export class SafariCookieQueryStrategy implements CookieQueryStrategy {
 
   /**
    * Gets the path to Safari's cookie database
-   *
    * @param homeDir - User's home directory path
    * @returns Path to Safari's cookie database
    */
@@ -54,19 +52,18 @@ export class SafariCookieQueryStrategy implements CookieQueryStrategy {
 
   /**
    * Decodes cookies from Safari's binary cookie file
-   *
    * @param cookieDbPath - Path to the cookie database
    * @param name - Name of the cookie to find
    * @param domain - Domain to filter cookies by
    * @returns Array of exported cookies
    */
-  private async decodeCookies(
+  private decodeCookies(
     cookieDbPath: string,
     name: string,
     domain: string,
-  ): Promise<ExportedCookie[]> {
+  ): ExportedCookie[] {
     try {
-      const cookies = await decodeBinaryCookies(cookieDbPath);
+      const cookies = decodeBinaryCookies(cookieDbPath);
       return cookies
         .filter(
           (cookie) => cookie.name === name && cookie.domain.includes(domain),
@@ -105,7 +102,6 @@ export class SafariCookieQueryStrategy implements CookieQueryStrategy {
 
   /**
    * Query Safari's cookie storage for cookies matching the given criteria
-   *
    * @param name - Name of the cookie to find
    * @param domain - Domain to filter cookies by
    * @returns Array of matching cookies, or empty array if none found
@@ -116,10 +112,10 @@ export class SafariCookieQueryStrategy implements CookieQueryStrategy {
   ): Promise<ExportedCookie[]> {
     const homeDir = this.getHomeDir();
     if (typeof homeDir !== "string" || homeDir.length === 0) {
-      return [];
+      return Promise.resolve([]);
     }
 
     const cookieDbPath = this.getCookieDbPath(homeDir);
-    return this.decodeCookies(cookieDbPath, name, domain);
+    return Promise.resolve(this.decodeCookies(cookieDbPath, name, domain));
   }
 }

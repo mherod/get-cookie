@@ -39,7 +39,7 @@
     "prepare": "husky install",
     "docs:dev": "vitepress dev docs",
     "docs:preview": "vitepress preview docs",
-    "docs:api": "typedoc",
+    "docs:api": "typedoc && ./scripts/fix-typedoc.sh",
     "docs:build": "pnpm docs:api && vitepress build docs"
   },
   "engines": {

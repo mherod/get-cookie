@@ -14,6 +14,8 @@ import { queryCookies } from "./queryCookies";
  * to the console without throwing to the caller
  * @example
  * ```typescript
+ * import { getCookie } from "@mherod/get-cookie";
+ *
  * // Get all cookies named "sessionId"
  * const cookies = await getCookie({ name: "sessionId" });
  * // Returns: [{ name: "sessionId", value: "abc123", domain: ".example.com", ... }]
@@ -45,7 +47,7 @@ export async function getCookie(
  * Default export of the getCookie function.
  * @example
  * ```typescript
- * import getCookie from './getCookie';
+ * import { getCookie } from "@mherod/get-cookie";
  * const authCookies = await getCookie({
  *   name: "auth-token",
  *   domain: "api.example.com"

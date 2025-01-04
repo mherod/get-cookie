@@ -12,6 +12,8 @@ import { FirefoxCookieQueryStrategy } from "../browsers/firefox/FirefoxCookieQue
  * to the console without throwing to the caller
  * @example
  * ```typescript
+ * import { getFirefoxCookie } from "@mherod/get-cookie";
+ *
  * // Get all cookies named "sessionId" from Firefox
  * const cookies = await getFirefoxCookie({ name: "sessionId" });
  *
@@ -45,7 +47,7 @@ export async function getFirefoxCookie(
  * Default export of the getFirefoxCookie function.
  * @example
  * ```typescript
- * import getFirefoxCookie from './getFirefoxCookie';
+ * import { getFirefoxCookie } from "@mherod/get-cookie";
  * const sessionCookies = await getFirefoxCookie({
  *   name: "PHPSESSID",
  *   domain: "example.com"

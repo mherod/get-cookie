@@ -12,6 +12,8 @@ import { ChromeCookieQueryStrategy } from "../browsers/chrome/ChromeCookieQueryS
  * to the console without throwing to the caller
  * @example
  * ```typescript
+ * import { getChromeCookie } from "@mherod/get-cookie";
+ *
  * // Get all cookies named "sessionId" from Chrome
  * const cookies = await getChromeCookie({ name: "sessionId" });
  *
@@ -42,7 +44,7 @@ export async function getChromeCookie(
  * Default export of the getChromeCookie function.
  * @example
  * ```typescript
- * import getChromeCookie from './getChromeCookie';
+ * import { getChromeCookie } from "@mherod/get-cookie";
  * const cookies = await getChromeCookie({
  *   name: "sessionId",
  *   domain: "example.com"

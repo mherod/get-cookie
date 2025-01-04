@@ -162,23 +162,7 @@ export default [
       "jsdoc/require-yields": "error",
       "jsdoc/sort-tags": "error",
       "jsdoc/check-examples": "off",
-      "jsdoc/require-example": [
-        "error",
-        {
-          contexts: [
-            "ExportDefaultDeclaration",
-            "ExportNamedDeclaration:not(TSTypeAliasDeclaration)",
-            "ExportNamedDeclaration:not(TSInterfaceDeclaration)",
-            "FunctionDeclaration",
-            "MethodDefinition",
-          ],
-          exemptedBy: ["internal", "private", "test"],
-          exemptNoArguments: true,
-          checkConstructors: true,
-          checkGetters: true,
-          checkSetters: true,
-        },
-      ],
+      "jsdoc/require-example": "off",
       "jsdoc/check-tag-names": [
         "error",
         {
@@ -211,6 +195,7 @@ export default [
         {
           checkRestProperty: true,
           enableFixer: true,
+          allowExtraTrailingParamDocs: true,
         },
       ],
       "jsdoc/require-param-description": "error",

@@ -18,6 +18,7 @@ export default defineConfig({
   minify: true,
   platform: "node",
   bundle: true,
+  tsconfig: "./tsconfig.cli.json",
   noExternal: ["lodash-es"],
   esbuildOptions(options) {
     options.alias = {

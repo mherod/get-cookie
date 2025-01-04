@@ -18,6 +18,7 @@ export default defineConfig({
   minify: true,
   platform: "node",
   bundle: true,
+  tsconfig: "./tsconfig.tsup.json",
   external: ["fs", "path", "crypto", "os", "child_process"],
   esbuildOptions(options) {
     options.alias = {

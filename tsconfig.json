@@ -1,11 +1,5 @@
 {
-  "include": [
-    "src/**/*",
-    "scripts/**/*",
-    "*.ts",
-    "src/core/cookies/dynamicImports.ts",
-    "examples/**/*"
-  ],
+  "include": ["src/**/*", "scripts/**/*", "*.ts", "examples/**/*"],
   "compilerOptions": {
     "moduleResolution": "node",
     "target": "es2020",

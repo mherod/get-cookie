@@ -6,17 +6,14 @@
 /**
  * @description
  * This example demonstrates basic usage of the getCookie function.
- * It shows how to retrieve cookies from Chrome and Firefox browsers.
+ * It shows how to retrieve cookies from all supported browsers using a unified interface.
  * @internal
  * @example
  * ```typescript
- * import { getCookie } from "../src";
- *
- * // Get the cookie retrieval function
- * const getCookieFn = await getCookie();
+ * import { getCookie } from "@mherod/get-cookie";
  *
  * // Get a cookie by name and domain
- * const cookie = await getCookieFn({
+ * const cookie = await getCookie({
  *   name: "session",
  *   domain: "github.com"
  * });
@@ -34,12 +31,9 @@ import { getCookie } from "../src";
  * @returns A promise that resolves when all examples have completed.
  */
 export async function runBasicExamples(): Promise<void> {
-  // Get the cookie retrieval function
-  const getCookieFn = await getCookie();
-
   // Get a cookie by name and domain
-  const cookie = await getCookieFn({
-    name: "user_session",
+  const cookie = await getCookie({
+    name: "session",
     domain: "github.com",
   });
 

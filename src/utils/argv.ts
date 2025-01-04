@@ -44,7 +44,7 @@ interface ParsedArgs {
  */
 export function parseArgv(argv: string[]): ParsedArgs {
   const parsed = minimist(argv, {
-    string: ["browser", "profile", "url", "domain", "name", "output"],
+    string: ["browser", "profile", "url", "domain", "name", "output", "store"],
     boolean: [
       "help",
       "version",

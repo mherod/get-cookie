@@ -59,16 +59,19 @@ export class FirefoxCookieQueryStrategy implements CookieQueryStrategy {
    * Queries cookies from Firefox's cookie store
    * @param name - The name pattern to match cookies against
    * @param domain - The domain pattern to match cookies against
+   * @param store - Optional path to a specific cookie store file
    * @returns A promise that resolves to an array of exported cookies
    */
   public async queryCookies(
     name: string,
     domain: string,
+    store?: string,
   ): Promise<ExportedCookie[]> {
-    const files = findFirefoxCookieFiles();
+    const files = store ?? findFirefoxCookieFiles();
+    const fileList = Array.isArray(files) ? files : [files];
     const results: ExportedCookie[] = [];
 
-    for (const file of files) {
+    for (const file of fileList) {
       try {
         const cookies = await querySqliteThenTransform<
           FirefoxCookieRow,

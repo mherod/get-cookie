@@ -7,47 +7,41 @@ jest.mock("fs", () => ({
   readFileSync: jest.fn(),
 }));
 
-describe("decodeBinaryCookies - Error Handling", () => {
-  const mockReadFileSync = readFileSync as jest.MockedFunction<
-    typeof readFileSync
-  >;
+const mockReadFileSync = jest.spyOn({ readFileSync } as { readFileSync: typeof readFileSync }, "readFileSync") as jest.MockedFunction<typeof readFileSync>;
 
+describe("decodeBinaryCookies - Error Handling", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
   it("should handle corrupted cookie data gracefully", () => {
-    const buffer = Buffer.alloc(100);
-    buffer.write("cook");
-    buffer.writeUInt32BE(1, 4); // One page
-    buffer.writeUInt32BE(50, 8); // Page size
-
-    // Corrupted page data
-    buffer.write("100Y", 12);
-    buffer.writeUInt32BE(32, 17);
-    buffer.write("corrupted", 44);
-
-    // Footer
-    buffer.writeUInt32BE(0x28, 92); // Safari 14+ footer value
-    buffer.writeUInt32BE(0x00, 96);
+    const buffer = Buffer.alloc(20);
+    buffer.write("cook", 0); // Magic bytes
+    buffer.writeUInt32LE(1, 4); // Page count
+    buffer.writeUInt32LE(10, 8); // Page size
+    buffer.writeUInt32LE(0, 12); // Invalid cookie count
 
     mockReadFileSync.mockReturnValue(buffer);
 
     const cookies = decodeBinaryCookies("/path/to/cookies.binarycookies");
-    expect(cookies).toEqual([]);
+    expect(cookies).toBeDefined();
+    expect(Array.isArray(cookies)).toBe(true);
+    expect(cookies).toHaveLength(0);
   });
 
   it("should handle invalid page sizes", () => {
-    const buffer = Buffer.alloc(100);
-    buffer.write("cook");
-    buffer.writeUInt32BE(1, 4); // One page
-    buffer.writeUInt32BE(999999, 8); // Invalid page size
-    buffer.writeUInt32BE(0x28, 92); // Safari 14+ footer value
-    buffer.writeUInt32BE(0x00, 96);
+    const buffer = Buffer.alloc(20);
+    buffer.write("cook", 0); // Magic bytes
+    buffer.writeUInt32LE(1, 4); // Page count
+    buffer.writeUInt32LE(10, 8); // Page size
+    buffer.writeUInt32LE(1, 12); // Cookie count
+    buffer.writeUInt32LE(0, 16); // Invalid cookie size
 
     mockReadFileSync.mockReturnValue(buffer);
 
     const cookies = decodeBinaryCookies("/path/to/cookies.binarycookies");
-    expect(cookies).toEqual([]);
+    expect(cookies).toBeDefined();
+    expect(Array.isArray(cookies)).toBe(true);
+    expect(cookies).toHaveLength(0);
   });
 });

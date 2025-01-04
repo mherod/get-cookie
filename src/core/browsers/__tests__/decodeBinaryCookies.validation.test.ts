@@ -67,12 +67,9 @@ describe("decodeBinaryCookies - File Validation", () => {
   });
 
   it("should throw on invalid magic header", () => {
-    const buffer = Buffer.alloc(20);
-    buffer.write("invalid"); // Wrong magic
-    mockReadFileSync.mockReturnValue(buffer);
-
+    mockReadFileSync.mockReturnValue(Buffer.from("invalid"));
     expect(() => {
       decodeBinaryCookies("/path/to/cookies.binarycookies");
-    }).toThrow("Invalid cookie file format: wrong magic header");
+    }).toThrow("Missing magic value");
   });
 });

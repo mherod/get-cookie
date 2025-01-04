@@ -1,14 +1,14 @@
-import type { BinaryCookieRow } from "../../../../types/schemas";
+import { BinaryCookieRow } from "../../../../types/schemas";
 import * as BinaryCookies from "../decodeBinaryCookies";
 import { SafariCookieQueryStrategy } from "../SafariCookieQueryStrategy";
 
 // Mock the decodeBinaryCookies function
-jest.mock("../../decodeBinaryCookies");
+jest.mock("../decodeBinaryCookies");
 
 const mockDecodeBinaryCookies = jest.spyOn(
   BinaryCookies,
-  "decodeBinaryCookies",
-) as jest.SpyInstance<BinaryCookieRow[], [string]>;
+  "decodeBinaryCookies"
+) as jest.MockedFunction<typeof BinaryCookies.decodeBinaryCookies>;
 
 function createMockCookie(
   name: string,

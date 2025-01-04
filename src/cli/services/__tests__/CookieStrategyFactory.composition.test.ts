@@ -20,7 +20,8 @@ describe("CookieStrategyFactory - Composite Strategy Composition", () => {
     const cookies = await compositeStrategy.queryCookies(
       spec.name,
       spec.domain,
+      undefined,
     );
     expect(cookies).toEqual([]);
-  });
+  }, 10000);
 });

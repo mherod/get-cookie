@@ -4,7 +4,9 @@ import { readFileSync } from "fs";
 import { homedir } from "os";
 import { join } from "path";
 
-import { consola } from "consola";
+import { createTaggedLogger } from "../src/utils/logHelpers";
+
+const logger = createTaggedLogger("dump-safari-cookies");
 
 function createHexDump(buffer: Buffer, offset: number, length: number): string {
   let hexDump = "";
@@ -34,20 +36,20 @@ function createHexDump(buffer: Buffer, offset: number, length: number): string {
 }
 
 function dumpCookieAtOffset(buffer: Buffer, offset: number): void {
-  consola.info(`\nDumping cookie data at offset ${offset}:`);
+  logger.info(`\nDumping cookie data at offset ${offset}:`);
 
   // Read cookie size
   const size = buffer.readUInt32LE(offset);
-  consola.info(`Cookie size: ${size} bytes`);
+  logger.info(`Cookie size: ${size} bytes`);
 
   // Read cookie header
   const version = buffer.readUInt32LE(offset + 4);
   const flags = buffer.readUInt32LE(offset + 8);
   const hasPort = buffer.readUInt32LE(offset + 12);
 
-  consola.info(`Version: ${version}`);
-  consola.info(`Flags: ${flags}`);
-  consola.info(`Has port: ${hasPort}`);
+  logger.info(`Version: ${version}`);
+  logger.info(`Flags: ${flags}`);
+  logger.info(`Has port: ${hasPort}`);
 
   // Read offsets
   const urlOffset = buffer.readUInt32LE(offset + 16);
@@ -55,41 +57,43 @@ function dumpCookieAtOffset(buffer: Buffer, offset: number): void {
   const pathOffset = buffer.readUInt32LE(offset + 24);
   const valueOffset = buffer.readUInt32LE(offset + 28);
 
-  consola.info(`URL offset: ${urlOffset}`);
-  consola.info(`Name offset: ${nameOffset}`);
-  consola.info(`Path offset: ${pathOffset}`);
-  consola.info(`Value offset: ${valueOffset}`);
+  logger.info(`URL offset: ${urlOffset}`);
+  logger.info(`Name offset: ${nameOffset}`);
+  logger.info(`Path offset: ${pathOffset}`);
+  logger.info(`Value offset: ${valueOffset}`);
 
   // Dump the raw bytes
-  consola.info("\nRaw bytes:");
-  consola.info(createHexDump(buffer, offset, Math.min(size, 256)));
+  logger.info("\nRaw bytes:");
+  logger.info(createHexDump(buffer, offset, Math.min(size, 256)));
 
   // Try to read strings
   try {
     let end = offset + nameOffset;
-    while (end < buffer.length && buffer[end] !== 0) {end++;}
+    while (end < buffer.length && buffer[end] !== 0) {
+      end++;
+    }
     const name = buffer.toString("utf8", offset + nameOffset, end);
-    consola.info(`\nCookie name: "${name}"`);
-  } catch (_error) {
-    consola.warn("Failed to read cookie name");
+    logger.info(`\nCookie name: "${name}"`);
+  } catch (error) {
+    logger.warn("Failed to read cookie name", { error });
   }
 }
 
 function dumpFooter(buffer: Buffer): void {
   const footerOffset = buffer.length - 8;
-  consola.info("\nFooter analysis:");
-  consola.info("Last 16 bytes as hex:");
-  consola.info(createHexDump(buffer, footerOffset - 8, 16));
+  logger.info("\nFooter analysis:");
+  logger.info("Last 16 bytes as hex:");
+  logger.info(createHexDump(buffer, footerOffset - 8, 16));
 
   // Show different interpretations of the footer
   const footerBigInt = buffer.readBigUInt64BE(footerOffset);
-  const footerNumber = Number(footerBigInt);
+  const footerNumber = buffer.readUInt32BE(footerOffset);
   const footerLittleEndian = buffer.readBigUInt64LE(footerOffset);
 
-  consola.info("\nFooter interpretations:");
-  consola.info(`As BigInt (BE): 0x${footerBigInt.toString(16)}`);
-  consola.info(`As Number (BE): 0x${footerNumber.toString(16)}`);
-  consola.info(`As BigInt (LE): 0x${footerLittleEndian.toString(16)}`);
+  logger.info("\nFooter interpretations:");
+  logger.info(`As BigInt (BE): 0x${footerBigInt.toString(16)}`);
+  logger.info(`As Number (BE): 0x${footerNumber.toString(16)}`);
+  logger.info(`As BigInt (LE): 0x${footerLittleEndian.toString(16)}`);
 }
 
 function main(): void {
@@ -100,37 +104,32 @@ function main(): void {
 
   try {
     const buffer = readFileSync(cookieDbPath);
-    consola.info("First 64 bytes of cookie file:");
+    logger.info("First 64 bytes of cookie file:");
 
     // Print magic bytes as string
-    consola.info("Magic bytes:", buffer.toString("utf8", 0, 4));
+    logger.info("Magic bytes:", buffer.toString("utf8", 0, 4));
 
     // Print number of pages
     const numPages = buffer.readUInt32BE(4);
-    consola.info("Number of pages:", numPages);
+    logger.info("Number of pages:", numPages);
 
     // Print page sizes
-    consola.info("Page sizes:");
+    logger.info("Page sizes:");
     for (let i = 0; i < Math.min(numPages, 10); i++) {
       const size = buffer.readUInt32BE(8 + i * 4);
-      consola.info(`  Page ${i}: ${size} bytes`);
+      logger.info(`  Page ${i}: ${size} bytes`);
     }
 
     // Print hex dump of header
-    consola.info("\nHeader hex dump:");
-    consola.info(createHexDump(buffer, 0, 64));
+    logger.info("\nHeader hex dump:");
+    logger.info(createHexDump(buffer, 0, 64));
 
     // Dump the cookie at the problematic offset
-    dumpCookieAtOffset(buffer, 17305);
+    dumpCookieAtOffset(buffer, 4096);
 
-    // Analyze footer
     dumpFooter(buffer);
   } catch (error) {
-    if (error instanceof Error) {
-      consola.error("Error reading cookie file:", error.message);
-    } else {
-      consola.error("Error reading cookie file:", error);
-    }
+    logger.error("Error reading cookie file", { error });
   }
 }
 

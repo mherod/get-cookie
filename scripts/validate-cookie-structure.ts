@@ -4,7 +4,9 @@ import { readFileSync } from "fs";
 import { homedir } from "os";
 import { join } from "path";
 
-import { consola } from "consola";
+import { createTaggedLogger } from "../src/utils/logHelpers";
+
+const logger = createTaggedLogger("validate-cookie-structure");
 
 function validateCookieOffsets(
   buffer: Buffer,
@@ -19,18 +21,18 @@ function validateCookieOffsets(
     );
   }
 
-  consola.info("  Cookie offsets:");
+  logger.info("  Cookie offsets:");
   for (let i = 0; i < numCookies; i++) {
     const cookieOffsetBE = buffer.readUInt32BE(offset + 8 + i * 4);
     const cookieOffsetLE = buffer.readUInt32LE(offset + 8 + i * 4);
     const absoluteOffsetBE = offset + cookieOffsetBE;
     const absoluteOffsetLE = offset + cookieOffsetLE;
 
-    consola.info(`    Cookie ${i}:`);
-    consola.info(
+    logger.info(`    Cookie ${i}:`);
+    logger.info(
       `      BE offset: ${cookieOffsetBE} (absolute: ${absoluteOffsetBE})${absoluteOffsetBE >= bufferLength ? " INVALID" : ""}`,
     );
-    consola.info(
+    logger.info(
       `      LE offset: ${cookieOffsetLE} (absolute: ${absoluteOffsetLE})${absoluteOffsetLE >= bufferLength ? " INVALID" : ""}`,
     );
   }
@@ -52,11 +54,11 @@ function validatePageHeader(
   const numCookiesBE = buffer.readUInt32BE(offset + 4);
   const numCookiesLE = buffer.readUInt32LE(offset + 4);
 
-  consola.info(`Page Header at offset ${offset}:`);
-  consola.info(`  Magic (BE): 0x${pageMagicBE.toString(16).padStart(8, "0")}`);
-  consola.info(`  Magic (LE): 0x${pageMagicLE.toString(16).padStart(8, "0")}`);
-  consola.info(`  Number of cookies (BE): ${numCookiesBE}`);
-  consola.info(`  Number of cookies (LE): ${numCookiesLE}`);
+  logger.info(`Page Header at offset ${offset}:`);
+  logger.info(`  Magic (BE): 0x${pageMagicBE.toString(16).padStart(8, "0")}`);
+  logger.info(`  Magic (LE): 0x${pageMagicLE.toString(16).padStart(8, "0")}`);
+  logger.info(`  Number of cookies (BE): ${numCookiesBE}`);
+  logger.info(`  Number of cookies (LE): ${numCookiesLE}`);
 
   // Try little-endian for number of cookies since big-endian gave an unreasonable value
   const numCookies = numCookiesLE;
@@ -85,12 +87,12 @@ function validateStringOffsets(
   for (const { name, offset: stringOffset } of stringOffsets) {
     const absoluteOffset = offset + stringOffset;
     if (absoluteOffset >= bufferLength) {
-      consola.warn(
+      logger.warn(
         `  ${name} offset: ${stringOffset} (absolute: ${absoluteOffset}) INVALID - exceeds buffer length`,
       );
       continue;
     }
-    consola.info(
+    logger.info(
       `  ${name} offset: ${stringOffset} (absolute: ${absoluteOffset})`,
     );
   }
@@ -121,9 +123,9 @@ function validateCookieHeader(
   const expiryDate = buffer.readDoubleLE(offset + 28);
   const creationDate = buffer.readDoubleLE(offset + 36);
 
-  consola.info(`\nCookie Header at offset ${offset}:`);
-  consola.info(`  Size: ${size} bytes`);
-  consola.info(`  Flags: 0x${flags.toString(16).padStart(8, "0")}`);
+  logger.info(`\nCookie Header at offset ${offset}:`);
+  logger.info(`  Size: ${size} bytes`);
+  logger.info(`  Flags: 0x${flags.toString(16).padStart(8, "0")}`);
 
   validateStringOffsets(
     buffer,
@@ -136,8 +138,8 @@ function validateCookieHeader(
     commentOffset,
   );
 
-  consola.info(`  Expiry date: ${new Date(expiryDate * 1000).toISOString()}`);
-  consola.info(
+  logger.info(`  Expiry date: ${new Date(expiryDate * 1000).toISOString()}`);
+  logger.info(
     `  Creation date: ${new Date(creationDate * 1000).toISOString()}`,
   );
 }
@@ -155,9 +157,9 @@ function validateFileHeader(buffer: Buffer): {
   const magic = buffer.toString("utf8", 0, 4);
   const numPages = buffer.readUInt32BE(4);
 
-  consola.info("\nFile Header:");
-  consola.info(`  Magic: ${magic}`);
-  consola.info(`  Number of pages: ${numPages}`);
+  logger.info("\nFile Header:");
+  logger.info(`  Magic: ${magic}`);
+  logger.info(`  Number of pages: ${numPages}`);
 
   // Validate page sizes array
   const pageSizesEnd = 8 + numPages * 4;
@@ -167,17 +169,17 @@ function validateFileHeader(buffer: Buffer): {
     );
   }
 
-  consola.info("\nPage Sizes:");
+  logger.info("\nPage Sizes:");
   for (let i = 0; i < numPages; i++) {
     const size = buffer.readUInt32BE(8 + i * 4);
-    consola.info(`  Page ${i}: ${size} bytes`);
+    logger.info(`  Page ${i}: ${size} bytes`);
   }
 
   return { numPages, pageSizesEnd };
 }
 
 function validateFirstPage(buffer: Buffer, offset: number): void {
-  consola.info("\n=== First Page Details ===");
+  logger.info("\n=== First Page Details ===");
 
   try {
     validatePageHeader(buffer, offset, buffer.length);
@@ -187,7 +189,7 @@ function validateFirstPage(buffer: Buffer, offset: number): void {
       validateCookieHeader(buffer, offset + firstCookieOffset, buffer.length);
     }
   } catch (error) {
-    consola.error("Error validating first page:", error);
+    logger.error("Error validating first page:", error);
   }
 }
 
@@ -199,15 +201,15 @@ function main(): void {
 
   try {
     const buffer = readFileSync(cookieDbPath);
-    consola.info(`Cookie file size: ${buffer.length} bytes`);
+    logger.info(`Cookie file size: ${buffer.length} bytes`);
 
     const { pageSizesEnd } = validateFileHeader(buffer);
     validateFirstPage(buffer, pageSizesEnd);
   } catch (error) {
     if (error instanceof Error) {
-      consola.error("Error reading cookie file:", error.message);
+      logger.error("Error reading cookie file:", error.message);
     } else {
-      consola.error("Error reading cookie file:", error);
+      logger.error("Error reading cookie file:", error);
     }
   }
 }

@@ -1,9 +1,11 @@
 import { existsSync } from "fs";
 
-import consola from "consola";
 import { sync } from "fast-glob";
 
 import { parseArgv } from "./argv";
+import { createTaggedLogger } from "./logHelpers";
+
+const logger = createTaggedLogger("findAllFiles");
 
 type FindFilesOptions = {
   path: string;
@@ -35,7 +37,7 @@ type FindFilesOptions = {
  *   });
  *   // Returns: ['./tests/unit/auth.test.ts', './tests/integration/api.test.ts']
  * } catch (error) {
- *   console.error('Failed to find test files:', error.message);
+ *   logger.error('Failed to find test files', { error });
  * }
  */
 export function findAllFiles({
@@ -49,7 +51,7 @@ export function findAllFiles({
 
   const args = parseArgv(process.argv);
   if (args.values.verbose === true) {
-    consola.start(`Searching for ${name} files in ${path}`);
+    logger.debug(`Searching for ${name} files in ${path}`);
   }
 
   const files: string[] = sync(`${path}/**/${name}`, {
@@ -59,8 +61,8 @@ export function findAllFiles({
 
   if (args.values.verbose === true) {
     if (files.length > 0) {
-      consola.success(`Found ${files.length} ${name} files`);
-      consola.info(files);
+      logger.debug(`Found ${files.length} ${name} files`);
+      logger.debug("Files found:", files);
     }
   }
 

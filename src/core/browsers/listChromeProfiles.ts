@@ -5,11 +5,11 @@ import { join } from "path";
 import fg from "fast-glob";
 
 // Internal imports
-import logger from "@utils/logger";
+import { createTaggedLogger } from "../../utils/logHelpers";
 
 import { chromeApplicationSupport } from "./chrome/ChromeApplicationSupport";
 
-const consola = logger.withTag("listChromeProfiles");
+const logger = createTaggedLogger("listChromeProfiles");
 
 /**
  * Lists all Chrome profile paths that contain cookie files
@@ -29,7 +29,7 @@ const consola = logger.withTag("listChromeProfiles");
  * try {
  *   const paths = listChromeProfilePaths();
  * } catch (error) {
- *   console.error('Failed to access Chrome profiles:', error);
+ *   logger.error('Failed to access Chrome profiles', { error });
  * }
  * ```
  */
@@ -39,7 +39,7 @@ export function listChromeProfilePaths(): string[] {
     absolute: true,
   });
 
-  consola.debug("Found cookie files:", files);
+  logger.debug("Found cookie files:", files);
   return files;
 }
 
@@ -117,7 +117,7 @@ interface ChromeProfileInfo {
  * // Handle empty or error case
  * const profiles = listChromeProfiles();
  * if (profiles.length === 0) {
- *   console.log('No Chrome profiles found or error occurred');
+ *   logger.warn('No Chrome profiles found');
  * }
  * ```
  */
@@ -129,11 +129,7 @@ export function listChromeProfiles(): ChromeProfileInfo[] {
     ) as ChromeLocalState;
     return Object.values(localState.profile.info_cache);
   } catch (error) {
-    if (error instanceof Error) {
-      consola.error("Failed to read Chrome profiles:", error.message);
-    } else {
-      consola.error("Failed to read Chrome profiles: Unknown error");
-    }
+    logger.debug("Failed to access Chrome profiles", { error });
     return [];
   }
 }

@@ -1,24 +1,12 @@
-import { memoize } from "lodash-es";
-
-import { execSimple } from "@utils/execSimple";
+import { execSimple } from "../../../../utils/execSimple";
 
 /**
- * Retrieves the Chrome Safe Storage password from the macOS keychain
- * @returns A promise that resolves to the Chrome Safe Storage password
- * @throws {Error} If the password cannot be retrieved from the keychain
+ * Gets the Chrome password from the keychain
+ * @param account - The account to get the password for
+ * @returns The password
  */
-const getChromeSafeStoragePassword = async (): Promise<string> => {
-  const command = 'security find-generic-password -w -s "Chrome Safe Storage"';
-  return execSimple(command);
-};
-
-/**
- * Memoized version of getChromeSafeStoragePassword that caches the result
- * to avoid repeated keychain queries
- * @returns A promise that resolves to the Chrome Safe Storage password
- * @throws {Error} If the password cannot be retrieved from the keychain
- * @example
- */
-export const getChromePassword: () => Promise<string> = memoize(
-  getChromeSafeStoragePassword,
-);
+export async function getChromePassword(account: string): Promise<string> {
+  const command = `security find-generic-password -w -a "${account}" -s "Chrome Safe Storage"`;
+  const result = await execSimple(command);
+  return result.stdout.trim();
+}

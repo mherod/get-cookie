@@ -1,2 +1,9 @@
-#!/bin/sh
-npx --no -- commitlint --edit ${1}
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Try pnpm first, fallback to npx if pnpm not found
+if command -v pnpm >/dev/null 2>&1; then
+  pnpm exec commitlint --edit ${1}
+else
+  npx --no -- commitlint --edit ${1}
+fi

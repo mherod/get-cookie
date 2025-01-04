@@ -21,27 +21,27 @@ describe("decodeBinaryCookies - Single Cookie Parsing", () => {
     buffer.write("cook", 0);
 
     // Write page count (1)
-    buffer.writeUInt32LE(1, 4);
+    buffer.writeUInt32BE(1, 4);
 
     // Write page size (80)
-    buffer.writeUInt32LE(80, 8);
+    buffer.writeUInt32BE(80, 8);
 
     // Write page data
     const pageStart = 12;
-    buffer.writeUInt32LE(1, pageStart); // 1 cookie in page
+    buffer.writeUInt32BE(1, pageStart); // 1 cookie in page
 
     // Write cookie data
     const cookieStart = pageStart + 4;
-    buffer.writeUInt32LE(60, cookieStart); // Cookie size
-    buffer.writeUInt32LE(1, cookieStart + 4); // Version
-    buffer.writeUInt32LE(1, cookieStart + 8); // Flags
-    buffer.writeUInt32LE(0, cookieStart + 12); // No port
+    buffer.writeUInt32BE(60, cookieStart); // Cookie size
+    buffer.writeUInt32BE(1, cookieStart + 4); // Version
+    buffer.writeUInt32BE(1, cookieStart + 8); // Flags
+    buffer.writeUInt32BE(0, cookieStart + 12); // No port
 
     // Write string offsets
-    buffer.writeUInt32LE(40, cookieStart + 16); // URL offset
-    buffer.writeUInt32LE(45, cookieStart + 20); // Name offset
-    buffer.writeUInt32LE(50, cookieStart + 24); // Path offset
-    buffer.writeUInt32LE(55, cookieStart + 28); // Value offset
+    buffer.writeUInt32BE(40, cookieStart + 16); // URL offset
+    buffer.writeUInt32BE(45, cookieStart + 20); // Name offset
+    buffer.writeUInt32BE(50, cookieStart + 24); // Path offset
+    buffer.writeUInt32BE(55, cookieStart + 28); // Value offset
 
     mockReadFileSync.mockReturnValue(buffer);
 

@@ -21,22 +21,22 @@ describe("decodeBinaryCookies - Port Handling", () => {
     buffer.write("cook", 0);
 
     // Write page count (1)
-    buffer.writeUInt32LE(1, 4);
+    buffer.writeUInt32BE(1, 4);
 
     // Write page size (80)
-    buffer.writeUInt32LE(80, 8);
+    buffer.writeUInt32BE(80, 8);
 
     // Write page data
     const pageStart = 12;
-    buffer.writeUInt32LE(1, pageStart); // 1 cookie in page
+    buffer.writeUInt32BE(1, pageStart); // 1 cookie in page
 
     // Write cookie data
     const cookieStart = pageStart + 4;
-    buffer.writeUInt32LE(60, cookieStart); // Cookie size
-    buffer.writeUInt32LE(1, cookieStart + 4); // Version
-    buffer.writeUInt32LE(1, cookieStart + 8); // Flags
-    buffer.writeUInt32LE(1, cookieStart + 12); // Has port
-    buffer.writeUInt16LE(8080, cookieStart + 16); // Port value
+    buffer.writeUInt32BE(60, cookieStart); // Cookie size
+    buffer.writeUInt32BE(1, cookieStart + 4); // Version
+    buffer.writeUInt32BE(1, cookieStart + 8); // Flags
+    buffer.writeUInt32BE(1, cookieStart + 12); // Has port
+    buffer.writeUInt16BE(8080, cookieStart + 16); // Port value
 
     mockReadFileSync.mockReturnValue(buffer);
 

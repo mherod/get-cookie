@@ -15,11 +15,15 @@ describe("decodeBinaryCookies - Error Handling", () => {
   });
 
   it("should handle corrupted cookie data gracefully", () => {
-    const buffer = Buffer.alloc(20);
+    const buffer = Buffer.alloc(40);
     buffer.write("cook", 0); // Magic bytes
-    buffer.writeUInt32LE(1, 4); // Page count
-    buffer.writeUInt32LE(10, 8); // Page size
-    buffer.writeUInt32LE(0, 12); // Invalid cookie count
+    buffer.writeUInt32BE(1, 4); // Page count
+    buffer.writeUInt32BE(10, 8); // Page size
+    buffer.writeUInt32BE(0, 12); // Invalid cookie count
+
+    // Write checksum and footer
+    buffer.writeUInt32BE(0, 16);
+    buffer.writeBigUInt64BE(BigInt('0x071720050000004b'), 20);
 
     mockReadFileSync.mockReturnValue(buffer);
 
@@ -30,12 +34,16 @@ describe("decodeBinaryCookies - Error Handling", () => {
   });
 
   it("should handle invalid page sizes", () => {
-    const buffer = Buffer.alloc(20);
+    const buffer = Buffer.alloc(40);
     buffer.write("cook", 0); // Magic bytes
-    buffer.writeUInt32LE(1, 4); // Page count
-    buffer.writeUInt32LE(10, 8); // Page size
-    buffer.writeUInt32LE(1, 12); // Cookie count
-    buffer.writeUInt32LE(0, 16); // Invalid cookie size
+    buffer.writeUInt32BE(1, 4); // Page count
+    buffer.writeUInt32BE(10, 8); // Page size
+    buffer.writeUInt32BE(1, 12); // Cookie count
+    buffer.writeUInt32BE(0, 16); // Invalid cookie size
+
+    // Write checksum and footer
+    buffer.writeUInt32BE(0, 20);
+    buffer.writeBigUInt64BE(BigInt('0x071720050000004b'), 24);
 
     mockReadFileSync.mockReturnValue(buffer);
 

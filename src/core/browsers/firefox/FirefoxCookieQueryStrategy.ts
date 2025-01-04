@@ -1,7 +1,7 @@
 import { homedir } from "os";
 import { join } from "path";
 
-import { sync } from "glob";
+import fg from "fast-glob";
 
 import { logDebug, logWarn } from "@utils/logHelpers";
 
@@ -37,7 +37,7 @@ function findFirefoxCookieFiles(): string[] {
 
   const files: string[] = [];
   for (const pattern of patterns) {
-    const matches = sync(pattern);
+    const matches = fg.sync(pattern);
     files.push(...matches);
   }
 

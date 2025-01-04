@@ -1,10 +1,10 @@
-import { Buffer } from 'buffer';
+import { Buffer } from "buffer";
 
-import { BinaryCookieRow, BinaryCookieRowSchema } from '../../../types/schemas';
+import { BinaryCookieRow, BinaryCookieRowSchema } from "../../../types/schemas";
 
-import { BinaryCodableContainer } from './interfaces/BinaryCodableContainer';
-import { BinaryCodableFlags } from './interfaces/BinaryCodableFlags';
-import { BinaryCodableOffsets } from './interfaces/BinaryCodableOffsets';
+import { BinaryCodableContainer } from "./interfaces/BinaryCodableContainer";
+import { BinaryCodableFlags } from "./interfaces/BinaryCodableFlags";
+import { BinaryCodableOffsets } from "./interfaces/BinaryCodableOffsets";
 
 /**
  * Represents a single cookie within a page
@@ -17,7 +17,7 @@ export class BinaryCodableCookie {
   /**
    *
    */
-  public url = '';
+  public url = "";
   /**
    *
    */
@@ -25,15 +25,15 @@ export class BinaryCodableCookie {
   /**
    *
    */
-  public name = '';
+  public name = "";
   /**
    *
    */
-  public path = '';
+  public path = "";
   /**
    *
    */
-  public value = '';
+  public value = "";
   /**
    *
    */
@@ -49,7 +49,7 @@ export class BinaryCodableCookie {
     isSecure: false,
     isHTTPOnly: false,
     unknown1: false,
-    unknown2: false
+    unknown2: false,
   };
   /**
    *
@@ -79,18 +79,18 @@ export class BinaryCodableCookie {
       } catch {
         return lastProcessed;
       }
-    } while (processed !== lastProcessed && processed.includes('%'));
+    } while (processed !== lastProcessed && processed.includes("%"));
     return processed;
   }
 
   private decodeJwtPayload(token: string): string | null {
-    const parts = token.split('.');
+    const parts = token.split(".");
     if (parts.length !== 3) {
       return null;
     }
 
     try {
-      const payload = Buffer.from(parts[1], 'base64').toString('utf8');
+      const payload = Buffer.from(parts[1], "base64").toString("utf8");
       const parsed = JSON.parse(payload) as Record<string, unknown>;
       return JSON.stringify(parsed);
     } catch {
@@ -114,15 +114,15 @@ export class BinaryCodableCookie {
     // Then, try JWT decoding if it looks like a JWT token
     if (decoded.match(/^ey[A-Za-z0-9_-]+\.ey[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/)) {
       const jwtPayload = this.decodeJwtPayload(decoded);
-      if (typeof jwtPayload === 'string' && jwtPayload.length > 0) {
+      if (typeof jwtPayload === "string" && jwtPayload.length > 0) {
         return jwtPayload;
       }
     }
 
     // Finally, try JSON parsing if it looks like JSON
-    if (decoded.startsWith('{') || decoded.startsWith('[')) {
+    if (decoded.startsWith("{") || decoded.startsWith("[")) {
       const jsonValue = this.parseJsonValue(decoded);
-      if (typeof jsonValue === 'string' && jsonValue.length > 0) {
+      if (typeof jsonValue === "string" && jsonValue.length > 0) {
         return jsonValue;
       }
     }
@@ -140,22 +140,31 @@ export class BinaryCodableCookie {
       const flagsValue = this.convertFlags();
 
       // Extract domain from URL
-      const domain = this.url.replace(/^https?:\/\//, '').replace(/\/.*$/, '') || 'uk';
+      const domain =
+        this.url.replace(/^https?:\/\//, "").replace(/\/.*$/, "") || "uk";
 
-      // Keep timestamps as they are (seconds since 2001-01-01)
-      // The display layer will handle the conversion to human-readable dates
+      // Convert timestamps from Mac epoch (seconds since 2001-01-01) to Unix epoch (seconds since 1970-01-01)
+      const macToUnixOffset = 978307200; // Seconds between 1970-01-01 and 2001-01-01
+      const expiryUnix =
+        this.expiration > 0
+          ? this.expiration + macToUnixOffset
+          : this.expiration;
+      const creationUnix =
+        this.creation > 0 ? this.creation + macToUnixOffset : this.creation;
+
+      // Create cookie row with converted timestamps
       const cookieRow = BinaryCookieRowSchema.parse({
-        name: this.name.replace(/^: /, ''),  // Remove leading ': ' if present
-        value: this.processValue(this.value) || '',  // Process and ensure value is never undefined
+        name: this.name.replace(/^: /, ""), // Remove leading ': ' if present
+        value: this.processValue(this.value) || "", // Process and ensure value is never undefined
         domain,
-        path: this.path || '/',
-        expiry: this.expiration,
-        creation: this.creation,
+        path: this.path || "/",
+        expiry: expiryUnix,
+        creation: creationUnix,
         flags: flagsValue,
         version: this.version,
         port: this.port,
         comment: this.comment,
-        commentURL: this.commentURL
+        commentURL: this.commentURL,
       });
 
       return cookieRow;
@@ -164,35 +173,47 @@ export class BinaryCodableCookie {
     }
   }
 
-  private readNullTerminatedString(container: BinaryCodableContainer, offset: number): string {
+  private readNullTerminatedString(
+    container: BinaryCodableContainer,
+    offset: number,
+  ): string {
     let end = offset;
     while (end < container.buffer.length && container.buffer[end] !== 0) {
       end++;
     }
-    const value = container.buffer.toString('utf8', offset, end);
-    return value || '';
+    const value = container.buffer.toString("utf8", offset, end);
+    return value || "";
   }
 
-  private readHeader(container: BinaryCodableContainer): { size: number; hasPort: number; offsets: BinaryCodableOffsets } {
+  private readHeader(container: BinaryCodableContainer): {
+    size: number;
+    hasPort: number;
+    offsets: BinaryCodableOffsets;
+  } {
     // Cookie size (4 bytes)
     const size = container.buffer.readUInt32LE(container.offset);
+    console.log("Cookie size:", size);
     container.offset += 4;
 
-    // Unknown (4 bytes)
+    // Version (4 bytes)
+    const version = container.buffer.readUInt32LE(container.offset);
+    console.log("Cookie version:", version);
     container.offset += 4;
 
     // Cookie flags (4 bytes)
     const flagsValue = container.buffer.readUInt32LE(container.offset);
+    console.log("Cookie flags:", flagsValue.toString(2).padStart(8, "0"));
     container.offset += 4;
     this.flags = {
       isSecure: (flagsValue & 1) !== 0,
       isHTTPOnly: (flagsValue & 4) !== 0,
       unknown1: (flagsValue & 8) !== 0,
-      unknown2: (flagsValue & 16) !== 0
+      unknown2: (flagsValue & 16) !== 0,
     };
 
-    // Unknown (4 bytes)
+    // Has port (4 bytes)
     const hasPort = container.buffer.readUInt32LE(container.offset);
+    console.log("Has port:", hasPort);
     container.offset += 4;
 
     // String offsets (24 bytes total)
@@ -202,8 +223,9 @@ export class BinaryCodableCookie {
       pathOffset: container.buffer.readUInt32LE(container.offset + 8),
       valueOffset: container.buffer.readUInt32LE(container.offset + 12),
       commentOffset: container.buffer.readUInt32LE(container.offset + 16),
-      commentURLOffset: container.buffer.readUInt32LE(container.offset + 20)
+      commentURLOffset: container.buffer.readUInt32LE(container.offset + 20),
     };
+    console.log("String offsets:", offsets);
 
     return { size, hasPort, offsets };
   }
@@ -232,47 +254,67 @@ export class BinaryCodableCookie {
     this.creation = creation;
   }
 
-  private readStrings(container: BinaryCodableContainer, size: number, offsets: BinaryCodableOffsets): void {
+  private readStrings(
+    container: BinaryCodableContainer,
+    size: number,
+    offsets: BinaryCodableOffsets,
+  ): void {
     // All offsets are relative to the start of the cookie
     const cookieStart = 0; // Offsets are relative to the cookie buffer start
+    console.log("Reading strings from cookie buffer of size:", size);
 
     // Read strings in order of their offsets
     const offsetEntries = [
-      { field: 'url', offset: offsets.urlOffset },
-      { field: 'name', offset: offsets.nameOffset },
-      { field: 'path', offset: offsets.pathOffset },
-      { field: 'value', offset: offsets.valueOffset },
-      { field: 'comment', offset: offsets.commentOffset }
-    ].filter(entry => entry.offset > 0)
-     .sort((a, b) => a.offset - b.offset);
+      { field: "url", offset: offsets.urlOffset },
+      { field: "name", offset: offsets.nameOffset },
+      { field: "path", offset: offsets.pathOffset },
+      { field: "value", offset: offsets.valueOffset },
+      { field: "comment", offset: offsets.commentOffset },
+    ]
+      .filter((entry) => entry.offset > 0)
+      .sort((a, b) => a.offset - b.offset);
+
+    console.log(
+      "Reading strings in order:",
+      offsetEntries.map((e) => e.field),
+    );
 
     // Calculate string lengths based on offset differences
     for (let i = 0; i < offsetEntries.length; i++) {
       const { field, offset } = offsetEntries[i];
-      const nextOffset = i < offsetEntries.length - 1 ? offsetEntries[i + 1].offset : size;
+      const nextOffset =
+        i < offsetEntries.length - 1 ? offsetEntries[i + 1].offset : size;
       const length = nextOffset - offset;
 
       // Read string up to null terminator
       let end = cookieStart + offset;
-      while (end < cookieStart + offset + length && container.buffer[end] !== 0) {
+      while (
+        end < cookieStart + offset + length &&
+        container.buffer[end] !== 0
+      ) {
         end++;
       }
-      const value = container.buffer.toString('utf8', cookieStart + offset, end);
+      const value = container.buffer.toString(
+        "utf8",
+        cookieStart + offset,
+        end,
+      );
+      console.log(`Read ${field}:`, value);
 
       switch (field) {
-        case 'url':
+        case "url":
           this.url = value;
           break;
-        case 'name':
+        case "name":
           this.name = value;
           break;
-        case 'path':
+        case "path":
           this.path = value;
           break;
-        case 'value':
+        case "value":
           this.value = value;
           break;
-        case 'comment':
+        case "comment":
           this.comment = value;
           break;
       }
@@ -299,9 +341,11 @@ export class BinaryCodableCookie {
   }
 
   private convertFlags(): number {
-    return (this.flags.isSecure ? 0x1 : 0) |
+    return (
+      (this.flags.isSecure ? 0x1 : 0) |
       (this.flags.isHTTPOnly ? 0x4 : 0) |
       (this.flags.unknown1 ? 0x8 : 0) |
-      (this.flags.unknown2 ? 0x10 : 0);
+      (this.flags.unknown2 ? 0x10 : 0)
+    );
   }
 }

@@ -1,4 +1,8 @@
-import type { CookieSpec, ExportedCookie } from "../../types/schemas";
+import type {
+  CookieSpec,
+  ExportedCookie,
+  CookieQueryOptions,
+} from "../../types/schemas";
 
 import type { CookieQueryStrategy } from "./CookieStrategyFactory";
 
@@ -13,15 +17,15 @@ export class CookieQueryService {
   public constructor(private readonly strategy: CookieQueryStrategy) {}
 
   /**
-   * Queries cookies from the strategy with an optional limit
+   * Queries cookies from the strategy with options
    * @param spec - The cookie specification to query for
-   * @param _limit - Optional limit on the number of cookies to return (currently unused)
+   * @param options - Query options including limit, removeExpired, and store path
    * @returns Array of exported cookies
    */
   public async queryCookies(
     spec: CookieSpec,
-    _limit?: number,
+    options?: CookieQueryOptions,
   ): Promise<ExportedCookie[]> {
-    return this.strategy.queryCookies(spec.name, spec.domain);
+    return this.strategy.queryCookies(spec.name, spec.domain, options?.store);
   }
 }

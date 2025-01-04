@@ -65,6 +65,7 @@ export class ChromeCookieQueryStrategy implements CookieQueryStrategy {
    * Queries cookies from Chrome's cookie store
    * @param name - The name pattern to match cookies against
    * @param domain - The domain pattern to match cookies against
+   * @param store - Optional path to a specific cookie store file
    * @returns A promise that resolves to an array of exported cookies
    * @example
    * ```typescript
@@ -76,9 +77,10 @@ export class ChromeCookieQueryStrategy implements CookieQueryStrategy {
   public async queryCookies(
     name: string,
     domain: string,
+    store?: string,
   ): Promise<ExportedCookie[]> {
     try {
-      this.logger.info("Querying cookies", { name, domain });
+      this.logger.info("Querying cookies", { name, domain, store });
 
       if (process.platform !== "darwin") {
         this.logger.warn("Platform not supported", {
@@ -87,17 +89,16 @@ export class ChromeCookieQueryStrategy implements CookieQueryStrategy {
         return [];
       }
 
-      const cookieFiles = listChromeProfilePaths();
-      if (cookieFiles.length === 0) {
+      const cookieFiles = store ?? listChromeProfilePaths();
+      const files = Array.isArray(cookieFiles) ? cookieFiles : [cookieFiles];
+      if (files.length === 0) {
         this.logger.warn("No Chrome cookie files found");
         return [];
       }
 
       const password = await getChromePassword();
       const results = await Promise.all(
-        cookieFiles.map((file) =>
-          this.processFile(file, name, domain, password),
-        ),
+        files.map((file) => this.processFile(file, name, domain, password)),
       );
 
       return results.flat();

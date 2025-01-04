@@ -96,11 +96,13 @@ export class SafariCookieQueryStrategy implements CookieQueryStrategy {
    * Query Safari's cookie storage for cookies matching the given criteria
    * @param name - Name of the cookie to find
    * @param domain - Domain to filter cookies by
+   * @param store - Optional store path
    * @returns Array of matching cookies, or empty array if none found
    */
   public async queryCookies(
     name: string,
     domain: string,
+    store?: string,
   ): Promise<ExportedCookie[]> {
     const home = homedir();
     if (typeof home !== "string" || home.length === 0) {
@@ -108,7 +110,9 @@ export class SafariCookieQueryStrategy implements CookieQueryStrategy {
       return Promise.resolve([]);
     }
 
-    const cookieDbPath = this.getCookieDbPath(home);
-    return Promise.resolve(this.decodeCookies(cookieDbPath, name || "%", domain || "%"));
+    const cookieDbPath = store ?? this.getCookieDbPath(home);
+    return Promise.resolve(
+      this.decodeCookies(cookieDbPath, name || "%", domain || "%"),
+    );
   }
 }

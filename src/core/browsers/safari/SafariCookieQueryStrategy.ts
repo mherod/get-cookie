@@ -8,7 +8,8 @@ import type {
   CookieQueryStrategy,
   ExportedCookie,
 } from "../../../types/schemas";
-import { decodeBinaryCookies } from "../decodeBinaryCookies";
+
+import { decodeBinaryCookies } from "./decodeBinaryCookies";
 
 /**
  * Strategy for querying cookies from Safari browser

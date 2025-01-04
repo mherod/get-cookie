@@ -3,7 +3,7 @@
 import { readFileSync } from "fs";
 import { join } from "path";
 
-import { decodeBinaryCookies } from "../src/core/browsers/decodeBinaryCookies";
+import { decodeBinaryCookies } from "../src/core/browsers/safari/decodeBinaryCookies";
 import type { BinaryCookieRow } from "../src/types/schemas";
 
 function formatCookieValue(value: unknown): string {

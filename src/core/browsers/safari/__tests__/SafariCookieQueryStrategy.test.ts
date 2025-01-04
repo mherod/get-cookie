@@ -1,5 +1,5 @@
 import type { BinaryCookieRow } from "../../../../types/schemas";
-import * as BinaryCookies from "../../decodeBinaryCookies";
+import * as BinaryCookies from "../decodeBinaryCookies";
 import { SafariCookieQueryStrategy } from "../SafariCookieQueryStrategy";
 
 // Mock the decodeBinaryCookies function

@@ -1,36 +1,27 @@
 import type { CookieSpec, ExportedCookie } from "../../types/schemas";
+
 import type { CookieQueryStrategy } from "./CookieStrategyFactory";
 
 /**
- * Service class for querying cookies with limits
+ * Service for querying cookies using a strategy
  */
 export class CookieQueryService {
+  /**
+   * Creates a new CookieQueryService instance
+   * @param strategy - The strategy to use for querying cookies
+   */
   public constructor(private readonly strategy: CookieQueryStrategy) {}
 
   /**
    * Queries cookies from the strategy with an optional limit
-   * @param specs - List of cookie specifications to query
-   * @param limit - Optional maximum number of cookies to return
-   * @returns List of cookies matching the specifications
-   * @example
-   * // Query cookies with a limit of 10
-   * const cookies = await queryService.queryCookiesWithLimit(specs, 10);
+   * @param spec - The cookie specification to query for
+   * @param _limit - Optional limit on the number of cookies to return (currently unused)
+   * @returns Array of exported cookies
    */
-  public async queryCookiesWithLimit(
-    specs: CookieSpec[],
-    limit?: number
+  public async queryCookies(
+    spec: CookieSpec,
+    _limit?: number,
   ): Promise<ExportedCookie[]> {
-    const results: ExportedCookie[] = [];
-
-    for (const spec of specs) {
-      const cookies = await this.strategy.queryCookies(spec.name, spec.domain);
-      if (typeof limit === "number" && limit > 0 && results.length + cookies.length > limit) {
-        results.push(...cookies.slice(0, limit - results.length));
-        break;
-      }
-      results.push(...cookies);
-    }
-
-    return results;
+    return this.strategy.queryCookies(spec.name, spec.domain);
   }
 }

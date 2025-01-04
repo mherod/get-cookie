@@ -60,17 +60,12 @@ async function handleCookieQuery(
     logger.log("cookieSpecs", cookieSpecs);
   }
 
-  const selectedBrowser = values.browser as string;
-  const browsers = selectedBrowser === "all"
-    ? ["chrome", "firefox", "safari"]
-    : [selectedBrowser];
-
   try {
     await cliQueryCookies(
+      values,
       cookieSpecs,
-      browsers,
-      ["default"],
-      { ...values }
+      undefined,
+      values.removeExpired === true,
     );
   } catch (error) {
     if (error instanceof Error) {

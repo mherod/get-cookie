@@ -1,9 +1,12 @@
 {
   "extends": "./tsconfig.json",
-  "include": ["src/**/*", "jest.config.ts", "tsup.*.ts"],
+  "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "**/__tests__/**", "**/__mocks__/**"],
   "compilerOptions": {
     "module": "ESNext",
-    "moduleResolution": "bundler"
+    "moduleResolution": "bundler",
+    "composite": false,
+    "declaration": true,
+    "declarationMap": true
   }
 }

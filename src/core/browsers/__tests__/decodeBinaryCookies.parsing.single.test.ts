@@ -18,9 +18,9 @@ function createTestBuffer(): Buffer {
   // Page header
   buffer.write("100Y", 12);
   buffer.write("\0", 16);
-  buffer.writeUInt32BE(20, 17); // Header length
-  buffer.writeUInt32BE(1, 21); // One cookie
-  buffer.writeUInt32BE(32, 25); // Cookie offset
+  buffer.writeUInt32LE(20, 17); // Header length
+  buffer.writeUInt32LE(1, 21); // One cookie
+  buffer.writeUInt32LE(32, 25); // Cookie offset
 
   // Cookie header
   const cookieOffset = 32;

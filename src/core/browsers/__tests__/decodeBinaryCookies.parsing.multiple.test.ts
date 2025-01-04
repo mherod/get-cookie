@@ -24,10 +24,10 @@ function createTestBuffer(): Buffer {
   // Page header (20 bytes total)
   buffer.write("100Y", 12); // First 4 bytes of page header
   buffer.write("\0", 16); // Fifth byte
-  buffer.writeUInt32BE(20, 17); // Header length (20 bytes)
-  buffer.writeUInt32BE(2, 21); // Two cookies
-  buffer.writeUInt32BE(32, 25); // First cookie offset
-  buffer.writeUInt32BE(108, 29); // Second cookie offset
+  buffer.writeUInt32LE(20, 17); // Header length (20 bytes)
+  buffer.writeUInt32LE(2, 21); // Two cookies
+  buffer.writeUInt32LE(32, 25); // First cookie offset
+  buffer.writeUInt32LE(108, 29); // Second cookie offset
 
   // First cookie
   let cookieOffset = 32;

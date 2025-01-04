@@ -1,7 +1,7 @@
 import { readFileSync } from "fs";
 
 import { logWarn } from "../../../utils/logHelpers";
-import { decodeBinaryCookies } from "../decodeBinaryCookies";
+import { decodeBinaryCookies } from "../safari/decodeBinaryCookies";
 
 // Mock fs module
 jest.mock("fs", () => ({

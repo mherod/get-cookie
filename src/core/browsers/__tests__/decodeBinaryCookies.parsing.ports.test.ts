@@ -1,6 +1,6 @@
 import { readFileSync } from "fs";
 
-import { decodeBinaryCookies } from "../decodeBinaryCookies";
+import { decodeBinaryCookies } from "../safari/decodeBinaryCookies";
 
 // Mock fs module
 jest.mock("fs", () => ({

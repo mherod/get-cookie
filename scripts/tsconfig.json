@@ -1,9 +1,23 @@
 {
   "extends": "../tsconfig.json",
   "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "target": "ESNext",
+    "lib": ["ESNext"],
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "outDir": "../dist/scripts",
     "rootDir": "..",
-    "baseUrl": "../src",
-    "noEmit": true
+    "baseUrl": ".",
+    "paths": {
+      "../src/*": ["../src/*"]
+    }
   },
-  "include": ["./**/*"]
+  "include": [
+    ".",
+    "../src/**/*"
+  ]
 }

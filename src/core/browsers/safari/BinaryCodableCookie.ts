@@ -1,10 +1,13 @@
 import { Buffer } from "buffer";
 
 import { BinaryCookieRow, BinaryCookieRowSchema } from "../../../types/schemas";
+import { createTaggedLogger } from "../../../utils/logHelpers";
 
 import { BinaryCodableContainer } from "./interfaces/BinaryCodableContainer";
 import { BinaryCodableFlags } from "./interfaces/BinaryCodableFlags";
 import { BinaryCodableOffsets } from "./interfaces/BinaryCodableOffsets";
+
+const logger = createTaggedLogger("BinaryCodableCookie");
 
 /**
  * Represents a single cookie within a page
@@ -192,17 +195,17 @@ export class BinaryCodableCookie {
   } {
     // Cookie size (4 bytes)
     const size = container.buffer.readUInt32LE(container.offset);
-    console.log("Cookie size:", size);
+    logger.debug("Cookie size:", size);
     container.offset += 4;
 
     // Version (4 bytes)
     const version = container.buffer.readUInt32LE(container.offset);
-    console.log("Cookie version:", version);
+    logger.debug("Cookie version:", version);
     container.offset += 4;
 
     // Cookie flags (4 bytes)
     const flagsValue = container.buffer.readUInt32LE(container.offset);
-    console.log("Cookie flags:", flagsValue.toString(2).padStart(8, "0"));
+    logger.debug("Cookie flags:", flagsValue.toString(2).padStart(8, "0"));
     container.offset += 4;
     this.flags = {
       isSecure: (flagsValue & 1) !== 0,
@@ -213,7 +216,7 @@ export class BinaryCodableCookie {
 
     // Has port (4 bytes)
     const hasPort = container.buffer.readUInt32LE(container.offset);
-    console.log("Has port:", hasPort);
+    logger.debug("Has port:", hasPort);
     container.offset += 4;
 
     // String offsets (24 bytes total)
@@ -225,7 +228,7 @@ export class BinaryCodableCookie {
       commentOffset: container.buffer.readUInt32LE(container.offset + 16),
       commentURLOffset: container.buffer.readUInt32LE(container.offset + 20),
     };
-    console.log("String offsets:", offsets);
+    logger.debug("String offsets:", offsets);
 
     return { size, hasPort, offsets };
   }
@@ -261,7 +264,7 @@ export class BinaryCodableCookie {
   ): void {
     // All offsets are relative to the start of the cookie
     const cookieStart = 0; // Offsets are relative to the cookie buffer start
-    console.log("Reading strings from cookie buffer of size:", size);
+    logger.debug("Reading strings from cookie buffer of size:", size);
 
     // Read strings in order of their offsets
     const offsetEntries = [
@@ -274,7 +277,7 @@ export class BinaryCodableCookie {
       .filter((entry) => entry.offset > 0)
       .sort((a, b) => a.offset - b.offset);
 
-    console.log(
+    logger.debug(
       "Reading strings in order:",
       offsetEntries.map((e) => e.field),
     );
@@ -299,7 +302,7 @@ export class BinaryCodableCookie {
         cookieStart + offset,
         end,
       );
-      console.log(`Read ${field}:`, value);
+      logger.debug(`Read ${field}:`, value);
 
       switch (field) {
         case "url":

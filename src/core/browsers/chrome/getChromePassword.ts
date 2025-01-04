@@ -1,37 +1,20 @@
-import { memoize } from "lodash-es";
+import { platform } from "os";
 
-import { logError, logDebug } from "@utils/logHelpers";
+import { getChromePassword as getMacOSPassword } from "./macos/getChromePassword";
 
 /**
- * Retrieves the Chrome password for decrypting cookies
- * This is only supported on macOS
- * @returns A promise that resolves to the Chrome password
- * @throws {Error} If the platform is not macOS or if password retrieval fails
- * @example
+ * Gets the Chrome Safe Storage password for the current platform
+ * @returns A promise that resolves to the Chrome Safe Storage password
+ * @throws {Error} If the password cannot be retrieved or the platform is not supported
  */
-export const getChromePassword: () => Promise<string> = memoize(async () => {
-  if (process.platform !== "darwin") {
-    logError(
-      "Chrome password retrieval failed",
-      new Error("This only works on macOS"),
-      {
-        platform: process.platform,
-      },
-    );
-    throw new Error("This only works on macOS");
+export async function getChromePassword(): Promise<string> {
+  switch (platform()) {
+    case "darwin": {
+      const account = "Chrome Safe Storage";
+      const password = await getMacOSPassword(account);
+      return password;
+    }
+    default:
+      throw new Error(`Platform ${platform()} is not supported`);
   }
-
-  try {
-    const { getChromePassword: getMacOSPassword } = await import(
-      "./macos/getChromePassword"
-    );
-    const password = await getMacOSPassword();
-    logDebug("ChromePassword", "Retrieved password successfully", {
-      platform: "macOS",
-    });
-    return password;
-  } catch (error) {
-    logError("Chrome password retrieval failed", error, { platform: "macOS" });
-    throw error;
-  }
-});
+}

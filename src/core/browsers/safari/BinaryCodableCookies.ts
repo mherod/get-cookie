@@ -4,10 +4,12 @@ import { homedir } from "os";
 import { join } from "path";
 
 import { BinaryCookieRow } from "../../../types/schemas";
-import { logWarn } from "../../../utils/logHelpers";
+import { logWarn, createTaggedLogger } from "../../../utils/logHelpers";
 
 import { BinaryCodablePage } from "./BinaryCodablePage";
 import { BinaryCodableContainer } from "./interfaces/BinaryCodableContainer";
+
+const logger = createTaggedLogger("BinaryCodableCookies");
 
 /**
  * Represents a binary cookies file structure used by Safari
@@ -92,14 +94,14 @@ export class BinaryCodableCookies {
         container.offset + 4,
       );
       container.offset += 4;
-      console.log("Magic bytes:", magic.toString());
+      logger.debug("Magic bytes:", magic.toString());
       if (!magic.equals(BinaryCodableCookies.MAGIC)) {
         throw new Error("Missing magic value");
       }
 
       // Read page count
       const pageCount = container.buffer.readUInt32BE(container.offset);
-      console.log("Page count:", pageCount);
+      logger.debug("Page count:", pageCount);
       container.offset += 4;
 
       // Read page sizes
@@ -107,16 +109,16 @@ export class BinaryCodableCookies {
       for (let i = 0; i < pageCount; i++) {
         const pageSize = container.buffer.readUInt32BE(container.offset);
         pageSizes.push(pageSize);
-        console.log(`Page ${i} size:`, pageSize);
+        logger.debug(`Page ${i} size:`, pageSize);
         container.offset += 4;
       }
 
       // Calculate page offsets
       let currentOffset = container.offset;
-      console.log("Starting page data at offset:", currentOffset);
+      logger.debug("Starting page data at offset:", currentOffset);
       for (const pageSize of pageSizes) {
         try {
-          console.log(
+          logger.debug(
             "Reading page at offset:",
             currentOffset,
             "with size:",
@@ -132,7 +134,7 @@ export class BinaryCodableCookies {
         } catch (error) {
           const errorMessage =
             error instanceof Error ? error.message : String(error);
-          console.error("Error decoding page:", errorMessage);
+          logger.warn("Error decoding page:", { error: errorMessage });
           currentOffset += pageSize; // Skip the problematic page
         }
       }
@@ -140,12 +142,12 @@ export class BinaryCodableCookies {
 
       // Read checksum
       const checksum = container.buffer.readUInt32BE(container.offset);
-      console.log("Checksum:", checksum.toString(16));
+      logger.debug("Checksum:", checksum.toString(16));
       container.offset += 4;
 
       // Read footer
       const footer = container.buffer.readBigUInt64BE(container.offset);
-      console.log("Footer:", footer.toString(16));
+      logger.debug("Footer:", footer.toString(16));
       container.offset += 8;
       if (footer !== BinaryCodableCookies.FOOTER) {
         logWarn("BinaryCookies", "Invalid cookie file format: wrong footer");

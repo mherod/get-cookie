@@ -79,57 +79,80 @@ export class BinaryCodableCookies {
     return cookies;
   }
 
-  private decode(container: BinaryCodableContainer): void {
-    try {
-      // Check magic value
-      const magic = container.buffer.subarray(container.offset, container.offset + 4);
-      container.offset += 4;
-      if (!magic.equals(BinaryCodableCookies.MAGIC)) {
-        throw new Error('Missing magic value');
+  private readMagic(container: BinaryCodableContainer): void {
+    const magic = container.buffer.subarray(container.offset, container.offset + 4);
+    container.offset += 4;
+    if (!magic.equals(BinaryCodableCookies.MAGIC)) {
+      throw new Error('Missing magic value');
+    }
+  }
+
+  private readPageSizes(container: BinaryCodableContainer): number[] {
+    const pageCount = container.buffer.readUInt32LE(container.offset);
+    container.offset += 4;
+
+    const pageSizes: number[] = [];
+    for (let i = 0; i < pageCount; i++) {
+      if (container.offset + 4 > container.buffer.length) {
+        logWarn('BinaryCookies', 'Buffer overflow while reading page sizes');
+        break;
       }
-
-      // Read page count
-      const pageCount = container.buffer.readUInt32BE(container.offset);
+      pageSizes.push(container.buffer.readUInt32LE(container.offset));
       container.offset += 4;
+    }
+    return pageSizes;
+  }
 
-      // Read page sizes
-      const pageSizes: number[] = [];
-      for (let i = 0; i < pageCount; i++) {
-        pageSizes.push(container.buffer.readUInt32BE(container.offset));
-        container.offset += 4;
+  private readPages(container: BinaryCodableContainer, pageSizes: number[]): void {
+    let currentOffset = container.offset;
+    for (const pageSize of pageSizes) {
+      if (currentOffset + pageSize > container.buffer.length) {
+        logWarn('BinaryCookies', 'Buffer overflow while reading page');
+        break;
       }
-
-      // Calculate page offsets
-      let currentOffset = container.offset;
-      for (const pageSize of pageSizes) {
-        try {
-          const pageBuffer = container.buffer.subarray(currentOffset, currentOffset + pageSize);
-          const page = new BinaryCodablePage(pageBuffer);
-          this.pages.push(page);
-          currentOffset += pageSize;
-        } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : String(error);
-          logWarn('BinaryCookies', `Error decoding page`, { error: errorMessage });
-          currentOffset += pageSize; // Skip the problematic page
-        }
+      try {
+        const pageBuffer = container.buffer.subarray(currentOffset, currentOffset + pageSize);
+        const page = new BinaryCodablePage(pageBuffer);
+        this.pages.push(page);
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        logWarn('BinaryCookies', `Error decoding page`, { error: errorMessage });
       }
-      container.offset = currentOffset;
+      currentOffset += pageSize;
+    }
+    container.offset = currentOffset;
+  }
 
-      // Read checksum
-      const _checksum = container.buffer.readUInt32BE(container.offset);
+  private readFooter(container: BinaryCodableContainer): void {
+    if (container.offset + 4 <= container.buffer.length) {
+      const _checksum = container.buffer.readUInt32LE(container.offset);
       container.offset += 4;
+    }
 
-      // Read footer
-      const footer = container.buffer.readBigUInt64BE(container.offset);
+    if (container.offset + 8 <= container.buffer.length) {
+      const footer = container.buffer.readBigUInt64LE(container.offset);
       container.offset += 8;
       if (footer !== BinaryCodableCookies.FOOTER) {
         logWarn('BinaryCookies', 'Invalid cookie file format: wrong footer');
       }
+    }
+  }
 
-      // Read metadata plist
+  private readMetadata(container: BinaryCodableContainer): void {
+    if (container.offset < container.buffer.length) {
       const _plistData = container.buffer.subarray(container.offset);
       // Note: You'll need to implement or use a plist parser library here
       this.metadata = {}; // Placeholder for plist data
+    }
+  }
+
+  private decode(container: BinaryCodableContainer): void {
+    try {
+      this.readMagic(container);
+      const pageSizes = this.readPageSizes(container);
+      this.readPages(container, pageSizes);
+      this.readFooter(container);
+      this.readMetadata(container);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       logWarn('BinaryCookies', 'Error decoding binary cookies file', { error: errorMessage });

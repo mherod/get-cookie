@@ -76,7 +76,7 @@ export async function comboQueryCookieSpec(
     ]);
 
   const queryFn = async (cs: CookieSpec): Promise<ExportedCookie[]> => {
-    const cookies = await strategy.queryCookies(cs.name, cs.domain);
+    const cookies = await strategy.queryCookies(cs.name, cs.domain, undefined);
     return cookies.map(convertExpiry);
   };
 

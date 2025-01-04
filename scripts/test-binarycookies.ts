@@ -1,10 +1,7 @@
-import { join, dirname } from "path";
-import { fileURLToPath } from "url";
+import { join } from "path";
 
 import { SafariCookieQueryStrategy } from "../src/core/browsers/safari/SafariCookieQueryStrategy";
 import logger from "../src/utils/logger";
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
 
 async function main(): Promise<void> {
   // Path to our test binarycookies file

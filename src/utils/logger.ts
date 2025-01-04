@@ -1,4 +1,4 @@
-import { createConsola } from "consola";
+import { type ConsolaInstance, createConsola } from "consola";
 
 import { env } from "../config";
 
@@ -34,7 +34,7 @@ const consola = createConsola({
 export const isDebug = env.LOG_LEVEL === "debug";
 
 /**
- * Configured consola logger instance with standardized formatting and colored output.
+ * Configured logger instance with standardized formatting and colored output.
  * Used for consistent logging throughout the application.
  * @example
  * // Basic usage
@@ -60,4 +60,9 @@ export const isDebug = env.LOG_LEVEL === "debug";
  *   input: data
  * });
  */
-export default consola;
+const logger: ConsolaInstance = consola;
+
+/**
+ *
+ */
+export default logger;

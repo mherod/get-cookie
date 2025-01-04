@@ -20,6 +20,7 @@ function showHelp(): void {
   logger.log(`  -u, --url: URL to extract cookie specs from`);
   logger.log(`  -n, --name: Cookie name pattern`);
   logger.log(`  -d, --domain: Cookie domain pattern`);
+  logger.log(`  --store: Path to a specific binarycookies store file`);
   logger.log(`  --output: Output format (e.g., json)`);
 }
 
@@ -66,6 +67,7 @@ async function handleCookieQuery(
       cookieSpecs,
       undefined,
       values.removeExpired === true,
+      values.store as string | undefined,
     );
   } catch (error) {
     if (error instanceof Error) {

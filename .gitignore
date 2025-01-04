@@ -128,3 +128,7 @@ docs/reference/*
 .swiftpm/
 cookie-creator
 *.binarycookies
+
+# CookieCreator binary
+scripts/CookieCreator/Sources/main
+scripts/CookieCreator/main

@@ -3,12 +3,18 @@ import { join } from "path";
 
 import glob from "fast-glob";
 
-import { logError, logDebug, logOperationResult } from "@utils/logHelpers";
+import {
+  logError,
+  logOperationResult,
+  createTaggedLogger,
+} from "@utils/logHelpers";
 
 import type { CookieRow } from "../../types/schemas";
 
 import { chromeApplicationSupport } from "./chrome/ChromeApplicationSupport";
 import { querySqliteThenTransform } from "./QuerySqliteThenTransform";
+
+const logger = createTaggedLogger("getEncryptedChromeCookie");
 
 interface ChromeCookieRow {
   encrypted_value: Buffer;
@@ -63,7 +69,7 @@ async function getCookieFiles(): Promise<string[]> {
     files.push(...matches);
   }
 
-  logDebug("ChromeCookies", "Found cookie files", {
+  logger.debug("ChromeCookies", "Found cookie files", {
     count: files.length,
     files,
   });
@@ -100,7 +106,7 @@ async function processCookieFile(
 ): Promise<CookieRow[]> {
   try {
     const { sql, params } = buildSqlQuery(name, domain);
-    logDebug("ChromeCookies", "Executing query", { sql, params });
+    logger.debug("ChromeCookies", "Executing query", { sql, params });
 
     const rows = await querySqliteThenTransform<ChromeCookieRow, CookieRow>({
       file: cookieFile,
@@ -144,14 +150,14 @@ export async function getEncryptedChromeCookie({
       : await getCookieFiles();
 
   if (cookieFiles.length === 0) {
-    logDebug("ChromeCookies", "No cookie files found");
+    logger.debug("ChromeCookies", "No cookie files found");
     return [];
   }
 
   const results: CookieRow[] = [];
   for (const cookieFile of cookieFiles) {
     if (!isValidFilePath(cookieFile)) {
-      logDebug("ChromeCookies", "Cookie file missing or invalid", {
+      logger.debug("ChromeCookies", "Cookie file missing or invalid", {
         file: cookieFile,
       });
       continue;
@@ -161,6 +167,8 @@ export async function getEncryptedChromeCookie({
     results.push(...cookies);
   }
 
-  logDebug("ChromeCookies", "Query complete", { totalCookies: results.length });
+  logger.debug("ChromeCookies", "Query complete", {
+    totalCookies: results.length,
+  });
   return results;
 }

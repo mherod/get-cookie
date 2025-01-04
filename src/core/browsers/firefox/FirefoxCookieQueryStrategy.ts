@@ -3,7 +3,9 @@ import { join } from "path";
 
 import fg from "fast-glob";
 
-import { logDebug, logWarn } from "@utils/logHelpers";
+import { createTaggedLogger, logWarn } from "@utils/logHelpers";
+
+const logger = createTaggedLogger("FirefoxCookieQueryStrategy");
 
 import {
   BrowserName,
@@ -41,7 +43,7 @@ function findFirefoxCookieFiles(): string[] {
     files.push(...matches);
   }
 
-  logDebug("FirefoxCookieQuery", "Found Firefox cookie files", { files });
+  logger.debug("Found Firefox cookie files", { files });
   return files;
 }
 

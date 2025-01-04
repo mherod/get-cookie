@@ -150,9 +150,9 @@ export type BinaryCookieRow = z.infer<typeof BinaryCookieRowSchema>;
  * };
  * const result = CookieSpecSchema.safeParse(spec);
  * if (result.success) {
- *   console.log('Valid cookie spec:', result.data);
+ *   logger.info('Valid cookie spec:', result.data);
  * } else {
- *   console.error('Invalid cookie spec:', result.error);
+ *   logger.error('Invalid cookie spec:', result.error);
  * }
  *
  * // Invalid spec (empty name)
@@ -233,9 +233,9 @@ export type CookieMeta = z.infer<typeof CookieMetaSchema>;
  * };
  * const result = ExportedCookieSchema.safeParse(cookie);
  * if (result.success) {
- *   console.log('Valid cookie:', result.data);
+ *   logger.info('Valid cookie:', result.data);
  * } else {
- *   console.error('Invalid cookie:', result.error);
+ *   logger.error('Invalid cookie:', result.error);
  * }
  *
  * // Cookie with infinite expiry

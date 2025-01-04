@@ -100,13 +100,13 @@ interface QueryOptions {
 }
 
 /**
- * Query cookies and apply limit
+ * Internal function to query cookies and apply limit
  * @param queryService - The query service to use
  * @param specs - Cookie specifications to query
  * @param options - Query options including limit, expiry handling, store path, and strategy
  * @returns Array of cookies
  */
-async function queryCookies(
+async function queryAndLimitCookies(
   queryService: CookieQueryService,
   specs: CookieSpec[],
   options: QueryOptions,
@@ -151,7 +151,7 @@ export async function cliQueryCookies(
     const queryService = new CookieQueryService(strategy);
     const specs = Array.isArray(cookieSpec) ? cookieSpec : [cookieSpec];
 
-    const results = await queryCookies(queryService, specs, {
+    const results = await queryAndLimitCookies(queryService, specs, {
       limit,
       removeExpired,
       store,
@@ -164,11 +164,11 @@ export async function cliQueryCookies(
     }
 
     if (args["--json"] === true) {
-      console.log(JSON.stringify(results, null, 2));
+      logger.log(JSON.stringify(results, null, 2));
     } else {
-      results.forEach((cookie) => {
+      results.forEach((cookie: ExportedCookie) => {
         const lines = formatCookie(cookie);
-        lines.forEach((line) => console.log(line));
+        lines.forEach((line) => logger.log(line));
       });
     }
   } catch (error) {
@@ -177,5 +177,73 @@ export async function cliQueryCookies(
     } else {
       logger.error("An unknown error occurred");
     }
+  }
+}
+
+function formatResults(results: ExportedCookie[]): void {
+  if (results.length === 0) {
+    logger.warn("No cookies found matching the specified criteria");
+    return;
+  }
+
+  logger.log(JSON.stringify(results, null, 2));
+}
+
+function formatResultsVerbose(results: ExportedCookie[]): void {
+  if (results.length === 0) {
+    logger.warn("No cookies found matching the specified criteria");
+    return;
+  }
+
+  const lines: string[] = [];
+  results.forEach((cookie) => {
+    lines.push("\n-------------------");
+    lines.push(`Name: ${cookie.name}`);
+    lines.push(`Domain: ${cookie.domain}`);
+    lines.push(`Value: ${cookie.value}`);
+
+    const path = cookie.meta?.path;
+    if (typeof path === "string" && path.length > 0) {
+      lines.push(`Path: ${path}`);
+    }
+
+    const dateLines = formatDates(cookie);
+    lines.push(...dateLines);
+
+    if (cookie.meta) {
+      const metaLines = [
+        formatMetaField(cookie.meta, "file", "string"),
+        formatMetaField(cookie.meta, "browser", "string"),
+        formatMetaField(cookie.meta, "profile", "string"),
+        formatMetaField(cookie.meta, "decrypted", "boolean"),
+      ].filter((line): line is string => line !== null);
+
+      if (metaLines.length > 0) {
+        lines.push("Metadata:");
+        lines.push(...metaLines);
+      }
+    }
+  });
+
+  lines.forEach((line) => logger.log(line));
+}
+
+/**
+ * Query cookies based on the provided specification
+ * @param spec - The cookie specification to query
+ * @param service - The cookie query service to use
+ * @param verbose - Whether to output verbose information
+ * @returns Promise that resolves when the query is complete
+ */
+export async function queryCookies(
+  spec: CookieSpec,
+  service: CookieQueryService,
+  verbose = false,
+): Promise<void> {
+  const results = await service.queryCookies(spec);
+  if (verbose) {
+    formatResultsVerbose(results);
+  } else {
+    formatResults(results);
   }
 }

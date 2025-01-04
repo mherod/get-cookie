@@ -20,15 +20,14 @@ async function main(): Promise<void> {
 
     // Print each cookie in a readable format
     cookies.forEach((cookie: ExportedCookie) => {
-      console.log("\n-------------------");
-      console.log(`Name: ${cookie.name}`);
-      console.log(`Domain: ${cookie.domain}`);
-      console.log(`Value: ${cookie.value}`);
-      console.log(`Expiry: ${String(cookie.expiry)}`);
-      console.log(`Decrypted: ${cookie.meta?.decrypted ?? false}`);
-      console.log(`Profile: ${cookie.meta?.file ?? "Unknown"}`);
+      logger.log("\n-------------------");
+      logger.log(`Name: ${cookie.name}`);
+      logger.log(`Domain: ${cookie.domain}`);
+      logger.log(`Value: ${cookie.value}`);
+      logger.log(`Expiry: ${String(cookie.expiry)}`);
+      logger.log(`Decrypted: ${cookie.meta?.decrypted ?? false}`);
+      logger.log(`Profile: ${cookie.meta?.file ?? "Unknown"}`);
     });
-
   } catch (error) {
     if (error instanceof Error) {
       logger.error("Failed to dump GitHub cookies", { error });

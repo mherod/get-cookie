@@ -39,9 +39,12 @@ export async function runBasicExamples(): Promise<void> {
 
   // Get a cookie by name and domain
   const cookie = await getCookieFn({
-    name: "session",
+    name: "user_session",
     domain: "github.com",
   });
 
   console.log("Cookie:", cookie);
 }
+
+// Execute the examples
+runBasicExamples().catch(console.error);

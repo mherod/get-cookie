@@ -1,11 +1,11 @@
 import { FirefoxCookieQueryStrategy } from "../FirefoxCookieQueryStrategy";
 
-// Mock the glob sync function
-jest.mock("glob", () => ({
+// Mock fast-glob
+jest.mock("fast-glob", () => ({
   sync: jest.fn(),
 }));
 
-interface MockGlob {
+interface MockFastGlob {
   sync: jest.Mock;
 }
 
@@ -24,7 +24,7 @@ describe("FirefoxCookieQueryStrategy - File Discovery", () => {
   });
 
   it("should find cookie files in macOS paths", async () => {
-    const { sync } = jest.requireMock<MockGlob>("glob");
+    const { sync } = jest.requireMock<MockFastGlob>("fast-glob");
     sync.mockImplementation((pattern: string) => {
       if (pattern.includes("Library/Application Support/Firefox")) {
         return [
@@ -43,7 +43,7 @@ describe("FirefoxCookieQueryStrategy - File Discovery", () => {
   });
 
   it("should find cookie files in Linux paths", async () => {
-    const { sync } = jest.requireMock<MockGlob>("glob");
+    const { sync } = jest.requireMock<MockFastGlob>("fast-glob");
     sync.mockImplementation((pattern: string) => {
       if (pattern.includes(".mozilla/firefox")) {
         return ["/mock/home/.mozilla/firefox/xyz789/cookies.sqlite"];

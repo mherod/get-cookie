@@ -120,3 +120,11 @@ docs/api/
 # TypeDoc generated files
 docs/reference/*
 !docs/reference/index.md
+
+# Swift
+.build/
+*.xcodeproj
+*.xcworkspace
+.swiftpm/
+cookie-creator
+*.binarycookies

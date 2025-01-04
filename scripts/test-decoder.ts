@@ -3,93 +3,81 @@
 import { homedir } from "os";
 import { join } from "path";
 
-import { decodeBinaryCookies } from "../src/core/browsers/decodeBinaryCookies";
+import { decodeBinaryCookies } from "../src/core/browsers/safari/decodeBinaryCookies";
 import type { BinaryCookieRow } from "../src/types/schemas";
 
-// Cookie flag constants for human-readable output
-const COOKIE_FLAGS = {
-  SECURE: 0x1,
-  HTTP_ONLY: 0x4,
-  UNKNOWN1: 0x8,
-  UNKNOWN2: 0x10,
-} as const;
-
-function getFlagDescriptions(flags: number | undefined): string[] {
-  if (typeof flags !== "number") {
-    return [];
-  }
-
+function getFlagDescriptions(flags: number): string[] {
   const descriptions: string[] = [];
-  if (flags & COOKIE_FLAGS.SECURE) {
-    descriptions.push("Secure");
-  }
-  if (flags & COOKIE_FLAGS.HTTP_ONLY) {
-    descriptions.push("HTTPOnly");
-  }
-  if (flags & COOKIE_FLAGS.UNKNOWN1) {
-    descriptions.push("Unknown1");
-  }
-  if (flags & COOKIE_FLAGS.UNKNOWN2) {
-    descriptions.push("Unknown2");
-  }
+  if ((flags & 0x1) !== 0) {descriptions.push('Secure');}
+  if ((flags & 0x4) !== 0) {descriptions.push('HTTPOnly');}
+  if ((flags & 0x8) !== 0) {descriptions.push('Unknown1');}
+  if ((flags & 0x10) !== 0) {descriptions.push('Unknown2');}
   return descriptions;
 }
 
+function formatDate(timestamp: number, epochOffset: number): string {
+  // Handle special cases
+  if (timestamp === 0) {
+    return 'Session Cookie (expires when browser closes)';
+  }
+
+  // Convert from seconds since 2001-01-01 to milliseconds since 1970-01-01
+  const milliseconds = (timestamp + epochOffset) * 1000;
+
+  try {
+    const date = new Date(milliseconds);
+    if (isNaN(date.getTime())) {
+      return 'Invalid Date';
+    }
+    return date.toISOString();
+  } catch {
+    return 'Invalid Date';
+  }
+}
+
 function displayCookie(cookie: BinaryCookieRow, index: number): void {
+  const epochOffset = 978307200; // Seconds between 1970-01-01 and 2001-01-01
+
   console.log(`\nCookie ${index + 1}:`);
-  console.log("  Name:", cookie.name);
-  console.log("  Value:", cookie.value);
-  console.log("  Domain:", cookie.domain);
-  console.log("  Path:", cookie.path);
-  console.log("  Expiry:", new Date(cookie.expiry * 1000).toISOString());
-  console.log("  Creation:", new Date(cookie.creation * 1000).toISOString());
+  console.log(`  Name: ${cookie.name}`);
+  console.log(`  Value: ${typeof cookie.value === 'object' ? JSON.stringify(cookie.value) : cookie.value}`);
+  console.log(`  Domain: ${cookie.domain}`);
+  console.log(`  Path: ${cookie.path}`);
+  console.log(`  Expiry: ${formatDate(cookie.expiry, epochOffset)}`);
+  console.log(`  Creation: ${formatDate(cookie.creation, epochOffset)}`);
+  console.log(`  Version: ${cookie.version}`);
 
-  // Display version if present
-  if (typeof cookie.version === "number") {
-    console.log("  Version:", cookie.version);
-  }
-
-  // Display port if present
-  if (typeof cookie.port === "number") {
-    console.log("  Port:", cookie.port);
-  }
-
-  // Display comment if present
-  if (typeof cookie.comment === "string" && cookie.comment.length > 0) {
-    console.log("  Comment:", cookie.comment);
-  }
-
-  // Display commentURL if present
-  if (typeof cookie.commentURL === "string" && cookie.commentURL.length > 0) {
-    console.log("  Comment URL:", cookie.commentURL);
-  }
-
-  // Display flags in both hex and human-readable format
-  if (typeof cookie.flags === "number") {
+  if (cookie.flags !== undefined) {
     const flagDescriptions = getFlagDescriptions(cookie.flags);
-    console.log(
-      "  Flags:",
-      cookie.flags.toString(16).padStart(8, "0"),
-      flagDescriptions.length > 0 ? `(${flagDescriptions.join(", ")})` : "",
-    );
+    console.log(`  Flags: ${cookie.flags.toString(2).padStart(8, '0')} (${flagDescriptions.join(', ')})`);
+  }
+
+  if (cookie.port !== undefined) {
+    console.log(`  Port: ${cookie.port}`);
+  }
+
+  if (cookie.comment !== undefined && cookie.comment !== '') {
+    console.log(`  Comment: ${cookie.comment}`);
+  }
+
+  if (cookie.commentURL !== undefined && cookie.commentURL !== '') {
+    console.log(`  Comment URL: ${cookie.commentURL}`);
   }
 }
 
 function main(): void {
   const cookieDbPath = join(
     homedir(),
-    "Library/Containers/com.apple.Safari/Data/Library/Cookies/Cookies.binarycookies",
+    'Library/Containers/com.apple.Safari/Data/Library/Cookies/Cookies.binarycookies'
   );
 
   try {
     const cookies = decodeBinaryCookies(cookieDbPath);
     console.log(`Successfully decoded ${cookies.length} cookies\n`);
-
-    // Display first 5 cookies as a sample
-    console.log("Sample cookies (first 5):");
-    cookies.slice(0, 5).forEach(displayCookie);
+    console.log('Sample cookies (first 5):');
+    cookies.slice(0, 5).forEach((cookie, index) => displayCookie(cookie, index));
   } catch (error) {
-    console.error("Error decoding cookies:", error);
+    console.error('Error decoding cookies:', error);
   }
 }
 

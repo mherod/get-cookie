@@ -1,4 +1,9 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
-pnpm run type-check && pnpm run test
+# Try pnpm first, fallback to npx if pnpm not found
+if command -v pnpm >/dev/null 2>&1; then
+  pnpm run validate
+else
+  npm run validate
+fi

@@ -119,16 +119,16 @@ function decodePage(
   // Skip first 4 bytes of page header
   const headerLengthOffset = offset + 4;
   // Next byte is a null terminator
-  const _headerLength = buffer.readUInt32BE(headerLengthOffset + 1);
+  const _headerLength = buffer.readUInt32LE(headerLengthOffset + 1);
   // Next 4 bytes contain number of cookies
-  const numCookies = buffer.readUInt32BE(headerLengthOffset + 5);
+  const numCookies = buffer.readUInt32LE(headerLengthOffset + 5);
 
   const cookies: BinaryCookieRow[] = [];
 
   // Read cookie offsets
   const cookieOffsets: number[] = [];
   for (let i = 0; i < numCookies; i++) {
-    const cookieOffset = buffer.readUInt32BE(headerLengthOffset + 9 + i * 4);
+    const cookieOffset = buffer.readUInt32LE(headerLengthOffset + 9 + i * 4);
     cookieOffsets.push(cookieOffset);
   }
 

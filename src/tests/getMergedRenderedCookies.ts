@@ -36,7 +36,8 @@ export async function getMergedRenderedCookies(
 
   const cookiePromises = cookieSpecs.map(
     (spec) =>
-      strategy?.queryCookies(spec.name, spec.domain) ?? Promise.resolve([]),
+      strategy?.queryCookies(spec.name, spec.domain, undefined) ??
+      Promise.resolve([]),
   );
 
   const cookies = await Promise.all(cookiePromises);

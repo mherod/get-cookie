@@ -1,13 +1,13 @@
-import { Buffer } from 'buffer';
-import { readFileSync } from 'fs';
-import { homedir } from 'os';
-import { join } from 'path';
+import { Buffer } from "buffer";
+import { readFileSync } from "fs";
+import { homedir } from "os";
+import { join } from "path";
 
-import { BinaryCookieRow } from '../../../types/schemas';
-import { logWarn } from '../../../utils/logHelpers';
+import { BinaryCookieRow } from "../../../types/schemas";
+import { logWarn } from "../../../utils/logHelpers";
 
-import { BinaryCodablePage } from './BinaryCodablePage';
-import { BinaryCodableContainer } from './interfaces/BinaryCodableContainer';
+import { BinaryCodablePage } from "./BinaryCodablePage";
+import { BinaryCodableContainer } from "./interfaces/BinaryCodableContainer";
 
 /**
  * Represents a binary cookies file structure used by Safari
@@ -21,11 +21,11 @@ export class BinaryCodableCookies {
    *
    */
   public metadata: Record<string, unknown>;
-  private static readonly MAGIC = Buffer.from('cook', 'utf8');
-  private static readonly FOOTER = BigInt('0x071720050000004b');
+  private static readonly MAGIC = Buffer.from("cook", "utf8");
+  private static readonly FOOTER = BigInt("0x071720050000004b");
   private static readonly DEFAULT_COOKIE_PATH = join(
     homedir(),
-    'Library/Containers/com.apple.Safari/Data/Library/Cookies/Cookies.binarycookies'
+    "Library/Containers/com.apple.Safari/Data/Library/Cookies/Cookies.binarycookies",
   );
 
   /**
@@ -54,7 +54,9 @@ export class BinaryCodableCookies {
    * @returns A new BinaryCookies instance
    */
   public static fromDefaultPath(): BinaryCodableCookies {
-    return BinaryCodableCookies.fromFile(BinaryCodableCookies.DEFAULT_COOKIE_PATH);
+    return BinaryCodableCookies.fromFile(
+      BinaryCodableCookies.DEFAULT_COOKIE_PATH,
+    );
   }
 
   /**
@@ -71,8 +73,11 @@ export class BinaryCodableCookies {
           cookies.push(...pageCookies);
         }
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        logWarn('BinaryCookies', 'Error converting page cookies', { error: errorMessage });
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        logWarn("BinaryCookies", "Error converting page cookies", {
+          error: errorMessage,
+        });
       }
     }
 
@@ -82,48 +87,68 @@ export class BinaryCodableCookies {
   private decode(container: BinaryCodableContainer): void {
     try {
       // Check magic value
-      const magic = container.buffer.subarray(container.offset, container.offset + 4);
+      const magic = container.buffer.subarray(
+        container.offset,
+        container.offset + 4,
+      );
       container.offset += 4;
+      console.log("Magic bytes:", magic.toString());
       if (!magic.equals(BinaryCodableCookies.MAGIC)) {
-        throw new Error('Missing magic value');
+        throw new Error("Missing magic value");
       }
 
       // Read page count
       const pageCount = container.buffer.readUInt32BE(container.offset);
+      console.log("Page count:", pageCount);
       container.offset += 4;
 
       // Read page sizes
       const pageSizes: number[] = [];
       for (let i = 0; i < pageCount; i++) {
-        pageSizes.push(container.buffer.readUInt32BE(container.offset));
+        const pageSize = container.buffer.readUInt32BE(container.offset);
+        pageSizes.push(pageSize);
+        console.log(`Page ${i} size:`, pageSize);
         container.offset += 4;
       }
 
       // Calculate page offsets
       let currentOffset = container.offset;
+      console.log("Starting page data at offset:", currentOffset);
       for (const pageSize of pageSizes) {
         try {
-          const pageBuffer = container.buffer.subarray(currentOffset, currentOffset + pageSize);
+          console.log(
+            "Reading page at offset:",
+            currentOffset,
+            "with size:",
+            pageSize,
+          );
+          const pageBuffer = container.buffer.subarray(
+            currentOffset,
+            currentOffset + pageSize,
+          );
           const page = new BinaryCodablePage(pageBuffer);
           this.pages.push(page);
           currentOffset += pageSize;
         } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : String(error);
-          logWarn('BinaryCookies', `Error decoding page`, { error: errorMessage });
+          const errorMessage =
+            error instanceof Error ? error.message : String(error);
+          console.error("Error decoding page:", errorMessage);
           currentOffset += pageSize; // Skip the problematic page
         }
       }
       container.offset = currentOffset;
 
       // Read checksum
-      const _checksum = container.buffer.readUInt32BE(container.offset);
+      const checksum = container.buffer.readUInt32BE(container.offset);
+      console.log("Checksum:", checksum.toString(16));
       container.offset += 4;
 
       // Read footer
       const footer = container.buffer.readBigUInt64BE(container.offset);
+      console.log("Footer:", footer.toString(16));
       container.offset += 8;
       if (footer !== BinaryCodableCookies.FOOTER) {
-        logWarn('BinaryCookies', 'Invalid cookie file format: wrong footer');
+        logWarn("BinaryCookies", "Invalid cookie file format: wrong footer");
       }
 
       // Read metadata plist
@@ -131,8 +156,11 @@ export class BinaryCodableCookies {
       // Note: You'll need to implement or use a plist parser library here
       this.metadata = {}; // Placeholder for plist data
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      logWarn('BinaryCookies', 'Error decoding binary cookies file', { error: errorMessage });
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      logWarn("BinaryCookies", "Error decoding binary cookies file", {
+        error: errorMessage,
+      });
       throw error;
     }
   }

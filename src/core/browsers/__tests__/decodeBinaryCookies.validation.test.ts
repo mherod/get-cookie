@@ -11,6 +11,14 @@ jest.mock("fs", () => ({
 // Mock logHelpers
 jest.mock("../../../utils/logHelpers", () => ({
   logWarn: jest.fn(),
+  createTaggedLogger: () => ({
+    debug: jest.fn(),
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+    success: jest.fn(),
+    withTag: jest.fn(),
+  }),
 }));
 
 describe("decodeBinaryCookies - File Validation", () => {

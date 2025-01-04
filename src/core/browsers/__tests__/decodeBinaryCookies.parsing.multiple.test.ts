@@ -50,7 +50,7 @@ function createTestBuffer(): Buffer {
   buffer.writeDoubleLE(now, cookieOffset + 48); // Creation
 
   // First cookie strings
-  buffer.write(".example.com\0", cookieOffset + 56);
+  buffer.write("https://example.com\0", cookieOffset + 56);
   buffer.write("session-id\0", cookieOffset + 70);
   buffer.write("/\0", cookieOffset + 80);
   buffer.write("abc123\0", cookieOffset + 85);
@@ -59,10 +59,10 @@ function createTestBuffer(): Buffer {
   cookieOffset = 108;
   buffer.writeUInt32LE(76, cookieOffset); // Cookie size
   buffer.writeUInt32LE(1, cookieOffset + 4); // Version
-  buffer.writeUInt32LE(4, cookieOffset + 8); // Flags (HTTP_ONLY)
+  buffer.writeUInt32LE(5, cookieOffset + 8); // Flags (SECURE + HTTP_ONLY)
   buffer.writeUInt32LE(0, cookieOffset + 12); // No port
 
-  // Second cookie string offsets (relative to cookie start)
+  // Second cookie string offsets
   buffer.writeUInt32LE(56, cookieOffset + 16); // URL offset
   buffer.writeUInt32LE(70, cookieOffset + 20); // Name offset
   buffer.writeUInt32LE(80, cookieOffset + 24); // Path offset
@@ -71,18 +71,17 @@ function createTestBuffer(): Buffer {
   buffer.writeUInt32LE(0, cookieOffset + 36); // CommentURL offset
 
   // Second cookie dates
-  buffer.writeDoubleLE(now + 86400, cookieOffset + 40); // Expiry
+  buffer.writeDoubleLE(now + 172800, cookieOffset + 40); // Expiry
   buffer.writeDoubleLE(now, cookieOffset + 48); // Creation
 
   // Second cookie strings
-  buffer.write(".example.org\0", cookieOffset + 56);
+  buffer.write("https://example.com\0", cookieOffset + 56);
   buffer.write("auth-token\0", cookieOffset + 70);
-  buffer.write("/api/v1\0", cookieOffset + 80);
+  buffer.write("/api\0", cookieOffset + 80);
   buffer.write("xyz789\0", cookieOffset + 85);
 
   // Footer
-  buffer.writeUInt32BE(0x28, 272); // Safari 14+ footer value
-  buffer.writeUInt32BE(0x00, 276);
+  buffer.writeUInt32LE(0x28, buffer.length - 4);
 
   return buffer;
 }
@@ -95,12 +94,10 @@ describe("decodeBinaryCookies - Multiple Cookies Parsing", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockReadFileSync.mockReturnValue(createTestBuffer());
   });
 
   it("should handle multiple cookies in a page", () => {
-    const buffer = createTestBuffer();
-    mockReadFileSync.mockReturnValue(buffer);
-
     const cookies = decodeBinaryCookies("/path/to/cookies.binarycookies");
     expect(cookies).toHaveLength(2);
     expect(cookies[0]).toMatchObject({
@@ -108,23 +105,23 @@ describe("decodeBinaryCookies - Multiple Cookies Parsing", () => {
       value: "abc123",
       domain: "example.com",
       path: "/",
-      flags: 1,
+      isSecure: true,
+      isHttpOnly: false,
     });
     expect(cookies[1]).toMatchObject({
       name: "auth-token",
       value: "xyz789",
-      domain: "example.org",
-      path: "/api/v1",
-      flags: 4,
+      domain: "example.com",
+      path: "/api",
+      isSecure: true,
+      isHttpOnly: true,
     });
   });
 
   it("should return cookies even with invalid footer", () => {
-    const buffer = createTestBuffer();
-    // Corrupt the footer
-    buffer.writeUInt32BE(0x00, 292);
-    buffer.writeUInt32BE(0x00, 296);
-    mockReadFileSync.mockReturnValue(buffer);
+    const invalidFooterBuffer = createTestBuffer();
+    invalidFooterBuffer.writeUInt32LE(0x29, invalidFooterBuffer.length - 4); // Wrong footer value
+    mockReadFileSync.mockReturnValue(invalidFooterBuffer);
 
     const cookies = decodeBinaryCookies("/path/to/cookies.binarycookies");
     expect(cookies).toHaveLength(2);

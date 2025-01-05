@@ -22,23 +22,22 @@
  * ```
  */
 
-import { getCookie } from "../src";
+import { getCookie } from "@mherod/get-cookie";
 
 /**
  * @description
- * Run basic examples of cookie retrieval.
+ * Basic example showing how to retrieve cookies from browsers.
  * @internal
- * @returns A promise that resolves when all examples have completed.
  */
-export async function runBasicExamples(): Promise<void> {
-  // Get a cookie by name and domain
-  const cookie = await getCookie({
-    name: "session",
+async function main(): Promise<void> {
+  // Get all session cookies from github.com
+  const cookies = await getCookie({
+    name: "user_session",
     domain: "github.com",
   });
 
-  console.log("Cookie:", cookie);
+  console.log("Found cookies:", cookies);
 }
 
-// Execute the examples
-runBasicExamples().catch(console.error);
+// Run the example
+void main();

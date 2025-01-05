@@ -6,7 +6,7 @@ const TEST_PASSWORD = "test-password";
 
 describe("decrypt", () => {
   it("should decrypt Chrome cookie values", async () => {
-    const encryptedValue = Buffer.from("test-encrypted-value");
+    const encryptedValue = Buffer.from("0123456789abcdef");
     const decrypted = await decrypt(encryptedValue, TEST_PASSWORD);
     expect(decrypted).toBe("test-decrypted-value");
   });

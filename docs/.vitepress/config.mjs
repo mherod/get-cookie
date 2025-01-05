@@ -19,7 +19,9 @@ export default defineConfig({
     nav: [
       { text: "🏠 Home", link: "/" },
       { text: "📚 Guide", link: "/guide/" },
+      { text: "🔧 Automation", link: "/automation/" },
       { text: "🔧 API Reference", link: "/reference/" },
+      { text: "🛡️ Security", link: "/guide/security" },
       {
         text: "💡 More",
         items: [
@@ -37,20 +39,58 @@ export default defineConfig({
     sidebar: {
       "/guide/": [
         {
-          text: "📚 Guide",
+          text: "Introduction",
           items: [
             { text: "🤔 What is get-cookie?", link: "/guide/" },
             { text: "🚀 Getting Started", link: "/guide/getting-started" },
           ],
         },
+        {
+          text: "Essential Guides",
+          items: [
+            { text: "🛡️ Security & Privacy", link: "/guide/security" },
+            { text: "🔍 Troubleshooting", link: "/guide/troubleshooting" },
+            { text: "💻 CLI Usage", link: "/guide/cli-usage" },
+          ],
+        },
+        {
+          text: "Advanced Topics",
+          items: [
+            { text: "🔐 Browser-Specific Details", link: "/guide/browsers" },
+            { text: "🧪 Integration Testing", link: "/guide/testing" },
+          ],
+        },
+      ],
+      "/automation/": [
+        {
+          text: "Automation",
+          items: [
+            { text: "🤖 Overview", link: "/automation/" },
+            { text: "📜 Shell Scripts", link: "/automation/shell-scripts" },
+            { text: "⚡ Node.js Scripts", link: "/automation/nodejs-scripts" },
+            { text: "🎭 Browser Automation", link: "/automation/browser-automation" },
+            { text: "⏱️ Scheduled Tasks", link: "/automation/scheduled-tasks" },
+            { text: "📊 Monitoring", link: "/automation/monitoring" },
+            { text: "🔄 Error Recovery", link: "/automation/error-recovery" },
+          ],
+        },
+        {
+          text: "Best Practices",
+          items: [
+            { text: "🎯 Performance", link: "/automation/performance" },
+            { text: "🛡️ Security", link: "/automation/security" },
+            { text: "🔧 Maintenance", link: "/automation/maintenance" },
+          ],
+        },
       ],
       "/reference/": [
         {
-          text: "🔧 API Reference",
+          text: "API Reference",
           items: [
             { text: "📖 Overview", link: "/reference/" },
-            { text: "⚙️ Core", link: "/reference/modules" },
-            { text: "📝 Types", link: "/reference/types" },
+            { text: "⚙️ Core Functions", link: "/reference/modules" },
+            { text: "📝 Type Definitions", link: "/reference/types" },
+            { text: "🌐 Browser Strategies", link: "/reference/browsers" },
           ],
         },
       ],
@@ -62,10 +102,6 @@ export default defineConfig({
     footer: {
       message: "🔒 Safe cookie extraction with proper encryption handling",
       copyright: "© 2024 Matthew Herod",
-    },
-    carbonAds: {
-      code: "your-carbon-code",
-      placement: "your-carbon-placement",
     },
     outline: {
       level: [2, 3],
@@ -79,8 +115,8 @@ export default defineConfig({
       },
     },
     docFooter: {
-      prev: "👈 Previous page",
-      next: "Next page 👉",
+      prev: "👈 Previous",
+      next: "Next 👉",
     },
   },
   head: [

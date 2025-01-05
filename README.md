@@ -1,151 +1,107 @@
 # get-cookie 🍪
 
-## What is it? 🤔
+Tired of manually copying cookies for API testing? `get-cookie` extracts authentication cookies directly from Chrome, Firefox, and Safari - perfect for testing, debugging, and automation.
 
-get-cookie is a powerful command-line utility and Node.js module that allows you to securely retrieve browser cookies from your locally installed browsers. Perfect for:
+## Quick Start 🚀
 
-- 🔐 Testing authenticated web applications
-- 🔍 Debugging cookie-related issues
-- 🤖 Automating browser cookie extraction
-- 🧪 Integration testing with real browser cookies
+```bash
+# Install globally
+pnpm add -g @mherod/get-cookie
 
-## Documentation 📚
+# Get a cookie
+get-cookie auth example.com
 
-Visit our [comprehensive documentation](https://mherod.github.io/get-cookie/) for:
+# Get all cookies for a domain
+get-cookie % example.com
+```
 
-- Detailed API reference
-- Getting started guides
-- Advanced usage examples
-- TypeScript type definitions
+```typescript
+// Node.js usage
+import { getCookie } from "@mherod/get-cookie";
+
+const cookies = await getCookie({
+  name: "auth",
+  domain: "example.com",
+});
+```
+
+⚠️ **Note: macOS only. Windows/Linux support planned.**
+
+## Installation 📦
+
+```bash
+pnpm add @mherod/get-cookie    # recommended
+npm install @mherod/get-cookie # or npm
+yarn add @mherod/get-cookie    # or yarn
+```
+
+## Common Use Cases 🎯
+
+- 🔐 Get auth cookies for API testing
+- 🔍 Debug cookie issues across browsers
+- 🤖 Automate cookie extraction
+- 🧪 Use real cookies in integration tests
+
+## Basic Usage Examples 💡
+
+### CLI
+
+```bash
+# Get specific cookie
+get-cookie auth example.com
+
+# Pretty print
+get-cookie auth example.com --render
+
+# From URL
+get-cookie --url https://example.com/path
+```
+
+### Node.js
+
+```typescript
+import { getCookie } from "@mherod/get-cookie";
+
+try {
+  // Get specific cookie
+  const authCookie = await getCookie({
+    name: "auth",
+    domain: "example.com",
+  });
+
+  // Get multiple cookies
+  const cookies = await getCookie({
+    name: "%", // all cookies
+    domain: "example.com",
+    removeExpired: true, // skip expired
+  });
+} catch (error) {
+  console.error("Failed:", error);
+}
+```
 
 ## Features ✨
 
-- 🌐 **Multi-Browser Support**: Works with Chrome, Firefox, and Safari
+- 🌐 **Multi-Browser Support**: Works with Chrome, Firefox, and Safari on macOS
 - 🔒 **Secure**: Safe cookie extraction with proper encryption handling
 - 📝 **TypeScript Ready**: Built with TypeScript for excellent type safety
 - 🎯 **Flexible Querying**: Search by name, domain, or URL pattern
 - 🔄 **Multiple Output Formats**: JSON, rendered, or grouped results
 - 👥 **Profile Support**: Query cookies from different browser profiles
 
-## Installation 📦
+## Platform Support 🖥️
 
-Install from npm registry using your preferred package manager:
+**Important: This package currently only works on macOS.**
 
-```bash
-# Using pnpm (recommended)
-pnpm add @mherod/get-cookie
+- ✅ macOS: Full support for Chrome, Firefox, and Safari
+- ❌ Windows: Not currently supported
+- ❌ Linux: Not currently supported
 
-# Using npm
-npm install @mherod/get-cookie
+Browser-specific notes:
 
-# Using yarn
-yarn add @mherod/get-cookie
-```
-
-For global installation:
-
-```bash
-# Using pnpm (recommended)
-pnpm add -g @mherod/get-cookie
-
-# Using npm
-npm install -g @mherod/get-cookie
-
-# Using yarn
-yarn global add @mherod/get-cookie
-```
-
-**Note: Currently only macOS is supported. Windows support is planned for a future release.** 🚧
-
-## How do I use it? 🚀
-
-### CLI Usage 💻
-
-Basic cookie retrieval:
-
-```bash
-# Get a specific cookie
-get-cookie auth example.com
-
-# Get all cookies for a domain
-get-cookie % example.com
-
-# Get cookies with output formatting
-get-cookie auth example.com --render
-get-cookie auth example.com --dump-grouped
-
-# Get cookies from a specific URL
-get-cookie --url https://example.com/path
-```
-
-### Node.js Module Usage 📚
-
-Basic usage:
-
-```typescript
-import { getCookie } from "@mherod/get-cookie";
-
-// Get a specific cookie
-const authCookies = await getCookie({
-  name: "auth",
-  domain: "example.com",
-});
-
-// Get all cookies for a domain
-const allCookies = await getCookie({
-  name: "%",
-  domain: "example.com",
-});
-
-// Get cookies from multiple specifications
-import { comboQueryCookieSpec } from "@mherod/get-cookie";
-
-const cookies = await comboQueryCookieSpec(
-  [
-    { name: "session", domain: "api.example.com" },
-    { name: "auth", domain: "auth.example.com" },
-  ],
-  {
-    removeExpired: true,
-    limit: 10,
-  },
-);
-```
-
-### Advanced Usage 🔧
-
-Using browser-specific strategies:
-
-```typescript
-import {
-  ChromeCookieQueryStrategy,
-  FirefoxCookieQueryStrategy,
-} from "@mherod/get-cookie";
-
-// Query Chrome cookies
-const chromeStrategy = new ChromeCookieQueryStrategy();
-const chromeCookies = await chromeStrategy.queryCookies(
-  "sessionId",
-  "example.com",
-);
-
-// Query Firefox cookies
-const firefoxStrategy = new FirefoxCookieQueryStrategy();
-const firefoxCookies = await firefoxStrategy.queryCookies(
-  "auth",
-  "example.com",
-);
-```
-
-Using URL-based cookie extraction:
-
-```typescript
-import { cookieSpecsFromUrl } from "@mherod/get-cookie";
-
-// Get all cookies needed for a specific URL
-const specs = cookieSpecsFromUrl("https://example.com/dashboard");
-const cookies = await comboQueryCookieSpec(specs);
-```
+- Chrome: Requires macOS Keychain access for cookie decryption
+- Firefox: Reads from SQLite database in profile directories
+- Safari: Reads binary cookie format from Safari container
 
 ## Output Formats 📊
 
@@ -165,6 +121,15 @@ get-cookie auth example.com --render
 get-cookie auth example.com --dump-grouped
 ```
 
+## Documentation 📚
+
+Full docs at [mherod.github.io/get-cookie](https://mherod.github.io/get-cookie/)
+
+- API Reference
+- Advanced Usage
+- TypeScript Types
+- [Security Guide](https://mherod.github.io/get-cookie/guide/security.html) ⚠️
+
 ## Contributing 🤝
 
 Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
@@ -173,6 +138,20 @@ Contributions are welcome! Please feel free to submit a Pull Request. For major 
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
-## Security 🛡️
+## Known Limitations 🚧
 
-This tool handles sensitive data (cookies). Always be careful when extracting and storing cookie information. Never share your cookies or use this tool on untrusted machines.
+1. **Platform Support**
+
+   - Only works on macOS
+   - Windows and Linux support is planned for future releases
+
+2. **Browser Support**
+
+   - Chrome: Requires macOS Keychain access
+   - Firefox: Requires readable profile directory
+   - Safari: Requires access to Safari container directory
+
+3. **Error Handling**
+   - Some cookies may fail to decrypt
+   - Browser profile access may be restricted
+   - Keychain access may require user approval

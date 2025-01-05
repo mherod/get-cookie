@@ -34,7 +34,7 @@
     "type-check": "tsc --noEmit --skipLibCheck",
     "lint": "eslint . --format=codeframe",
     "lint:fix": "eslint . --format=codeframe --fix",
-    "validate": "pnpm run type-check && pnpm run lint && pnpm run test",
+    "validate": "pnpm run type-check && pnpm run lint && pnpm run test && pnpm run check-links",
     "prepack": "pnpm run validate",
     "prepublishOnly": "pnpm run clean && pnpm run validate && pnpm run build",
     "format": "prettier --write .",
@@ -43,7 +43,8 @@
     "prepare": "husky install",
     "docs": "typedoc && ./scripts/fix-typedoc.sh && vitepress build docs",
     "docs:dev": "vitepress dev docs",
-    "docs:preview": "vitepress preview docs"
+    "docs:preview": "vitepress preview docs",
+    "check-links": "./scripts/check-vitepress-links.sh"
   },
   "engines": {
     "node": "^20.0.0 || ^22.0.0"
@@ -106,6 +107,10 @@
     ],
     "*.{json,md,yml,yaml}": [
       "prettier --write"
+    ],
+    "docs/**/*.{md,vue}": [
+      "prettier --write",
+      "./scripts/check-vitepress-links.sh"
     ]
   }
 }

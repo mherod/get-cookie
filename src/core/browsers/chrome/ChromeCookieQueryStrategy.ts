@@ -1,10 +1,9 @@
-import { toBuffer, decodeBuffer } from "@utils/bufferUtils";
+import { toBuffer } from "@utils/bufferUtils";
 import { createTaggedLogger, logError } from "@utils/logHelpers";
 
 import {
   BrowserName,
   CookieQueryStrategy,
-  CookieRow,
   ExportedCookie,
   ExportedCookieSchema,
 } from "../../../types/schemas";
@@ -14,11 +13,7 @@ import { listChromeProfilePaths } from "../listChromeProfiles";
 import { chromeTimestampToDate } from "./chromeTimestamps";
 import { decrypt } from "./decrypt";
 import { getChromePassword } from "./getChromePassword";
-
-interface DecryptionContext {
-  file: string;
-  password: string;
-}
+import { ChromeCookieRow, DecryptionContext } from "./types";
 
 function createExportedCookie(
   domain: string,
@@ -27,23 +22,40 @@ function createExportedCookie(
   expiry: number | undefined | null,
   file: string,
   decrypted: boolean,
+  path: string = "/",
 ): ExportedCookie {
+  // Ensure domain and name are trimmed
+  const trimmedDomain = domain.trim();
+  const trimmedName = name.trim();
+
+  // Convert expiry to the correct format
   const expiryDate =
     typeof expiry === "number" && expiry > 0
       ? chromeTimestampToDate(expiry)
       : null;
 
-  return {
-    domain,
-    name,
-    value,
+  const cookie = {
+    domain: trimmedDomain,
+    name: trimmedName,
+    value: value.trim(),
     expiry: expiryDate?.getTime() ?? "Infinity",
     meta: {
       file,
-      browser: "Chrome",
+      browser: "Chrome" as const,
       decrypted,
+      path,
     },
   };
+
+  // Validate the cookie before returning
+  const validation = ExportedCookieSchema.safeParse(cookie);
+  if (!validation.success) {
+    throw new Error(
+      `Invalid cookie: ${JSON.stringify(validation.error.format())}`,
+    );
+  }
+
+  return validation.data;
 }
 
 /**
@@ -143,15 +155,33 @@ export class ChromeCookieQueryStrategy implements CookieQueryStrategy {
         file,
       });
 
+      this.logger.debug("Processing cookies", {
+        count: encryptedCookies.length,
+        file,
+        cookies: encryptedCookies,
+      });
+
       const context: DecryptionContext = { file, password };
       const results = await Promise.allSettled(
-        encryptedCookies.map((cookie) => this.processCookie(cookie, context)),
+        encryptedCookies.map((cookie) =>
+          this.processCookie(cookie as ChromeCookieRow, context),
+        ),
       );
 
-      return results
+      const validCookies = results
         .map((result) => {
           if (result.status === "fulfilled") {
-            return result.value;
+            const cookie = result.value;
+            const validation = ExportedCookieSchema.safeParse(cookie);
+            if (!validation.success) {
+              this.logger.error("Invalid cookie:", {
+                errors: validation.error.format(),
+                cookie,
+                raw: result.value,
+              });
+              return null;
+            }
+            return validation.data;
           }
           this.logger.error("Failed to process cookie", {
             error:
@@ -162,6 +192,18 @@ export class ChromeCookieQueryStrategy implements CookieQueryStrategy {
           return null;
         })
         .filter((cookie): cookie is ExportedCookie => cookie !== null);
+
+      this.logger.debug("Processed cookies", {
+        total: results.length,
+        valid: validCookies.length,
+        cookies: validCookies,
+        results: results.map((r) => ({
+          status: r.status,
+          value: r.status === "fulfilled" ? r.value : String(r.reason),
+        })),
+      });
+
+      return validCookies;
     } catch (error) {
       if (error instanceof Error) {
         this.logger.error("Failed to process cookie file", { error, file });
@@ -176,7 +218,7 @@ export class ChromeCookieQueryStrategy implements CookieQueryStrategy {
   }
 
   private async processCookie(
-    cookie: CookieRow,
+    cookie: ChromeCookieRow,
     context: DecryptionContext,
   ): Promise<ExportedCookie> {
     try {
@@ -190,27 +232,45 @@ export class ChromeCookieQueryStrategy implements CookieQueryStrategy {
         cookie.expiry,
         context.file,
         true,
+        cookie.path,
       );
     } catch (error) {
-      // Handle decryption errors
+      // Log decryption error
       this.logger.warn("Failed to decrypt cookie", {
         error: error instanceof Error ? error.message : String(error),
         domain: cookie.domain,
         name: cookie.name,
       });
 
-      // Always return a cookie, even if decryption fails
-      const valueBuffer = toBuffer(cookie.value);
-      const fallbackValue = decodeBuffer(valueBuffer);
+      // Return cookie with raw value when decryption fails
+      const rawValue =
+        cookie.value instanceof Buffer
+          ? cookie.value.toString("utf-8")
+          : String(cookie.value);
 
-      return createExportedCookie(
-        cookie.domain,
-        cookie.name,
-        fallbackValue,
-        cookie.expiry,
-        context.file,
-        false,
-      );
+      try {
+        return createExportedCookie(
+          cookie.domain,
+          cookie.name,
+          rawValue,
+          cookie.expiry,
+          context.file,
+          false,
+          cookie.path,
+        );
+      } catch (validationError) {
+        // Log validation error and rethrow
+        this.logger.error("Failed to create cookie", {
+          error:
+            validationError instanceof Error
+              ? validationError.message
+              : String(validationError),
+          domain: cookie.domain,
+          name: cookie.name,
+          value: rawValue,
+        });
+        throw validationError;
+      }
     }
   }
 }

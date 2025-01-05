@@ -2,8 +2,10 @@ import { getEncryptedChromeCookie } from "../getEncryptedChromeCookie";
 import { listChromeProfilePaths } from "../listChromeProfiles";
 
 import { ChromeCookieQueryStrategy } from "./ChromeCookieQueryStrategy";
+import { dateToChromeMicroseconds } from "./chromeTimestamps";
 import { decrypt } from "./decrypt";
 import { getChromePassword } from "./getChromePassword";
+import { ChromeCookieRow } from "./types";
 
 jest.mock("./decrypt");
 jest.mock("./getChromePassword");
@@ -23,11 +25,13 @@ export const mockCookieFile = "/path/to/Cookies";
 /**
  * Mock cookie data used for testing
  */
-export const mockCookieData = {
+export const mockCookieData: ChromeCookieRow = {
   name: "test-cookie",
   value: Buffer.from("encrypted-value"),
   domain: "example.com",
-  expiry: Date.now() + 86400000, // 1 day in the future
+  path: "/",
+  expiry:
+    dateToChromeMicroseconds(new Date(Date.now() + 86400000)) ?? undefined, // 1 day in the future
 };
 
 /**
@@ -51,14 +55,9 @@ export function setupChromeTest(): ChromeCookieQueryStrategy {
     mockCookieFile,
   ]);
   (getChromePassword as unknown as jest.Mock).mockResolvedValue(mockPassword);
-  (getEncryptedChromeCookie as unknown as jest.Mock).mockImplementation(
-    ({ file }) => {
-      if (file === mockCookieFile) {
-        return Promise.resolve([mockCookieData]);
-      }
-      return Promise.resolve([]);
-    },
-  );
+  (getEncryptedChromeCookie as unknown as jest.Mock).mockResolvedValue([
+    mockCookieData,
+  ]);
   (decrypt as unknown as jest.Mock).mockResolvedValue("decrypted-value");
 
   const strategy = new ChromeCookieQueryStrategy();

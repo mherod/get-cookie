@@ -44,9 +44,10 @@ describe("ChromeCookieQueryStrategy - Basic Functionality", () => {
     const secondCookie = {
       ...mockCookieData,
       name: "second-cookie",
+      path: "/api",
     };
 
-    mockGetEncryptedChromeCookie.mockResolvedValue([
+    mockGetEncryptedChromeCookie.mockResolvedValueOnce([
       mockCookieData,
       secondCookie,
     ]);
@@ -67,6 +68,7 @@ describe("ChromeCookieQueryStrategy - Basic Functionality", () => {
       domain: mockCookieData.domain,
       meta: {
         decrypted: true,
+        path: mockCookieData.path,
       },
     });
     expect(cookies[1]).toMatchObject({
@@ -75,6 +77,7 @@ describe("ChromeCookieQueryStrategy - Basic Functionality", () => {
       domain: secondCookie.domain,
       meta: {
         decrypted: true,
+        path: secondCookie.path,
       },
     });
   });

@@ -298,17 +298,16 @@ export type ExportedCookie = z.infer<typeof ExportedCookieSchema>;
 /**
  * Schema for raw cookie data from browser stores
  */
-export const CookieRowSchema = z
-  .object({
-    expiry: z.number().int().optional(),
-    domain: CookieDomainSchema,
-    name: CookieNameSchema,
-    value: z.union([z.string(), z.instanceof(Buffer)]),
-  })
-  .strict();
+export const CookieRowSchema = z.object({
+  name: z.string(),
+  value: z.union([z.string(), z.instanceof(Buffer)]),
+  domain: z.string(),
+  path: z.string().optional(),
+  expiry: z.number().optional(),
+});
 
 /**
- * Type definition for raw cookie data
+ * Type definition for a cookie row from the database
  */
 export type CookieRow = z.infer<typeof CookieRowSchema>;
 

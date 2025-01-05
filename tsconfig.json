@@ -14,6 +14,8 @@
     "baseUrl": ".",
     "composite": true,
     "paths": {
+      "@mherod/get-cookie": ["src"],
+      "@mherod/get-cookie/*": ["src/*"],
       "@/*": ["src/*"],
       "@core/*": ["src/core/*"],
       "@utils/*": ["src/utils/*"],

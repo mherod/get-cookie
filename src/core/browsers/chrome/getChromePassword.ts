@@ -10,9 +10,7 @@ import { getChromePassword as getMacOSPassword } from "./macos/getChromePassword
 export async function getChromePassword(): Promise<string> {
   switch (platform()) {
     case "darwin": {
-      const account = "Chrome Safe Storage";
-      const password = await getMacOSPassword(account);
-      return password;
+      return getMacOSPassword();
     }
     default:
       throw new Error(`Platform ${platform()} is not supported`);

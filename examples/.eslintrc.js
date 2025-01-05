@@ -4,6 +4,8 @@ module.exports = {
     project: "./tsconfig.json",
   },
   rules: {
+    "@typescript-eslint/no-unsafe-call": "off",
+    "@typescript-eslint/no-unsafe-assignment": "off",
     "jsdoc/require-example": "off",
     "jsdoc/require-description": "off",
     "jsdoc/require-returns": "off",

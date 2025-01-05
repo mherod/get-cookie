@@ -132,3 +132,10 @@ cookie-creator
 # CookieCreator binary
 scripts/CookieCreator/Sources/main
 scripts/CookieCreator/main
+
+# Test fixtures
+test/fixtures/**/*.db
+test/fixtures/**/*.sqlite
+test/fixtures/**/*.sqlite3
+test/fixtures/**/*.binarycookies
+!test/fixtures/chrome/chrome_cookies.db

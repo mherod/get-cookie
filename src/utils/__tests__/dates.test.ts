@@ -13,8 +13,9 @@ describe("Mac Date Utils", () => {
       const parsedDate = parseMacDate(macDate);
 
       // Compare timestamps rounded to seconds to avoid millisecond differences
-      expect(Math.floor(parsedDate.getTime() / 1000))
-        .toBe(Math.floor(now.getTime() / 1000));
+      expect(Math.floor(parsedDate.getTime() / 1000)).toBe(
+        Math.floor(now.getTime() / 1000),
+      );
     });
 
     it("should handle dates before Mac epoch", () => {
@@ -40,8 +41,9 @@ describe("Mac Date Utils", () => {
       const parsedDate = parseMacDate(macDate);
 
       // Compare timestamps rounded to seconds
-      expect(Math.floor(parsedDate.getTime() / 1000))
-        .toBe(Math.floor(originalDate.getTime() / 1000));
+      expect(Math.floor(parsedDate.getTime() / 1000)).toBe(
+        Math.floor(originalDate.getTime() / 1000),
+      );
     });
   });
 

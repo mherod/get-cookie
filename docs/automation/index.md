@@ -42,20 +42,11 @@ const cookies = await getCookie({
 });
 ```
 
-[Learn more about Node.js Scripts →](/automation/nodejs-scripts)
+[Learn more about the API →](/reference/index/functions/getCookie)
 
-### Scheduled Tasks
+### Browser Automation
 
-Automate recurring cookie operations:
-
-```typescript
-import { CronJob } from "cron";
-import { refreshCookies } from "./cookies";
-
-new CronJob("0 * * * *", refreshCookies).start();
-```
-
-[Learn more about Scheduled Tasks →](/automation/scheduled-tasks)
+[Learn more about Browser Automation →](/automation/browser-automation)
 
 ## Key Features
 
@@ -112,10 +103,8 @@ new CronJob("0 * * * *", refreshCookies).start();
 ## Next Steps
 
 - [Start with Shell Scripts →](/automation/shell-scripts)
-- [Build Node.js Scripts →](/automation/nodejs-scripts)
-- [Set up Scheduled Tasks →](/automation/scheduled-tasks)
-- [Implement Monitoring →](/automation/monitoring)
-- [Add Error Recovery →](/automation/error-recovery)
+- [Read Browser Automation Guide →](/automation/browser-automation)
+- [Check the API Reference →](/reference/)
 
 ## Need Help?
 

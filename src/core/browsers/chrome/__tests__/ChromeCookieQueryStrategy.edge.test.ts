@@ -3,6 +3,7 @@ import {
   mockDecrypt,
   setupChromeTest,
   mockCookieData,
+  mockPassword,
 } from "../testSetup";
 
 describe("ChromeCookieQueryStrategy - Edge Cases", () => {
@@ -18,14 +19,16 @@ describe("ChromeCookieQueryStrategy - Edge Cases", () => {
       value: "non-buffer-value",
     };
     mockGetEncryptedChromeCookie.mockResolvedValueOnce([nonBufferCookie]);
+    mockDecrypt.mockResolvedValueOnce("decrypted-value");
 
-    const cookies = await strategy.queryCookies("test-cookie", "example.com");
-
-    expect(mockDecrypt).toHaveBeenCalledWith(
-      expect.any(Buffer),
+    const cookies = await strategy.queryCookies(
+      "test-cookie",
+      "example.com",
       "test-password",
     );
+
     expect(cookies).toHaveLength(1);
     expect(cookies[0].value).toBe("decrypted-value");
+    expect(mockDecrypt).toHaveBeenCalledWith(expect.any(Buffer), mockPassword);
   });
 });

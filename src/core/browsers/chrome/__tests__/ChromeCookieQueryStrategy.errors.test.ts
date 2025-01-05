@@ -14,6 +14,7 @@ describe("ChromeCookieQueryStrategy - Error Handling", () => {
 
   it("should handle decryption failures gracefully", async () => {
     mockDecrypt.mockRejectedValueOnce(new Error("Decryption failed"));
+    mockGetEncryptedChromeCookie.mockResolvedValueOnce([mockCookieData]);
 
     const cookies = await strategy.queryCookies("test-cookie", "example.com");
 
@@ -21,6 +22,7 @@ describe("ChromeCookieQueryStrategy - Error Handling", () => {
     expect(cookies[0]).toMatchObject({
       name: mockCookieData.name,
       domain: mockCookieData.domain,
+      value: mockCookieData.value.toString("utf-8"),
       meta: {
         browser: "Chrome",
         decrypted: false,

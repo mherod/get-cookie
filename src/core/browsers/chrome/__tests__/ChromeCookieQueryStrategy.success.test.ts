@@ -27,6 +27,13 @@ describe("ChromeCookieQueryStrategy - Success", () => {
     const mockPassword = "mock-password";
     const mockDecryptedValue = "decrypted-value";
 
+    // Convert 24 hours from now to Chrome's timestamp format
+    // First get Unix timestamp in microseconds (multiply by 1000000)
+    // Then add the difference between Chrome epoch and Unix epoch in microseconds
+    const unixMicroseconds = (Date.now() + 86400000) * 1000;
+    const chromeEpochDiffMicroseconds = 11644473600000 * 1000;
+    const chromeTimestamp = unixMicroseconds + chromeEpochDiffMicroseconds;
+
     mockListChromeProfilePaths.mockReturnValue(["/path/to/profile"]);
     mockGetChromePassword.mockResolvedValue(mockPassword);
     mockGetEncryptedChromeCookie.mockResolvedValue([
@@ -34,7 +41,7 @@ describe("ChromeCookieQueryStrategy - Success", () => {
         name: "test-cookie",
         value: mockCookieValue,
         domain: "example.com",
-        expiry: Math.floor(Date.now() / 1000) + 86400, // 24 hours from now
+        expiry: chromeTimestamp,
       } satisfies CookieRow,
     ]);
     mockDecrypt.mockResolvedValue(mockDecryptedValue);
@@ -47,7 +54,17 @@ describe("ChromeCookieQueryStrategy - Success", () => {
       name: "test-cookie",
       value: mockDecryptedValue,
       domain: "example.com",
+      meta: {
+        browser: "Chrome",
+        decrypted: true,
+      },
     });
+
+    // Verify the expiry is a valid Unix timestamp in milliseconds
+    expect(typeof cookies[0].expiry).toBe("number");
+    const expiryDate = new Date(cookies[0].expiry as number);
+    expect(expiryDate.getTime()).toBeGreaterThan(Date.now());
+    expect(expiryDate.getTime()).toBeLessThan(Date.now() + 86401000); // 24 hours + 1 second
 
     expect(mockListChromeProfilePaths).toHaveBeenCalled();
     expect(mockGetChromePassword).toHaveBeenCalled();

@@ -119,7 +119,19 @@ export function buildFirefoxCookieQuery(
  * @returns SQL query object with parameterized values
  */
 export function buildChromeCookieQuery(name: string, domain: string): SqlQuery {
-  return buildCookieQuery(name, domain, {
-    additionalColumns: ["is_secure", "is_httponly", "path", "samesite"],
-  });
+  const options: Required<CookieQueryOptions> = {
+    tableName: "cookies",
+    domainColumn: "host_key",
+    expiryColumn: "expires_utc",
+    includeExpired: true,
+    additionalColumns: [
+      "value",
+      "path",
+      "is_secure",
+      "is_httponly",
+      "samesite",
+    ],
+  };
+
+  return buildCookieQuery(name, domain, options);
 }

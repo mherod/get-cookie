@@ -37,6 +37,18 @@ export function toBuffer(value: unknown): Buffer {
 }
 
 /**
+ * Safely converts a buffer-like value to a string, handling null/undefined cases
+ * @param value - The value to convert (Buffer, string, null, or undefined)
+ * @returns A string representation of the value, or empty string if null/undefined
+ */
+export function toString(value: Buffer | string | undefined | null): string {
+  if (value === undefined || value === null) {
+    return "";
+  }
+  return Buffer.isBuffer(value) ? value.toString("utf8") : String(value);
+}
+
+/**
  * Checks if a buffer contains valid UTF-8 text
  * @param buffer - The buffer to check
  * @returns true if the buffer contains valid UTF-8 text

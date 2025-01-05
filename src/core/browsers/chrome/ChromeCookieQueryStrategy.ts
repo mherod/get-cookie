@@ -1,5 +1,6 @@
 import type { BrowserName, ExportedCookie } from "../../../types/schemas";
 import type { CookieRow } from "../../../types/schemas";
+import { toBuffer, toString } from "../../../utils/bufferUtils";
 import logger from "../../../utils/logger";
 import { getEncryptedChromeCookie } from "../getEncryptedChromeCookie";
 import { listChromeProfilePaths } from "../listChromeProfiles";
@@ -23,15 +24,6 @@ interface DecryptionResult {
  * Strategy for querying and decrypting Chrome browser cookies
  */
 export class ChromeCookieQueryStrategy {
-  private getValueFromBuffer(
-    value: Buffer | string | undefined | null,
-  ): string {
-    const fallbackValue = value ?? "";
-    return Buffer.isBuffer(fallbackValue)
-      ? fallbackValue.toString("utf8")
-      : String(fallbackValue);
-  }
-
   private async attemptDecryption(
     buffer: Buffer,
     context: DecryptionContext,
@@ -45,29 +37,34 @@ export class ChromeCookieQueryStrategy {
     context: DecryptionContext,
   ): Promise<DecryptionResult> {
     try {
-      // Handle null/undefined values
+      // Handle empty or invalid values with explicit null/undefined check
       if (encryptedValue === null || encryptedValue === undefined) {
         return {
-          decryptedValue: typeof value === "string" ? value : "",
+          decryptedValue: toString(value),
           decrypted: false,
         };
       }
 
-      // Convert to Buffer if needed
-      const buffer = Buffer.isBuffer(encryptedValue)
-        ? encryptedValue
-        : Buffer.from(String(encryptedValue));
-
-      // Skip decryption for empty buffers
+      // Convert to a buffer with our utility
+      const buffer = toBuffer(encryptedValue);
       if (buffer.length === 0) {
         return {
-          decryptedValue: typeof value === "string" ? value : "",
+          decryptedValue: toString(value),
           decrypted: false,
         };
       }
 
-      const decryptedValue = await this.attemptDecryption(buffer, context);
-      return { decryptedValue, decrypted: true };
+      // Attempt decryption
+      try {
+        const decryptedValue = await this.attemptDecryption(buffer, context);
+        return { decryptedValue, decrypted: true };
+      } catch {
+        // If decryption fails, fall back to the original value
+        return {
+          decryptedValue: toString(value),
+          decrypted: false,
+        };
+      }
     } catch (err) {
       logger.error("Failed to decrypt cookie value", {
         error: err instanceof Error ? err.message : String(err),
@@ -77,7 +74,7 @@ export class ChromeCookieQueryStrategy {
       });
 
       return {
-        decryptedValue: this.getValueFromBuffer(value),
+        decryptedValue: toString(value),
         decrypted: false,
       };
     }
@@ -88,19 +85,32 @@ export class ChromeCookieQueryStrategy {
     value: string,
     decrypted: boolean,
   ): ExportedCookie {
-    const expiry = chromeTimestampToDate(cookie.expires_utc);
+    // Add logging to debug the cookie data
+    logger.debug("Creating exported cookie", {
+      cookieName: cookie.name,
+      cookieValue: value,
+      cookieDomain: cookie.host_key,
+      cookieExpiry: cookie.expires_utc,
+    });
+
+    // Safely handle potentially undefined values
+    const name = toString(cookie.name);
+    const domain = toString(cookie.host_key);
+    const cookieValue = toString(value);
+    const expiryDate = cookie.expires_utc ? chromeTimestampToDate(cookie.expires_utc) : null;
+
     return {
-      name: cookie.name.trim(),
-      value: value.trim(),
-      domain: cookie.host_key.trim(),
-      expiry: expiry ?? new Date(0),
+      name: name.trim(),
+      value: cookieValue.trim(),
+      domain: domain.trim(),
+      expiry: expiryDate ? expiryDate.getTime() : 0,
       meta: {
         browser: "Chrome",
         decrypted,
-        path: cookie.path,
+        path: cookie.path || "/",
         secure: Boolean(cookie.is_secure),
         httpOnly: Boolean(cookie.is_httponly),
-        sameSite: cookie.samesite,
+        sameSite: cookie.samesite || "",
       },
     };
   }
@@ -125,9 +135,7 @@ export class ChromeCookieQueryStrategy {
             const cookie: ChromeCookieRow = {
               name: row.name,
               value: row.value,
-              encrypted_value: Buffer.isBuffer(row.value)
-                ? row.value
-                : Buffer.from(String(row.value)),
+              encrypted_value: toBuffer(row.value),
               host_key: row.domain,
               path: "/",
               expires_utc: row.expiry ?? 0,
@@ -170,23 +178,52 @@ export class ChromeCookieQueryStrategy {
     }
   }
 
-  private validateCookieResult(
-    result: PromiseSettledResult<ExportedCookie>,
-  ): ExportedCookie | null {
-    if (result.status === "fulfilled") {
-      return result.value;
-    }
+  private isValidCookie(cookie: ExportedCookie): boolean {
+    return (
+      typeof cookie.name === "string" &&
+      typeof cookie.value === "string" &&
+      typeof cookie.domain === "string" &&
+      typeof cookie.expiry === "number"
+    );
+  }
 
-    const error =
-      result.reason instanceof Error
-        ? result.reason
-        : new Error(String(result.reason));
+  private normalizeCookie(cookie: ExportedCookie): ExportedCookie {
+    return {
+      ...cookie,
+      value: String(cookie.value),
+      expiry: typeof cookie.expiry === "number" ? cookie.expiry : 0,
+    };
+  }
+
+  private handleRejectedCookie(reason: unknown): void {
+    const error = reason instanceof Error ? reason : new Error(String(reason));
     logger.error("Failed to process cookie", {
       error: error.message,
       type: error.name,
       stack: error.stack,
     });
-    return null;
+  }
+
+  private validateCookieResult(
+    result: PromiseSettledResult<ExportedCookie>,
+  ): ExportedCookie | null {
+    try {
+      if (result.status === "fulfilled") {
+        const cookie = result.value;
+        if (this.isValidCookie(cookie)) {
+          return this.normalizeCookie(cookie);
+        }
+      } else {
+        this.handleRejectedCookie(result.reason);
+      }
+
+      return null;
+    } catch (err) {
+      logger.error("Failed to validate cookie", {
+        error: err instanceof Error ? err.message : String(err),
+      });
+      return null;
+    }
   }
 
   /**

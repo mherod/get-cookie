@@ -1,8 +1,9 @@
 import { execSimple } from "../../../../utils/execSimple";
 
 /**
- * Gets the Chrome password from the keychain
- * @returns The password
+ * Retrieves the Chrome Safe Storage password from the macOS keychain
+ * @returns A promise that resolves to the Chrome Safe Storage password
+ * @throws {Error} If the password cannot be retrieved from the keychain
  */
 export async function getChromePassword(): Promise<string> {
   const command = 'security find-generic-password -w -s "Chrome Safe Storage"';

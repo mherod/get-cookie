@@ -46,14 +46,64 @@ jobs:
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
 
-      - name: Type Check
-        run: pnpm run type-check
-
-      - name: Lint
-        run: pnpm run lint
-
-      - name: Test
-        run: pnpm run test
+      - name: Run all checks
+        run: pnpm run validate
 
       - name: Build
         run: pnpm run build
+
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9.15.2
+
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Build documentation
+        run: pnpm run docs
+
+      - name: Check for dead links
+        run: pnpm run check-links
+
+      - name: Upload documentation artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/.vitepress/dist
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9.15.2
+
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Run type check
+        run: pnpm run type-check
+
+      - name: Run ESLint
+        run: pnpm run lint
+
+      - name: Check formatting
+        run: pnpm run format:check

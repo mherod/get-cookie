@@ -406,19 +406,6 @@ export function formatCookieVerbose(
 }
 
 /**
- * Converts a Chrome timestamp to a Date
- * Chrome stores expiry dates as microseconds since 1601-01-01T00:00:00Z
- * @param microseconds - The timestamp in microseconds since 1601
- * @returns A Date object
- */
-function chromeTimestampToDate(microseconds: number): Date {
-  // Convert microseconds to milliseconds and adjust for epoch difference
-  // Chrome's epoch (1601-01-01) is 11644473600000 milliseconds before Unix epoch (1970-01-01)
-  const unixTimestampMs = Math.floor(microseconds / 1000) - 11644473600000;
-  return new Date(unixTimestampMs);
-}
-
-/**
  * Formats an expiry date for display
  * @param expiry - The expiry date to format
  * @returns A human-readable string representation of the expiry date
@@ -437,8 +424,8 @@ function formatExpiry(expiry: Date | number | "Infinity" | undefined): string {
   }
 
   try {
-    // Handle Chrome's microseconds timestamp
-    const date = chromeTimestampToDate(expiry);
+    // For numeric timestamps, assume they are milliseconds since Unix epoch
+    const date = new Date(expiry);
     logger.debug("Converted date:", { date, timestamp: expiry });
     return date.toISOString();
   } catch (error) {

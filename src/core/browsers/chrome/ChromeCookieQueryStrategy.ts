@@ -10,25 +10,13 @@ import {
 import { getEncryptedChromeCookie } from "../getEncryptedChromeCookie";
 import { listChromeProfilePaths } from "../listChromeProfiles";
 
+import { chromeTimestampToDate } from "./chromeTimestamps";
 import { decrypt } from "./decrypt";
 import { getChromePassword } from "./getChromePassword";
 
 interface DecryptionContext {
   file: string;
   password: string;
-}
-
-/**
- * Converts a Chrome expiry timestamp to a number or "Infinity"
- * Chrome stores expiry dates as seconds since Unix epoch (1970)
- * @param expiry - The expiry timestamp in seconds
- * @returns The original timestamp if valid, "Infinity" for invalid or no expiry
- */
-function getExpiryDate(expiry: number | undefined | null): number | "Infinity" {
-  if (typeof expiry !== "number" || expiry <= 0) {
-    return "Infinity";
-  }
-  return expiry;
 }
 
 function createExportedCookie(
@@ -39,11 +27,16 @@ function createExportedCookie(
   file: string,
   decrypted: boolean,
 ): ExportedCookie {
+  const expiryDate =
+    typeof expiry === "number" && expiry > 0
+      ? chromeTimestampToDate(expiry)
+      : undefined;
+
   return {
     domain,
     name,
     value,
-    expiry: getExpiryDate(expiry),
+    expiry: expiryDate?.getTime() ?? "Infinity",
     meta: {
       file,
       browser: "Chrome",

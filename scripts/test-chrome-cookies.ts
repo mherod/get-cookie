@@ -1,11 +1,7 @@
-import { join, dirname } from "path";
-import { fileURLToPath } from "url";
+import { join } from "path";
 
 import { ChromeCookieQueryStrategy } from "../src/core/browsers/chrome/ChromeCookieQueryStrategy";
 import logger from "../src/utils/logger";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 
 async function runTests(
   strategy: ChromeCookieQueryStrategy,
@@ -47,8 +43,7 @@ async function runTests(
 async function main(): Promise<void> {
   // Path to our test Chrome cookies SQLite file
   const cookieStorePath = join(
-    __dirname,
-    "..",
+    process.cwd(),
     "test",
     "fixtures",
     "chrome",

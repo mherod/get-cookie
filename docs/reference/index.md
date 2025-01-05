@@ -6,11 +6,10 @@
 
 ## Modules
 
-- [cli/cli](cli/cli/index.html)
-- [index](index/index.html)
-- [types/CookieRender](types/CookieRender/index.html)
-- [types/CookieSpec](types/CookieSpec/index.html)
-- [types/ExportedCookie](types/ExportedCookie/index.html)
+- [cli](/reference/cli/cli/)
+- [index](/reference/index/)
+- [index/functions](/reference/index/functions/)
+- [index/type-aliases](/reference/index/type-aliases/)
 
 # API Reference
 

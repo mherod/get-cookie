@@ -5,6 +5,7 @@ import {
   CookieQueryStrategy,
   CookieRow,
   ExportedCookie,
+  ExportedCookieSchema,
 } from "../../../types/schemas";
 import { getEncryptedChromeCookie } from "../getEncryptedChromeCookie";
 import { listChromeProfilePaths } from "../listChromeProfiles";
@@ -17,11 +18,17 @@ interface DecryptionContext {
   password: string;
 }
 
-function getExpiryDate(expiry: number | undefined | null): Date | "Infinity" {
+/**
+ * Converts a Chrome expiry timestamp to a number or "Infinity"
+ * Chrome stores expiry dates as seconds since Unix epoch (1970)
+ * @param expiry - The expiry timestamp in seconds
+ * @returns The original timestamp if valid, "Infinity" for invalid or no expiry
+ */
+function getExpiryDate(expiry: number | undefined | null): number | "Infinity" {
   if (typeof expiry !== "number" || expiry <= 0) {
     return "Infinity";
   }
-  return new Date(expiry);
+  return expiry;
 }
 
 function createExportedCookie(
@@ -101,7 +108,21 @@ export class ChromeCookieQueryStrategy implements CookieQueryStrategy {
         files.map((file) => this.processFile(file, name, domain, password)),
       );
 
-      return results.flat();
+      const allCookies = results.flat();
+      const validCookies = allCookies.filter((cookie) => {
+        const result = ExportedCookieSchema.safeParse(cookie);
+        if (!result.success) {
+          this.logger.debug("Invalid cookie:", result.error.format());
+        }
+        return result.success;
+      });
+
+      this.logger.debug("Query complete", {
+        total: allCookies.length,
+        valid: validCookies.length,
+      });
+
+      return validCookies;
     } catch (error) {
       if (error instanceof Error) {
         logError("Failed to query cookies", error, { name, domain });

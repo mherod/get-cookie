@@ -1,4 +1,5 @@
 import type { CookieSpec, ExportedCookie } from "../../types/schemas";
+import { CookieSpecSchema } from "../../types/schemas";
 import { ChromeCookieQueryStrategy } from "../browsers/chrome/ChromeCookieQueryStrategy";
 import { FirefoxCookieQueryStrategy } from "../browsers/firefox/FirefoxCookieQueryStrategy";
 import { SafariCookieQueryStrategy } from "../browsers/safari/SafariCookieQueryStrategy";
@@ -11,7 +12,7 @@ import { SafariCookieQueryStrategy } from "../browsers/safari/SafariCookieQueryS
  * @param cookieSpec.domain - The domain to match cookies against
  * @returns Promise resolving to array of exported cookies from all available browsers
  * @remarks
- * - Returns empty array if cookieSpec is invalid or missing required fields
+ * - Returns empty array if cookieSpec is invalid
  * - Aggregates results from all available browser strategies
  * - Failed browser queries are gracefully handled and excluded from results
  * - Both name and domain fields are required and must be strings
@@ -27,14 +28,12 @@ import { SafariCookieQueryStrategy } from "../browsers/safari/SafariCookieQueryS
 export async function queryCookies(
   cookieSpec: CookieSpec,
 ): Promise<ExportedCookie[]> {
-  if (!cookieSpec.name || !cookieSpec.domain) {
+  const result = CookieSpecSchema.safeParse(cookieSpec);
+  if (!result.success) {
     return [];
   }
 
-  const { name, domain } = cookieSpec;
-  if (typeof name !== "string" || typeof domain !== "string") {
-    return [];
-  }
+  const { name, domain } = result.data;
 
   /**
    * Initialize all available browser-specific strategies

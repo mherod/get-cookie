@@ -4,21 +4,20 @@ import {
   setupChromeTest,
   mockCookieData,
   mockPassword,
+  mockCookieFile,
+  restorePlatform,
 } from "../testSetup";
 
 describe("ChromeCookieQueryStrategy - Edge Cases", () => {
   let strategy: ReturnType<typeof setupChromeTest>;
-  const originalPlatform = process.platform;
 
   beforeEach(() => {
+    jest.clearAllMocks();
     strategy = setupChromeTest();
   });
 
-  afterAll(() => {
-    Object.defineProperty(process, "platform", {
-      value: originalPlatform,
-      configurable: true,
-    });
+  afterEach(() => {
+    restorePlatform();
   });
 
   it("should handle non-buffer cookie values", async () => {
@@ -26,13 +25,13 @@ describe("ChromeCookieQueryStrategy - Edge Cases", () => {
       ...mockCookieData,
       value: "non-buffer-value",
     };
-    mockGetEncryptedChromeCookie.mockResolvedValueOnce([nonBufferCookie]);
-    mockDecrypt.mockResolvedValueOnce("decrypted-value");
+    mockGetEncryptedChromeCookie.mockResolvedValue([nonBufferCookie]);
+    mockDecrypt.mockResolvedValue("decrypted-value");
 
     const cookies = await strategy.queryCookies(
       "test-cookie",
       "example.com",
-      "test-password",
+      mockCookieFile,
     );
 
     expect(cookies).toHaveLength(1);

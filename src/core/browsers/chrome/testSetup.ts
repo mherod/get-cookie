@@ -31,29 +31,49 @@ export const mockCookieData = {
 };
 
 /**
+ * Store the original platform for restoration
+ */
+export const originalPlatform = process.platform;
+
+/**
  * Sets up a Chrome test environment with mocked dependencies
  * @returns A configured ChromeCookieQueryStrategy instance
  */
 export function setupChromeTest(): ChromeCookieQueryStrategy {
-  const strategy = new ChromeCookieQueryStrategy();
-
-  // Mock process.platform
+  // Mock process.platform before creating strategy
   Object.defineProperty(process, "platform", {
     value: "darwin",
     configurable: true,
   });
 
-  // Setup default mock values
+  // Setup default mock values before creating strategy
   (listChromeProfilePaths as unknown as jest.Mock).mockReturnValue([
     mockCookieFile,
   ]);
   (getChromePassword as unknown as jest.Mock).mockResolvedValue(mockPassword);
-  (getEncryptedChromeCookie as unknown as jest.Mock).mockResolvedValue([
-    mockCookieData,
-  ]);
+  (getEncryptedChromeCookie as unknown as jest.Mock).mockImplementation(
+    ({ file }) => {
+      if (file === mockCookieFile) {
+        return Promise.resolve([mockCookieData]);
+      }
+      return Promise.resolve([]);
+    },
+  );
   (decrypt as unknown as jest.Mock).mockResolvedValue("decrypted-value");
 
+  const strategy = new ChromeCookieQueryStrategy();
   return strategy;
+}
+
+/**
+ * Restores the original platform value and resets mocks
+ */
+export function restorePlatform(): void {
+  Object.defineProperty(process, "platform", {
+    value: originalPlatform,
+    configurable: true,
+  });
+  jest.resetAllMocks();
 }
 
 // Export mocked functions for test assertions

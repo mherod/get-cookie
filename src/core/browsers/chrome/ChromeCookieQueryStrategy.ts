@@ -1,3 +1,4 @@
+import { toBuffer, decodeBuffer } from "@utils/bufferUtils";
 import { createTaggedLogger, logError } from "@utils/logHelpers";
 
 import {
@@ -30,7 +31,7 @@ function createExportedCookie(
   const expiryDate =
     typeof expiry === "number" && expiry > 0
       ? chromeTimestampToDate(expiry)
-      : undefined;
+      : null;
 
   return {
     domain,
@@ -148,7 +149,18 @@ export class ChromeCookieQueryStrategy implements CookieQueryStrategy {
       );
 
       return results
-        .map((result) => (result.status === "fulfilled" ? result.value : null))
+        .map((result) => {
+          if (result.status === "fulfilled") {
+            return result.value;
+          }
+          this.logger.error("Failed to process cookie", {
+            error:
+              result.reason instanceof Error
+                ? result.reason.message
+                : String(result.reason),
+          });
+          return null;
+        })
         .filter((cookie): cookie is ExportedCookie => cookie !== null);
     } catch (error) {
       if (error instanceof Error) {
@@ -168,11 +180,9 @@ export class ChromeCookieQueryStrategy implements CookieQueryStrategy {
     context: DecryptionContext,
   ): Promise<ExportedCookie> {
     try {
-      const value = Buffer.isBuffer(cookie.value)
-        ? cookie.value
-        : Buffer.from(String(cookie.value));
+      const valueBuffer = toBuffer(cookie.value);
+      const decryptedValue = await decrypt(valueBuffer, context.password);
 
-      const decryptedValue = await decrypt(value, context.password);
       return createExportedCookie(
         cookie.domain,
         cookie.name,
@@ -182,15 +192,21 @@ export class ChromeCookieQueryStrategy implements CookieQueryStrategy {
         true,
       );
     } catch (error) {
-      if (error instanceof Error) {
-        this.logger.warn("Failed to decrypt cookie", { error });
-      } else {
-        this.logger.warn("Failed to decrypt cookie", { error: String(error) });
-      }
+      // Handle decryption errors
+      this.logger.warn("Failed to decrypt cookie", {
+        error: error instanceof Error ? error.message : String(error),
+        domain: cookie.domain,
+        name: cookie.name,
+      });
+
+      // Always return a cookie, even if decryption fails
+      const valueBuffer = toBuffer(cookie.value);
+      const fallbackValue = decodeBuffer(valueBuffer);
+
       return createExportedCookie(
         cookie.domain,
         cookie.name,
-        cookie.value.toString("utf-8"),
+        fallbackValue,
         cookie.expiry,
         context.file,
         false,

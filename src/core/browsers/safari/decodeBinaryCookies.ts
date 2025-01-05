@@ -1,6 +1,6 @@
-import type { BinaryCookieRow } from '../../../types/schemas';
+import type { BinaryCookieRow } from "../../../types/schemas";
 
-import { BinaryCodableCookies } from './BinaryCodableCookies';
+import { BinaryCodableCookies } from "./BinaryCodableCookies";
 
 /**
  * Decodes a Safari binary cookie file into an array of cookie objects.

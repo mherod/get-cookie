@@ -1,4 +1,4 @@
-import { Buffer } from 'buffer';
+import { Buffer } from "buffer";
 
 /**
  * Container for binary data parsing with offset tracking

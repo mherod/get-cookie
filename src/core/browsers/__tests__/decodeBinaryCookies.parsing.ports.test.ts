@@ -6,7 +6,10 @@ jest.mock("fs", () => ({
   readFileSync: jest.fn(),
 }));
 
-const mockReadFileSync = jest.spyOn({ readFileSync } as { readFileSync: typeof readFileSync }, "readFileSync") as jest.MockedFunction<typeof readFileSync>;
+const mockReadFileSync = jest.spyOn(
+  { readFileSync } as { readFileSync: typeof readFileSync },
+  "readFileSync",
+) as jest.MockedFunction<typeof readFileSync>;
 
 describe("decodeBinaryCookies - Port Handling", () => {
   beforeEach(() => {

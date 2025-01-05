@@ -6,7 +6,10 @@ jest.mock("fs", () => ({
   readFileSync: jest.fn(),
 }));
 
-const mockReadFileSync = jest.spyOn({ readFileSync } as { readFileSync: typeof readFileSync }, "readFileSync") as jest.MockedFunction<typeof readFileSync>;
+const mockReadFileSync = jest.spyOn(
+  { readFileSync } as { readFileSync: typeof readFileSync },
+  "readFileSync",
+) as jest.MockedFunction<typeof readFileSync>;
 
 describe("decodeBinaryCookies - Multiple Cookies Parsing", () => {
   beforeEach(() => {
@@ -45,7 +48,7 @@ describe("decodeBinaryCookies - Multiple Cookies Parsing", () => {
     // Write checksum and footer
     const checksumOffset = cookie2Start + 30;
     buffer.writeUInt32BE(0, checksumOffset);
-    buffer.writeBigUInt64BE(BigInt('0x071720050000004b'), checksumOffset + 4);
+    buffer.writeBigUInt64BE(BigInt("0x071720050000004b"), checksumOffset + 4);
 
     mockReadFileSync.mockReturnValue(buffer);
 

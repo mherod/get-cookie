@@ -1,0 +1,91 @@
+version: 2.1
+
+orbs:
+  macos: circleci/macos@2
+
+jobs:
+  build-and-test:
+    macos:
+      xcode: 16.2.0
+    resource_class: m2pro.medium
+    environment:
+      HOMEBREW_NO_AUTO_UPDATE: 1
+    steps:
+      - checkout
+      - run:
+          name: Install Dependencies
+          command: |
+            npm install -g pnpm
+            pnpm install
+      - run:
+          name: Build and Test
+          command: |
+            pnpm run build
+            pnpm run test
+      - run:
+          name: Validate
+          command: pnpm run validate
+      - run:
+          name: Create Binary Cookie Test Fixtures
+          command: cd scripts && ./create-binary-cookies.sh
+      - run:
+          name: Run Test Scripts
+          command: |
+            cd scripts
+            pnpm exec tsx test-binarycookies.ts
+            pnpm exec tsx test-decoder.ts
+            pnpm exec tsx test-safari-cookies.ts
+            pnpm exec tsx validate-cookie-structure.ts
+      - store_artifacts:
+          path: scripts/Cookies.binarycookies
+          destination: test-fixtures
+
+  docs:
+    macos:
+      xcode: 16.2.0
+    resource_class: m2pro.medium
+    steps:
+      - checkout
+      - run:
+          name: Install Dependencies
+          command: |
+            npm install -g pnpm
+            pnpm install
+      - run:
+          name: Build Documentation
+          command: pnpm run docs:build
+      - run:
+          name: Check Documentation Links
+          command: cd scripts && ./check-vitepress-links.sh
+      - store_artifacts:
+          path: docs/.vitepress/dist
+          destination: docs
+
+  lint:
+    macos:
+      xcode: 16.2.0
+    resource_class: m2pro.medium
+    steps:
+      - checkout
+      - run:
+          name: Install Dependencies
+          command: |
+            npm install -g pnpm
+            pnpm install
+      - run:
+          name: Type Check
+          command: pnpm run type-check
+      - run:
+          name: Run ESLint
+          command: pnpm run lint
+      - run:
+          name: Check Formatting
+          command: pnpm run format-check
+
+workflows:
+  version: 2
+  build-test-lint:
+    jobs:
+      - build-and-test
+      - docs
+      - lint

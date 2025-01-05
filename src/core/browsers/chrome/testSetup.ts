@@ -38,6 +38,11 @@ export const mockCookieData: ChromeCookieRow = {
 };
 
 /**
+ * Mock decrypted value used for testing
+ */
+export const mockDecryptedValue = "decrypted-value";
+
+/**
  * Store the original platform for restoration
  */
 export const originalPlatform = process.platform;
@@ -59,9 +64,14 @@ export function setupChromeTest(): ChromeCookieQueryStrategy {
   ]);
   (getChromePassword as unknown as jest.Mock).mockResolvedValue(mockPassword);
   (getEncryptedChromeCookie as unknown as jest.Mock).mockResolvedValue([
-    mockCookieData,
+    {
+      name: mockCookieData.name,
+      value: mockCookieData.encrypted_value,
+      domain: mockCookieData.host_key,
+      expiry: mockCookieData.expires_utc,
+    },
   ]);
-  (decrypt as unknown as jest.Mock).mockResolvedValue("decrypted-value");
+  (decrypt as unknown as jest.Mock).mockResolvedValue(mockDecryptedValue);
 
   const strategy = new ChromeCookieQueryStrategy();
   return strategy;

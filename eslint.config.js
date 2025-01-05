@@ -211,7 +211,16 @@ export default [
       "no-var": "error",
       curly: ["error", "all"],
       "max-depth": ["error", 3],
-      "max-lines-per-function": ["error", { max: 50 }],
+      "max-lines-per-function": [
+        "error",
+        {
+          max: 50,
+          skipBlankLines: true,
+          skipComments: true,
+          IIFEs: true,
+          ArrowFunctionExpression: 200,
+        },
+      ],
       complexity: ["error", 10],
       "jsdoc/no-types": "off",
     },

@@ -139,3 +139,4 @@ test/fixtures/**/*.sqlite
 test/fixtures/**/*.sqlite3
 test/fixtures/**/*.binarycookies
 !test/fixtures/chrome/chrome_cookies.db
+.idea/git_toolbox_blame.xml

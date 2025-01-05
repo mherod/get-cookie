@@ -2,6 +2,60 @@ import destr from "destr";
 import { z } from "zod";
 
 /**
+ * Zod schema for Mac date validation.
+ * Validates that a number represents a valid Mac date (seconds since 2001-01-01).
+ * @example
+ * ```typescript
+ * // Valid dates
+ * MacDateSchema.parse(0);              // OK - Mac epoch (2001-01-01)
+ * MacDateSchema.parse(3124137600);     // OK - 2100-01-01
+ *
+ * // Invalid dates
+ * MacDateSchema.parse(-1);             // Error: Date must be after Mac epoch (2001-01-01)
+ * MacDateSchema.parse(3124137601);     // Error: Date must be before 2100-01-01
+ * MacDateSchema.parse("not a number"); // Error: Expected number, received string
+ * ```
+ */
+export const MacDateSchema = z
+  .number()
+  .int("Mac date must be an integer")
+  .min(0, "Date must be after Mac epoch (2001-01-01)")
+  .max(3124137600, "Date must be before 2100-01-01");
+
+/**
+ * Schema for validating Chrome-specific dates.
+ * Chrome stores dates as microseconds since 1601-01-01T00:00:00Z.
+ * @example
+ * ```typescript
+ * // Valid Chrome dates
+ * ChromeDateSchema.parse(13303830968000000); // OK - converts to Date object
+ * ChromeDateSchema.parse(0);                 // OK - converts to 1601-01-01
+ *
+ * // Invalid Chrome dates
+ * ChromeDateSchema.parse(-1);                // Error: Must be positive
+ * ChromeDateSchema.parse(1.5);               // Error: Must be integer
+ * ```
+ */
+export const ChromeDateSchema = z
+  .number()
+  .int()
+  .nonnegative()
+  .transform((microseconds) => {
+    // Chrome epoch is 1601-01-01T00:00:00Z
+    // First convert microseconds to milliseconds
+    const milliseconds = Math.floor(microseconds / 1000);
+    // Then adjust for the difference between Chrome epoch and Unix epoch
+    // Unix epoch (1970) is 11644473600 seconds after Chrome epoch (1601)
+    const unixTimestamp = milliseconds - 11644473600000;
+    return new Date(unixTimestamp);
+  });
+
+/**
+ * Type representing a Chrome date in microseconds since 1601-01-01.
+ */
+export type ChromeDate = z.infer<typeof ChromeDateSchema>;
+
+/**
  * Zod schema for cookie domain validation.
  * Enforces standard cookie domain rules.
  * @example
@@ -20,13 +74,17 @@ export const CookieDomainSchema = z
   .string()
   .trim()
   .min(1, "Domain cannot be empty")
-  .refine(
-    (domain) =>
-      /^\.?[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/.test(
-        domain,
-      ),
-    "Invalid domain format",
-  );
+  .refine((domain) => {
+    if (
+      domain === "localhost" ||
+      /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/.test(domain)
+    ) {
+      return true;
+    }
+    return /^\.?[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/.test(
+      domain,
+    );
+  }, "Invalid domain format");
 
 /**
  * Zod schema for cookie name validation.
@@ -48,10 +106,12 @@ export const CookieNameSchema = z
   .string()
   .trim()
   .min(1, "Cookie name cannot be empty")
-  .refine(
-    (name) => name === "%" || /^[!#$%&'()*+\-.:0-9A-Z \^_`a-z|~]+$/.test(name),
-    "Invalid cookie name format - must contain only valid characters (letters, numbers, and certain symbols) or be '%' for wildcard",
-  );
+  .refine((name) => {
+    if (name === "%") {
+      return true;
+    }
+    return /^[!#$%&'()*+\-.:0-9A-Z\^_`a-z|~]+$/.test(name);
+  }, "Invalid cookie name format - must contain only valid characters (letters, numbers, and certain symbols) or be '%' for wildcard");
 
 /**
  * Zod schema for cookie path validation.
@@ -81,8 +141,23 @@ export const CookiePathSchema = z
   .default("/");
 
 /**
- * Zod schema for cookie value.
- * Attempts to parse JSON values using destr for better readability.
+ * Zod schema for cookie value validation.
+ * Attempts to parse JSON values using destr for better readability and type safety.
+ * The schema first trims the string value, then attempts to parse it as JSON using destr.
+ * If the value is valid JSON, it will be parsed into its corresponding JavaScript type.
+ * @example
+ * ```typescript
+ * // Valid values
+ * CookieValueSchema.parse("123");           // OK - Number 123
+ * CookieValueSchema.parse("true");          // OK - Boolean true
+ * CookieValueSchema.parse('"hello"');       // OK - String "hello"
+ * CookieValueSchema.parse('{"a":1}');       // OK - Object { a: 1 }
+ * CookieValueSchema.parse("[1,2,3]");       // OK - Array [1, 2, 3]
+ *
+ * // Raw strings remain as strings
+ * CookieValueSchema.parse("abc123");        // OK - String "abc123"
+ * CookieValueSchema.parse(" abc ");         // OK - String "abc" (trimmed)
+ * ```
  */
 export const CookieValueSchema = z
   .string()
@@ -197,7 +272,32 @@ export const CookieSpecSchema = z
 export type CookieSpec = z.infer<typeof CookieSpecSchema>;
 
 /**
- * Schema for metadata about a cookie
+ * Schema for metadata about a cookie.
+ * Contains additional information about the cookie's source and security settings.
+ * @property file - The file path where the cookie was stored
+ * @property browser - The browser name that stored the cookie (e.g., "Chrome", "Safari")
+ * @property decrypted - Whether the cookie value has been decrypted
+ * @property secure - Whether the cookie is only transmitted over HTTPS
+ * @property httpOnly - Whether the cookie is inaccessible to JavaScript
+ * @property path - The cookie's path attribute
+ * @example
+ * ```typescript
+ * // Basic metadata
+ * const meta = {
+ *   file: "/Users/me/Library/Cookies/Cookies.binarycookies",
+ *   browser: "Safari",
+ *   secure: true,
+ *   httpOnly: false
+ * };
+ * const result = CookieMetaSchema.parse(meta);
+ *
+ * // Partial metadata (all fields are optional)
+ * const partialMeta = {
+ *   browser: "Chrome",
+ *   decrypted: true
+ * };
+ * CookieMetaSchema.parse(partialMeta); // OK
+ * ```
  */
 export const CookieMetaSchema = z
   .object({
@@ -215,6 +315,36 @@ export const CookieMetaSchema = z
  * Type definition for cookie metadata
  */
 export type CookieMeta = z.infer<typeof CookieMetaSchema>;
+
+/**
+ * Schema for validating cookie expiry dates.
+ * Accepts dates in various formats: "Infinity", Date objects, timestamps, or undefined.
+ * @example
+ * ```typescript
+ * // Valid dates
+ * ExportedCookieDateSchema.parse("Infinity");     // OK - Never expires
+ * ExportedCookieDateSchema.parse(new Date());     // OK - Date object
+ * ExportedCookieDateSchema.parse(1735689600000);  // OK - Unix timestamp
+ *
+ * // Invalid dates
+ * ExportedCookieDateSchema.parse(-1);             // Error: Expiry must be a positive number
+ * ExportedCookieDateSchema.parse("invalid");      // Error: Invalid date format
+ * ```
+ */
+export const ExportedCookieDateSchema = z.union([
+  z.literal("Infinity"),
+  z.instanceof(Date),
+  z
+    .number()
+    .int()
+    .positive()
+    .transform((ms) => new Date(ms)),
+]);
+
+/**
+ * Type definition for exported cookie date
+ */
+export type ExportedCookieDate = z.infer<typeof ExportedCookieDateSchema>;
 
 /**
  * Schema for exported cookie data
@@ -251,13 +381,7 @@ export const ExportedCookieSchema = z
     domain: CookieDomainSchema,
     name: CookieNameSchema,
     value: CookieValueSchema,
-    expiry: z
-      .union([
-        z.literal("Infinity"),
-        z.date(),
-        z.number().int().positive("Expiry must be a positive number"),
-      ])
-      .optional(),
+    expiry: ExportedCookieDateSchema.optional(),
     meta: CookieMetaSchema.optional(),
   })
   .strict();
@@ -296,11 +420,60 @@ export const ExportedCookieSchema = z
 export type ExportedCookie = z.infer<typeof ExportedCookieSchema>;
 
 /**
- * Schema for raw cookie data from browser stores
+ * Schema for raw cookie values that can be either strings or buffers.
+ * Used when reading cookies directly from browser stores before processing.
+ * @example
+ * ```typescript
+ * // String values
+ * CookieValueBufferOrStringSchema.parse("abc123");     // OK
+ * CookieValueBufferOrStringSchema.parse("");           // OK
+ *
+ * // Buffer values
+ * CookieValueBufferOrStringSchema.parse(Buffer.from("encrypted")); // OK
+ *
+ * // Invalid values
+ * CookieValueBufferOrStringSchema.parse(123);          // Error: Expected string or Buffer
+ * CookieValueBufferOrStringSchema.parse(null);         // Error: Expected string or Buffer
+ * ```
+ */
+const CookieValueBufferOrStringSchema = z.union([
+  z.string(),
+  z.instanceof(Buffer),
+]);
+
+/**
+ * Schema for raw cookie data from browser stores.
+ * Represents the minimal structure of a cookie as stored in browser databases
+ * before processing and transformation into the exported format.
+ * @property name - The name of the cookie
+ * @property value - The raw value of the cookie (can be string or buffer)
+ * @property domain - The domain the cookie belongs to
+ * @property path - Optional cookie path
+ * @property expiry - Optional expiration timestamp
+ * @example
+ * ```typescript
+ * // Basic cookie row
+ * const row = {
+ *   name: "session",
+ *   value: "abc123",
+ *   domain: "example.com",
+ *   path: "/",
+ *   expiry: 1735689600
+ * };
+ * const result = CookieRowSchema.parse(row);
+ *
+ * // Minimal cookie row
+ * const minimal = {
+ *   name: "theme",
+ *   value: Buffer.from([1, 2, 3]), // Encrypted value
+ *   domain: ".example.com"
+ * };
+ * CookieRowSchema.parse(minimal); // OK - path and expiry are optional
+ * ```
  */
 export const CookieRowSchema = z.object({
   name: z.string(),
-  value: z.union([z.string(), z.instanceof(Buffer)]),
+  value: CookieValueBufferOrStringSchema,
   domain: z.string(),
   path: z.string().optional(),
   expiry: z.number().optional(),
@@ -312,7 +485,32 @@ export const CookieRowSchema = z.object({
 export type CookieRow = z.infer<typeof CookieRowSchema>;
 
 /**
- * Schema for cookie render options
+ * Schema for cookie rendering options.
+ * Defines how cookies should be formatted when displayed or exported.
+ * @property format - Optional display format:
+ * - "merged": Combines cookies with same name/domain
+ * - "grouped": Groups cookies by domain
+ * @property separator - Optional string to use between cookie fields
+ * @property showFilePaths - Optional flag to include source file paths in output
+ * @example
+ * ```typescript
+ * // Basic render options
+ * const options = {
+ *   format: "grouped" as const,
+ *   separator: "; ",
+ *   showFilePaths: true
+ * };
+ * const result = RenderOptionsSchema.parse(options);
+ *
+ * // Minimal options
+ * const minimal = {
+ *   format: "merged" as const
+ * };
+ * RenderOptionsSchema.parse(minimal); // OK - all fields are optional
+ *
+ * // Invalid format
+ * RenderOptionsSchema.parse({ format: "invalid" }); // Error: Invalid format
+ * ```
  */
 export const RenderOptionsSchema = z
   .object({
@@ -328,7 +526,25 @@ export const RenderOptionsSchema = z
 export type RenderOptions = z.infer<typeof RenderOptionsSchema>;
 
 /**
- * Schema for browser names
+ * Schema for browser names supported by the cookie query system.
+ * Validates that a browser name is one of the supported values.
+ * - "Chrome": Google Chrome and Chromium-based browsers
+ * - "Firefox": Mozilla Firefox
+ * - "Safari": Apple Safari
+ * - "internal": Internal browser implementation
+ * - "unknown": Browser type could not be determined
+ * @example
+ * ```typescript
+ * // Valid browser names
+ * BrowserNameSchema.parse("Chrome");    // OK
+ * BrowserNameSchema.parse("Safari");    // OK
+ * BrowserNameSchema.parse("Firefox");   // OK
+ *
+ * // Invalid browser names
+ * BrowserNameSchema.parse("chrome");    // Error: Invalid browser name
+ * BrowserNameSchema.parse("Opera");     // Error: Invalid browser name
+ * BrowserNameSchema.parse("");          // Error: Invalid browser name
+ * ```
  */
 export const BrowserNameSchema = z.enum([
   "Chrome",
@@ -357,7 +573,35 @@ export const CookieQueryStrategySchema = z
   .strict();
 
 /**
- * Type definition for cookie query strategy
+ * Schema for cookie query strategy implementation.
+ * Defines the interface for querying cookies from different browser stores.
+ * Each browser implementation must provide a strategy that conforms to this schema.
+ * @property browserName - The name of the browser this strategy handles
+ * @property queryCookies - Function to query cookies from the browser's store
+ * - Parameters:
+ * - name: Cookie name to query
+ * - domain: Domain to query cookies from
+ * - path: Optional path to filter cookies
+ * - Returns: Promise resolving to array of exported cookies
+ * @example
+ * ```typescript
+ * // Example Chrome query strategy
+ * const chromeStrategy = {
+ *   browserName: "Chrome" as const,
+ *   queryCookies: async (name: string, domain: string, path?: string) => {
+ *     // Implementation to query Chrome cookies
+ *     const cookies = await queryChromeCookies(name, domain, path);
+ *     return cookies;
+ *   }
+ * };
+ *
+ * // Validate the strategy
+ * const result = CookieQueryStrategySchema.safeParse(chromeStrategy);
+ * if (result.success) {
+ *   // Use the strategy to query cookies
+ *   const cookies = await result.data.queryCookies("session", "example.com");
+ * }
+ * ```
  */
 export type CookieQueryStrategy = z.infer<typeof CookieQueryStrategySchema>;
 
@@ -382,7 +626,32 @@ export type CookieQueryStrategy = z.infer<typeof CookieQueryStrategySchema>;
 export type MultiCookieSpec = CookieSpec | CookieSpec[];
 
 /**
+ * Interface for configuring cookie query operations.
+ * Provides options to customize how cookies are queried from browser stores.
+ * @template T - The type of cookie query strategy to use (defaults to CookieQueryStrategy)
+ * @property strategy - The strategy implementation to use for querying cookies
+ * @property limit - Optional maximum number of cookies to return
+ * @property removeExpired - Optional flag to filter out expired cookies from results
+ * @property store - Optional specific cookie store to query from
+ * @example
+ * ```typescript
+ * // Basic query options
+ * const options: CookieQueryOptions = {
+ *   strategy: chromeStrategy,
+ *   limit: 10,
+ *   removeExpired: true
+ * };
  *
+ * // Custom strategy type
+ * interface CustomStrategy extends CookieQueryStrategy {
+ *   customMethod(): void;
+ * }
+ *
+ * const customOptions: CookieQueryOptions<CustomStrategy> = {
+ *   strategy: customImplementation,
+ *   store: "Custom Store"
+ * };
+ * ```
  */
 export interface CookieQueryOptions<
   T extends CookieQueryStrategy = CookieQueryStrategy,

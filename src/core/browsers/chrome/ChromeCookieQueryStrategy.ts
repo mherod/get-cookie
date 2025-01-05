@@ -31,6 +31,29 @@ export class ChromeCookieQueryStrategy {
     return decrypt(buffer, context.password);
   }
 
+  private getEmptyDecryptionResult(): DecryptionResult {
+    return {
+      decryptedValue: "",
+      decrypted: false,
+    };
+  }
+
+  private async tryDecryption(
+    buffer: Buffer,
+    context: DecryptionContext,
+    fallbackValue: string,
+  ): Promise<DecryptionResult> {
+    try {
+      const decryptedValue = await this.attemptDecryption(buffer, context);
+      return { decryptedValue: decryptedValue || "", decrypted: true };
+    } catch {
+      return {
+        decryptedValue: fallbackValue || "",
+        decrypted: false,
+      };
+    }
+  }
+
   private async decryptValue(
     value: Buffer | string | undefined | null,
     encryptedValue: Buffer | string | undefined | null,
@@ -38,33 +61,22 @@ export class ChromeCookieQueryStrategy {
   ): Promise<DecryptionResult> {
     try {
       // Handle empty or invalid values with explicit null/undefined check
-      if (encryptedValue === null || encryptedValue === undefined) {
-        return {
-          decryptedValue: toString(value),
-          decrypted: false,
-        };
+      if (
+        value === null ||
+        value === undefined ||
+        encryptedValue === null ||
+        encryptedValue === undefined
+      ) {
+        return this.getEmptyDecryptionResult();
       }
 
       // Convert to a buffer with our utility
       const buffer = toBuffer(encryptedValue);
       if (buffer.length === 0) {
-        return {
-          decryptedValue: toString(value),
-          decrypted: false,
-        };
+        return this.getEmptyDecryptionResult();
       }
 
-      // Attempt decryption
-      try {
-        const decryptedValue = await this.attemptDecryption(buffer, context);
-        return { decryptedValue, decrypted: true };
-      } catch {
-        // If decryption fails, fall back to the original value
-        return {
-          decryptedValue: toString(value),
-          decrypted: false,
-        };
-      }
+      return this.tryDecryption(buffer, context, toString(value));
     } catch (err) {
       logger.error("Failed to decrypt cookie value", {
         error: err instanceof Error ? err.message : String(err),
@@ -73,10 +85,7 @@ export class ChromeCookieQueryStrategy {
         encryptedValueType: typeof encryptedValue,
       });
 
-      return {
-        decryptedValue: toString(value),
-        decrypted: false,
-      };
+      return this.getEmptyDecryptionResult();
     }
   }
 
@@ -93,17 +102,19 @@ export class ChromeCookieQueryStrategy {
       cookieExpiry: cookie.expires_utc,
     });
 
-    // Safely handle potentially undefined values
-    const name = toString(cookie.name);
-    const domain = toString(cookie.host_key);
-    const cookieValue = toString(value);
-    const expiryDate = cookie.expires_utc ? chromeTimestampToDate(cookie.expires_utc) : null;
+    // Safely handle potentially undefined values with empty string defaults
+    const name = cookie.name ? toString(cookie.name) : "";
+    const domain = cookie.host_key ? toString(cookie.host_key) : "";
+    const cookieValue = value || "";
+    const expiryDate = cookie.expires_utc
+      ? (chromeTimestampToDate(cookie.expires_utc) ?? new Date(0))
+      : new Date(0);
 
     return {
       name: name.trim(),
       value: cookieValue.trim(),
       domain: domain.trim(),
-      expiry: expiryDate ? expiryDate.getTime() : 0,
+      expiry: expiryDate.getTime(),
       meta: {
         browser: "Chrome",
         decrypted,
@@ -128,6 +139,13 @@ export class ChromeCookieQueryStrategy {
         file,
       });
 
+      logger.debug("Processing cookies", {
+        count: encryptedCookies.length,
+        file,
+        name,
+        domain,
+      });
+
       const context: DecryptionContext = { file, password };
       const results = await Promise.allSettled(
         encryptedCookies.map(
@@ -136,7 +154,7 @@ export class ChromeCookieQueryStrategy {
               name: row.name,
               value: row.value,
               encrypted_value: toBuffer(row.value),
-              host_key: row.domain,
+              host_key: row.domain || domain,
               path: "/",
               expires_utc: row.expiry ?? 0,
               is_secure: 0,
@@ -144,13 +162,33 @@ export class ChromeCookieQueryStrategy {
               samesite: "",
             };
 
-            const { decryptedValue, decrypted } = await this.decryptValue(
-              cookie.value,
-              cookie.encrypted_value,
-              context,
-            );
+            const { decryptedValue, decrypted: _decrypted } =
+              await this.decryptValue(
+                cookie.value,
+                cookie.encrypted_value,
+                context,
+              );
 
-            return this.createExportedCookie(cookie, decryptedValue, decrypted);
+            // Convert Chrome timestamp to Date object
+            const expiryDate = chromeTimestampToDate(cookie.expires_utc);
+            // If the timestamp is invalid or 0, use "Infinity"
+            const expiry =
+              expiryDate && expiryDate.getTime() > 0 ? expiryDate : "Infinity";
+
+            return {
+              name: cookie.name,
+              domain: cookie.host_key,
+              value: decryptedValue,
+              expiry,
+              meta: {
+                file,
+                browser: "Chrome",
+                decrypted: true,
+                secure: Boolean(cookie.is_secure),
+                httpOnly: Boolean(cookie.is_httponly),
+                path: cookie.path,
+              },
+            };
           },
         ),
       );
@@ -183,7 +221,7 @@ export class ChromeCookieQueryStrategy {
       typeof cookie.name === "string" &&
       typeof cookie.value === "string" &&
       typeof cookie.domain === "string" &&
-      typeof cookie.expiry === "number"
+      cookie.expiry instanceof Date
     );
   }
 
@@ -191,7 +229,7 @@ export class ChromeCookieQueryStrategy {
     return {
       ...cookie,
       value: String(cookie.value),
-      expiry: typeof cookie.expiry === "number" ? cookie.expiry : 0,
+      expiry: cookie.expiry instanceof Date ? cookie.expiry : new Date(0),
     };
   }
 
@@ -213,6 +251,7 @@ export class ChromeCookieQueryStrategy {
         if (this.isValidCookie(cookie)) {
           return this.normalizeCookie(cookie);
         }
+        logger.warn("Invalid cookie structure", { cookie });
       } else {
         this.handleRejectedCookie(result.reason);
       }

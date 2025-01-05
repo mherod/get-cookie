@@ -2,96 +2,174 @@
 
 This guide covers important security and privacy considerations when using get-cookie.
 
+## Platform-Specific Requirements
+
+### macOS Requirements
+
+- **Keychain Access**: Required for Chrome cookie decryption
+- **Browser Profile Directories**: Required for all browsers
+- **Safari Container Access**: Required for Safari cookies
+- **System Integrity Protection**: Must be enabled for secure operation
+
+### Linux Requirements (Experimental)
+
+- **Firefox Only**: Currently only Firefox is supported
+- **Profile Directory**: Requires read access to `~/.mozilla/firefox`
+- **SQLite Access**: Direct database access needed
+- **No Encryption Support**: Only unencrypted cookies accessible
+
 ## System Access Requirements
 
-get-cookie requires specific system-level access to function:
+Different browsers have different security models:
 
-- **macOS Keychain Access**: Required for Chrome cookie decryption
-- **Browser Profile Directories**: Required to read cookie databases
-- **Safari Container Access**: Required for Safari cookie access
+### Chrome (macOS only)
+
+- Requires Keychain access for Safe Storage password
+- Each profile has a unique encryption key
+- Database must be readable by current user
+- Chrome must be installed and configured
+
+### Firefox (macOS & Linux)
+
+- Direct access to profile directory required
+- SQLite database must be unlocked
+- No encryption handling needed
+- Profile discovery varies by platform
+
+### Safari (macOS only)
+
+- Container access permissions required
+- Binary cookie format parsing
+- System-wide cookie storage
+- No profile-specific permissions
 
 ## Data Handling
 
 ### Local Processing
 
-- All cookie decryption happens locally on your machine
-- No data is ever sent over the network
-- No external services are contacted
+- All cookie decryption happens locally
+- No network communication
+- No external services contacted
+- Memory-only processing where possible
 
 ### Cookie Security
 
-- Cookies are sensitive authentication tokens
-- Treat extracted cookies as securely as passwords
-- Never commit cookies to version control
-- Avoid logging cookie values in CI/CD pipelines
+- Treat cookies as sensitive auth tokens
+- Never commit to version control
+- Avoid logging in CI/CD pipelines
+- Clear from memory after use
 
 ## Best Practices
 
 1. **Access Control**
 
-   - Only run on trusted development machines
-   - Don't use on shared or public computers
-   - Keep your macOS Keychain secure
+   - Use only on development machines
+   - Avoid shared/public computers
+   - Maintain secure system configuration
+   - Regular security updates
 
 2. **Data Storage**
 
-   - Don't store extracted cookies in plain text
-   - Use environment variables for temporary storage
-   - Clear stored cookies after use
+   - Use secure environment variables
+   - Clear after use
+   - Encrypt if storage needed
+   - Use secure memory handling
 
 3. **Usage Guidelines**
-   - Only extract cookies you own/have permission to use
-   - Don't share extracted cookies with other users
-   - Be cautious with cookie automation in scripts
+   - Only access authorized cookies
+   - Respect browser security models
+   - Monitor for permission changes
+   - Regular security audits
 
-## Common Risks
+## Platform-Specific Risks
 
-1. **System Access**
+### macOS Risks
 
-   - Browser profile access may be restricted
-   - Keychain access may require approval
-   - Container permissions may need configuration
+- Keychain access restrictions
+- Container permission changes
+- Profile corruption
+- System updates affecting access
 
-2. **Decryption Issues**
+### Linux Risks (Firefox)
 
-   - Some cookies may fail to decrypt
-   - Chrome's encryption key may be unavailable
-   - Profile corruption can prevent access
-
-3. **Permission Errors**
-   - File system permission denials
-   - Keychain access denials
-   - Container access restrictions
+- Profile directory permissions
+- Database locking issues
+- Missing browser support
+- Limited functionality
 
 ## Troubleshooting
 
-If you encounter security-related issues:
+### macOS Issues
 
 1. **Keychain Access**
 
    ```bash
-   # Check if Chrome has Keychain access
+   # Verify Chrome Keychain entry
    security find-generic-password -s "Chrome Safe Storage"
+
+   # Check Keychain permissions
+   security list-keychains
    ```
 
 2. **Profile Access**
 
    ```bash
-   # Check Firefox profile permissions
-   ls -la ~/Library/Application\ Support/Firefox/Profiles/
-
-   # Check Chrome profile permissions
+   # Chrome profiles
    ls -la ~/Library/Application\ Support/Google/Chrome/
+
+   # Firefox profiles
+   ls -la ~/Library/Application\ Support/Firefox/Profiles/
    ```
 
 3. **Safari Container**
    ```bash
-   # Check Safari container permissions
+   # Check container
    ls -la ~/Library/Containers/com.apple.Safari/
+   ```
+
+### Linux Issues (Firefox)
+
+1. **Profile Access**
+
+   ```bash
+   # Check Firefox profiles
+   ls -la ~/.mozilla/firefox/
+
+   # Verify database
+   file ~/.mozilla/firefox/*/cookies.sqlite
+   ```
+
+2. **Permissions**
+   ```bash
+   # Fix profile permissions
+   chmod 600 ~/.mozilla/firefox/*/cookies.sqlite
    ```
 
 ## Security Updates
 
-- Keep get-cookie updated to latest version
-- Watch for security advisories
-- Report security issues via GitHub
+- Keep get-cookie updated
+- Monitor security advisories
+- Report issues via GitHub
+- Check browser compatibility
+
+## Error Recovery
+
+1. **Permission Denied**
+
+   - Check file ownership
+   - Verify user permissions
+   - Review security settings
+   - Check browser status
+
+2. **Encryption Failures**
+
+   - Verify Keychain status
+   - Check profile integrity
+   - Review browser config
+   - Update if needed
+
+3. **Access Blocked**
+   - Check security settings
+   - Review permissions
+   - Verify browser state
+   - Update system config

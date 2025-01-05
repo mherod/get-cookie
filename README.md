@@ -25,7 +25,11 @@ const cookies = await getCookie({
 });
 ```
 
-⚠️ **Note: macOS only. Windows/Linux support planned.**
+⚠️ **Platform Support**:
+
+- Chrome: macOS only
+- Firefox: macOS and Linux
+- Safari: macOS only
 
 ## Installation 📦
 
@@ -60,7 +64,7 @@ get-cookie --url https://example.com/path
 ### Node.js
 
 ```typescript
-import { getCookie } from "@mherod/get-cookie";
+import { getCookie, type CookieSpec } from "@mherod/get-cookie";
 
 try {
   // Get specific cookie
@@ -73,7 +77,6 @@ try {
   const cookies = await getCookie({
     name: "%", // all cookies
     domain: "example.com",
-    removeExpired: true, // skip expired
   });
 } catch (error) {
   console.error("Failed:", error);
@@ -82,26 +85,17 @@ try {
 
 ## Features ✨
 
-- 🌐 **Multi-Browser Support**: Works with Chrome, Firefox, and Safari on macOS
-- 🔒 **Secure**: Safe cookie extraction with proper encryption handling
-- 📝 **TypeScript Ready**: Built with TypeScript for excellent type safety
-- 🎯 **Flexible Querying**: Search by name, domain, or URL pattern
+- 🌐 **Multi-Browser Support**:
+  - Chrome (macOS)
+  - Firefox (macOS, Linux)
+  - Safari (macOS)
+- 🔒 **Secure**: Browser-specific encryption handling
+- 📝 **TypeScript Ready**: Full type safety with exported type definitions
+- 🎯 **Flexible Querying**: Search by name, domain, or use wildcards
 - 🔄 **Multiple Output Formats**: JSON, rendered, or grouped results
-- 👥 **Profile Support**: Query cookies from different browser profiles
+- 👥 **Profile Support**: Chrome and Firefox multi-profile support
 
-## Platform Support 🖥️
-
-**Important: This package currently only works on macOS.**
-
-- ✅ macOS: Full support for Chrome, Firefox, and Safari
-- ❌ Windows: Not currently supported
-- ❌ Linux: Not currently supported
-
-Browser-specific notes:
-
-- Chrome: Requires macOS Keychain access for cookie decryption
-- Firefox: Reads from SQLite database in profile directories
-- Safari: Reads binary cookie format from Safari container
+⚠️ **Note: Platform support varies by browser. See our [Platform Support Guide](https://mherod.github.io/get-cookie/guide/platform-support.html) for details.**
 
 ## Output Formats 📊
 
@@ -140,18 +134,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Known Limitations 🚧
 
-1. **Platform Support**
-
-   - Only works on macOS
-   - Windows and Linux support is planned for future releases
-
-2. **Browser Support**
-
-   - Chrome: Requires macOS Keychain access
-   - Firefox: Requires readable profile directory
-   - Safari: Requires access to Safari container directory
-
-3. **Error Handling**
-   - Some cookies may fail to decrypt
-   - Browser profile access may be restricted
-   - Keychain access may require user approval
+For a comprehensive list of limitations and known issues, please see our [Known Limitations Guide](https://mherod.github.io/get-cookie/guide/limitations.html).

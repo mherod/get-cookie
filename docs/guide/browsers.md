@@ -1,12 +1,24 @@
 # Browser-Specific Details 🔐
 
-Understanding how get-cookie works with different browsers.
+Understanding how get-cookie works with different browsers and platforms.
 
-## Chrome
+## Platform Support Matrix
+
+| Browser | macOS | Linux | Windows |
+| ------- | ----- | ----- | ------- |
+| Chrome  | ✅    | ❌    | ❌      |
+| Firefox | ✅    | ✅    | ❌      |
+| Safari  | ✅    | ❌    | ❌      |
+
+✅ Full Support | ❌ Not Supported
+
+## Chrome (macOS Only)
 
 ### Storage Location
 
 Chrome stores cookies in an SQLite database:
+
+macOS:
 
 ```
 ~/Library/Application Support/Google/Chrome/Default/Cookies
@@ -14,46 +26,68 @@ Chrome stores cookies in an SQLite database:
 
 ### Security Model
 
-- Cookies are encrypted using Chrome's Safe Storage
-- Requires macOS Keychain access
-- Each profile has its own encryption key
+- Cookies are encrypted using Chrome Safe Storage
+- Encryption key stored in macOS Keychain
+- Each profile has a unique encryption key
+- Requires Keychain access permission
+- Chrome must be installed and configured
+- Profile must be unlocked and accessible
 
 ### Profile Support
 
 - Multiple profiles supported
 - Default profile: "Default"
 - Profile list in `Local State` file
-- Each profile has separate cookie storage
+- Each profile requires:
+  - Separate cookie database
+  - Unique encryption key
+  - Independent Keychain access
 
 ### Limitations
 
-- Must have Keychain access
+- macOS only (no Linux/Windows support)
+- Requires Keychain access
 - Chrome must be installed
-- Some cookies may be session-only
+- Session cookies not accessible
 - Incognito mode not supported
+- Profile must be unlocked
+- Fails silently if encryption key unavailable
 
-## Firefox
+## Firefox (macOS & Linux)
 
 ### Storage Location
 
 Firefox uses SQLite for cookie storage:
 
+macOS:
+
 ```
 ~/Library/Application Support/Firefox/Profiles/<profile>/cookies.sqlite
 ```
 
+Linux:
+
+```
+~/.mozilla/firefox/<profile>/cookies.sqlite
+```
+
 ### Security Model
 
-- Cookies stored in SQLite database
-- No additional encryption
+- SQLite database with no additional encryption
+- File system permissions-based security
+- Database locking mechanism for concurrent access
+- Platform-specific profile paths
 - Direct database access required
+- Handles database busy states gracefully
 
 ### Profile Support
 
 - Multiple profiles supported
-- Default profile in `profiles.ini`
-- Each profile is a separate directory
+- Profile list in `profiles.ini`
+- Each profile is separate directory
 - Custom profile paths supported
+- Cross-platform profile handling
+- Automatic profile discovery
 
 ### Limitations
 
@@ -61,8 +95,10 @@ Firefox uses SQLite for cookie storage:
 - Firefox must be installed
 - Profile directory must be readable
 - Some cookies may be protected
+- Database may be temporarily locked
+- Fails gracefully if database is busy
 
-## Safari
+## Safari (macOS Only)
 
 ### Storage Location
 
@@ -75,163 +111,188 @@ Safari uses a binary cookie format:
 ### Security Model
 
 - Custom binary format
+- Container-based security
+- System-level permissions
 - No additional encryption
-- Container access required
+- macOS container isolation
+- Requires container access permission
 
 ### Profile Support
 
 - Single profile only
+- System-wide cookie store
 - No multi-profile support
 - All cookies in one file
+- Shared between instances
+- No profile separation
 
 ### Limitations
 
-- Binary format can change
+- macOS only
+- Binary format can change between versions
 - Safari must be installed
 - Container permissions needed
+- No profile separation
 - Some cookies may be restricted
+- Fails silently if container inaccessible
 
-## Common Features
+## Implementation Examples
 
-### Cookie Properties
-
-All browsers support:
-
-- Name
-- Value
-- Domain
-- Path
-- Expiry
-- Secure flag
-- HTTPOnly flag
-
-### Access Requirements
-
-Each browser needs:
-
-- Read permissions
-- Profile directory access
-- Database/file access
-
-## Implementation Details
-
-### Chrome Strategy
+### Chrome Strategy (macOS)
 
 ```typescript
 import { ChromeCookieQueryStrategy } from "@mherod/get-cookie";
 
+// Create strategy
 const strategy = new ChromeCookieQueryStrategy();
-const cookies = await strategy.queryCookies("auth", "example.com");
+
+try {
+  // Query cookies (macOS only)
+  const cookies = await strategy.queryCookies("auth", "example.com");
+} catch (error) {
+  if (error.message.includes("platform")) {
+    console.error("Chrome cookies only supported on macOS");
+  } else if (error.message.includes("keychain")) {
+    console.error("Keychain access denied");
+  } else {
+    console.error("Failed to query cookies:", error);
+  }
+}
 ```
 
-Key features:
-
-- Safe Storage decryption
-- Profile management
-- SQLite query optimization
-
-### Firefox Strategy
+### Firefox Strategy (Cross-Platform)
 
 ```typescript
 import { FirefoxCookieQueryStrategy } from "@mherod/get-cookie";
 
+// Create strategy
 const strategy = new FirefoxCookieQueryStrategy();
-const cookies = await strategy.queryCookies("auth", "example.com");
+
+try {
+  // Works on macOS and Linux
+  const cookies = await strategy.queryCookies("auth", "example.com");
+} catch (error) {
+  if (error.message.includes("SQLITE_BUSY")) {
+    console.error("Database is locked");
+  } else if (error.message.includes("EACCES")) {
+    console.error("Permission denied");
+  } else {
+    console.error("Failed to query cookies:", error);
+  }
+}
 ```
 
-Key features:
-
-- SQLite direct access
-- Profile discovery
-- No encryption handling
-
-### Safari Strategy
+### Safari Strategy (macOS)
 
 ```typescript
 import { SafariCookieQueryStrategy } from "@mherod/get-cookie";
 
+// Create strategy
 const strategy = new SafariCookieQueryStrategy();
-const cookies = await strategy.queryCookies("auth", "example.com");
+
+try {
+  // macOS only
+  const cookies = await strategy.queryCookies("auth", "example.com");
+} catch (error) {
+  if (error.message.includes("container")) {
+    console.error("Safari container access denied");
+  } else if (error.message.includes("format")) {
+    console.error("Invalid cookie file format");
+  } else {
+    console.error("Failed to query cookies:", error);
+  }
+}
 ```
-
-Key features:
-
-- Binary format parsing
-- Container access
-- Single profile handling
 
 ## Best Practices
 
-### Chrome
+### Error Handling
 
-1. **Profile Management**
+1. **Always use try-catch blocks**
 
-   ```bash
-   # List profiles
-   get-cookie --list-profiles
-
-   # Use specific profile
-   get-cookie auth example.com --profile "Profile 1"
+   ```typescript
+   try {
+     const cookies = await getCookie({
+       name: "auth",
+       domain: "example.com",
+     });
+   } catch (error) {
+     // Handle specific error types
+     console.error("Cookie extraction failed:", error);
+   }
    ```
 
-2. **Keychain Access**
-   - Grant permanent access
-   - Use system keychain
-   - Keep Chrome installed
+2. **Check platform compatibility**
 
-### Firefox
-
-1. **Profile Handling**
-
-   ```bash
-   # Check profiles
-   ls -la ~/Library/Application\ Support/Firefox/Profiles/
-
-   # Use specific profile
-   export FIREFOX_PROFILE="xyz123.default"
+   ```typescript
+   if (process.platform !== "darwin") {
+     console.warn("Some features only work on macOS");
+   }
    ```
 
-2. **Database Access**
-   - Close Firefox
-   - Check file permissions
-   - Verify profile path
-
-### Safari
-
-1. **Container Access**
-
-   ```bash
-   # Check container
-   ls -la ~/Library/Containers/com.apple.Safari/
-
-   # Verify cookie file
-   file ~/Library/Containers/com.apple.Safari/Data/Library/Cookies/Cookies.binarycookies
+3. **Handle browser-specific errors**
+   ```typescript
+   if (error.message.includes("SQLITE_BUSY")) {
+     // Retry after delay
+     await new Promise((resolve) => setTimeout(resolve, 1000));
+   }
    ```
 
-2. **Binary Format**
-   - Keep Safari updated
-   - Check file permissions
-   - Monitor format changes
+### Security Considerations
+
+1. **Keychain Access (Chrome)**
+
+   - Request user permission for Keychain access
+   - Handle denied access gracefully
+   - Don't store Keychain passwords
+
+2. **Database Access (Firefox)**
+
+   - Check file permissions before access
+   - Handle locked database states
+   - Implement retry mechanisms
+
+3. **Container Access (Safari)**
+   - Verify container permissions
+   - Handle format version changes
+   - Don't modify cookie store directly
 
 ## Troubleshooting
 
-### Chrome Issues
+### Platform-Specific Issues
 
-- Check Keychain Access
-- Verify profile exists
-- Test encryption key
-- Check database permissions
+#### macOS
 
-### Firefox Issues
-
-- Verify profile exists
-- Check database lock
-- Test file permissions
+- Check Keychain status
+- Verify container access
 - Monitor profile changes
+- Handle encryption errors
 
-### Safari Issues
+#### Linux (Firefox)
 
-- Check container access
-- Verify binary format
-- Test file permissions
-- Monitor Safari updates
+- Check file permissions
+- Monitor database locks
+- Handle profile paths
+- Verify SQLite access
+
+### Common Problems
+
+1. **Access Denied**
+
+   - Check user permissions
+   - Verify browser installation
+   - Review security settings
+   - Check file ownership
+
+2. **Browser Issues**
+
+   - Verify browser version
+   - Check profile status
+   - Monitor file locks
+   - Handle updates
+
+3. **Data Issues**
+   - Validate cookie format
+   - Check encryption status
+   - Monitor file integrity
+   - Handle corruption

@@ -1,4 +1,4 @@
-import { cookieSpecsFromUrl } from "../core/cookies/cookieSpecsFromUrl";
+import { cookieSpecsFromUrl } from "../cookies/cookieSpecsFromUrl";
 
 describe("cookieSpecsFromUrl - basic URL handling", function () {
   it("should extract cookie specs from a simple URL", function () {

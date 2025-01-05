@@ -1,8 +1,8 @@
 import {
   listChromeProfiles,
   listChromeProfilePaths,
-} from "../core/browsers/listChromeProfiles";
-import { createTaggedLogger } from "../utils/logHelpers";
+} from "../../core/browsers/listChromeProfiles";
+import { createTaggedLogger } from "../../utils/logHelpers";
 
 const logger = createTaggedLogger("listChromeProfiles.test");
 

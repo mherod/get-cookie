@@ -69,6 +69,6 @@ function printCookieInfo(cookie: unknown): boolean {
 
 // Export functions that are used elsewhere
 /**
- *
+ * Export utility functions for cookie validation and printing
  */
 export { isValidExportedCookie, printCookieInfo };

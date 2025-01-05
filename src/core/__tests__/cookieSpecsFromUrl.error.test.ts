@@ -1,4 +1,4 @@
-import { cookieSpecsFromUrl } from "../core/cookies/cookieSpecsFromUrl";
+import { cookieSpecsFromUrl } from "../cookies/cookieSpecsFromUrl";
 
 describe("cookieSpecsFromUrl - error handling", function () {
   it("should handle invalid URLs", function () {

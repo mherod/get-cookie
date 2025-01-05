@@ -1,4 +1,4 @@
-import { type ConsolaInstance, createConsola } from "consola";
+import { createConsola } from "consola";
 
 import { env } from "../config";
 
@@ -11,18 +11,6 @@ import { env } from "../config";
  * - error: Error conditions that might still allow the app to continue
  * - fatal: Critical errors that prevent the app from continuing
  */
-const consola = createConsola({
-  fancy: true,
-  formatOptions: {
-    showLogLevel: false,
-    colors: true,
-    date: false,
-    compact: true,
-    columns:
-      typeof process.stdout.columns === "number" ? process.stdout.columns : 80,
-  },
-  level: env.LOG_LEVEL === "debug" ? 5 : 2,
-});
 
 /**
  * Indicates whether debug logging is enabled
@@ -60,7 +48,18 @@ export const isDebug = env.LOG_LEVEL === "debug";
  *   input: data
  * });
  */
-const logger: ConsolaInstance = consola;
+const logger = createConsola({
+  fancy: true,
+  formatOptions: {
+    showLogLevel: false,
+    colors: true,
+    date: false,
+    compact: true,
+    columns:
+      typeof process.stdout.columns === "number" ? process.stdout.columns : 80,
+  },
+  level: env.LOG_LEVEL === "debug" ? 5 : 2,
+});
 
 /**
  *

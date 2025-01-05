@@ -15,16 +15,16 @@ import { ExportedCookie, RenderOptions } from "../../types/schemas";
  * ```typescript
  * // Merged format (default)
  * const cookies = [
- *   { value: 'sessionId=abc123' },
- *   { value: 'theme=dark' }
+ *   { name: 'sessionId', value: 'abc123' },
+ *   { name: 'theme', value: 'dark' }
  * ];
  * renderCookies(cookies);
  * // Returns: "sessionId=abc123; theme=dark"
  *
  * // Grouped format with file paths
  * const groupedCookies = [
- *   { value: 'sessionId=abc123', meta: { file: 'auth.ts' } },
- *   { value: 'theme=dark', meta: { file: 'preferences.ts' } }
+ *   { name: 'sessionId', value: 'abc123', meta: { file: 'auth.ts' } },
+ *   { name: 'theme', value: 'dark', meta: { file: 'preferences.ts' } }
  * ];
  * renderCookies(groupedCookies, { format: 'grouped', showFilePaths: true });
  * // Returns: ["auth.ts: sessionId=abc123", "preferences.ts: theme=dark"]
@@ -40,13 +40,16 @@ export function renderCookies(
     return format === "merged" ? "" : [];
   }
 
+  const formatCookie = (cookie: ExportedCookie): string =>
+    `${cookie.name}=${cookie.value}`;
+
   if (format === "merged") {
-    return cookies.map((c) => c.value as string).join(separator);
+    return cookies.map(formatCookie).join(separator);
   }
 
   const groupedByFile = groupBy(cookies, (c) => c.meta?.file ?? "unknown");
   return Object.entries(groupedByFile).map(([file, fileCookies]) => {
-    const values = fileCookies.map((c) => c.value as string).join(separator);
+    const values = fileCookies.map(formatCookie).join(separator);
     return showFilePaths ? `${file}: ${values}` : values;
   });
 }

@@ -38,7 +38,6 @@ export function setupChromeTest(): ChromeCookieQueryStrategy {
   const strategy = new ChromeCookieQueryStrategy();
 
   // Mock process.platform
-  const originalPlatform = process.platform;
   Object.defineProperty(process, "platform", {
     value: "darwin",
     configurable: true,
@@ -53,14 +52,6 @@ export function setupChromeTest(): ChromeCookieQueryStrategy {
     mockCookieData,
   ]);
   (decrypt as unknown as jest.Mock).mockResolvedValue("decrypted-value");
-
-  // Restore platform after tests
-  afterAll(() => {
-    Object.defineProperty(process, "platform", {
-      value: originalPlatform,
-      configurable: true,
-    });
-  });
 
   return strategy;
 }

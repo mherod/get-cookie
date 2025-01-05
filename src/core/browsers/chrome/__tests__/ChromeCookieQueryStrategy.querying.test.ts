@@ -11,9 +11,17 @@ jest.mock("../decrypt");
 
 describe("ChromeCookieQueryStrategy - Basic Functionality", () => {
   let strategy: ReturnType<typeof setupChromeTest>;
+  const originalPlatform = process.platform;
 
   beforeEach(() => {
     strategy = setupChromeTest();
+  });
+
+  afterAll(() => {
+    Object.defineProperty(process, "platform", {
+      value: originalPlatform,
+      configurable: true,
+    });
   });
 
   it("should query and decrypt cookies successfully", async () => {

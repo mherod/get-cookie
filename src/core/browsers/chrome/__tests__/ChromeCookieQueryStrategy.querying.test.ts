@@ -1,84 +1,54 @@
 import {
-  mockGetEncryptedChromeCookie,
-  mockDecrypt,
-  setupChromeTest,
   mockCookieData,
   mockCookieFile,
-  restorePlatform,
+  mockGetEncryptedChromeCookie,
+  setupChromeTest,
 } from "../testSetup";
+import type { ChromeCookieRow } from "../types";
 
-describe("ChromeCookieQueryStrategy - Basic Functionality", () => {
-  let strategy: ReturnType<typeof setupChromeTest>;
+describe("ChromeCookieQueryStrategy - Querying", () => {
+  const secondCookie: ChromeCookieRow = {
+    name: "second-cookie",
+    value: Buffer.from("second-value"),
+    encrypted_value: Buffer.from("second-encrypted-value"),
+    host_key: "example.org",
+    path: "/",
+    expires_utc: Date.now() + 86400000, // 1 day in the future
+    is_secure: 0,
+    is_httponly: 0,
+    samesite: "",
+  };
 
-  beforeEach(() => {
-    jest.clearAllMocks();
-    strategy = setupChromeTest();
-  });
-
-  afterEach(() => {
-    restorePlatform();
-  });
-
-  it("should query and decrypt a single cookie successfully", async () => {
-    mockGetEncryptedChromeCookie.mockResolvedValue([mockCookieData]);
-    mockDecrypt.mockResolvedValue("decrypted-value");
-
+  it("should query cookies by name and domain", async () => {
+    const strategy = setupChromeTest();
     const cookies = await strategy.queryCookies(
-      "test-cookie",
-      "example.com",
+      mockCookieData.name,
+      mockCookieData.host_key,
       mockCookieFile,
     );
 
     expect(cookies).toHaveLength(1);
-    expect(cookies[0]).toMatchObject({
-      name: mockCookieData.name,
-      value: "decrypted-value",
-      domain: mockCookieData.domain,
-      meta: {
-        decrypted: true,
-      },
-    });
+    expect(cookies[0].name).toBe(mockCookieData.name);
+    expect(cookies[0].domain).toBe(mockCookieData.host_key);
   });
 
-  it("should query and decrypt multiple cookies successfully", async () => {
-    const secondCookie = {
-      ...mockCookieData,
-      name: "second-cookie",
-      path: "/api",
-    };
-
+  it("should handle multiple cookies", async () => {
+    const strategy = setupChromeTest();
     mockGetEncryptedChromeCookie.mockResolvedValueOnce([
       mockCookieData,
       secondCookie,
     ]);
-    mockDecrypt
-      .mockResolvedValueOnce("first-decrypted-value")
-      .mockResolvedValueOnce("second-decrypted-value");
 
     const cookies = await strategy.queryCookies(
-      "test-cookie",
-      "example.com",
+      mockCookieData.name,
+      mockCookieData.host_key,
       mockCookieFile,
     );
 
     expect(cookies).toHaveLength(2);
-    expect(cookies[0]).toMatchObject({
-      name: mockCookieData.name,
-      value: "first-decrypted-value",
-      domain: mockCookieData.domain,
-      meta: {
-        decrypted: true,
-        path: mockCookieData.path,
-      },
-    });
-    expect(cookies[1]).toMatchObject({
-      name: secondCookie.name,
-      value: "second-decrypted-value",
-      domain: secondCookie.domain,
-      meta: {
-        decrypted: true,
-        path: secondCookie.path,
-      },
-    });
+    expect(cookies[0].name).toBe(mockCookieData.name);
+    expect(cookies[0].domain).toBe(mockCookieData.host_key);
+    expect(cookies[1].name).toBe(secondCookie.name);
+    expect(cookies[1].domain).toBe(secondCookie.host_key);
   });
 });

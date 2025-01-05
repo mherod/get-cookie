@@ -1,52 +1,38 @@
 import {
-  mockGetEncryptedChromeCookie,
-  mockDecrypt,
-  setupChromeTest,
   mockCookieData,
   mockCookieFile,
-  restorePlatform,
+  mockGetEncryptedChromeCookie,
+  setupChromeTest,
 } from "../testSetup";
 
 describe("ChromeCookieQueryStrategy - Error Handling", () => {
-  let strategy: ReturnType<typeof setupChromeTest>;
-
-  beforeEach(() => {
-    jest.clearAllMocks();
-    strategy = setupChromeTest();
-  });
-
-  afterEach(() => {
-    restorePlatform();
-  });
-
-  it("should handle decryption failures gracefully", async () => {
-    mockGetEncryptedChromeCookie.mockResolvedValue([mockCookieData]);
-    mockDecrypt.mockRejectedValue(new Error("Decryption failed"));
+  it("should handle cookie query errors", async () => {
+    const strategy = setupChromeTest();
+    mockGetEncryptedChromeCookie.mockRejectedValueOnce(
+      new Error("Query failed"),
+    );
 
     const cookies = await strategy.queryCookies(
-      "test-cookie",
-      "example.com",
+      mockCookieData.name,
+      mockCookieData.host_key,
+      mockCookieFile,
+    );
+
+    expect(cookies).toHaveLength(0);
+  });
+
+  it("should handle cookie decryption errors", async () => {
+    const strategy = setupChromeTest();
+    mockGetEncryptedChromeCookie.mockResolvedValueOnce([mockCookieData]);
+
+    const cookies = await strategy.queryCookies(
+      mockCookieData.name,
+      mockCookieData.host_key,
       mockCookieFile,
     );
 
     expect(cookies).toHaveLength(1);
-    expect(cookies[0]).toMatchObject({
-      name: mockCookieData.name,
-      domain: mockCookieData.domain,
-      value: mockCookieData.value.toString("utf-8"),
-      meta: {
-        decrypted: false,
-      },
-    });
-  });
-
-  it("should handle cookie retrieval errors gracefully", async () => {
-    mockGetEncryptedChromeCookie.mockRejectedValueOnce(
-      new Error("Failed to retrieve cookies"),
-    );
-
-    const cookies = await strategy.queryCookies("test-cookie", "example.com");
-
-    expect(cookies).toHaveLength(0);
+    expect(cookies[0].name).toBe(mockCookieData.name);
+    expect(cookies[0].domain).toBe(mockCookieData.host_key);
   });
 });

@@ -12,6 +12,7 @@ import {
   CookieQueryStrategy,
   ExportedCookie,
 } from "../../../types/schemas";
+import { buildFirefoxCookieQuery } from "../../sql/cookieQueries";
 import { querySqliteThenTransform } from "../QuerySqliteThenTransform";
 
 interface FirefoxCookieRow {
@@ -49,11 +50,10 @@ function findFirefoxCookieFiles(): string[] {
 
 /**
  * Strategy for querying cookies from Firefox browser
- * @example
  */
 export class FirefoxCookieQueryStrategy implements CookieQueryStrategy {
   /**
-   *
+   * The browser name identifier
    */
   public readonly browserName: BrowserName = "Firefox";
 
@@ -75,13 +75,14 @@ export class FirefoxCookieQueryStrategy implements CookieQueryStrategy {
 
     for (const file of fileList) {
       try {
+        const { sql, params } = buildFirefoxCookieQuery(name, domain);
         const cookies = await querySqliteThenTransform<
           FirefoxCookieRow,
           ExportedCookie
         >({
           file,
-          sql: "SELECT name, value, host as domain, expiry FROM moz_cookies WHERE name = ? AND host LIKE ?",
-          params: [name, `%${domain}%`],
+          sql,
+          params,
           rowTransform: (row) => ({
             name: row.name,
             value: row.value,

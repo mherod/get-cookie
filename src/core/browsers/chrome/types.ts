@@ -4,9 +4,13 @@
 export interface ChromeCookieRow {
   name: string;
   value: string | Buffer;
-  domain: string;
+  encrypted_value: string | Buffer;
+  host_key: string;
   path: string;
-  expiry?: number;
+  expires_utc: number;
+  is_secure: number;
+  is_httponly: number;
+  samesite: string;
 }
 
 /**
@@ -15,4 +19,13 @@ export interface ChromeCookieRow {
 export interface DecryptionContext {
   file: string;
   password: string;
+}
+
+/**
+ * Type definition for Chrome cookie query
+ */
+export interface ChromeCookieQuery {
+  name: string;
+  domain: string;
+  file: string;
 }

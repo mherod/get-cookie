@@ -10,6 +10,7 @@ import {
 } from "@utils/logHelpers";
 
 import type { CookieRow } from "../../types/schemas";
+import { buildChromeCookieQuery } from "../sql/cookieQueries";
 
 import { chromeApplicationSupport } from "./chrome/ChromeApplicationSupport";
 import { querySqliteThenTransform } from "./QuerySqliteThenTransform";
@@ -27,11 +28,6 @@ interface GetEncryptedCookieOptions {
   name: string;
   domain: string;
   file?: string;
-}
-
-interface SqlQuery {
-  sql: string;
-  params: string[];
 }
 
 /**
@@ -77,22 +73,6 @@ async function getCookieFiles(): Promise<string[]> {
 }
 
 /**
- * Builds the SQL query for retrieving cookies
- * @param name - Cookie name to search for
- * @param domain - Domain to filter by
- * @returns SQL query and parameters
- */
-function buildSqlQuery(name: string, domain: string): SqlQuery {
-  const isWildcard = name === "%";
-  const sql = isWildcard
-    ? `SELECT name, encrypted_value, host_key, expires_utc FROM cookies WHERE host_key LIKE ?`
-    : `SELECT name, encrypted_value, host_key, expires_utc FROM cookies WHERE name = ? AND host_key LIKE ?`;
-  const params = isWildcard ? [`%${domain}%`] : [name, `%${domain}%`];
-
-  return { sql, params };
-}
-
-/**
  * Processes a single cookie file to extract matching cookies
  * @param cookieFile - Path to the cookie file
  * @param name - Cookie name to search for
@@ -105,7 +85,7 @@ async function processCookieFile(
   domain: string,
 ): Promise<CookieRow[]> {
   try {
-    const { sql, params } = buildSqlQuery(name, domain);
+    const { sql, params } = buildChromeCookieQuery(name, domain);
     logger.debug("ChromeCookies", "Executing query", { sql, params });
 
     const rows = await querySqliteThenTransform<ChromeCookieRow, CookieRow>({

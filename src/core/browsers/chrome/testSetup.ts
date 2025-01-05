@@ -5,7 +5,7 @@ import { ChromeCookieQueryStrategy } from "./ChromeCookieQueryStrategy";
 import { dateToChromeMicroseconds } from "./chromeTimestamps";
 import { decrypt } from "./decrypt";
 import { getChromePassword } from "./getChromePassword";
-import { ChromeCookieRow } from "./types";
+import type { ChromeCookieRow } from "./types";
 
 jest.mock("./decrypt");
 jest.mock("./getChromePassword");
@@ -28,10 +28,13 @@ export const mockCookieFile = "/path/to/Cookies";
 export const mockCookieData: ChromeCookieRow = {
   name: "test-cookie",
   value: Buffer.from("encrypted-value"),
-  domain: "example.com",
+  encrypted_value: Buffer.from("encrypted-value"),
+  host_key: "example.com",
   path: "/",
-  expiry:
-    dateToChromeMicroseconds(new Date(Date.now() + 86400000)) ?? undefined, // 1 day in the future
+  expires_utc: dateToChromeMicroseconds(new Date(Date.now() + 86400000)) ?? 0, // 1 day in the future
+  is_secure: 0,
+  is_httponly: 0,
+  samesite: "",
 };
 
 /**
@@ -77,20 +80,23 @@ export function restorePlatform(): void {
 
 // Export mocked functions for test assertions
 /**
- *
+ * Mock function for listChromeProfilePaths
  */
 export const mockListChromeProfilePaths =
   listChromeProfilePaths as unknown as jest.Mock;
+
 /**
- *
+ * Mock function for getChromePassword
  */
 export const mockGetChromePassword = getChromePassword as unknown as jest.Mock;
+
 /**
- *
+ * Mock function for getEncryptedChromeCookie
  */
 export const mockGetEncryptedChromeCookie =
   getEncryptedChromeCookie as unknown as jest.Mock;
+
 /**
- *
+ * Mock function for decrypt
  */
 export const mockDecrypt = decrypt as unknown as jest.Mock;

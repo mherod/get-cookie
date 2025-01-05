@@ -1,4 +1,4 @@
-import { CookieRow } from "../../../../../types/schemas";
+import type { CookieRow } from "../../../../../types/schemas";
 import { mockCookieData } from "../../testSetup";
 
 /**
@@ -21,10 +21,10 @@ describe("Chrome Cookie Fixtures", () => {
       expect(mockCookieData.name.length).toBeGreaterThan(0);
       expect(Buffer.isBuffer(mockCookieData.value)).toBe(true);
       expect(mockCookieData.value.length).toBeGreaterThan(0);
-      expect(typeof mockCookieData.domain).toBe("string");
-      expect(mockCookieData.domain.length).toBeGreaterThan(0);
-      expect(typeof mockCookieData.expiry).toBe("number");
-      expect(mockCookieData.expiry).toBeGreaterThan(Date.now());
+      expect(typeof mockCookieData.host_key).toBe("string");
+      expect(mockCookieData.host_key.length).toBeGreaterThan(0);
+      expect(typeof mockCookieData.expires_utc).toBe("number");
+      expect(mockCookieData.expires_utc).toBeGreaterThan(Date.now());
     });
   });
 

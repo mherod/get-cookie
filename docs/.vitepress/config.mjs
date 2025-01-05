@@ -51,6 +51,7 @@ export default defineConfig({
             { text: "🛡️ Security & Privacy", link: "/guide/security" },
             { text: "🔍 Troubleshooting", link: "/guide/troubleshooting" },
             { text: "💻 CLI Usage", link: "/guide/cli-usage" },
+            { text: "🚧 Known Limitations", link: "/guide/limitations" },
           ],
         },
         {

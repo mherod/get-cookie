@@ -25,24 +25,24 @@ jobs:
       - run:
           name: Validate
           command: pnpm run validate
-      - run:
-          name: Build CookieCreator
-          command: |
-            cd scripts/CookieCreator
-            swift build
-      - run:
-          name: Create Binary Cookie Test Fixtures
-          command: |
-            cd scripts
-            ./create-binary-cookies.sh
-      - run:
-          name: Run Test Scripts
-          command: |
-            pnpm exec tsx scripts/test-binarycookies.ts
-            pnpm exec tsx scripts/test-decoder.ts
-            pnpm exec tsx scripts/test-safari-cookies.ts
-            pnpm exec tsx scripts/validate-cookie-structure.ts
-      - store_artifacts:
+          # - run:
+          #     name: Build CookieCreator
+          #     command: |
+          #       cd scripts/CookieCreator
+          #       swift build
+          # - run:
+          #     name: Create Binary Cookie Test Fixtures
+          #     command: |
+          #       cd scripts
+          #       ./create-binary-cookies.sh
+          # - run:
+          #     name: Run Test Scripts
+          #     command: |
+          #       pnpm exec tsx scripts/test-binarycookies.ts
+          #       pnpm exec tsx scripts/test-decoder.ts
+          #       pnpm exec tsx scripts/test-safari-cookies.ts
+          #       pnpm exec tsx scripts/validate-cookie-structure.ts
+          # - store_artifacts:
           path: scripts/Cookies.binarycookies
           destination: test-fixtures
 

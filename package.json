@@ -13,13 +13,13 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
     },
     "./cli": {
-      "types": "./dist/cli/cli.d.ts",
-      "import": "./dist/cli/cli.mjs",
-      "require": "./dist/cli/cli.js"
+      "types": "./dist/cli.d.cts",
+      "import": "./dist/cli.cjs",
+      "require": "./dist/cli.cjs"
     }
   },
   "publishConfig": {

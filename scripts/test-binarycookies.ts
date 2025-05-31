@@ -4,9 +4,10 @@ import { SafariCookieQueryStrategy } from "../src/core/browsers/safari/SafariCoo
 import logger from "../src/utils/logger";
 
 async function main(): Promise<void> {
-  // Path to our test binarycookies file
+  // Path to our test binarycookies file using project root
   const cookieStorePath = join(
-    __dirname,
+    process.cwd(),
+    "scripts",
     "CookieCreator",
     "Cookies.binarycookies",
   );

@@ -1,11 +1,5 @@
-import { createTaggedLogger, logError } from "@utils/logHelpers";
-
-import {
-  BrowserName,
-  CookieQueryStrategy,
-  CookieRow,
-  ExportedCookie,
-} from "../../../types/schemas";
+import { CookieRow, ExportedCookie } from "../../../types/schemas";
+import { BaseCookieQueryStrategy } from "../BaseCookieQueryStrategy";
 import { getEncryptedChromeCookie } from "../getEncryptedChromeCookie";
 import { listChromeProfilePaths } from "../listChromeProfiles";
 
@@ -46,73 +40,62 @@ function createExportedCookie(
 }
 
 /**
- * Strategy for querying cookies from Chrome browser
+ * Strategy for querying cookies from Chrome browser.
+ * This class extends the BaseCookieQueryStrategy and implements Chrome-specific
+ * cookie extraction logic.
  * @example
  * ```typescript
  * const strategy = new ChromeCookieQueryStrategy();
  * const cookies = await strategy.queryCookies('session', 'example.com');
  * ```
  */
-export class ChromeCookieQueryStrategy implements CookieQueryStrategy {
-  private readonly logger = createTaggedLogger("ChromeCookieQueryStrategy");
-
+export class ChromeCookieQueryStrategy extends BaseCookieQueryStrategy {
   /**
-   * The browser name for this strategy
+   * Creates a new instance of ChromeCookieQueryStrategy
    */
-  public readonly browserName: BrowserName = "Chrome";
+  public constructor() {
+    super("ChromeCookieQueryStrategy", "Chrome");
+  }
 
   /**
-   * Queries cookies from Chrome's cookie store
+   * Executes the Chrome-specific query logic
    * @param name - The name pattern to match cookies against
    * @param domain - The domain pattern to match cookies against
    * @param store - Optional path to a specific cookie store file
    * @returns A promise that resolves to an array of exported cookies
+   * @protected
    * @example
    * ```typescript
-   * const strategy = new ChromeCookieQueryStrategy();
+   * // This method is called internally by queryCookies
    * const cookies = await strategy.queryCookies('session', 'example.com');
    * console.log(cookies);
    * ```
    */
-  public async queryCookies(
+  protected async executeQuery(
     name: string,
     domain: string,
     store?: string,
   ): Promise<ExportedCookie[]> {
-    try {
-      this.logger.info("Querying cookies", { name, domain, store });
-
-      if (process.platform !== "darwin") {
-        this.logger.warn("Platform not supported", {
-          platform: process.platform,
-        });
-        return [];
-      }
-
-      const cookieFiles = store ?? listChromeProfilePaths();
-      const files = Array.isArray(cookieFiles) ? cookieFiles : [cookieFiles];
-      if (files.length === 0) {
-        this.logger.warn("No Chrome cookie files found");
-        return [];
-      }
-
-      const password = await getChromePassword();
-      const results = await Promise.all(
-        files.map((file) => this.processFile(file, name, domain, password)),
-      );
-
-      return results.flat();
-    } catch (error) {
-      if (error instanceof Error) {
-        logError("Failed to query cookies", error, { name, domain });
-      } else {
-        logError("Failed to query cookies", new Error(String(error)), {
-          name,
-          domain,
-        });
-      }
+    if (process.platform !== "darwin") {
+      this.logger.warn("Platform not supported", {
+        platform: process.platform,
+      });
       return [];
     }
+
+    const cookieFiles = store ?? listChromeProfilePaths();
+    const files = Array.isArray(cookieFiles) ? cookieFiles : [cookieFiles];
+    if (files.length === 0) {
+      this.logger.warn("No Chrome cookie files found");
+      return [];
+    }
+
+    const password = await getChromePassword();
+    const results = await Promise.all(
+      files.map((file) => this.processFile(file, name, domain, password)),
+    );
+
+    return results.flat();
   }
 
   private async processFile(
@@ -138,11 +121,18 @@ export class ChromeCookieQueryStrategy implements CookieQueryStrategy {
         .filter((cookie): cookie is ExportedCookie => cookie !== null);
     } catch (error) {
       if (error instanceof Error) {
-        this.logger.error("Failed to process cookie file", { error, file });
+        this.logger.error("Failed to process cookie file", {
+          error: error.message,
+          file,
+          name,
+          domain,
+        });
       } else {
         this.logger.error("Failed to process cookie file", {
           error: String(error),
           file,
+          name,
+          domain,
         });
       }
       return [];

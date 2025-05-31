@@ -3,15 +3,10 @@ import { join } from "path";
 
 import fg from "fast-glob";
 
-import { createTaggedLogger, logWarn } from "@utils/logHelpers";
+import { createTaggedLogger } from "@utils/logHelpers";
 
-const logger = createTaggedLogger("FirefoxCookieQueryStrategy");
-
-import {
-  BrowserName,
-  CookieQueryStrategy,
-  ExportedCookie,
-} from "../../../types/schemas";
+import type { ExportedCookie } from "../../../types/schemas";
+import { BaseCookieQueryStrategy } from "../BaseCookieQueryStrategy";
 import { querySqliteThenTransform } from "../QuerySqliteThenTransform";
 
 interface FirefoxCookieRow {
@@ -23,12 +18,15 @@ interface FirefoxCookieRow {
 
 /**
  * Find all Firefox cookie database files
+ * @param logger - Logger instance for logging messages
  * @returns An array of file paths to Firefox cookie databases
  */
-function findFirefoxCookieFiles(): string[] {
+function findFirefoxCookieFiles(
+  logger: ReturnType<typeof createTaggedLogger>,
+): string[] {
   const home = homedir();
   if (!home) {
-    logWarn("FirefoxCookieQuery", "Failed to get home directory");
+    logger.warn("Failed to get home directory");
     return [];
   }
 
@@ -48,28 +46,41 @@ function findFirefoxCookieFiles(): string[] {
 }
 
 /**
- * Strategy for querying cookies from Firefox browser
+ * Strategy for querying cookies from Firefox browser.
+ * This class extends the BaseCookieQueryStrategy and implements Firefox-specific
+ * cookie extraction logic. It searches for cookie databases in standard Firefox
+ * profile locations and extracts cookies matching the specified name and domain.
  * @example
+ * ```typescript
+ * import { FirefoxCookieQueryStrategy } from './FirefoxCookieQueryStrategy';
+ *
+ * const strategy = new FirefoxCookieQueryStrategy();
+ * const cookies = await strategy.queryCookies('sessionid', 'example.com');
+ * console.log(cookies);
+ * ```
  */
-export class FirefoxCookieQueryStrategy implements CookieQueryStrategy {
+export class FirefoxCookieQueryStrategy extends BaseCookieQueryStrategy {
   /**
-   *
+   * Creates a new instance of FirefoxCookieQueryStrategy
    */
-  public readonly browserName: BrowserName = "Firefox";
+  public constructor() {
+    super("FirefoxCookieQueryStrategy", "Firefox");
+  }
 
   /**
-   * Queries cookies from Firefox's cookie store
+   * Executes the Firefox-specific query logic
    * @param name - The name pattern to match cookies against
    * @param domain - The domain pattern to match cookies against
    * @param store - Optional path to a specific cookie store file
    * @returns A promise that resolves to an array of exported cookies
+   * @protected
    */
-  public async queryCookies(
+  protected async executeQuery(
     name: string,
     domain: string,
     store?: string,
   ): Promise<ExportedCookie[]> {
-    const files = store ?? findFirefoxCookieFiles();
+    const files = store ?? findFirefoxCookieFiles(this.logger);
     const fileList = Array.isArray(files) ? files : [files];
     const results: ExportedCookie[] = [];
 
@@ -98,16 +109,19 @@ export class FirefoxCookieQueryStrategy implements CookieQueryStrategy {
         results.push(...cookies);
       } catch (error) {
         if (error instanceof Error) {
-          logWarn(
-            "FirefoxCookieQuery",
-            `Error reading Firefox cookie file ${file}`,
-            { error: error.message },
-          );
+          this.logger.warn(`Error reading Firefox cookie file ${file}`, {
+            error: error.message,
+            file,
+            name,
+            domain,
+          });
         } else {
-          logWarn(
-            "FirefoxCookieQuery",
-            `Error reading Firefox cookie file ${file}`,
-          );
+          this.logger.warn(`Error reading Firefox cookie file ${file}`, {
+            error: String(error),
+            file,
+            name,
+            domain,
+          });
         }
       }
     }

@@ -1,24 +1,23 @@
 import { homedir } from "os";
 import { join } from "path";
 
-import { logError } from "@utils/logHelpers";
-
-import type {
-  BrowserName,
-  CookieQueryStrategy,
-  ExportedCookie,
-} from "../../../types/schemas";
+import type { ExportedCookie } from "../../../types/schemas";
+import { BaseCookieQueryStrategy } from "../BaseCookieQueryStrategy";
 
 import { decodeBinaryCookies } from "./decodeBinaryCookies";
 
 /**
- * Strategy for querying cookies from Safari browser
+ * Strategy for querying cookies from Safari browser.
+ * This class extends the BaseCookieQueryStrategy and implements Safari-specific
+ * cookie extraction logic.
  */
-export class SafariCookieQueryStrategy implements CookieQueryStrategy {
+export class SafariCookieQueryStrategy extends BaseCookieQueryStrategy {
   /**
-   * The browser name for this strategy
+   * Creates a new instance of SafariCookieQueryStrategy
    */
-  public readonly browserName: BrowserName = "Safari";
+  public constructor() {
+    super("SafariCookieQueryStrategy", "Safari");
+  }
 
   /**
    * Gets the path to Safari's cookie database
@@ -130,43 +129,65 @@ export class SafariCookieQueryStrategy implements CookieQueryStrategy {
         }));
     } catch (error) {
       if (error instanceof Error) {
-        logError(
-          "SafariCookieQueryStrategy",
-          `Error decoding ${cookieDbPath}`,
-          { error, name, domain },
-        );
+        this.logger.error(`Error decoding ${cookieDbPath}`, {
+          error: error.message,
+          file: cookieDbPath,
+          name,
+          domain,
+        });
       } else {
-        logError(
-          "SafariCookieQueryStrategy",
-          `Error decoding ${cookieDbPath}`,
-          { error: "Unknown error", name, domain },
-        );
+        this.logger.error(`Error decoding ${cookieDbPath}`, {
+          error: String(error),
+          file: cookieDbPath,
+          name,
+          domain,
+        });
       }
       return [];
     }
   }
 
   /**
-   * Query Safari's cookie storage for cookies matching the given criteria
+   * Executes the Safari-specific query logic
    * @param name - Name of the cookie to find
    * @param domain - Domain to filter cookies by
    * @param store - Optional store path
    * @returns Array of matching cookies, or empty array if none found
+   * @protected
    */
-  public async queryCookies(
+  protected executeQuery(
     name: string,
     domain: string,
     store?: string,
   ): Promise<ExportedCookie[]> {
-    const home = homedir();
-    if (typeof home !== "string" || home.length === 0) {
-      logError("SafariCookieQueryStrategy", "Failed to get home directory");
+    try {
+      this.logger.info("Querying cookies", { name, domain, store });
+
+      const home = homedir();
+      if (typeof home !== "string" || home.length === 0) {
+        this.logger.error("Failed to get home directory");
+        return Promise.resolve([]);
+      }
+
+      const cookieDbPath = store ?? this.getCookieDbPath(home);
+      return Promise.resolve(
+        this.decodeCookies(cookieDbPath, name || "%", domain || "%"),
+      );
+    } catch (error) {
+      if (error instanceof Error) {
+        this.logger.error("Failed to query cookies", {
+          error: error.message,
+          name,
+          domain,
+        });
+      } else {
+        this.logger.error("Failed to query cookies", {
+          error: String(error),
+          name,
+          domain,
+        });
+      }
       return Promise.resolve([]);
     }
-
-    const cookieDbPath = store ?? this.getCookieDbPath(home);
-    return Promise.resolve(
-      this.decodeCookies(cookieDbPath, name || "%", domain || "%"),
-    );
   }
 }

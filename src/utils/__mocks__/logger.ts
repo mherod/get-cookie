@@ -6,8 +6,11 @@ const mockLogger = {
   error: jest.fn(),
   fatal: jest.fn(),
   log: jest.fn(),
-  withTag: jest.fn().mockReturnThis(),
+  withTag: jest.fn(),
 };
+
+// Set up withTag to return the mock logger itself
+mockLogger.withTag.mockReturnValue(mockLogger);
 
 /**
  * Mock logger for testing purposes

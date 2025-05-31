@@ -4,10 +4,10 @@ This document contains a comprehensive list of actionable improvement tasks for 
 
 ## Code Quality and Structure
 
-[ ] Improve incomplete JSDoc comments throughout the codebase (e.g., empty comments in FirefoxCookieQueryStrategy.ts)
-[ ] Add missing examples to JSDoc comments (e.g., FirefoxCookieQueryStrategy class)
-[ ] Standardize error handling across all browser implementations
-[ ] Refactor duplicate code in browser-specific implementations
+[x] Improve incomplete JSDoc comments throughout the codebase (e.g., empty comments in FirefoxCookieQueryStrategy.ts)
+[x] Add missing examples to JSDoc comments (e.g., FirefoxCookieQueryStrategy class)
+[x] Standardize error handling across all browser implementations
+[x] Refactor duplicate code in browser-specific implementations
 [ ] Implement more specific error types instead of using generic Error class
 [ ] Add input validation for all public API functions
 [ ] Improve type safety by reducing use of 'any' type

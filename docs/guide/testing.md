@@ -199,28 +199,37 @@ jobs:
           pnpm test
 ```
 
-### CircleCI
+### Advanced Testing Workflow
 
 ```yaml
-# .circleci/config.yml
-version: 2.1
+# .github/workflows/comprehensive-tests.yml
+name: Comprehensive Tests
+on: [push, pull_request]
+
 jobs:
   test:
-    macos:
-      xcode: "14.2.0"
+    runs-on: macos-latest
     steps:
-      - checkout
-      - run:
-          name: Setup Test Environment
-          command: |
-            # Install browsers
-            brew install --cask google-chrome firefox
+      - uses: actions/checkout@v4
 
-      - run:
-          name: Run Tests
-          command: |
-            pnpm install
-            pnpm test
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.2
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run comprehensive tests
+        run: |
+          pnpm test
+          pnpm run test:integration
+          pnpm run test:e2e
 ```
 
 ## Best Practices

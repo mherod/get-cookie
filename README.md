@@ -83,6 +83,18 @@ const cookies = await getCookie({
 
 Explore our comprehensive docs at [mherod.github.io/get-cookie](https://mherod.github.io/get-cookie/)
 
+## CI/CD Pipeline 🔄
+
+Our GitHub Actions workflows ensure quality and reliability:
+
+- **🚀 CI Pipeline**: Automated testing across Node.js 20.x & 22.x on macOS
+- **📖 Documentation**: Auto-generated docs with TypeScript APIs
+- **🧪 Comprehensive Testing**: Swift CookieCreator, binary cookies, and validation scripts
+- **📦 Automated Releases**: NPM publishing with GitHub release creation
+- **✅ Quality Gates**: TypeScript checking, ESLint, Prettier, and link validation
+
+All workflows run on macOS to ensure native browser compatibility and proper cookie encryption testing.
+
 ## Contributing 🤝
 
 We welcome contributions! Open an issue or submit a PR to get started.

@@ -1,3 +1,17 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+# Load nvm and use the project's Node.js version
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+
+# Use the version specified in .nvmrc or fallback to default nvm version
+if [ -f .nvmrc ]; then
+  nvm use
+else
+  nvm use default
+fi
+
 # Try pnpm first, fallback to npx if pnpm not found
 if command -v pnpm >/dev/null 2>&1; then
   pnpm exec commitlint --edit ${1}

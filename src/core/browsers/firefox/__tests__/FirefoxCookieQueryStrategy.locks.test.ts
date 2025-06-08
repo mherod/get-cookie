@@ -1,10 +1,9 @@
+import { setupDatabaseLockMocks } from "./FirefoxCookieQueryStrategy.locks.helpers";
 import {
   setupTest,
   cleanupTest,
   createMockCookieDatabase,
   type MockProcessDetector,
-  type MockQuerySqlite,
-  type MockFastGlob,
   type TestSetup,
 } from "./FirefoxCookieQueryStrategy.locks.setup";
 
@@ -21,22 +20,12 @@ describe("FirefoxCookieQueryStrategy - Database Lock Handling", () => {
 
   describe("database lock error handling", () => {
     it("should call Firefox process detection when database lock error occurs", async () => {
-      const { querySqliteThenTransform } = jest.requireMock<MockQuerySqlite>(
-        "../../QuerySqliteThenTransform",
-      );
-      const { sync } = jest.requireMock<MockFastGlob>("fast-glob");
-      const { isFirefoxRunning, getBrowserConflictAdvice } =
+      const mocks = setupDatabaseLockMocks(testSetup);
+      const { getBrowserConflictAdvice } =
         jest.requireMock<MockProcessDetector>("@utils/ProcessDetector");
 
-      // Mock finding Firefox cookie files
-      sync.mockReturnValue([testSetup.mockCookieDbPath]);
-
-      // Mock database lock error
-      const lockError = new Error("database is locked");
-      querySqliteThenTransform.mockRejectedValue(lockError);
-
       // Mock Firefox process detection
-      isFirefoxRunning.mockResolvedValue([
+      mocks.isFirefoxRunning.mockResolvedValue([
         { pid: 1234, command: "firefox", details: "firefox process" },
       ]);
       getBrowserConflictAdvice.mockReturnValue(
@@ -56,45 +45,28 @@ describe("FirefoxCookieQueryStrategy - Database Lock Handling", () => {
       expect(result).toEqual([]);
 
       // Verify that Firefox process detection was called
-      expect(isFirefoxRunning).toHaveBeenCalled();
+      expect(mocks.isFirefoxRunning).toHaveBeenCalled();
       expect(getBrowserConflictAdvice).toHaveBeenCalledWith("firefox", [
         { pid: 1234, command: "firefox", details: "firefox process" },
       ]);
     });
 
     it("should handle database lock with no Firefox processes detected", async () => {
-      const { querySqliteThenTransform } = jest.requireMock<MockQuerySqlite>(
-        "../../QuerySqliteThenTransform",
-      );
-      const { sync } = jest.requireMock<MockFastGlob>("fast-glob");
-      const { isFirefoxRunning } = jest.requireMock<MockProcessDetector>(
-        "@utils/ProcessDetector",
-      );
-
-      // Mock finding Firefox cookie files
-      sync.mockReturnValue([testSetup.mockCookieDbPath]);
-
-      // Mock database lock error
-      const lockError = new Error("database is locked");
-      querySqliteThenTransform.mockRejectedValue(lockError);
+      const mocks = setupDatabaseLockMocks(testSetup);
 
       // Mock no Firefox processes
-      isFirefoxRunning.mockResolvedValue([]);
+      mocks.isFirefoxRunning.mockResolvedValue([]);
 
-      // Create a minimal SQLite database file
+      // Create database and execute query
       createMockCookieDatabase(testSetup.mockCookieDbPath);
-
-      // Execute the query
       const result = await testSetup.strategy.queryCookies(
         "test",
         "example.com",
       );
 
-      // Should return empty array due to error handling
+      // Verify results and process detection
       expect(result).toEqual([]);
-
-      // Verify that Firefox process detection was called
-      expect(isFirefoxRunning).toHaveBeenCalled();
+      expect(mocks.isFirefoxRunning).toHaveBeenCalled();
     });
   });
 

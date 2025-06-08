@@ -8,7 +8,6 @@ import {
   type CookieQueryStrategy,
 } from "./services/CookieStrategyFactory";
 
-
 interface QueryOptions {
   /** Maximum number of cookies to return */
   limit?: number;
@@ -100,4 +99,3 @@ export async function cliQueryCookies(
     }
   }
 }
-

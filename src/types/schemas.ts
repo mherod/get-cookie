@@ -352,7 +352,12 @@ export const CookieQueryStrategySchema = z
     browserName: BrowserNameSchema,
     queryCookies: z
       .function()
-      .args(z.string(), z.string(), z.string().optional(), z.boolean().optional())
+      .args(
+        z.string(),
+        z.string(),
+        z.string().optional(),
+        z.boolean().optional(),
+      )
       .returns(z.promise(z.array(ExportedCookieSchema))),
   })
   .strict();

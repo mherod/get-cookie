@@ -141,14 +141,17 @@ export class BinaryCodableCookie {
    */
   private convertMacTimestamp(macTimestamp: number): number {
     const macToUnixOffset = 978307200; // Seconds between 1970-01-01 and 2001-01-01
-    
+
     if (macTimestamp <= 0) {
       return macTimestamp;
     }
-    
+
     // Validate timestamp bounds - reasonable range is 0 to ~1 billion seconds (2032)
-    const isValid = macTimestamp >= 0 && macTimestamp <= 1000000000 && Number.isFinite(macTimestamp);
-    
+    const isValid =
+      macTimestamp >= 0 &&
+      macTimestamp <= 1000000000 &&
+      Number.isFinite(macTimestamp);
+
     return isValid ? macTimestamp + macToUnixOffset : 0;
   }
 

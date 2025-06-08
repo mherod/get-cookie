@@ -1,4 +1,5 @@
-import { setupDatabaseLockMocks } from "./FirefoxCookieQueryStrategy.locks.helpers";
+import { setupDatabaseLockMocks } from "../FirefoxCookieQueryStrategy.locks.helpers";
+
 import {
   setupTest,
   cleanupTest,

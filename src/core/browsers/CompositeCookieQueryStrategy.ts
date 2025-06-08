@@ -72,6 +72,7 @@ export class CompositeCookieQueryStrategy implements CookieQueryStrategy {
    * @param name - The name pattern to match cookies against
    * @param domain - The domain pattern to match cookies against
    * @param store - The store pattern to match cookies against
+   * @param force - Whether to force operations despite warnings (e.g., locked databases)
    * @returns Promise resolving to combined array of cookies from all strategies
    * @remarks
    * - Failures in individual strategies are logged but don't affect other strategies
@@ -91,12 +92,14 @@ export class CompositeCookieQueryStrategy implements CookieQueryStrategy {
     name: string,
     domain: string,
     store?: string,
+    force?: boolean,
   ): Promise<ExportedCookie[]> {
     try {
       this.logger.info("Querying cookies from all strategies", {
         name,
         domain,
         store,
+        force,
         strategyCount: this.strategies.length,
       });
 
@@ -109,7 +112,7 @@ export class CompositeCookieQueryStrategy implements CookieQueryStrategy {
         this.strategies,
         async (strategy) => {
           try {
-            return await strategy.queryCookies(name, domain, store);
+            return await strategy.queryCookies(name, domain, store, force);
           } catch (error) {
             this.handleStrategyError(error, strategy);
             return [];

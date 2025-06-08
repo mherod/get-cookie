@@ -17,6 +17,12 @@ jest.mock("better-sqlite3", () => {
 // Mock logger
 jest.mock("@utils/logHelpers", () => ({
   logError: jest.fn(),
+  createTaggedLogger: jest.fn().mockReturnValue({
+    debug: jest.fn(),
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+  }),
 }));
 
 describe("querySqliteThenTransform", () => {

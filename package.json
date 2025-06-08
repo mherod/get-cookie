@@ -1,7 +1,7 @@
 {
   "name": "@mherod/get-cookie",
   "version": "4.2.2",
-  "description": "Node.js module for querying a local user's Chrome cookie",
+  "description": "Node.js module for querying cookies from Chrome, Firefox, and Safari browsers",
   "packageManager": "pnpm@9.15.2",
   "type": "module",
   "source": "src/index.ts",

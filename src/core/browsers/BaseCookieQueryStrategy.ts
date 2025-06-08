@@ -50,28 +50,38 @@ export abstract class BaseCookieQueryStrategy implements CookieQueryStrategy {
    * @param name - The name pattern to match cookies against
    * @param domain - The domain pattern to match cookies against
    * @param store - Optional path to a specific cookie store file
+   * @param force - Whether to force operations despite warnings (e.g., locked databases)
    * @returns A promise that resolves to an array of exported cookies
    */
   public async queryCookies(
     name: string,
     domain: string,
     store?: string,
+    force?: boolean,
   ): Promise<ExportedCookie[]> {
     try {
-      this.logger.info("Querying cookies", { name, domain, store });
-      return await this.executeQuery(name, domain, store);
+      this.logger.info("Querying cookies", { name, domain, store, force });
+      return await this.executeQuery(name, domain, store, force);
     } catch (error) {
       if (error instanceof Error) {
         this.logger.error("Failed to query cookies", {
           error: error.message,
+          browser: this.browserName,
+          strategy: this.constructor.name,
           name,
           domain,
+          store,
+          force,
         });
       } else {
         this.logger.error("Failed to query cookies", {
           error: String(error),
+          browser: this.browserName,
+          strategy: this.constructor.name,
           name,
           domain,
+          store,
+          force,
         });
       }
       return [];
@@ -84,6 +94,7 @@ export abstract class BaseCookieQueryStrategy implements CookieQueryStrategy {
    * @param name - The name pattern to match cookies against
    * @param domain - The domain pattern to match cookies against
    * @param store - Optional path to a specific cookie store file
+   * @param force - Whether to force operations despite warnings (e.g., locked databases)
    * @returns A promise that resolves to an array of exported cookies
    * @protected
    */
@@ -91,5 +102,6 @@ export abstract class BaseCookieQueryStrategy implements CookieQueryStrategy {
     name: string,
     domain: string,
     store?: string,
+    force?: boolean,
   ): Promise<ExportedCookie[]>;
 }

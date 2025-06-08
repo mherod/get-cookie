@@ -62,6 +62,7 @@ export class ChromeCookieQueryStrategy extends BaseCookieQueryStrategy {
    * @param name - The name pattern to match cookies against
    * @param domain - The domain pattern to match cookies against
    * @param store - Optional path to a specific cookie store file
+   * @param _force - Whether to force operations despite warnings (e.g., locked databases)
    * @returns A promise that resolves to an array of exported cookies
    * @protected
    * @example
@@ -75,6 +76,7 @@ export class ChromeCookieQueryStrategy extends BaseCookieQueryStrategy {
     name: string,
     domain: string,
     store?: string,
+    _force?: boolean,
   ): Promise<ExportedCookie[]> {
     if (process.platform !== "darwin") {
       this.logger.warn("Platform not supported", {

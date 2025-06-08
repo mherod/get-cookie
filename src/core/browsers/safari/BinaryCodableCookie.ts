@@ -134,6 +134,25 @@ export class BinaryCodableCookie {
   }
 
   /**
+   * Validates and converts Mac epoch timestamp to Unix epoch
+   * @param macTimestamp - Timestamp in Mac epoch (seconds since 2001-01-01)
+   * @returns Unix epoch timestamp or 0 for invalid timestamps
+   * @private
+   */
+  private convertMacTimestamp(macTimestamp: number): number {
+    const macToUnixOffset = 978307200; // Seconds between 1970-01-01 and 2001-01-01
+    
+    if (macTimestamp <= 0) {
+      return macTimestamp;
+    }
+    
+    // Validate timestamp bounds - reasonable range is 0 to ~1 billion seconds (2032)
+    const isValid = macTimestamp >= 0 && macTimestamp <= 1000000000 && Number.isFinite(macTimestamp);
+    
+    return isValid ? macTimestamp + macToUnixOffset : 0;
+  }
+
+  /**
    * Converts the cookie to a validated cookie row
    * @returns Validated cookie row object or null if validation fails
    */
@@ -146,14 +165,9 @@ export class BinaryCodableCookie {
       const domain =
         this.url.replace(/^https?:\/\//, "").replace(/\/.*$/, "") || "uk";
 
-      // Convert timestamps from Mac epoch (seconds since 2001-01-01) to Unix epoch (seconds since 1970-01-01)
-      const macToUnixOffset = 978307200; // Seconds between 1970-01-01 and 2001-01-01
-      const expiryUnix =
-        this.expiration > 0
-          ? this.expiration + macToUnixOffset
-          : this.expiration;
-      const creationUnix =
-        this.creation > 0 ? this.creation + macToUnixOffset : this.creation;
+      // Convert timestamps from Mac epoch to Unix epoch with validation
+      const expiryUnix = this.convertMacTimestamp(this.expiration);
+      const creationUnix = this.convertMacTimestamp(this.creation);
 
       // Create cookie row with converted timestamps
       const cookieRow = BinaryCookieRowSchema.parse({

@@ -48,13 +48,23 @@ export class SafariCookieQueryStrategy extends BaseCookieQueryStrategy {
 
   /**
    * Formats the expiry date
-   * @param expiry - Expiry timestamp
-   * @returns Formatted expiry date
+   * @param expiry - Expiry timestamp (Unix epoch seconds)
+   * @returns Formatted expiry date or "Infinity"
    */
   private formatExpiry(expiry: number): Date | "Infinity" {
     if (expiry <= 0) {
       return "Infinity";
     }
+    
+    // Validate timestamp is reasonable (1970-2100 range in seconds)
+    const minTimestamp = 0; // 1970-01-01
+    const maxTimestamp = 4102444800; // 2100-01-01
+    
+    if (expiry < minTimestamp || expiry > maxTimestamp) {
+      this.logger.warn("Invalid expiry timestamp, treating as session cookie", { expiry });
+      return "Infinity";
+    }
+    
     return new Date(expiry * 1000);
   }
 
@@ -73,8 +83,8 @@ export class SafariCookieQueryStrategy extends BaseCookieQueryStrategy {
 
   /**
    * Formats the creation timestamp
-   * @param creation - Creation timestamp
-   * @returns Formatted creation timestamp or undefined
+   * @param creation - Creation timestamp (Unix epoch seconds)
+   * @returns Formatted creation timestamp in milliseconds or undefined
    */
   private formatCreation(
     creation: number | undefined | null,
@@ -82,6 +92,16 @@ export class SafariCookieQueryStrategy extends BaseCookieQueryStrategy {
     if (typeof creation !== "number" || isNaN(creation) || creation <= 0) {
       return undefined;
     }
+    
+    // Validate timestamp is reasonable (1970-2100 range in seconds)
+    const minTimestamp = 0; // 1970-01-01
+    const maxTimestamp = 4102444800; // 2100-01-01
+    
+    if (creation < minTimestamp || creation > maxTimestamp) {
+      this.logger.warn("Invalid creation timestamp, ignoring", { creation });
+      return undefined;
+    }
+    
     return creation * 1000;
   }
 
@@ -159,6 +179,7 @@ export class SafariCookieQueryStrategy extends BaseCookieQueryStrategy {
     name: string,
     domain: string,
     store?: string,
+    force?: boolean,
   ): Promise<ExportedCookie[]> {
     try {
       this.logger.info("Querying cookies", { name, domain, store });

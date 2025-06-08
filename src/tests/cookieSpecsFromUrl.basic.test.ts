@@ -1,7 +1,7 @@
 import { cookieSpecsFromUrl } from "../core/cookies/cookieSpecsFromUrl";
 
-describe("cookieSpecsFromUrl - basic URL handling", function () {
-  it("should extract cookie specs from a simple URL", function () {
+describe("cookieSpecsFromUrl - basic URL handling", () => {
+  it("should extract cookie specs from a simple URL", () => {
     const specs = cookieSpecsFromUrl("https://example.com");
     expect(Array.isArray(specs)).toBe(true);
     expect(specs.length).toBe(1);
@@ -13,7 +13,7 @@ describe("cookieSpecsFromUrl - basic URL handling", function () {
     });
   });
 
-  it("should extract cookie specs from a URL with subdomain", function () {
+  it("should extract cookie specs from a URL with subdomain", () => {
     const specs = cookieSpecsFromUrl("https://api.example.com");
     expect(Array.isArray(specs)).toBe(true);
     expect(specs.length).toBe(2);

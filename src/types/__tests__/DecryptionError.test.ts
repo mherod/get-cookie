@@ -1,6 +1,6 @@
 import {
-  DecryptionError,
   CookieExtractionError,
+  DecryptionError,
   isDecryptionError,
 } from "../errors";
 

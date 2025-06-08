@@ -1,8 +1,8 @@
-import { homedir } from "os";
+import { homedir } from "node:os";
 
 import type { BinaryCookieRow } from "../../../../types/schemas";
-import { decodeBinaryCookies } from "../decodeBinaryCookies";
 import { SafariCookieQueryStrategy } from "../SafariCookieQueryStrategy";
+import { decodeBinaryCookies } from "../decodeBinaryCookies";
 
 // Mock decodeBinaryCookies
 jest.mock("../decodeBinaryCookies");
@@ -104,7 +104,7 @@ describe("SafariCookieQueryStrategy - Expiry Dates", () => {
     const cookies = await strategy.queryCookies("test-cookie", "example.com");
     expect(cookies).toHaveLength(1);
     expect(cookies[0].expiry).toBeInstanceOf(Date);
-    expect(isNaN(cookies[0].expiry as unknown as number)).toBe(true);
+    expect(Number.isNaN(cookies[0].expiry as unknown as number)).toBe(true);
   });
 });
 

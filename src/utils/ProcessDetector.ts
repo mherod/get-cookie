@@ -18,8 +18,8 @@ function parseProcessLine(
     return null;
   }
 
-  const pid = parseInt(parts[1], 10);
-  if (isNaN(pid)) {
+  const pid = Number.parseInt(parts[1], 10);
+  if (Number.isNaN(pid)) {
     return null;
   }
 
@@ -144,9 +144,5 @@ export function getBrowserConflictAdvice(
   const browserDisplayName =
     browserName.charAt(0).toUpperCase() + browserName.slice(1);
 
-  return (
-    `${browserDisplayName} is currently running (${processCount} process${processCount > 1 ? "es" : ""} detected). ` +
-    `For reliable cookie access, consider closing ${browserDisplayName} and trying again. ` +
-    `Alternatively, use the --force flag to attempt access despite the lock.`
-  );
+  return `${browserDisplayName} is currently running (${processCount} process${processCount > 1 ? "es" : ""} detected). For reliable cookie access, consider closing ${browserDisplayName} and trying again. Alternatively, use the --force flag to attempt access despite the lock.`;
 }

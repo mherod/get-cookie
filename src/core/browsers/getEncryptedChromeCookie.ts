@@ -1,18 +1,18 @@
-import { existsSync } from "fs";
-import { join } from "path";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 
 import glob from "fast-glob";
 
 import {
+  createTaggedLogger,
   logError,
   logOperationResult,
-  createTaggedLogger,
 } from "@utils/logHelpers";
 
 import type { CookieRow } from "../../types/schemas";
 
-import { chromeApplicationSupport } from "./chrome/ChromeApplicationSupport";
 import { querySqliteThenTransform } from "./QuerySqliteThenTransform";
+import { chromeApplicationSupport } from "./chrome/ChromeApplicationSupport";
 
 const logger = createTaggedLogger("getEncryptedChromeCookie");
 
@@ -85,8 +85,8 @@ async function getCookieFiles(): Promise<string[]> {
 function buildSqlQuery(name: string, domain: string): SqlQuery {
   const isWildcard = name === "%";
   const sql = isWildcard
-    ? `SELECT name, encrypted_value, host_key, expires_utc FROM cookies WHERE host_key LIKE ?`
-    : `SELECT name, encrypted_value, host_key, expires_utc FROM cookies WHERE name = ? AND host_key LIKE ?`;
+    ? "SELECT name, encrypted_value, host_key, expires_utc FROM cookies WHERE host_key LIKE ?"
+    : "SELECT name, encrypted_value, host_key, expires_utc FROM cookies WHERE name = ? AND host_key LIKE ?";
   const params = isWildcard ? [`%${domain}%`] : [name, `%${domain}%`];
 
   return { sql, params };

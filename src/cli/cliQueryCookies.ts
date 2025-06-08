@@ -4,8 +4,8 @@ import { logger } from "../utils/logHelpers";
 import { OutputHandlerFactory } from "./handlers/OutputHandlerFactory";
 import { CookieQueryService } from "./services/CookieQueryService";
 import {
-  CookieStrategyFactory,
   type CookieQueryStrategy,
+  CookieStrategyFactory,
 } from "./services/CookieStrategyFactory";
 
 interface QueryOptions {

@@ -1,13 +1,13 @@
-import { Buffer } from "buffer";
-import { readFileSync } from "fs";
-import { homedir } from "os";
-import { join } from "path";
+import { Buffer } from "node:buffer";
+import { readFileSync } from "node:fs";
+import { homedir } from "node:os";
+import { join } from "node:path";
 
-import { BinaryCookieRow } from "../../../types/schemas";
-import { logWarn, createTaggedLogger } from "../../../utils/logHelpers";
+import type { BinaryCookieRow } from "../../../types/schemas";
+import { createTaggedLogger, logWarn } from "../../../utils/logHelpers";
 
 import { BinaryCodablePage } from "./BinaryCodablePage";
-import { BinaryCodableContainer } from "./interfaces/BinaryCodableContainer";
+import type { BinaryCodableContainer } from "./interfaces/BinaryCodableContainer";
 
 const logger = createTaggedLogger("BinaryCodableCookies");
 

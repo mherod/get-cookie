@@ -1,4 +1,4 @@
-import { ExportedCookie } from "../../types/schemas";
+import type { ExportedCookie } from "../../types/schemas";
 
 /**
  * Command-line arguments for cookie querying and output formatting

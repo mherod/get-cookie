@@ -1,6 +1,6 @@
 // External imports
-import { exec, ExecOptions } from "child_process";
-import { promisify } from "util";
+import { type ExecOptions, exec } from "node:child_process";
+import { promisify } from "node:util";
 
 // Internal imports
 import { logError } from "./logHelpers";

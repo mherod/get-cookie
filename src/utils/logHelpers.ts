@@ -1,4 +1,4 @@
-import { type ConsolaInstance } from "consola";
+import type { ConsolaInstance } from "consola";
 
 import logger from "./logger";
 

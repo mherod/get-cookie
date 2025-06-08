@@ -1,4 +1,4 @@
-import { readFileSync } from "fs";
+import { readFileSync } from "node:fs";
 
 import { logWarn } from "../../../utils/logHelpers";
 import { decodeBinaryCookies } from "../safari/decodeBinaryCookies";

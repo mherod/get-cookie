@@ -1,8 +1,8 @@
 // External imports
-import BetterSqlite3, { Database } from "better-sqlite3";
+import BetterSqlite3, { type Database } from "better-sqlite3";
 
 // Internal imports
-import { logError, createTaggedLogger } from "@utils/logHelpers";
+import { createTaggedLogger, logError } from "@utils/logHelpers";
 
 const logger = createTaggedLogger("QuerySqliteThenTransform");
 

@@ -1,9 +1,9 @@
 import {
-  CookieExtractionError,
+  BinaryParsingError,
   BrowserLockError,
+  CookieExtractionError,
   DecryptionError,
   InvalidTimestampError,
-  BinaryParsingError,
 } from "../errors";
 
 // Integration test to ensure all error types work together

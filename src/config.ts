@@ -1,4 +1,4 @@
-import { homedir } from "os";
+import { homedir } from "node:os";
 
 import { config } from "dotenv";
 import { z } from "zod";

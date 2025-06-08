@@ -1,5 +1,5 @@
-import { homedir } from "os";
-import { join } from "path";
+import { homedir } from "node:os";
+import { join } from "node:path";
 
 import type { ExportedCookie } from "../../../types/schemas";
 import { BaseCookieQueryStrategy } from "../BaseCookieQueryStrategy";
@@ -77,7 +77,7 @@ export class SafariCookieQueryStrategy extends BaseCookieQueryStrategy {
    * @returns True if the bit is set, false otherwise
    */
   private isFlagSet(flags: number | undefined | null, bit: number): boolean {
-    if (typeof flags !== "number" || isNaN(flags) || flags <= 0) {
+    if (typeof flags !== "number" || Number.isNaN(flags) || flags <= 0) {
       return false;
     }
     return (flags & bit) === bit;
@@ -91,7 +91,11 @@ export class SafariCookieQueryStrategy extends BaseCookieQueryStrategy {
   private formatCreation(
     creation: number | undefined | null,
   ): number | undefined {
-    if (typeof creation !== "number" || isNaN(creation) || creation <= 0) {
+    if (
+      typeof creation !== "number" ||
+      Number.isNaN(creation) ||
+      creation <= 0
+    ) {
       return undefined;
     }
 

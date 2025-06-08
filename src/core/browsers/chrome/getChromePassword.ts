@@ -1,4 +1,4 @@
-import { platform } from "os";
+import { platform } from "node:os";
 
 import { getChromePassword as getMacOSPassword } from "./macos/getChromePassword";
 
@@ -12,7 +12,7 @@ import { getChromePassword as getMacOSPassword } from "./macos/getChromePassword
 export async function getChromePassword(): Promise<string> {
   switch (platform()) {
     case "darwin": {
-      return getMacOSPassword();
+      return await getMacOSPassword();
     }
     default:
       throw new Error(`Platform ${platform()} is not supported`);

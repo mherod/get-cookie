@@ -1,8 +1,8 @@
-import { homedir } from "os";
+import { homedir } from "node:os";
 
 import type { BinaryCookieRow } from "../../../../types/schemas";
-import { decodeBinaryCookies } from "../decodeBinaryCookies";
 import { SafariCookieQueryStrategy } from "../SafariCookieQueryStrategy";
+import { decodeBinaryCookies } from "../decodeBinaryCookies";
 
 // Mock decodeBinaryCookies
 jest.mock("../decodeBinaryCookies");

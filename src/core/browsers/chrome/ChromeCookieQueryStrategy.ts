@@ -1,4 +1,4 @@
-import { CookieRow, ExportedCookie } from "../../../types/schemas";
+import type { CookieRow, ExportedCookie } from "../../../types/schemas";
 import { BaseCookieQueryStrategy } from "../BaseCookieQueryStrategy";
 import { getEncryptedChromeCookie } from "../getEncryptedChromeCookie";
 import { listChromeProfilePaths } from "../listChromeProfiles";

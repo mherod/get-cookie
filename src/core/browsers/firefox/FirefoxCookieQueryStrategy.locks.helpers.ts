@@ -5,9 +5,9 @@
  */
 
 import type {
+  MockFastGlob,
   MockProcessDetector,
   MockQuerySqlite,
-  MockFastGlob,
   TestSetup,
 } from "./__tests__/FirefoxCookieQueryStrategy.locks.setup";
 

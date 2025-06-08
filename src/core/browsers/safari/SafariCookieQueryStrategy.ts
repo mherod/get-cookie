@@ -55,16 +55,18 @@ export class SafariCookieQueryStrategy extends BaseCookieQueryStrategy {
     if (expiry <= 0) {
       return "Infinity";
     }
-    
+
     // Validate timestamp is reasonable (1970-2100 range in seconds)
     const minTimestamp = 0; // 1970-01-01
     const maxTimestamp = 4102444800; // 2100-01-01
-    
+
     if (expiry < minTimestamp || expiry > maxTimestamp) {
-      this.logger.warn("Invalid expiry timestamp, treating as session cookie", { expiry });
+      this.logger.warn("Invalid expiry timestamp, treating as session cookie", {
+        expiry,
+      });
       return "Infinity";
     }
-    
+
     return new Date(expiry * 1000);
   }
 
@@ -92,16 +94,16 @@ export class SafariCookieQueryStrategy extends BaseCookieQueryStrategy {
     if (typeof creation !== "number" || isNaN(creation) || creation <= 0) {
       return undefined;
     }
-    
+
     // Validate timestamp is reasonable (1970-2100 range in seconds)
     const minTimestamp = 0; // 1970-01-01
     const maxTimestamp = 4102444800; // 2100-01-01
-    
+
     if (creation < minTimestamp || creation > maxTimestamp) {
       this.logger.warn("Invalid creation timestamp, ignoring", { creation });
       return undefined;
     }
-    
+
     return creation * 1000;
   }
 
@@ -172,6 +174,7 @@ export class SafariCookieQueryStrategy extends BaseCookieQueryStrategy {
    * @param name - Name of the cookie to find
    * @param domain - Domain to filter cookies by
    * @param store - Optional store path
+   * @param _force - Whether to force operations despite warnings (e.g., locked databases)
    * @returns Array of matching cookies, or empty array if none found
    * @protected
    */
@@ -179,7 +182,7 @@ export class SafariCookieQueryStrategy extends BaseCookieQueryStrategy {
     name: string,
     domain: string,
     store?: string,
-    force?: boolean,
+    _force?: boolean,
   ): Promise<ExportedCookie[]> {
     try {
       this.logger.info("Querying cookies", { name, domain, store });

@@ -1,22 +1,30 @@
-import { exec } from 'child_process';
-import fs from 'fs';
-import os from 'os';
-import path from 'path';
+import { exec } from "child_process";
+import fs from "fs";
+import os from "os";
+import path from "path";
 
-import logger from './logger';
+import logger from "./logger";
 
+/**
+ * Options for safe file operations
+ */
 export interface SafeFileOperationOptions {
   maxRetries?: number;
   retryDelayMs?: number;
   useTempCopy?: boolean;
 }
 
+/**
+ * Utility class for safe file operations with fallback mechanisms
+ */
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class SafeFileOperations {
-  private static readonly DEFAULT_OPTIONS: Required<SafeFileOperationOptions> = {
-    maxRetries: 3,
-    retryDelayMs: 100,
-    useTempCopy: true,
-  };
+  private static readonly DEFAULT_OPTIONS: Required<SafeFileOperationOptions> =
+    {
+      maxRetries: 3,
+      retryDelayMs: 100,
+      useTempCopy: true,
+    };
 
   /**
    * Safely reads a file with fallback to temporary copy if the original is locked
@@ -25,39 +33,47 @@ export class SafeFileOperations {
    * @returns Buffer containing file contents
    * @throws Error if file cannot be read after all retry attempts
    */
-  static async readFileWithFallback(
+  public static async readFileWithFallback(
     filePath: string,
-    options: SafeFileOperationOptions = {}
+    options: SafeFileOperationOptions = {},
   ): Promise<Buffer> {
-    const opts = { ...this.DEFAULT_OPTIONS, ...options };
-    
+    const opts = { ...SafeFileOperations.DEFAULT_OPTIONS, ...options };
+
     // First try to read the file directly
     for (let attempt = 1; attempt <= opts.maxRetries; attempt++) {
       try {
-        logger.debug(`Attempting to read file directly: ${filePath} (attempt ${attempt})`);
+        logger.debug(
+          `Attempting to read file directly: ${filePath} (attempt ${attempt})`,
+        );
         return await fs.promises.readFile(filePath);
       } catch (error) {
-        const isLockError = this.isFileLockError(error);
-        
-        if (!isLockError) {
+        const isLockError = SafeFileOperations.isFileLockError(error);
+
+        if (isLockError === false) {
           throw error; // Re-throw non-lock errors immediately
         }
-        
-        logger.debug(`File appears to be locked: ${filePath}, attempt ${attempt}/${opts.maxRetries}`);
-        
+
+        logger.debug(
+          `File appears to be locked: ${filePath}, attempt ${attempt}/${opts.maxRetries}`,
+        );
+
         if (attempt < opts.maxRetries) {
-          await this.delay(opts.retryDelayMs * attempt);
+          await SafeFileOperations.delay(opts.retryDelayMs * attempt);
         }
       }
     }
-    
+
     // If direct reading failed and temp copy is enabled, try temp copy fallback
     if (opts.useTempCopy) {
-      logger.debug(`All direct read attempts failed, trying temp copy fallback for: ${filePath}`);
-      return await this.readViaTemporaryCopy(filePath);
+      logger.debug(
+        `All direct read attempts failed, trying temp copy fallback for: ${filePath}`,
+      );
+      return SafeFileOperations.readViaTemporaryCopy(filePath);
     }
-    
-    throw new Error(`Failed to read file after ${opts.maxRetries} attempts: ${filePath}`);
+
+    throw new Error(
+      `Failed to read file after ${opts.maxRetries} attempts: ${filePath}`,
+    );
   }
 
   /**
@@ -66,16 +82,21 @@ export class SafeFileOperations {
    * @returns true if the error appears to be a file lock error
    */
   private static isFileLockError(error: unknown): boolean {
-    if (!error || typeof error !== 'object' || !('code' in error)) {
+    if (
+      error === null ||
+      error === undefined ||
+      typeof error !== "object" ||
+      !("code" in error)
+    ) {
       return false;
     }
-    
+
     const errorWithCode = error as { code: unknown };
-    if (typeof errorWithCode.code !== 'string') {
+    if (typeof errorWithCode.code !== "string") {
       return false;
     }
-    
-    const lockErrorCodes = ['EBUSY', 'EMFILE', 'ENFILE', 'EACCES', 'EAGAIN'];
+
+    const lockErrorCodes = ["EBUSY", "EMFILE", "ENFILE", "EACCES", "EAGAIN"];
     return lockErrorCodes.includes(errorWithCode.code);
   }
 
@@ -88,26 +109,33 @@ export class SafeFileOperations {
     const tempDir = os.tmpdir();
     const fileName = path.basename(filePath);
     const tempPath = path.join(tempDir, `get-cookie-${Date.now()}-${fileName}`);
-    
+
     try {
       logger.debug(`Creating temporary copy: ${filePath} -> ${tempPath}`);
-      
+
       // Create temporary copy using OS-level copy commands for better lock handling
-      if (process.platform === 'win32') {
-        await this.executeCommand(`copy "${filePath}" "${tempPath}"`);
+      if (process.platform === "win32") {
+        await SafeFileOperations.executeCommand(
+          `copy "${filePath}" "${tempPath}"`,
+        );
       } else {
-        await this.executeCommand(`cp "${filePath}" "${tempPath}"`);
+        await SafeFileOperations.executeCommand(
+          `cp "${filePath}" "${tempPath}"`,
+        );
       }
-      
+
       // Read from the temporary copy
       const content = await fs.promises.readFile(tempPath);
       logger.debug(`Successfully read from temporary copy: ${tempPath}`);
-      
+
       return content;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       logger.debug(`Failed to read via temporary copy: ${errorMessage}`);
-      throw new Error(`Failed to create or read temporary copy of locked file: ${filePath}`);
+      throw new Error(
+        `Failed to create or read temporary copy of locked file: ${filePath}`,
+      );
     } finally {
       // Clean up temporary file
       try {
@@ -116,7 +144,10 @@ export class SafeFileOperations {
           logger.debug(`Cleaned up temporary file: ${tempPath}`);
         }
       } catch (cleanupError) {
-        logger.warn(`Failed to clean up temporary file: ${tempPath}`, cleanupError);
+        logger.warn(
+          `Failed to clean up temporary file: ${tempPath}`,
+          cleanupError,
+        );
       }
     }
   }
@@ -130,7 +161,11 @@ export class SafeFileOperations {
     return new Promise((resolve, reject) => {
       exec(command, (error, _stdout, stderr) => {
         if (error !== null) {
-          reject(new Error(`Command failed: ${command}\nError: ${error.message}\nStderr: ${stderr}`));
+          reject(
+            new Error(
+              `Command failed: ${command}\nError: ${error.message}\nStderr: ${stderr}`,
+            ),
+          );
         } else {
           resolve();
         }
@@ -144,7 +179,7 @@ export class SafeFileOperations {
    * @returns Promise that resolves after the delay
    */
   private static delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   /**
@@ -155,11 +190,11 @@ export class SafeFileOperations {
   public static async isFileLocked(filePath: string): Promise<boolean> {
     try {
       // Try to open the file in read mode
-      const fd = await fs.promises.open(filePath, 'r');
+      const fd = await fs.promises.open(filePath, "r");
       await fd.close();
       return false;
     } catch (error) {
-      return this.isFileLockError(error);
+      return SafeFileOperations.isFileLockError(error);
     }
   }
 }

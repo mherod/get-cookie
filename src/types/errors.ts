@@ -4,7 +4,7 @@
  * @example
  * ```typescript
  * import { CookieExtractionError, BrowserLockError } from './errors';
- * 
+ *
  * try {
  *   await queryCookies('session', 'example.com');
  * } catch (error) {
@@ -29,7 +29,13 @@
  * ```
  */
 export class CookieExtractionError extends Error {
+  /**
+   *
+   */
   public readonly browser: string;
+  /**
+   *
+   */
   public readonly context: Record<string, unknown>;
 
   /**
@@ -41,7 +47,7 @@ export class CookieExtractionError extends Error {
   public constructor(
     message: string,
     browser: string,
-    context: Record<string, unknown> = {}
+    context: Record<string, unknown> = {},
   ) {
     super(message);
     this.name = "CookieExtractionError";
@@ -63,6 +69,9 @@ export class CookieExtractionError extends Error {
  * ```
  */
 export class BrowserLockError extends CookieExtractionError {
+  /**
+   *
+   */
   public readonly filePath: string;
 
   /**
@@ -76,7 +85,7 @@ export class BrowserLockError extends CookieExtractionError {
     message: string,
     filePath: string,
     browser: string,
-    context: Record<string, unknown> = {}
+    context: Record<string, unknown> = {},
   ) {
     super(message, browser, { ...context, filePath });
     this.name = "BrowserLockError";
@@ -97,6 +106,9 @@ export class BrowserLockError extends CookieExtractionError {
  * ```
  */
 export class DecryptionError extends CookieExtractionError {
+  /**
+   *
+   */
   public readonly encryptionType: string;
 
   /**
@@ -110,7 +122,7 @@ export class DecryptionError extends CookieExtractionError {
     message: string,
     browser: string,
     encryptionType: string,
-    context: Record<string, unknown> = {}
+    context: Record<string, unknown> = {},
   ) {
     super(message, browser, { ...context, encryptionType });
     this.name = "DecryptionError";
@@ -132,7 +144,13 @@ export class DecryptionError extends CookieExtractionError {
  * ```
  */
 export class InvalidTimestampError extends CookieExtractionError {
+  /**
+   *
+   */
   public readonly timestamp: number;
+  /**
+   *
+   */
   public readonly expectedRange: { min: number; max: number };
 
   /**
@@ -141,6 +159,8 @@ export class InvalidTimestampError extends CookieExtractionError {
    * @param browser - The browser where timestamp parsing failed
    * @param timestamp - The invalid timestamp value
    * @param expectedRange - The expected range for valid timestamps
+   * @param expectedRange.min - Minimum valid timestamp value
+   * @param expectedRange.max - Maximum valid timestamp value
    * @param context - Additional context information
    */
   public constructor(
@@ -148,7 +168,7 @@ export class InvalidTimestampError extends CookieExtractionError {
     browser: string,
     timestamp: number,
     expectedRange: { min: number; max: number },
-    context: Record<string, unknown> = {}
+    context: Record<string, unknown> = {},
   ) {
     super(message, browser, { ...context, timestamp, expectedRange });
     this.name = "InvalidTimestampError";
@@ -170,6 +190,9 @@ export class InvalidTimestampError extends CookieExtractionError {
  * ```
  */
 export class BinaryParsingError extends CookieExtractionError {
+  /**
+   *
+   */
   public readonly offset: number;
 
   /**
@@ -183,7 +206,7 @@ export class BinaryParsingError extends CookieExtractionError {
     message: string,
     browser: string,
     offset: number,
-    context: Record<string, unknown> = {}
+    context: Record<string, unknown> = {},
   ) {
     super(message, browser, { ...context, offset });
     this.name = "BinaryParsingError";
@@ -207,7 +230,9 @@ export class BinaryParsingError extends CookieExtractionError {
  * }
  * ```
  */
-export function isCookieExtractionError(error: unknown): error is CookieExtractionError {
+export function isCookieExtractionError(
+  error: unknown,
+): error is CookieExtractionError {
   return error instanceof CookieExtractionError;
 }
 
@@ -266,7 +291,9 @@ export function isDecryptionError(error: unknown): error is DecryptionError {
  * }
  * ```
  */
-export function isInvalidTimestampError(error: unknown): error is InvalidTimestampError {
+export function isInvalidTimestampError(
+  error: unknown,
+): error is InvalidTimestampError {
   return error instanceof InvalidTimestampError;
 }
 
@@ -285,6 +312,8 @@ export function isInvalidTimestampError(error: unknown): error is InvalidTimesta
  * }
  * ```
  */
-export function isBinaryParsingError(error: unknown): error is BinaryParsingError {
+export function isBinaryParsingError(
+  error: unknown,
+): error is BinaryParsingError {
   return error instanceof BinaryParsingError;
 }

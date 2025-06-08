@@ -21,7 +21,7 @@ interface QuerySqliteThenTransformOptions<TRow, TResult> {
  * @returns Promise that resolves after the specified time
  */
 function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**
@@ -32,9 +32,11 @@ function sleep(ms: number): Promise<void> {
 function isDatabaseLockError(error: unknown): boolean {
   if (error instanceof Error) {
     const message = error.message.toLowerCase();
-    return message.includes("database is locked") || 
-           message.includes("database locked") ||
-           message.includes("sqlite_busy");
+    return (
+      message.includes("database is locked") ||
+      message.includes("database locked") ||
+      message.includes("sqlite_busy")
+    );
   }
   return false;
 }
@@ -42,19 +44,22 @@ function isDatabaseLockError(error: unknown): boolean {
 function openDatabase(file: string): Database {
   try {
     const db = new BetterSqlite3(file, { readonly: true, fileMustExist: true });
-    
+
     // Set WAL mode to reduce lock contention with the browser
     try {
       db.pragma("journal_mode = WAL");
       logger.debug("Set WAL mode for database", { file });
     } catch (pragmaError) {
       // WAL mode setting failed, but continue with default mode
-      logger.warn("Failed to set WAL mode, continuing with default", { 
-        file, 
-        error: pragmaError instanceof Error ? pragmaError.message : String(pragmaError) 
+      logger.warn("Failed to set WAL mode, continuing with default", {
+        file,
+        error:
+          pragmaError instanceof Error
+            ? pragmaError.message
+            : String(pragmaError),
       });
     }
-    
+
     return db;
   } catch (error) {
     logError("Database open failed", error, { file });
@@ -82,7 +87,7 @@ function closeDatabase(db: Database): Promise<void> {
  * @returns Promise that resolves to transformed results
  */
 async function executeQueryAttempt<TRow, TResult>(
-  options: QuerySqliteThenTransformOptions<TRow, TResult>
+  options: QuerySqliteThenTransformOptions<TRow, TResult>,
 ): Promise<TResult[]> {
   const { file, sql, params, rowFilter, rowTransform } = options;
   let db: Database | undefined;
@@ -118,45 +123,49 @@ async function executeQueryAttempt<TRow, TResult>(
  * @returns A promise that resolves to an array of transformed results
  */
 export async function querySqliteThenTransform<TRow, TResult>(
-  options: QuerySqliteThenTransformOptions<TRow, TResult>
+  options: QuerySqliteThenTransformOptions<TRow, TResult>,
 ): Promise<TResult[]> {
   const { file, sql, retryAttempts = 3 } = options;
   const retryDelays = [100, 500, 1000]; // Exponential backoff delays
-  
+
   let lastError: unknown;
 
   for (let attempt = 0; attempt < retryAttempts; attempt++) {
     try {
       const results = await executeQueryAttempt(options);
-      
+
       if (attempt > 0) {
-        logger.info("Database query succeeded after retry", { 
-          file, 
-          attempt: attempt + 1, 
-          totalAttempts: retryAttempts 
+        logger.info("Database query succeeded after retry", {
+          file,
+          attempt: attempt + 1,
+          totalAttempts: retryAttempts,
         });
       }
-      
+
       return results;
     } catch (error) {
       lastError = error;
-      
+
       if (isDatabaseLockError(error) && attempt < retryAttempts - 1) {
         const delay = retryDelays[attempt] || 1000;
-        logger.warn("Database locked, retrying after delay", { 
-          file, 
-          attempt: attempt + 1, 
+        logger.warn("Database locked, retrying after delay", {
+          file,
+          attempt: attempt + 1,
           totalAttempts: retryAttempts,
           delay,
-          error: error instanceof Error ? error.message : String(error)
+          error: error instanceof Error ? error.message : String(error),
         });
-        
+
         await sleep(delay);
         continue;
       }
-      
+
       // Not a lock error or final attempt - throw the error
-      logError("Database query failed", error, { file, sql, attempt: attempt + 1 });
+      logError("Database query failed", error, {
+        file,
+        sql,
+        attempt: attempt + 1,
+      });
       throw error;
     }
   }

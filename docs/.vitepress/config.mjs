@@ -69,7 +69,10 @@ export default defineConfig({
             { text: "🤖 Overview", link: "/automation/" },
             { text: "📜 Shell Scripts", link: "/automation/shell-scripts" },
             { text: "⚡ Node.js Scripts", link: "/automation/nodejs-scripts" },
-            { text: "🎭 Browser Automation", link: "/automation/browser-automation" },
+            {
+              text: "🎭 Browser Automation",
+              link: "/automation/browser-automation",
+            },
             { text: "⏱️ Scheduled Tasks", link: "/automation/scheduled-tasks" },
             { text: "📊 Monitoring", link: "/automation/monitoring" },
             { text: "🔄 Error Recovery", link: "/automation/error-recovery" },

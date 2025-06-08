@@ -4,7 +4,10 @@ import { join } from "path";
 import fg from "fast-glob";
 
 import { createTaggedLogger } from "@utils/logHelpers";
-import { isFirefoxRunning, getBrowserConflictAdvice } from "@utils/ProcessDetector";
+import {
+  isFirefoxRunning,
+  getBrowserConflictAdvice,
+} from "@utils/ProcessDetector";
 
 import type { ExportedCookie } from "../../../types/schemas";
 import { BaseCookieQueryStrategy } from "../BaseCookieQueryStrategy";
@@ -75,8 +78,14 @@ export class FirefoxCookieQueryStrategy extends BaseCookieQueryStrategy {
    * @returns Promise that resolves after providing advice
    * @private
    */
-  private async handleDatabaseLockError(error: unknown, file: string): Promise<void> {
-    if (error instanceof Error && error.message.toLowerCase().includes("database is locked")) {
+  private async handleDatabaseLockError(
+    error: unknown,
+    file: string,
+  ): Promise<void> {
+    if (
+      error instanceof Error &&
+      error.message.toLowerCase().includes("database is locked")
+    ) {
       try {
         const firefoxProcesses = await isFirefoxRunning();
         if (firefoxProcesses.length > 0) {
@@ -84,17 +93,23 @@ export class FirefoxCookieQueryStrategy extends BaseCookieQueryStrategy {
           this.logger.warn("Firefox process conflict detected", {
             file,
             processCount: firefoxProcesses.length,
-            advice
+            advice,
           });
         } else {
-          this.logger.warn("Database locked but no Firefox processes detected", {
-            file,
-            suggestion: "Another process may be accessing the database"
-          });
+          this.logger.warn(
+            "Database locked but no Firefox processes detected",
+            {
+              file,
+              suggestion: "Another process may be accessing the database",
+            },
+          );
         }
       } catch (processError) {
         this.logger.debug("Failed to check Firefox processes", {
-          error: processError instanceof Error ? processError.message : String(processError)
+          error:
+            processError instanceof Error
+              ? processError.message
+              : String(processError),
         });
       }
     }
@@ -145,7 +160,7 @@ export class FirefoxCookieQueryStrategy extends BaseCookieQueryStrategy {
       } catch (error) {
         // Check for database locks and provide helpful advice
         await this.handleDatabaseLockError(error, file);
-        
+
         if (error instanceof Error) {
           this.logger.warn(`Error reading Firefox cookie file ${file}`, {
             error: error.message,

@@ -14,26 +14,40 @@ function showHelp(): void {
   logger.log(``);
   logger.log(`Examples:`);
   logger.log(`  get-cookie auth example.com           # Get specific cookie`);
-  logger.log(`  get-cookie % github.com --output json # Get all cookies as JSON`);
+  logger.log(
+    `  get-cookie % github.com --output json # Get all cookies as JSON`,
+  );
   logger.log(`  get-cookie --url https://example.com  # Extract from URL`);
   logger.log(``);
   logger.log(`Options:`);
   logger.log(`  -h, --help                Show this help message`);
   logger.log(`  -v, --verbose             Enable verbose output`);
-  logger.log(`  -f, --force               Force operation despite warnings (e.g., locked databases)`);
+  logger.log(
+    `  -f, --force               Force operation despite warnings (e.g., locked databases)`,
+  );
   logger.log(``);
   logger.log(`Query options:`);
-  logger.log(`  -n, --name PATTERN        Cookie name pattern (% for wildcard)`);
+  logger.log(
+    `  -n, --name PATTERN        Cookie name pattern (% for wildcard)`,
+  );
   logger.log(`  -D, --domain PATTERN      Cookie domain pattern`);
   logger.log(`  -u, --url URL             URL to extract cookie specs from`);
-  logger.log(`  --browser BROWSER         Target specific browser (chrome|firefox|safari)`);
-  logger.log(`  --store PATH              Path to a specific cookie store file`);
+  logger.log(
+    `  --browser BROWSER         Target specific browser (chrome|firefox|safari)`,
+  );
+  logger.log(
+    `  --store PATH              Path to a specific cookie store file`,
+  );
   logger.log(``);
   logger.log(`Output options:`);
   logger.log(`  --output FORMAT           Output format (json)`);
   logger.log(`  -d, --dump                Dump all cookie details`);
-  logger.log(`  -G, --dump-grouped        Dump all results, grouped by profile`);
-  logger.log(`  -r, --render              Render all results in formatted output`);
+  logger.log(
+    `  -G, --dump-grouped        Dump all results, grouped by profile`,
+  );
+  logger.log(
+    `  -r, --render              Render all results in formatted output`,
+  );
 }
 
 function createCookieSpec(name: string, domain: string): CookieSpec {

@@ -24,7 +24,7 @@ import { OutputHandler, ParsedArgs } from "./types";
  */
 export class OutputHandlerFactory {
   private handlers: OutputHandler[];
-  private readonly validOutputFormats = ['json'] as const;
+  private readonly validOutputFormats = ["json"] as const;
 
   /**
    * Initializes the factory with all available output handlers
@@ -71,10 +71,15 @@ export class OutputHandlerFactory {
    * ```
    */
   private validateOutputFormat(args: ParsedArgs): void {
-    if (args.output !== undefined && !this.validOutputFormats.includes(args.output as typeof this.validOutputFormats[number])) {
-      const validFormats = this.validOutputFormats.join(', ');
+    if (
+      args.output !== undefined &&
+      !this.validOutputFormats.includes(
+        args.output as (typeof this.validOutputFormats)[number],
+      )
+    ) {
+      const validFormats = this.validOutputFormats.join(", ");
       throw new Error(
-        `Invalid output format: '${args.output}'. Valid formats are: ${validFormats}`
+        `Invalid output format: '${args.output}'. Valid formats are: ${validFormats}`,
       );
     }
   }
@@ -103,7 +108,7 @@ export class OutputHandlerFactory {
    */
   public getHandler(args: ParsedArgs): OutputHandler {
     this.validateOutputFormat(args);
-    
+
     return (
       this.handlers.find((handler) => handler.canHandle(args)) ??
       new DefaultOutputHandler()

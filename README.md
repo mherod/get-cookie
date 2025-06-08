@@ -43,6 +43,21 @@ npm install @mherod/get-cookie # or npm
 yarn add @mherod/get-cookie    # or yarn
 ```
 
+### Node.js Version Requirements 🔧
+
+This project requires Node.js v20.0.0 or v22.0.0. We recommend using [nvm](https://github.com/nvm-sh/nvm) to manage your Node.js versions.
+
+```bash
+# Install the correct Node.js version using nvm
+nvm install 22.0.0
+nvm use 22.0.0
+
+# Or simply run this in the project directory (we've included an .nvmrc file)
+nvm use
+```
+
+The project includes an `.nvmrc` file that specifies the required Node.js version, so `nvm use` will automatically switch to the correct version when you're in the project directory.
+
 ## Usage Examples 💡
 
 ### Command Line

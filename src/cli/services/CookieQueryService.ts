@@ -19,13 +19,13 @@ export class CookieQueryService {
   /**
    * Queries cookies from the strategy with options
    * @param spec - The cookie specification to query for
-   * @param options - Query options including limit, removeExpired, and store path
+   * @param options - Query options including limit, removeExpired, store path, and force flag
    * @returns Array of exported cookies
    */
   public async queryCookies(
     spec: CookieSpec,
     options?: CookieQueryOptions,
   ): Promise<ExportedCookie[]> {
-    return this.strategy.queryCookies(spec.name, spec.domain, options?.store);
+    return this.strategy.queryCookies(spec.name, spec.domain, options?.store, options?.force);
   }
 }

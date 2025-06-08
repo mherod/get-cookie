@@ -24,6 +24,7 @@ import { OutputHandler, ParsedArgs } from "./types";
  */
 export class OutputHandlerFactory {
   private handlers: OutputHandler[];
+  private readonly validOutputFormats = ['json'] as const;
 
   /**
    * Initializes the factory with all available output handlers
@@ -51,9 +52,38 @@ export class OutputHandlerFactory {
   }
 
   /**
+   * Validates the output format specified in arguments
+   * @param args - The parsed command line arguments
+   * @throws Error if an invalid output format is specified
+   * @example
+   * ```typescript
+   * const factory = new OutputHandlerFactory();
+   *
+   * // Valid format - no error
+   * factory.validateOutputFormat({ output: 'json' });
+   *
+   * // Invalid format - throws error
+   * try {
+   *   factory.validateOutputFormat({ output: 'invalid' });
+   * } catch (error) {
+   *   console.error('Invalid output format'); // Error thrown
+   * }
+   * ```
+   */
+  private validateOutputFormat(args: ParsedArgs): void {
+    if (args.output !== undefined && !this.validOutputFormats.includes(args.output as typeof this.validOutputFormats[number])) {
+      const validFormats = this.validOutputFormats.join(', ');
+      throw new Error(
+        `Invalid output format: '${args.output}'. Valid formats are: ${validFormats}`
+      );
+    }
+  }
+
+  /**
    * Returns the first handler that can handle the given arguments
    * @param args - The parsed command line arguments
    * @returns The first handler that can handle the arguments, or DefaultOutputHandler if none found
+   * @throws Error if an invalid output format is specified
    * @example
    * ```typescript
    * const factory = new OutputHandlerFactory();
@@ -72,6 +102,8 @@ export class OutputHandlerFactory {
    * ```
    */
   public getHandler(args: ParsedArgs): OutputHandler {
+    this.validateOutputFormat(args);
+    
     return (
       this.handlers.find((handler) => handler.canHandle(args)) ??
       new DefaultOutputHandler()

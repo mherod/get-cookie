@@ -4,6 +4,7 @@ import { join } from "path";
 import fg from "fast-glob";
 
 import { createTaggedLogger } from "@utils/logHelpers";
+import { isFirefoxRunning, getBrowserConflictAdvice } from "@utils/ProcessDetector";
 
 import type { ExportedCookie } from "../../../types/schemas";
 import { BaseCookieQueryStrategy } from "../BaseCookieQueryStrategy";
@@ -68,10 +69,43 @@ export class FirefoxCookieQueryStrategy extends BaseCookieQueryStrategy {
   }
 
   /**
+   * Check if an error indicates a database lock and provide helpful advice
+   * @param error - The error to check
+   * @param file - The database file that was locked
+   * @returns Promise that resolves after providing advice
+   * @private
+   */
+  private async handleDatabaseLockError(error: unknown, file: string): Promise<void> {
+    if (error instanceof Error && error.message.toLowerCase().includes("database is locked")) {
+      try {
+        const firefoxProcesses = await isFirefoxRunning();
+        if (firefoxProcesses.length > 0) {
+          const advice = getBrowserConflictAdvice("firefox", firefoxProcesses);
+          this.logger.warn("Firefox process conflict detected", {
+            file,
+            processCount: firefoxProcesses.length,
+            advice
+          });
+        } else {
+          this.logger.warn("Database locked but no Firefox processes detected", {
+            file,
+            suggestion: "Another process may be accessing the database"
+          });
+        }
+      } catch (processError) {
+        this.logger.debug("Failed to check Firefox processes", {
+          error: processError instanceof Error ? processError.message : String(processError)
+        });
+      }
+    }
+  }
+
+  /**
    * Executes the Firefox-specific query logic
    * @param name - The name pattern to match cookies against
    * @param domain - The domain pattern to match cookies against
    * @param store - Optional path to a specific cookie store file
+   * @param _force - Whether to force operations despite warnings (e.g., locked databases)
    * @returns A promise that resolves to an array of exported cookies
    * @protected
    */
@@ -79,6 +113,7 @@ export class FirefoxCookieQueryStrategy extends BaseCookieQueryStrategy {
     name: string,
     domain: string,
     store?: string,
+    _force?: boolean,
   ): Promise<ExportedCookie[]> {
     const files = store ?? findFirefoxCookieFiles(this.logger);
     const fileList = Array.isArray(files) ? files : [files];
@@ -108,6 +143,9 @@ export class FirefoxCookieQueryStrategy extends BaseCookieQueryStrategy {
 
         results.push(...cookies);
       } catch (error) {
+        // Check for database locks and provide helpful advice
+        await this.handleDatabaseLockError(error, file);
+        
         if (error instanceof Error) {
           this.logger.warn(`Error reading Firefox cookie file ${file}`, {
             error: error.message,

@@ -1,6 +1,6 @@
 import {
-  InvalidTimestampError,
   CookieExtractionError,
+  InvalidTimestampError,
   isInvalidTimestampError,
 } from "../errors";
 

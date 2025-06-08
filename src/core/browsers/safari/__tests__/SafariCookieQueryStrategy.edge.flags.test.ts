@@ -1,8 +1,8 @@
-import { homedir } from "os";
+import { homedir } from "node:os";
 
 import type { BinaryCookieRow } from "../../../../types/schemas";
-import { decodeBinaryCookies } from "../decodeBinaryCookies";
 import { SafariCookieQueryStrategy } from "../SafariCookieQueryStrategy";
+import { decodeBinaryCookies } from "../decodeBinaryCookies";
 
 // Mock decodeBinaryCookies
 jest.mock("../decodeBinaryCookies");
@@ -101,7 +101,7 @@ describe("SafariCookieQueryStrategy - Flag Edge Cases", () => {
         path: "/",
         creation: 1234567890,
         expiry: 1234567890,
-        flags: NaN,
+        flags: Number.NaN,
       },
     ];
 

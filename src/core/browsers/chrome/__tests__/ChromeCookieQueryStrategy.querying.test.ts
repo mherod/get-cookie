@@ -1,9 +1,9 @@
 import {
-  mockGetEncryptedChromeCookie,
-  mockDecrypt,
-  setupChromeTest,
   mockCookieData,
+  mockDecrypt,
+  mockGetEncryptedChromeCookie,
   mockPassword,
+  setupChromeTest,
 } from "../testSetup";
 
 jest.mock("../../getEncryptedChromeCookie");

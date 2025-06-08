@@ -1,8 +1,8 @@
 import logger from "@utils/logger";
 
-import { ExportedCookie } from "../../types/schemas";
+import type { ExportedCookie } from "../../types/schemas";
 
-import { OutputHandler, ParsedArgs } from "./types";
+import type { OutputHandler, ParsedArgs } from "./types";
 
 /**
  * Default handler for cookie output when no specific format is requested

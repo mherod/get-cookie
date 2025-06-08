@@ -1,4 +1,4 @@
-import { parseMacDate, toMacDate, isValidMacDate } from "../dates";
+import { isValidMacDate, parseMacDate, toMacDate } from "../dates";
 
 describe("Mac Date Utils", () => {
   describe("parseMacDate", () => {

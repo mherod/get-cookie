@@ -4,7 +4,7 @@ import { GroupedDumpOutputHandler } from "./GroupedDumpOutputHandler";
 import { GroupedRenderOutputHandler } from "./GroupedRenderOutputHandler";
 import { JsonOutputHandler } from "./JsonOutputHandler";
 import { RenderOutputHandler } from "./RenderOutputHandler";
-import { OutputHandler, ParsedArgs } from "./types";
+import type { OutputHandler, ParsedArgs } from "./types";
 
 /**
  * Factory for creating appropriate output handlers based on command-line arguments

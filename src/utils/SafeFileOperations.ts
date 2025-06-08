@@ -1,7 +1,7 @@
-import { exec } from "child_process";
-import fs from "fs";
-import os from "os";
-import path from "path";
+import { exec } from "node:child_process";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 
 import logger from "./logger";
 
@@ -18,6 +18,7 @@ export interface SafeFileOperationOptions {
  * Utility class for safe file operations with fallback mechanisms
  */
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
+// biome-ignore lint/complexity/noStaticOnlyClass: Utility class pattern preferred for this use case
 export class SafeFileOperations {
   private static readonly DEFAULT_OPTIONS: Required<SafeFileOperationOptions> =
     {

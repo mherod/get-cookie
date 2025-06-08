@@ -1,11 +1,14 @@
-import { Buffer } from "buffer";
+import { Buffer } from "node:buffer";
 
-import { BinaryCookieRow, BinaryCookieRowSchema } from "../../../types/schemas";
+import {
+  type BinaryCookieRow,
+  BinaryCookieRowSchema,
+} from "../../../types/schemas";
 import { createTaggedLogger } from "../../../utils/logHelpers";
 
-import { BinaryCodableContainer } from "./interfaces/BinaryCodableContainer";
-import { BinaryCodableFlags } from "./interfaces/BinaryCodableFlags";
-import { BinaryCodableOffsets } from "./interfaces/BinaryCodableOffsets";
+import type { BinaryCodableContainer } from "./interfaces/BinaryCodableContainer";
+import type { BinaryCodableFlags } from "./interfaces/BinaryCodableFlags";
+import type { BinaryCodableOffsets } from "./interfaces/BinaryCodableOffsets";
 
 const logger = createTaggedLogger("BinaryCodableCookie");
 
@@ -74,7 +77,7 @@ export class BinaryCodableCookie {
 
   private decodeUrlValue(value: string): string {
     let processed = value;
-    let lastProcessed;
+    let lastProcessed: string;
     do {
       lastProcessed = processed;
       try {

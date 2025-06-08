@@ -1,4 +1,4 @@
-import { join } from "path";
+import { join } from "node:path";
 
 import { SafariCookieQueryStrategy } from "../src/core/browsers/safari/SafariCookieQueryStrategy";
 import logger from "../src/utils/logger";

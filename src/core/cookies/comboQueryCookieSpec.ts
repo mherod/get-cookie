@@ -1,11 +1,11 @@
-import {
+import type {
   CookieQueryStrategy,
   CookieSpec,
   ExportedCookie,
   MultiCookieSpec,
 } from "../../types/schemas";
-import { ChromeCookieQueryStrategy } from "../browsers/chrome/ChromeCookieQueryStrategy";
 import { CompositeCookieQueryStrategy } from "../browsers/CompositeCookieQueryStrategy";
+import { ChromeCookieQueryStrategy } from "../browsers/chrome/ChromeCookieQueryStrategy";
 import { FirefoxCookieQueryStrategy } from "../browsers/firefox/FirefoxCookieQueryStrategy";
 import { SafariCookieQueryStrategy } from "../browsers/safari/SafariCookieQueryStrategy";
 

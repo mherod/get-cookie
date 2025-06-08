@@ -1,5 +1,5 @@
 // External imports
-import { createDecipheriv, pbkdf2 } from "crypto";
+import { createDecipheriv, pbkdf2 } from "node:crypto";
 
 import { memoize } from "lodash-es";
 
@@ -86,7 +86,7 @@ export async function decrypt(
     pbkdf2(password, "saltysalt", 1003, 16, "sha1", (error, key) => {
       try {
         if (error) {
-          reject(new Error("Failed to derive key: " + error.message));
+          reject(new Error(`Failed to derive key: ${error.message}`));
           return;
         }
 
@@ -107,7 +107,7 @@ export async function decrypt(
           decipher.final();
         } catch (e) {
           reject(
-            new Error("Failed to finalize decryption: " + (e as Error).message),
+            new Error(`Failed to finalize decryption: ${(e as Error).message}`),
           );
           return;
         }
@@ -116,7 +116,7 @@ export async function decrypt(
         const decodedString = decrypted.toString("utf8");
         resolve(extractValue(decodedString));
       } catch (e) {
-        reject(new Error("Decryption failed: " + (e as Error).message));
+        reject(new Error(`Decryption failed: ${(e as Error).message}`));
       }
     });
   });

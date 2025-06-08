@@ -1,11 +1,11 @@
 import { setupDatabaseLockMocks } from "../FirefoxCookieQueryStrategy.locks.helpers";
 
 import {
-  setupTest,
-  cleanupTest,
-  createMockCookieDatabase,
   type MockProcessDetector,
   type TestSetup,
+  cleanupTest,
+  createMockCookieDatabase,
+  setupTest,
 } from "./FirefoxCookieQueryStrategy.locks.setup";
 
 describe("FirefoxCookieQueryStrategy - Database Lock Handling", () => {

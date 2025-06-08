@@ -1,11 +1,11 @@
-import { Buffer } from "buffer";
+import type { Buffer } from "node:buffer";
 
-import { BinaryCookieRow } from "../../../types/schemas";
+import type { BinaryCookieRow } from "../../../types/schemas";
 import { logWarn } from "../../../utils/logHelpers";
 import { createTaggedLogger } from "../../../utils/logHelpers";
 
 import { BinaryCodableCookie } from "./BinaryCodableCookie";
-import { BinaryCodableContainer } from "./interfaces/BinaryCodableContainer";
+import type { BinaryCodableContainer } from "./interfaces/BinaryCodableContainer";
 
 const logger = createTaggedLogger("BinaryCodablePage");
 

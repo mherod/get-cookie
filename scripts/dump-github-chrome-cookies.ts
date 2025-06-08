@@ -1,5 +1,4 @@
 import { ChromeCookieQueryStrategy } from "../src/core/browsers/chrome/ChromeCookieQueryStrategy";
-import type { ExportedCookie } from "../src/types/schemas";
 import { createTaggedLogger } from "../src/utils/logHelpers";
 
 const logger = createTaggedLogger("dump-github-chrome-cookies");
@@ -19,7 +18,7 @@ async function main(): Promise<void> {
     logger.info(`Found ${cookies.length} GitHub cookies:`);
 
     // Print each cookie in a readable format
-    cookies.forEach((cookie: ExportedCookie) => {
+    for (const cookie of cookies) {
       logger.log("\n-------------------");
       logger.log(`Name: ${cookie.name}`);
       logger.log(`Domain: ${cookie.domain}`);
@@ -27,7 +26,7 @@ async function main(): Promise<void> {
       logger.log(`Expiry: ${String(cookie.expiry)}`);
       logger.log(`Decrypted: ${cookie.meta?.decrypted ?? false}`);
       logger.log(`Profile: ${cookie.meta?.file ?? "Unknown"}`);
-    });
+    }
   } catch (error) {
     if (error instanceof Error) {
       logger.error("Failed to dump GitHub cookies", { error });

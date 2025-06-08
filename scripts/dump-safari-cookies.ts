@@ -1,8 +1,8 @@
 #!/usr/bin/env tsx
 
-import { readFileSync } from "fs";
-import { homedir } from "os";
-import { join } from "path";
+import { readFileSync } from "node:fs";
+import { homedir } from "node:os";
+import { join } from "node:path";
 
 import { createTaggedLogger } from "../src/utils/logHelpers";
 
@@ -17,13 +17,13 @@ function createHexDump(buffer: Buffer, offset: number, length: number): string {
       }
       hexDump += `${(offset + i).toString(16).padStart(4, "0")}: `;
     }
-    hexDump += buffer[offset + i].toString(16).padStart(2, "0") + " ";
+    hexDump += `${buffer[offset + i].toString(16).padStart(2, "0")} `;
 
     // Add ASCII representation at the end of each line
     if ((i + 1) % 16 === 0 || i === length - 1) {
       // Pad with spaces if we're on the last line and it's not full
       const padding = " ".repeat((16 - (i % 16)) * 3);
-      hexDump += padding + " | ";
+      hexDump += `${padding} | `;
 
       // Add ASCII representation
       for (let j = i - (i % 16); j <= i; j++) {

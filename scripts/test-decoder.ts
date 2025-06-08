@@ -1,7 +1,7 @@
 #!/usr/bin/env tsx
 
-import { homedir } from "os";
-import { join } from "path";
+import { homedir } from "node:os";
+import { join } from "node:path";
 
 import { decodeBinaryCookies } from "../src/core/browsers/safari/decodeBinaryCookies";
 import type { BinaryCookieRow } from "../src/types/schemas";
@@ -37,7 +37,7 @@ function formatDate(timestamp: number, epochOffset: number): string {
 
   try {
     const date = new Date(milliseconds);
-    if (isNaN(date.getTime())) {
+    if (Number.isNaN(date.getTime())) {
       return "Invalid Date";
     }
     return date.toISOString();

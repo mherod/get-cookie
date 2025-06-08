@@ -1,8 +1,8 @@
 #!/usr/bin/env tsx
 
-import { readFileSync } from "fs";
-import { homedir } from "os";
-import { join } from "path";
+import { readFileSync } from "node:fs";
+import { homedir } from "node:os";
+import { join } from "node:path";
 
 import { consola } from "consola";
 

@@ -192,7 +192,7 @@ export function validateToken(
   try {
     if (token === undefined) {
       const errorMessage = "Token is undefined";
-      logger.debug("JWT validation error: " + errorMessage);
+      logger.debug(`JWT validation error: ${errorMessage}`);
       return {
         isValid: false,
         error: errorMessage,
@@ -222,7 +222,7 @@ export function validateToken(
       error instanceof Error
         ? error.message
         : "Unknown error during JWT validation";
-    logger.debug("JWT validation error: " + errorMessage);
+    logger.debug(`JWT validation error: ${errorMessage}`);
     return {
       isValid: false,
       error: errorMessage,

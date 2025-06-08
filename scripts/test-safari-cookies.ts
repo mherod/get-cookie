@@ -1,7 +1,7 @@
 #!/usr/bin/env tsx
 
-import { readFileSync } from "fs";
-import { join } from "path";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 
 import { decodeBinaryCookies } from "../src/core/browsers/safari/decodeBinaryCookies";
 import type { BinaryCookieRow } from "../src/types/schemas";

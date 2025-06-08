@@ -1,7 +1,7 @@
 import type {
+  CookieQueryOptions,
   CookieSpec,
   ExportedCookie,
-  CookieQueryOptions,
 } from "../../types/schemas";
 
 import type { CookieQueryStrategy } from "./CookieStrategyFactory";
@@ -26,7 +26,7 @@ export class CookieQueryService {
     spec: CookieSpec,
     options?: CookieQueryOptions,
   ): Promise<ExportedCookie[]> {
-    return this.strategy.queryCookies(
+    return await this.strategy.queryCookies(
       spec.name,
       spec.domain,
       options?.store,

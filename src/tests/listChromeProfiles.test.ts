@@ -1,6 +1,6 @@
 import {
-  listChromeProfiles,
   listChromeProfilePaths,
+  listChromeProfiles,
 } from "../core/browsers/listChromeProfiles";
 import { createTaggedLogger } from "../utils/logHelpers";
 

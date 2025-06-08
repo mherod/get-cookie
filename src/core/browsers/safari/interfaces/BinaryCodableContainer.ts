@@ -1,4 +1,4 @@
-import { Buffer } from "buffer";
+import type { Buffer } from "node:buffer";
 
 /**
  * Container for binary data parsing with offset tracking

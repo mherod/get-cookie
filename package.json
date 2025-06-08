@@ -32,13 +32,14 @@
     "build": "pnpm run build:lib && pnpm run build:cli",
     "test": "jest",
     "type-check": "tsc --noEmit --skipLibCheck",
-    "lint": "eslint . --format=codeframe",
-    "lint:fix": "eslint . --format=codeframe --fix",
+    "lint": "biome check --diagnostic-level=error .",
+    "lint:fix": "biome check --write .",
+    "lint:staged": "biome check --staged --write .",
+    "format": "biome format --write .",
+    "format:check": "biome check --diagnostic-level=error .",
     "validate": "pnpm run type-check && pnpm run lint && pnpm run test && pnpm run check-links && pnpm run format:check",
     "prepack": "pnpm run validate",
     "prepublishOnly": "pnpm run clean && pnpm run validate && pnpm run build",
-    "format": "prettier --write .",
-    "format:check": "prettier --check \"**/*.{js,ts,json,md,yml,yaml}\" \"docs/**/*.{md,vue}\"",
     "dev": "tsc -w -p tsconfig.json & tsc-alias -w -p tsconfig.json",
     "read-github": "NODE_OPTIONS=\"-r tsconfig-paths/register\" tsx scripts/read-github-cookies.ts",
     "prepare": "husky install",
@@ -67,6 +68,7 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@biomejs/biome": "1.9.4",
     "@commitlint/cli": "19.6.1",
     "@commitlint/config-conventional": "19.6.0",
     "@jest/globals": "^29.7.0",
@@ -103,14 +105,13 @@
   },
   "lint-staged": {
     "*.{js,ts}": [
-      "eslint --fix --format=codeframe",
-      "prettier --write"
+      "biome check --write --no-errors-on-unmatched"
     ],
     "*.{json,md,yml,yaml}": [
-      "prettier --write"
+      "biome format --write --no-errors-on-unmatched"
     ],
     "docs/**/*.{md,vue}": [
-      "prettier --write",
+      "biome format --write --no-errors-on-unmatched",
       "./scripts/check-vitepress-links.sh"
     ]
   }

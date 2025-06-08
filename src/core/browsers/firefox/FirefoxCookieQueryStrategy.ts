@@ -1,13 +1,13 @@
-import { homedir } from "os";
-import { join } from "path";
+import { homedir } from "node:os";
+import { join } from "node:path";
 
 import fg from "fast-glob";
 
-import { createTaggedLogger } from "@utils/logHelpers";
 import {
-  isFirefoxRunning,
   getBrowserConflictAdvice,
+  isFirefoxRunning,
 } from "@utils/ProcessDetector";
+import type { createTaggedLogger } from "@utils/logHelpers";
 
 import type { ExportedCookie } from "../../../types/schemas";
 import { BaseCookieQueryStrategy } from "../BaseCookieQueryStrategy";

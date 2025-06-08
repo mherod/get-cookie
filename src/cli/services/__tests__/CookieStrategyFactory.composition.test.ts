@@ -24,8 +24,11 @@ describe("CookieStrategyFactory - Composite Strategy Composition", () => {
       .mockResolvedValue([]);
 
     // Override the composite strategy's strategies with mocks
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
-    (compositeStrategy as any).strategies = [mockStrategy];
+    (
+      compositeStrategy as CompositeCookieQueryStrategy & {
+        strategies: CookieQueryStrategy[];
+      }
+    ).strategies = [mockStrategy];
 
     const spec = { name: "test", domain: "example.com" };
     const cookies = await compositeStrategy.queryCookies(

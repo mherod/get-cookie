@@ -1,8 +1,8 @@
 import {
-  mockGetEncryptedChromeCookie,
-  mockDecrypt,
-  setupChromeTest,
   mockCookieData,
+  mockDecrypt,
+  mockGetEncryptedChromeCookie,
+  setupChromeTest,
 } from "../testSetup";
 
 describe("ChromeCookieQueryStrategy - Error Handling", () => {

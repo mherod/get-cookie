@@ -2,9 +2,9 @@ import { groupBy } from "lodash-es";
 
 import logger from "@utils/logger";
 
-import { ExportedCookie } from "../../types/schemas";
+import type { ExportedCookie } from "../../types/schemas";
 
-import { OutputHandler, ParsedArgs } from "./types";
+import type { OutputHandler, ParsedArgs } from "./types";
 
 /**
  * Handles grouped dump output of cookie data

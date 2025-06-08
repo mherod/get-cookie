@@ -24,11 +24,9 @@ describe("CookieStrategyFactory - Composite Strategy Composition", () => {
       .mockResolvedValue([]);
 
     // Override the composite strategy's strategies with mocks
-    (
-      compositeStrategy as CompositeCookieQueryStrategy & {
-        strategies: CookieQueryStrategy[];
-      }
-    ).strategies = [mockStrategy];
+    // Using type assertion to access private property for testing purposes
+    // @ts-expect-error Accessing private property for testing
+    compositeStrategy.strategies = [mockStrategy];
 
     const spec = { name: "test", domain: "example.com" };
     const cookies = await compositeStrategy.queryCookies(

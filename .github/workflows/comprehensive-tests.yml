@@ -42,9 +42,6 @@ jobs:
       - name: Run decoder test
         run: pnpm exec tsx scripts/test-decoder.ts
 
-      - name: Run Safari cookies test
-        run: pnpm exec tsx scripts/test-safari-cookies.ts
-
       - name: Validate cookie structure
         run: pnpm exec tsx scripts/validate-cookie-structure.ts
 

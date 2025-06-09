@@ -59,7 +59,7 @@
     "consola": "^3.3.3",
     "date-fns": "4.1.0",
     "destr": "^2.0.3",
-    "dotenv": "16.4.7",
+    "dotenv": "16.5.0",
     "fast-glob": "^3.3.3",
     "jsonwebtoken": "^9.0.2",
     "lodash-es": "^4.17.21",

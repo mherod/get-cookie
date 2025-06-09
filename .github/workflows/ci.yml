@@ -127,6 +127,6 @@ jobs:
 
       - name: Test package installation
         run: |
-          pnpm pack
-          npm install -g ./mherod-get-cookie-*.tgz
+          pnpm run build
+          pnpm link --global
           get-cookie --help

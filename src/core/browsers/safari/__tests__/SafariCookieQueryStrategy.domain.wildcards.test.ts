@@ -8,11 +8,11 @@ import { decodeBinaryCookies } from "../decodeBinaryCookies";
 jest.mock("../decodeBinaryCookies");
 
 // Mock os.homedir and path.join
-jest.mock("os", () => ({
-  homedir: jest.fn(),
+jest.mock("node:os", () => ({
+  homedir: jest.fn().mockReturnValue("/Users/testuser"),
 }));
 
-jest.mock("path", () => ({
+jest.mock("node:path", () => ({
   join: jest.fn((...args) => args.join("/")),
 }));
 
@@ -21,11 +21,14 @@ describe("SafariCookieQueryStrategy - Domain Wildcards", () => {
   const mockDecodeBinaryCookies = decodeBinaryCookies as jest.MockedFunction<
     typeof decodeBinaryCookies
   >;
-  const mockHomedir = homedir as jest.MockedFunction<typeof homedir>;
+  const _mockHomedir = homedir as jest.MockedFunction<typeof homedir>;
 
   beforeEach(() => {
+    jest.clearAllMocks();
+    jest.clearAllMocks();
+    jest.clearAllMocks();
+    jest.clearAllMocks();
     strategy = new SafariCookieQueryStrategy();
-    mockHomedir.mockReturnValue("/Users/testuser");
     jest.clearAllMocks();
   });
 

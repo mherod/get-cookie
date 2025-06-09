@@ -113,7 +113,24 @@ export class BinaryCodableCookie {
     }
   }
 
-  private processValue(value: string): string {
+  private processValue(value: unknown): string {
+    // Handle non-string values
+    if (value === null) {
+      return "null";
+    }
+
+    if (value === undefined) {
+      return "undefined";
+    }
+
+    if (Buffer.isBuffer(value)) {
+      return value.toString();
+    }
+
+    if (typeof value !== "string") {
+      return String(value);
+    }
+
     // First, try URL decoding
     const decoded = this.decodeUrlValue(value);
 

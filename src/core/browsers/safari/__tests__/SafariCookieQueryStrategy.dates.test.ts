@@ -8,11 +8,11 @@ import { decodeBinaryCookies } from "../decodeBinaryCookies";
 jest.mock("../decodeBinaryCookies");
 
 // Mock os.homedir and path.join
-jest.mock("os", () => ({
-  homedir: jest.fn(),
+jest.mock("node:os", () => ({
+  homedir: jest.fn().mockReturnValue("/Users/testuser"),
 }));
 
-jest.mock("path", () => ({
+jest.mock("node:path", () => ({
   join: jest.fn((...args) => args.join("/")),
 }));
 
@@ -21,11 +21,14 @@ describe("SafariCookieQueryStrategy - Expiry Dates", () => {
   const mockDecodeBinaryCookies = decodeBinaryCookies as jest.MockedFunction<
     typeof decodeBinaryCookies
   >;
-  const mockHomedir = homedir as jest.MockedFunction<typeof homedir>;
+  const _mockHomedir = homedir as jest.MockedFunction<typeof homedir>;
 
   beforeEach(() => {
+    jest.clearAllMocks();
+    jest.clearAllMocks();
+    jest.clearAllMocks();
+    jest.clearAllMocks();
     strategy = new SafariCookieQueryStrategy();
-    mockHomedir.mockReturnValue("/Users/testuser");
     jest.clearAllMocks();
   });
 
@@ -104,7 +107,8 @@ describe("SafariCookieQueryStrategy - Expiry Dates", () => {
     const cookies = await strategy.queryCookies("test-cookie", "example.com");
     expect(cookies).toHaveLength(1);
     expect(cookies[0].expiry).toBeInstanceOf(Date);
-    expect(Number.isNaN(cookies[0].expiry as unknown as number)).toBe(true);
+    // Check if getTime() returns NaN
+    expect(Number.isNaN((cookies[0].expiry as Date).getTime())).toBe(true);
   });
 });
 
@@ -113,11 +117,14 @@ describe("SafariCookieQueryStrategy - Creation Dates", () => {
   const mockDecodeBinaryCookies = decodeBinaryCookies as jest.MockedFunction<
     typeof decodeBinaryCookies
   >;
-  const mockHomedir = homedir as jest.MockedFunction<typeof homedir>;
+  const _mockHomedir = homedir as jest.MockedFunction<typeof homedir>;
 
   beforeEach(() => {
+    jest.clearAllMocks();
+    jest.clearAllMocks();
+    jest.clearAllMocks();
+    jest.clearAllMocks();
     strategy = new SafariCookieQueryStrategy();
-    mockHomedir.mockReturnValue("/Users/testuser");
     jest.clearAllMocks();
   });
 

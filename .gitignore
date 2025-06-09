@@ -132,3 +132,6 @@ cookie-creator
 # CookieCreator binary
 scripts/CookieCreator/Sources/main
 scripts/CookieCreator/main
+
+# Test exports directory
+test-exports/

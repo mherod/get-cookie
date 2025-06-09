@@ -49,7 +49,7 @@
     "check-links": "./scripts/check-vitepress-links.sh"
   },
   "engines": {
-    "node": "^20.0.0 || ^22.0.0"
+    "node": "^20.0.0 || ^22.0.0 || ^24.0.0"
   },
   "keywords": [],
   "author": "Matthew Herod",

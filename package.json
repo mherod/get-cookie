@@ -100,7 +100,7 @@
     "tsx": "4.19.2",
     "typedoc": "^0.27.9",
     "typedoc-plugin-markdown": "^4.4.1",
-    "typescript": "^5.7.2",
+    "typescript": "^5.8.3",
     "vitepress": "^1.6.3"
   },
   "lint-staged": {

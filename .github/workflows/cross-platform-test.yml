@@ -61,9 +61,9 @@ jobs:
           strategy.queryCookies('*', '.example.com')
             .then(cookies => console.log('Query completed, found:', cookies.length, 'cookies'))
             .catch(err => console.log('Expected error (no Chrome profile):', err.message));
-          "@ | Out-File -FilePath test-windows.js -Encoding UTF8
+          "@ | Out-File -FilePath test-windows.cjs -Encoding UTF8
           
-          node test-windows.js
+          node test-windows.cjs
         shell: pwsh
 
   test-linux:
@@ -109,7 +109,7 @@ jobs:
       
       - name: Integration test - Chrome on Linux
         run: |
-          cat > test-linux.js << 'EOF'
+          cat > test-linux.cjs << 'EOF'
           const {ChromeCookieQueryStrategy} = require('./dist/index.cjs');
           const strategy = new ChromeCookieQueryStrategy();
           console.log('Chrome strategy initialized on Linux');
@@ -120,11 +120,11 @@ jobs:
             .catch(err => console.log('Expected error (no Chrome profile):', err.message));
           EOF
           
-          node test-linux.js
+          node test-linux.cjs
       
       - name: Test multiple browsers
         run: |
-          cat > test-browsers.js << 'EOF'
+          cat > test-browsers.cjs << 'EOF'
           const {ChromiumCookieQueryStrategy} = require('./dist/index.cjs');
           
           const browsers = ['chrome', 'brave', 'edge', 'opera', 'vivaldi'];
@@ -139,7 +139,7 @@ jobs:
           }
           EOF
           
-          node test-browsers.js
+          node test-browsers.cjs
 
   test-macos:
     runs-on: macos-latest
@@ -179,7 +179,7 @@ jobs:
       
       - name: Integration test - Chrome on macOS
         run: |
-          cat > test-macos.js << 'EOF'
+          cat > test-macos.cjs << 'EOF'
           const {ChromeCookieQueryStrategy} = require('./dist/index.cjs');
           const strategy = new ChromeCookieQueryStrategy();
           console.log('Chrome strategy initialized on macOS');
@@ -190,4 +190,4 @@ jobs:
             .catch(err => console.log('Expected error:', err.message));
           EOF
           
-          node test-macos.js
+          node test-macos.cjs

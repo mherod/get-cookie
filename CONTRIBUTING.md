@@ -75,17 +75,129 @@ npm install -g pnpm@9.15.2
 5. Install dependencies: `pnpm install`
 6. Run tests to verify your setup: `pnpm test`
 
-## Development Workflow
+## Git Flow Workflow
 
-1. Create a new branch for your feature or bugfix: `git checkout -b feature/your-feature-name`
-2. Make your changes
-3. Run tests to ensure everything works: `pnpm test`
-4. Run the type checker: `pnpm type-check`
-5. Run the linter: `pnpm lint`
-6. Format your code: `pnpm format`
-7. Commit your changes using conventional commit format: `git commit -m "feat: add new feature"`
-8. Push your branch: `git push origin feature/your-feature-name`
-9. Open a pull request
+This project uses [git-flow](https://github.com/nvie/gitflow) for branch management and releases. Git-flow provides a structured approach to managing features, releases, and hotfixes.
+
+### Branch Structure
+
+- **main** - Production-ready code. Only release and hotfix branches merge here.
+- **develop** - Integration branch for the next release. Feature branches merge here.
+- **feature/*** - New features and enhancements
+- **release/*** - Prepare new releases, bug fixes, and version bumps
+- **hotfix/*** - Critical fixes for production issues
+
+### Installing Git-Flow
+
+```bash
+# macOS
+brew install git-flow-avh
+
+# Ubuntu/Debian
+sudo apt-get install git-flow
+
+# Windows
+# Download from: https://github.com/petervanderdoes/gitflow-avh/wiki/Installing-on-Windows
+```
+
+### Git-Flow Configuration
+
+The repository is already configured with these settings:
+- Production branch: `main`
+- Development branch: `develop`
+- Feature prefix: `feature/`
+- Release prefix: `release/`
+- Hotfix prefix: `hotfix/`
+- Version tag prefix: `v`
+
+### Development Workflow
+
+#### Working on a New Feature
+
+```bash
+# Start a new feature
+git flow feature start my-new-feature
+
+# Work on your feature...
+# Make commits as usual
+git add .
+git commit -m "feat: add new feature"
+
+# Run validation before finishing
+pnpm run validate
+
+# Finish the feature (merges to develop)
+git flow feature finish my-new-feature
+```
+
+#### Creating a Release
+
+```bash
+# Start a new release
+git flow release start 4.4.0
+
+# Update version in package.json
+npm version 4.4.0 --no-git-tag-version
+
+# Run final validation
+pnpm run validate
+
+# Commit release changes
+git add .
+git commit -m "chore: prepare release 4.4.0"
+
+# Finish the release (merges to main and develop, creates tag)
+git flow release finish 4.4.0
+
+# Push everything
+git push origin main develop --tags
+```
+
+#### Emergency Hotfixes
+
+```bash
+# Start a hotfix from main
+git flow hotfix start 4.4.1
+
+# Fix the critical issue
+git add .
+git commit -m "fix: critical security issue"
+
+# Update version
+npm version 4.4.1 --no-git-tag-version
+git add package.json
+git commit -m "chore: bump version to 4.4.1"
+
+# Finish hotfix (merges to main and develop, creates tag)
+git flow hotfix finish 4.4.1
+
+# Push everything
+git push origin main develop --tags
+```
+
+### Code Quality Requirements
+
+All branches must pass these checks:
+
+```bash
+pnpm run validate  # Runs all of the following:
+pnpm run type-check    # TypeScript compilation
+pnpm run lint          # ESLint + Biome formatting  
+pnpm run test          # Jest test suite
+pnpm run build         # Library and CLI builds
+pnpm run check-links   # Documentation validation
+```
+
+### Commit Message Convention
+
+We use [Conventional Commits](https://www.conventionalcommits.org/):
+- `feat:` - New features
+- `fix:` - Bug fixes  
+- `chore:` - Maintenance tasks
+- `docs:` - Documentation updates
+- `test:` - Test additions/updates
+- `refactor:` - Code refactoring
+- `perf:` - Performance improvements
 
 ## Git Hooks
 
@@ -95,4 +207,8 @@ This project uses [husky](https://github.com/typicode/husky) and [lint-staged](h
 
 If you have any questions or need help with your contribution, please open an issue or reach out to the maintainers.
 
-Thank you for contributing to get-cookie!
+Thank you for contributing to get-cookie! 🍪
+
+## Git Flow Status
+
+✅ Git-flow has been successfully configured for this repository!

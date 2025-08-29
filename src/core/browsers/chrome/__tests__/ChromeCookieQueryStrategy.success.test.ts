@@ -56,6 +56,6 @@ describe("ChromeCookieQueryStrategy - Success", () => {
       domain: "example.com",
       file: "/path/to/profile",
     });
-    expect(mockDecrypt).toHaveBeenCalledWith(mockCookieValue, mockPassword);
+    expect(mockDecrypt).toHaveBeenCalledWith(mockCookieValue, mockPassword, 0);
   });
 });

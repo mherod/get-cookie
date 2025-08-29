@@ -29,7 +29,7 @@ async function decryptDPAPIKey(encryptedKey: Buffer): Promise<Buffer> {
   if (process.platform === "win32") {
     try {
       // Dynamically import DPAPI module if available
-      const dpapi = await import("@primno/dpapi")
+      const dpapi = await import("@primno/dpapi" as string)
         .then((module) => module as { unprotectData: (data: Buffer) => Buffer })
         .catch(() => null);
       if (dpapi) {

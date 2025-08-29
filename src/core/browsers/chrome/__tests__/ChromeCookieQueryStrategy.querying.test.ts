@@ -27,6 +27,7 @@ describe("ChromeCookieQueryStrategy - Basic Functionality", () => {
     expect(mockDecrypt).toHaveBeenCalledWith(
       mockCookieData.value,
       mockPassword,
+      0,
     );
 
     expect(cookies).toHaveLength(1);
@@ -101,7 +102,11 @@ describe("ChromeCookieQueryStrategy - Value Handling", () => {
 
     const cookies = await strategy.queryCookies("test-cookie", "example.com");
 
-    expect(mockDecrypt).toHaveBeenCalledWith(expect.any(Buffer), mockPassword);
+    expect(mockDecrypt).toHaveBeenCalledWith(
+      expect.any(Buffer),
+      mockPassword,
+      0,
+    );
     expect(cookies).toHaveLength(1);
     expect(cookies[0].value).toBe("decrypted-value");
   });

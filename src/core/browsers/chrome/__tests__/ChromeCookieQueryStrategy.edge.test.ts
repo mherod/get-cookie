@@ -24,6 +24,7 @@ describe("ChromeCookieQueryStrategy - Edge Cases", () => {
     expect(mockDecrypt).toHaveBeenCalledWith(
       expect.any(Buffer),
       "test-password",
+      0,
     );
     expect(cookies).toHaveLength(1);
     expect(cookies[0].value).toBe("decrypted-value");

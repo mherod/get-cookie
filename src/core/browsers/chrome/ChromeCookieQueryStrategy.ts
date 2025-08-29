@@ -124,10 +124,8 @@ export class ChromeCookieQueryStrategy extends BaseCookieQueryStrategy {
         try {
           const metaResult = db
             .prepare("SELECT value FROM meta WHERE key = ?")
-            .get("version");
-          metaVersion = metaResult
-            ? Number.parseInt(metaResult.value as string, 10)
-            : 0;
+            .get("version") as { value: string } | undefined;
+          metaVersion = metaResult ? Number.parseInt(metaResult.value, 10) : 0;
         } finally {
           db.close();
         }

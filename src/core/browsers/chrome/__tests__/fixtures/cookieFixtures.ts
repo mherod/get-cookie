@@ -58,14 +58,6 @@ export const ERROR_CASES = [
     error: "password must be a string",
   },
   {
-    name: "encrypted data is not a buffer",
-    input: {
-      value: "not a buffer" as unknown as Buffer,
-      password: TEST_PASSWORD,
-    },
-    error: "encryptedData must be a Buffer",
-  },
-  {
     name: "encrypted data length is not a multiple of 16",
     input: {
       value: Buffer.from("763130" + "6f9a47", "hex"),

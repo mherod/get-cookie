@@ -6,7 +6,7 @@ This guide details the current platform support status and requirements for get-
 
 | Browser | macOS | Linux | Windows |
 | ------- | ----- | ----- | ------- |
-| Chrome  | ✅    | ❌    | ❌      |
+| Chrome  | ✅    | ✅    | ✅      |
 | Firefox | ✅    | ⚠️    | ❌      |
 | Safari  | ✅    | ❌    | ❌      |
 
@@ -20,7 +20,11 @@ Primary supported platform with full functionality across all major browsers.
 
 #### Supported Browsers
 
-- **Chrome**: Full support with Keychain integration
+- **Chrome**: Full support with comprehensive cookie decryption
+  - v11+ cookies: AES-128-CBC with PBKDF2 key derivation
+  - Plaintext cookies: Legacy cookies stored without encryption
+  - Keychain integration for encryption keys
+  - Hash prefix handling for modern database versions
 - **Firefox**: Full support with profile management
 - **Safari**: Full support with container access
 
@@ -41,49 +45,77 @@ Primary supported platform with full functionality across all major browsers.
 
 ### Linux
 
-Limited support with Firefox only.
+Full Chrome support with experimental Firefox support.
 
 #### Supported Browsers
 
+- **Chrome**: Full support with comprehensive cookie decryption
+  - v11+ cookies: AES-128-CBC with PBKDF2 key derivation
+  - System keyring integration (libsecret)
+  - Fallback encryption key support
+  - Hash prefix handling for modern database versions
 - **Firefox**: Basic support (experimental)
-- **Chrome**: Not currently supported
 - **Safari**: Not available on platform
 
 #### Requirements
 
-- Firefox installation
-- Read access to `~/.mozilla/firefox`
+- **Chrome**: Google Chrome installation, system keyring (libsecret) recommended
+- **Firefox**: Firefox installation, read access to `~/.mozilla/firefox`
 - SQLite database access
 - Appropriate file permissions
 
 #### Known Limitations
 
-- Firefox only
-- No encryption support
-- Database locking issues possible
+- **Chrome**: Requires keyring access or falls back to hardcoded key
+- **Firefox**: Database locking issues possible, experimental feature set
 - Profile discovery may be limited
-- Experimental feature set
+- Some system configurations may require additional setup
 
 ### Windows
 
-Currently not supported.
+Chrome support available with Firefox support planned.
 
-#### Future Plans
+#### Supported Browsers
 
-- Firefox support planned
-- Chrome support under consideration
-- No timeline for implementation
+- **Chrome**: Full support with comprehensive cookie decryption
+  - v10 cookies: AES-256-GCM with DPAPI-protected keys
+  - v11+ cookies: AES-128-CBC with PBKDF2 key derivation
+  - Windows DPAPI integration for encryption keys
+  - Local State file parsing for master key
+- **Firefox**: Not currently supported
+- **Safari**: Not available on platform
+
+#### Requirements
+
+- **Chrome**: Google Chrome installation, Windows DPAPI access
+- Appropriate file permissions
+- Access to `%LOCALAPPDATA%\Google\Chrome\User Data`
+
+#### Known Limitations
+
+- **Chrome**: Requires DPAPI access, may need elevated permissions
+- **Firefox**: Not yet implemented
+- Some Windows configurations may require additional setup
 
 ## Browser-Specific Notes
 
 ### Chrome
 
 - **macOS**: Full support with Keychain integration
-  - Requires Keychain access
-  - Handles encrypted cookies
-  - Supports multiple profiles
-- **Linux**: Not supported
-- **Windows**: Not supported
+  - v11+ cookies with AES-128-CBC encryption
+  - Plaintext cookie support for legacy cookies
+  - Keychain-based encryption keys
+  - Hash prefix handling
+- **Linux**: Full support with keyring integration
+  - v11+ cookies with AES-128-CBC encryption
+  - System keyring (libsecret) integration
+  - Fallback encryption key support
+  - Hash prefix handling
+- **Windows**: Full support with DPAPI integration
+  - v10 cookies with AES-256-GCM encryption
+  - v11+ cookies with AES-128-CBC encryption
+  - DPAPI-protected encryption keys
+  - Local State file parsing
 
 ### Firefox
 
@@ -125,14 +157,23 @@ ls -la /Applications/Safari.app
 ### Linux
 
 ```bash
+# Check Chrome installation
+which google-chrome
+
+# Verify Chrome profile access
+ls -la ~/.config/google-chrome/Default/
+
 # Check Firefox installation
 which firefox
 
-# Verify profile access
+# Verify Firefox profile access
 ls -la ~/.mozilla/firefox/
 
 # Check SQLite support
 sqlite3 --version
+
+# Check keyring integration (for Chrome)
+which secret-tool
 ```
 
 ## Common Issues
@@ -146,26 +187,32 @@ sqlite3 --version
 
 ### Linux
 
-- Firefox not installed
-- Profile directory inaccessible
-- Database locked
-- Permission issues
+- **Chrome**: Chrome not installed, keyring access denied, profile directory inaccessible
+- **Firefox**: Firefox not installed, profile directory inaccessible, database locked
+- Permission issues with browser directories
+
+### Windows
+
+- **Chrome**: Chrome not installed, DPAPI access denied, Local State file inaccessible
+- **Firefox**: Not yet supported
+- Permission issues with browser directories
 
 ## Future Support Plans
 
-1. **Windows Support**
+1. **Windows Expansion**
 
    - Firefox implementation planned
-   - Chrome support under investigation
-   - Timeline to be determined
+   - Chrome optimization and testing
+   - Better DPAPI integration
 
-2. **Linux Expansion**
+2. **Linux Improvements**
 
    - Firefox stability improvements
-   - Chrome support investigation
+   - Chrome keyring optimization
    - Better profile management
 
-3. **Cross-Platform**
+3. **Cross-Platform Enhancements**
    - Unified profile handling
    - Consistent error reporting
    - Platform-specific optimisations
+   - Enhanced encryption support

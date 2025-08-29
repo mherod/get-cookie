@@ -30,7 +30,7 @@ const cookies = await getCookie({
 ## Why get-cookie? ✨
 
 - 🔐 **Battle-tested Security**: Handles complex browser encryption with ease
-- 🎯 **Universal Browser Support**: Chrome, Firefox, Safari - we've got you covered
+- 🎯 **Universal Browser Support**: Chrome (all platforms), Firefox, Safari - we've got you covered
 - 🚀 **Developer Experience**: Rich CLI options and type-safe Node.js API
 - ⚡ **Lightning Fast**: Optimised binary parsing and decryption
 - 🛠️ **Production Ready**: Used in critical testing pipelines worldwide
@@ -88,7 +88,7 @@ const cookies = await getCookie({
 
 ## Core Features 🎯
 
-- 🌐 **Cross-Browser**: Chrome (macOS), Firefox (macOS/Linux), Safari (macOS)
+- 🌐 **Cross-Platform**: Chrome (macOS/Linux/Windows), Firefox (macOS/Linux), Safari (macOS)
 - 🔒 **Enterprise Security**: Browser-native encryption handling
 - 📝 **TypeScript First**: Complete type safety and IntelliSense
 - 🎨 **Flexible Output**: JSON, rendered, or grouped results
@@ -108,7 +108,7 @@ Our GitHub Actions workflows ensure quality and reliability:
 - **📦 Automated Releases**: NPM publishing with GitHub release creation
 - **✅ Quality Gates**: TypeScript checking, ESLint, Prettier, and link validation
 
-All workflows run on macOS to ensure native browser compatibility and proper cookie encryption testing.
+Workflows run across macOS, Linux, and Windows to ensure cross-platform compatibility and proper cookie encryption testing.
 
 ## Contributing 🤝
 

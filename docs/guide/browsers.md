@@ -6,52 +6,79 @@ Understanding how get-cookie works with different browsers and platforms.
 
 | Browser | macOS | Linux | Windows |
 | ------- | ----- | ----- | ------- |
-| Chrome  | ✅    | ❌    | ❌      |
+| Chrome  | ✅    | ✅    | ✅      |
 | Firefox | ✅    | ✅    | ❌      |
 | Safari  | ✅    | ❌    | ❌      |
 
 ✅ Full Support | ❌ Not Supported
 
-## Chrome (macOS Only)
+## Chrome (Cross-Platform)
 
 ### Storage Location
 
-Chrome stores cookies in an SQLite database:
+Chrome stores cookies in an SQLite database across all platforms:
 
-macOS:
-
+**macOS:**
 ```
 ~/Library/Application Support/Google/Chrome/Default/Cookies
 ```
 
+**Linux:**
+```
+~/.config/google-chrome/Default/Cookies
+```
+
+**Windows:**
+```
+%LOCALAPPDATA%\Google\Chrome\User Data\Default\Cookies
+```
+
 ### Security Model
 
-- Cookies are encrypted using Chrome Safe Storage
-- Encryption key stored in macOS Keychain
-- Each profile has a unique encryption key
-- Requires Keychain access permission
-- Chrome must be installed and configured
-- Profile must be unlocked and accessible
+Chrome uses different encryption methods depending on the platform and cookie version:
+
+#### macOS
+- **v11+ cookies**: AES-128-CBC with PBKDF2 key derivation
+- **Plaintext cookies**: Legacy cookies without version prefix are stored as plaintext
+- Encryption key stored in macOS Keychain (Safe Storage)
+- Hash prefix support for database meta version ≥ 24
+
+#### Windows  
+- **v10 cookies**: AES-256-GCM with DPAPI-protected key
+- **v11+ cookies**: AES-128-CBC with PBKDF2 key derivation
+- Encryption key protected by Windows DPAPI
+- Local State file contains encrypted master key
+
+#### Linux
+- **v11+ cookies**: AES-128-CBC with PBKDF2 key derivation
+- Encryption key stored in system keyring (libsecret)
+- Fallback to hardcoded key if keyring unavailable
+- Hash prefix support for database meta version ≥ 24
+
+### Cookie Versions
+
+- **v10**: Windows-only AES-256-GCM encryption
+- **v11+**: Cross-platform AES-128-CBC encryption
+- **Plaintext**: macOS legacy cookies without version prefix
 
 ### Profile Support
 
-- Multiple profiles supported
+- Multiple profiles supported across all platforms
 - Default profile: "Default"
 - Profile list in `Local State` file
-- Each profile requires:
+- Each profile has:
   - Separate cookie database
-  - Unique encryption key
-  - Independent Keychain access
+  - Platform-specific encryption handling
+  - Independent security context
 
 ### Limitations
 
-- macOS only (no Linux/Windows support)
-- Requires Keychain access
+- Requires appropriate system permissions
 - Chrome must be installed
 - Session cookies not accessible
 - Incognito mode not supported
-- Profile must be unlocked
-- Fails silently if encryption key unavailable
+- Profile must be accessible
+- Platform-specific security requirements
 
 ## Firefox (macOS & Linux)
 
@@ -138,7 +165,7 @@ Safari uses a binary cookie format:
 
 ## Implementation Examples
 
-### Chrome Strategy (macOS)
+### Chrome Strategy (Cross-Platform)
 
 ```typescript
 import { ChromeCookieQueryStrategy } from "@mherod/get-cookie";
@@ -147,13 +174,26 @@ import { ChromeCookieQueryStrategy } from "@mherod/get-cookie";
 const strategy = new ChromeCookieQueryStrategy();
 
 try {
-  // Query cookies (macOS only)
+  // Query cookies (works on macOS, Linux, and Windows)
   const cookies = await strategy.queryCookies("auth", "example.com");
+  console.log(`Found ${cookies.length} cookies`);
+  
+  // Access cookie properties
+  cookies.forEach(cookie => {
+    console.log(`${cookie.name}: ${cookie.value}`);
+    console.log(`Decrypted: ${cookie.meta.decrypted}`);
+    console.log(`Platform: ${process.platform}`);
+  });
 } catch (error) {
-  if (error.message.includes("platform")) {
-    console.error("Chrome cookies only supported on macOS");
-  } else if (error.message.includes("keychain")) {
-    console.error("Keychain access denied");
+  // Platform-specific error handling
+  if (error.message.includes("keychain")) {
+    console.error("macOS Keychain access denied");
+  } else if (error.message.includes("DPAPI")) {
+    console.error("Windows DPAPI decryption failed");
+  } else if (error.message.includes("keyring")) {
+    console.error("Linux keyring access failed");
+  } else if (error.message.includes("profile")) {
+    console.error("Chrome profile not found or inaccessible");
   } else {
     console.error("Failed to query cookies:", error);
   }
@@ -225,8 +265,15 @@ try {
 2. **Check platform compatibility**
 
    ```typescript
-   if (process.platform !== "darwin") {
-     console.warn("Some features only work on macOS");
+   // Chrome now works on all platforms
+   const supportedPlatforms = ["darwin", "linux", "win32"];
+   if (!supportedPlatforms.includes(process.platform)) {
+     console.warn("Platform not supported");
+   }
+   
+   // Firefox works on macOS and Linux
+   if (process.platform === "win32") {
+     console.warn("Firefox support not available on Windows");
    }
    ```
 
@@ -240,11 +287,13 @@ try {
 
 ### Security Considerations
 
-1. **Keychain Access (Chrome)**
+1. **Chrome Cross-Platform Security**
 
-   - Request user permission for Keychain access
-   - Handle denied access gracefully
-   - Don't store Keychain passwords
+   - **macOS**: Request Keychain access permission, handle denied access gracefully
+   - **Windows**: Ensure DPAPI access rights, handle encryption key failures
+   - **Linux**: Verify keyring access, implement fallback for missing keyring
+   - Never store or log decrypted encryption keys
+   - Handle platform-specific permission errors appropriately
 
 2. **Database Access (Firefox)**
 
@@ -261,19 +310,26 @@ try {
 
 ### Platform-Specific Issues
 
-#### macOS
+#### macOS (Chrome & Safari)
 
-- Check Keychain status
-- Verify container access
-- Monitor profile changes
-- Handle encryption errors
+- **Chrome**: Check Keychain status, handle plaintext cookies, verify database meta version
+- **Safari**: Verify container access, monitor binary format changes
+- Handle encryption errors and permission denials
+- Monitor profile changes and access rights
 
-#### Linux (Firefox)
+#### Linux (Chrome & Firefox)
 
-- Check file permissions
-- Monitor database locks
-- Handle profile paths
-- Verify SQLite access
+- **Chrome**: Check keyring availability, handle fallback encryption keys
+- **Firefox**: Check file permissions, monitor database locks
+- Handle profile paths and SQLite access
+- Verify system keyring integration
+
+#### Windows (Chrome)
+
+- **Chrome**: Ensure DPAPI availability, handle v10/v11 cookie versions
+- Check Local State file accessibility
+- Handle Windows permission model
+- Monitor encryption key changes
 
 ### Common Problems
 

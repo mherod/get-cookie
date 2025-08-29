@@ -36,8 +36,8 @@ describe("FirefoxCookieQueryStrategy - File Discovery", () => {
 
     await strategy.queryCookies("test-cookie", "example.com");
     expect(sync).toHaveBeenCalledWith(
-      expect.stringContaining(
-        "Library/Application Support/Firefox/Profiles/*/cookies.sqlite",
+      expect.stringMatching(
+        /Library[\/\\]Application Support[\/\\]Firefox[\/\\]Profiles[\/\\]\*[\/\\]cookies\.sqlite/,
       ),
     );
   });
@@ -53,7 +53,9 @@ describe("FirefoxCookieQueryStrategy - File Discovery", () => {
 
     await strategy.queryCookies("test-cookie", "example.com");
     expect(sync).toHaveBeenCalledWith(
-      expect.stringContaining(".mozilla/firefox/*/cookies.sqlite"),
+      expect.stringMatching(
+        /\.mozilla[\/\\]firefox[\/\\]\*[\/\\]cookies\.sqlite/,
+      ),
     );
   });
 

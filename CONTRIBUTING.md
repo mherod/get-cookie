@@ -207,4 +207,8 @@ This project uses [husky](https://github.com/typicode/husky) and [lint-staged](h
 
 If you have any questions or need help with your contribution, please open an issue or reach out to the maintainers.
 
-Thank you for contributing to get-cookie!
+Thank you for contributing to get-cookie! 🍪
+
+## Git Flow Status
+
+✅ Git-flow has been successfully configured for this repository!

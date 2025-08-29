@@ -128,7 +128,12 @@ export async function decrypt(
 ): Promise<string> {
   // v10 cookies use AES-GCM on Windows only
   // On macOS, cookies starting with v10 are actually v11 encrypted with a value that starts with "v10,"
-  if (platform() === "win32" && isV10Cookie(encryptedValue)) {
+  // Only treat as v10 cookie if we're on Windows AND it has sufficient length
+  if (
+    platform() === "win32" &&
+    isV10Cookie(encryptedValue) &&
+    encryptedValue.length >= 31
+  ) {
     const keyBuffer = Buffer.isBuffer(password)
       ? password
       : Buffer.from(password, "latin1");
@@ -151,7 +156,7 @@ export async function decrypt(
 
   // v11 cookies and other encrypted cookies use AES-CBC with PBKDF2
   if (typeof password !== "string") {
-    throw new Error("password must be a string for non-v10 cookies");
+    throw new Error("password must be a string");
   }
   if (!Buffer.isBuffer(encryptedValue)) {
     throw new Error("encryptedData must be a Buffer");

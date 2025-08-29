@@ -8,7 +8,7 @@ import { getChromePassword } from "./getChromePassword";
 
 interface DecryptionContext {
   file: string;
-  password: string;
+  password: string | Buffer;
 }
 
 function getExpiryDate(expiry: number | undefined | null): Date | "Infinity" {
@@ -78,9 +78,11 @@ export class ChromeCookieQueryStrategy extends BaseCookieQueryStrategy {
     store?: string,
     _force?: boolean,
   ): Promise<ExportedCookie[]> {
-    if (process.platform !== "darwin") {
+    const supportedPlatforms = ["darwin", "win32", "linux"];
+    if (!supportedPlatforms.includes(process.platform)) {
       this.logger.warn("Platform not supported", {
         platform: process.platform,
+        supportedPlatforms,
       });
       return [];
     }
@@ -104,7 +106,7 @@ export class ChromeCookieQueryStrategy extends BaseCookieQueryStrategy {
     file: string,
     name: string,
     domain: string,
-    password: string,
+    password: string | Buffer,
   ): Promise<ExportedCookie[]> {
     try {
       const encryptedCookies = await getEncryptedChromeCookie({

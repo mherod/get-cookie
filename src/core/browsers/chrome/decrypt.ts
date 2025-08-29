@@ -1,7 +1,10 @@
 // External imports
 import { createDecipheriv, pbkdf2 } from "node:crypto";
+import { platform } from "node:os";
 
 import { memoize } from "lodash-es";
+
+import { decryptV10Cookie, isV10Cookie } from "./windows/decryptV10Cookie";
 
 /**
  * Removes the v10 prefix from the encrypted value if present
@@ -73,10 +76,19 @@ function extractValue(decodedString: string): string {
  */
 export async function decrypt(
   encryptedValue: Buffer,
-  password: string,
+  password: string | Buffer,
 ): Promise<string> {
+  // Windows v10 cookies use AES-GCM with the DPAPI-decrypted key
+  if (platform() === "win32" && isV10Cookie(encryptedValue)) {
+    const keyBuffer = Buffer.isBuffer(password)
+      ? password
+      : Buffer.from(password, "latin1");
+    return decryptV10Cookie(encryptedValue, keyBuffer);
+  }
+
+  // macOS and older Windows cookies use AES-CBC with PBKDF2
   if (typeof password !== "string") {
-    throw new Error("password must be a string");
+    throw new Error("password must be a string for non-v10 cookies");
   }
   if (!Buffer.isBuffer(encryptedValue)) {
     throw new Error("encryptedData must be a Buffer");

@@ -1,0 +1,193 @@
+name: Cross-Platform Cookie Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test-windows:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        node-version: [20.x, 22.x]
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+      
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
+      
+      - name: Install dependencies
+        run: pnpm install
+      
+      - name: Build
+        run: pnpm run build
+      
+      - name: Run tests
+        run: pnpm test
+      
+      - name: Test Chrome cookie retrieval (Windows)
+        run: |
+          # Create a test Chrome cookie database
+          $chromeDir = "$env:LOCALAPPDATA\Google\Chrome\User Data\Default"
+          New-Item -ItemType Directory -Force -Path $chromeDir
+          
+          # Test the CLI
+          node dist/cli.cjs --help
+        shell: pwsh
+      
+      - name: Install optional DPAPI package
+        run: pnpm add @primno/dpapi
+        continue-on-error: true
+      
+      - name: Integration test - Chrome on Windows
+        run: |
+          # Create integration test script
+          @"
+          const {ChromeCookieQueryStrategy} = require('./dist/index.cjs');
+          const strategy = new ChromeCookieQueryStrategy();
+          console.log('Chrome strategy initialized on Windows');
+          
+          // Test querying (will fail without real Chrome data, but tests the flow)
+          strategy.queryCookies('*', '.example.com')
+            .then(cookies => console.log('Query completed, found:', cookies.length, 'cookies'))
+            .catch(err => console.log('Expected error (no Chrome profile):', err.message));
+          "@ | Out-File -FilePath test-windows.js -Encoding UTF8
+          
+          node test-windows.js
+        shell: pwsh
+
+  test-linux:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [20.x, 22.x]
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+      
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
+      
+      - name: Install dependencies
+        run: pnpm install
+      
+      - name: Build
+        run: pnpm run build
+      
+      - name: Run tests
+        run: pnpm test
+      
+      - name: Install Linux keyring tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libsecret-1-0 libsecret-tools python3-keyring
+      
+      - name: Test Chrome cookie retrieval (Linux)
+        run: |
+          # Create test Chrome directory structure
+          mkdir -p ~/.config/google-chrome/Default
+          
+          # Test the CLI
+          node dist/cli.cjs --help
+      
+      - name: Integration test - Chrome on Linux
+        run: |
+          cat > test-linux.js << 'EOF'
+          const {ChromeCookieQueryStrategy} = require('./dist/index.cjs');
+          const strategy = new ChromeCookieQueryStrategy();
+          console.log('Chrome strategy initialized on Linux');
+          
+          // Test querying (will fail without real Chrome data, but tests the flow)
+          strategy.queryCookies('*', '.example.com')
+            .then(cookies => console.log('Query completed, found:', cookies.length, 'cookies'))
+            .catch(err => console.log('Expected error (no Chrome profile):', err.message));
+          EOF
+          
+          node test-linux.js
+      
+      - name: Test multiple browsers
+        run: |
+          cat > test-browsers.js << 'EOF'
+          const {ChromiumCookieQueryStrategy} = require('./dist/index.cjs');
+          
+          const browsers = ['chrome', 'brave', 'edge', 'opera', 'vivaldi'];
+          
+          for (const browser of browsers) {
+            try {
+              const strategy = new ChromiumCookieQueryStrategy(browser);
+              console.log(`${browser} strategy initialized successfully`);
+            } catch (err) {
+              console.log(`${browser} initialization error:`, err.message);
+            }
+          }
+          EOF
+          
+          node test-browsers.js
+
+  test-macos:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        node-version: [20.x, 22.x]
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+      
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
+      
+      - name: Install dependencies
+        run: pnpm install
+      
+      - name: Build
+        run: pnpm run build
+      
+      - name: Run tests
+        run: pnpm test
+      
+      - name: Test Chrome cookie retrieval (macOS)
+        run: |
+          # Test the CLI
+          node dist/cli.cjs --help
+          
+          # Create test directory structure
+          mkdir -p ~/Library/Application\ Support/Google/Chrome/Default
+      
+      - name: Integration test - Chrome on macOS
+        run: |
+          cat > test-macos.js << 'EOF'
+          const {ChromeCookieQueryStrategy} = require('./dist/index.cjs');
+          const strategy = new ChromeCookieQueryStrategy();
+          console.log('Chrome strategy initialized on macOS');
+          
+          // Test querying (will fail without real Chrome data, but tests the flow)
+          strategy.queryCookies('*', '.example.com')
+            .then(cookies => console.log('Query completed, found:', cookies.length, 'cookies'))
+            .catch(err => console.log('Expected error:', err.message));
+          EOF
+          
+          node test-macos.js

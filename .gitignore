@@ -135,3 +135,4 @@ scripts/CookieCreator/main
 
 # Test exports directory
 test-exports/
+/.claude

@@ -19,7 +19,7 @@ export default defineConfig({
   platform: "node",
   bundle: true,
   tsconfig: "./tsconfig.tsup.json",
-  external: ["fs", "path", "crypto", "os", "child_process"],
+  external: ["fs", "path", "crypto", "os", "child_process", "lodash-es"],
   esbuildOptions(options) {
     options.alias = {
       lodash: "lodash-es",

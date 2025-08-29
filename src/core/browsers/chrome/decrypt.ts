@@ -128,16 +128,14 @@ export async function decrypt(
 ): Promise<string> {
   // v10 cookies use AES-GCM on Windows only
   // On macOS, cookies starting with v10 are actually v11 encrypted with a value that starts with "v10,"
-  // Only treat as v10 cookie if we're on Windows AND it has sufficient length
+  // Only treat as v10 cookie if we're on Windows AND it has sufficient length AND password is a Buffer (real scenario)
   if (
     platform() === "win32" &&
     isV10Cookie(encryptedValue) &&
-    encryptedValue.length >= 31
+    encryptedValue.length >= 31 &&
+    Buffer.isBuffer(password)
   ) {
-    const keyBuffer = Buffer.isBuffer(password)
-      ? password
-      : Buffer.from(password, "latin1");
-    return decryptV10Cookie(encryptedValue, keyBuffer);
+    return decryptV10Cookie(encryptedValue, password);
   }
 
   // On macOS, cookies that don't start with v10 are considered 'old data' stored as plaintext

@@ -35,33 +35,71 @@ jobs:
       - name: Run tests
         run: pnpm test
       
-      - name: Test Chrome cookie retrieval (Windows)
+      - name: Install and run Chromium to generate cookies (Windows)
         run: |
-          # Create a test Chrome cookie database
+          # Install Chromium
+          choco install chromium -y
+          
+          # Create Chrome user data directory
           $chromeDir = "$env:LOCALAPPDATA\Google\Chrome\User Data\Default"
           New-Item -ItemType Directory -Force -Path $chromeDir
           
-          # Test the CLI
-          node dist/cli.cjs --help
+          # Run Chromium headlessly to generate cookies
+          Write-Host "Starting Chromium to generate cookies..."
+          $chromiumPath = "C:\Program Files\Chromium\Application\chrome.exe"
+          
+          # Wait for installation to complete
+          Start-Sleep -Seconds 10
+          
+          if (Test-Path $chromiumPath) {
+            & "$chromiumPath" --headless --disable-gpu --no-sandbox --disable-dev-shm-usage --user-data-dir="$env:LOCALAPPDATA\Google\Chrome\User Data" "https://bbc.co.uk" --timeout=15000
+            Start-Sleep -Seconds 5
+            Write-Host "Chromium cookie generation completed"
+            
+            # Check if cookies were generated
+            $cookiesPath = "$chromeDir\Cookies"
+            if (Test-Path $cookiesPath) {
+              Write-Host "✓ Cookies database created at: $cookiesPath"
+              $cookieSize = (Get-Item $cookiesPath).Length
+              Write-Host "  Database size: $cookieSize bytes"
+            } else {
+              Write-Host "⚠️  No cookies database found"
+            }
+          } else {
+            Write-Host "⚠️  Chromium not found at expected path: $chromiumPath"
+          }
         shell: pwsh
       
       - name: Install optional DPAPI package
         run: pnpm add @primno/dpapi
         continue-on-error: true
       
-      - name: Integration test - Chrome on Windows
+      - name: Integration test - Chrome on Windows with real cookies
         run: |
-          # Test the CLI with Chrome browser option
-          Write-Host "Testing Chrome cookie retrieval via CLI..."
+          Write-Host "Testing Chrome cookie retrieval with real data..."
           
           # Test --help to ensure CLI is working
           node dist/cli.cjs --help
           
-          # Test Chrome cookie query (will fail gracefully without real Chrome data)
-          node dist/cli.cjs --browser chrome "*" .example.com
-          if ($LASTEXITCODE -ne 0) { Write-Host "Expected error: No Chrome profile found" }
+          # Test Chrome cookie query for BBC cookies
+          Write-Host "Attempting to extract BBC cookies..."
+          node dist/cli.cjs --browser chrome "*" bbc.co.uk
           
-          Write-Host "Chrome CLI integration test completed"
+          if ($LASTEXITCODE -eq 0) {
+            Write-Host "✓ Successfully extracted cookies from real Chrome data"
+          } else {
+            Write-Host "⚠️  Cookie extraction failed - this may indicate:"
+            Write-Host "  - No cookies were generated"  
+            Write-Host "  - DPAPI decryption issues"
+            Write-Host "  - Chrome profile detection problems"
+            
+            # Show diagnostic info
+            $chromeDir = "$env:LOCALAPPDATA\Google\Chrome\User Data\Default"
+            Write-Host "Chrome directory contents:"
+            if (Test-Path $chromeDir) {
+              Get-ChildItem $chromeDir | Format-Table Name, Length, LastWriteTime
+            }
+          }
         shell: pwsh
 
   test-linux:
@@ -97,26 +135,69 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libsecret-1-0 libsecret-tools python3-keyring
       
-      - name: Test Chrome cookie retrieval (Linux)
+      - name: Install and run Chromium to generate cookies (Linux)
         run: |
-          # Create test Chrome directory structure
+          # Install Chromium
+          sudo apt-get update
+          sudo apt-get install -y chromium-browser xvfb
+          
+          # Create Chrome user data directory
           mkdir -p ~/.config/google-chrome/Default
           
-          # Test the CLI
-          node dist/cli.cjs --help
+          # Run Chromium headlessly to generate cookies
+          echo "Starting Chromium to generate cookies..."
+          
+          # Use xvfb for headless display
+          export DISPLAY=:99
+          Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
+          
+          # Run Chromium to visit BBC and generate cookies
+          timeout 30s chromium-browser --no-sandbox --disable-dev-shm-usage --disable-extensions --disable-plugins --user-data-dir="$HOME/.config/google-chrome" "https://bbc.co.uk" || echo "Chromium timeout (expected)"
+          
+          sleep 5
+          echo "Chromium cookie generation completed"
+          
+          # Check if cookies were generated
+          COOKIES_PATH="$HOME/.config/google-chrome/Default/Cookies"
+          if [ -f "$COOKIES_PATH" ]; then
+            echo "✓ Cookies database created at: $COOKIES_PATH"
+            echo "  Database size: $(stat -c%s "$COOKIES_PATH") bytes"
+          else
+            echo "⚠️  No cookies database found"
+            echo "Chrome directory contents:"
+            ls -la ~/.config/google-chrome/Default/ || echo "Directory does not exist"
+          fi
       
-      - name: Integration test - Chrome on Linux
+      - name: Integration test - Chrome on Linux with real cookies
         run: |
-          # Test the CLI with Chrome browser option
-          echo "Testing Chrome cookie retrieval via CLI..."
+          echo "Testing Chrome cookie retrieval with real data..."
           
           # Test --help to ensure CLI is working
           node dist/cli.cjs --help
           
-          # Test Chrome cookie query (will fail gracefully without real Chrome data)
-          node dist/cli.cjs --browser chrome '*' .example.com || echo "Expected error: No Chrome profile found"
+          # Test Chrome cookie query for BBC cookies
+          echo "Attempting to extract BBC cookies..."
+          node dist/cli.cjs --browser chrome "*" bbc.co.uk
           
-          echo "Chrome CLI integration test completed"
+          if [ $? -eq 0 ]; then
+            echo "✓ Successfully extracted cookies from real Chrome data"
+          else
+            echo "⚠️  Cookie extraction failed - this may indicate:"
+            echo "  - No cookies were generated"  
+            echo "  - Keyring/password decryption issues"
+            echo "  - Chrome profile detection problems"
+            
+            # Show diagnostic info
+            echo "Chrome directory contents:"
+            ls -la ~/.config/google-chrome/Default/ || echo "Directory does not exist"
+            
+            # Check if Local State exists
+            if [ -f "$HOME/.config/google-chrome/Local State" ]; then
+              echo "✓ Local State file exists"
+            else
+              echo "⚠️  No Local State file found"
+            fi
+          fi
       
       - name: Test multiple browsers
         run: |
@@ -158,23 +239,61 @@ jobs:
       - name: Run tests
         run: pnpm test
       
-      - name: Test Chrome cookie retrieval (macOS)
+      - name: Install and run Chromium to generate cookies (macOS)
         run: |
-          # Test the CLI
-          node dist/cli.cjs --help
+          # Install Chromium via Homebrew
+          brew install --cask chromium
           
-          # Create test directory structure
+          # Create Chrome user data directory
           mkdir -p ~/Library/Application\ Support/Google/Chrome/Default
+          
+          # Run Chromium headlessly to generate cookies
+          echo "Starting Chromium to generate cookies..."
+          
+          # Run Chromium to visit BBC and generate cookies
+          timeout 30s /Applications/Chromium.app/Contents/MacOS/Chromium --headless --disable-gpu --no-sandbox --disable-dev-shm-usage --user-data-dir="$HOME/Library/Application Support/Google/Chrome" "https://bbc.co.uk" || echo "Chromium timeout (expected)"
+          
+          sleep 5
+          echo "Chromium cookie generation completed"
+          
+          # Check if cookies were generated
+          COOKIES_PATH="$HOME/Library/Application Support/Google/Chrome/Default/Cookies"
+          if [ -f "$COOKIES_PATH" ]; then
+            echo "✓ Cookies database created at: $COOKIES_PATH"
+            echo "  Database size: $(stat -f%z "$COOKIES_PATH") bytes"
+          else
+            echo "⚠️  No cookies database found"
+            echo "Chrome directory contents:"
+            ls -la "$HOME/Library/Application Support/Google/Chrome/Default/" || echo "Directory does not exist"
+          fi
       
-      - name: Integration test - Chrome on macOS
+      - name: Integration test - Chrome on macOS with real cookies
         run: |
-          # Test the CLI with Chrome browser option
-          echo "Testing Chrome cookie retrieval via CLI..."
+          echo "Testing Chrome cookie retrieval with real data..."
           
           # Test --help to ensure CLI is working
           node dist/cli.cjs --help
           
-          # Test Chrome cookie query (will fail gracefully without real Chrome data)
-          node dist/cli.cjs --browser chrome '*' .example.com || echo "Expected error: No Chrome profile found"
+          # Test Chrome cookie query for BBC cookies
+          echo "Attempting to extract BBC cookies..."
+          node dist/cli.cjs --browser chrome "*" bbc.co.uk
           
-          echo "Chrome CLI integration test completed"
+          if [ $? -eq 0 ]; then
+            echo "✓ Successfully extracted cookies from real Chrome data"
+          else
+            echo "⚠️  Cookie extraction failed - this may indicate:"
+            echo "  - No cookies were generated"  
+            echo "  - Keychain access issues"
+            echo "  - Chrome profile detection problems"
+            
+            # Show diagnostic info
+            echo "Chrome directory contents:"
+            ls -la "$HOME/Library/Application Support/Google/Chrome/Default/" || echo "Directory does not exist"
+            
+            # Check if Local State exists
+            if [ -f "$HOME/Library/Application Support/Google/Chrome/Local State" ]; then
+              echo "✓ Local State file exists"
+            else
+              echo "⚠️  No Local State file found"
+            fi
+          fi

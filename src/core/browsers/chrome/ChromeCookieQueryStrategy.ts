@@ -9,6 +9,7 @@ import { getChromePassword } from "./getChromePassword";
 interface DecryptionContext {
   file: string;
   password: string | Buffer;
+  metaVersion?: number;
 }
 
 function getExpiryDate(expiry: number | undefined | null): Date | "Infinity" {
@@ -115,7 +116,29 @@ export class ChromeCookieQueryStrategy extends BaseCookieQueryStrategy {
         file,
       });
 
-      const context: DecryptionContext = { file, password };
+      // Get meta version from the Chrome database to determine if hash prefix should be used
+      let metaVersion = 0;
+      try {
+        const Database = await import("better-sqlite3");
+        const db = new Database.default(file, { readonly: true });
+        try {
+          const metaResult = db
+            .prepare("SELECT value FROM meta WHERE key = ?")
+            .get("version");
+          metaVersion = metaResult
+            ? Number.parseInt(metaResult.value as string, 10)
+            : 0;
+        } finally {
+          db.close();
+        }
+      } catch (error) {
+        // If we can't get meta version, default to 0 (no hash prefix)
+        this.logger.debug("Could not retrieve meta version, defaulting to 0", {
+          error,
+        });
+      }
+
+      const context: DecryptionContext = { file, password, metaVersion };
       const results = await Promise.allSettled(
         encryptedCookies.map((cookie) => this.processCookie(cookie, context)),
       );
@@ -152,7 +175,11 @@ export class ChromeCookieQueryStrategy extends BaseCookieQueryStrategy {
         ? cookie.value
         : Buffer.from(String(cookie.value));
 
-      const decryptedValue = await decrypt(value, context.password);
+      const decryptedValue = await decrypt(
+        value,
+        context.password,
+        context.metaVersion,
+      );
       return createExportedCookie(
         cookie.domain,
         cookie.name,

@@ -57,6 +57,11 @@ function createCookieSpec(name: string, domain: string): CookieSpec {
   };
 }
 
+function normalizeWildcard(pattern: string): string {
+  // Convert * to % for consistent wildcard handling
+  return pattern === "*" ? "%" : pattern;
+}
+
 function getCookieSpecs(
   values: Record<string, string | boolean | string[]>,
   positionals: string[],
@@ -72,8 +77,12 @@ function getCookieSpecs(
     return specs;
   }
 
-  const name = (values.name as string) || positionals[0] || "%";
-  const domain = (values.domain as string) || positionals[1] || "%";
+  const name = normalizeWildcard(
+    (values.name as string) || positionals[0] || "%",
+  );
+  const domain = normalizeWildcard(
+    (values.domain as string) || positionals[1] || "%",
+  );
   return [createCookieSpec(name, domain)];
 }
 

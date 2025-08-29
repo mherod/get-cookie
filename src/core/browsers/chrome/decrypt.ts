@@ -49,11 +49,35 @@ const removePadding = memoize(
  * @returns The cleaned up value
  */
 function extractValue(decodedString: string): string {
+  // First try to find a UUID pattern which is common in cookies
+  const uuidMatch = decodedString.match(
+    /([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i,
+  );
+  if (uuidMatch) {
+    return uuidMatch[1];
+  }
+
+  // Look for common patterns at the end of the string
+  const endPatterns = [
+    /([A-Z]{3})$/, // Currency codes (USD, GBP, EUR)
+    /([a-z]{2}_[A-Z]{2})$/, // Locale codes (en_US, en_GB)
+    /(\d{3}-\d{7}-\d{7})$/, // Amazon session IDs
+  ];
+
+  for (const pattern of endPatterns) {
+    const match = decodedString.match(pattern);
+    if (match) {
+      return match[1];
+    }
+  }
+
+  // Then try other cleanup patterns
   const cleanupPatterns = [
     /.*?0t(.+)$/, // Pattern ending in "0t" followed by value
     /.*?1e`(.+)$/, // Pattern ending in "1e`" followed by value
     /.*?[`'](.+)$/, // Any backtick or quote followed by value
-    /[^\x20-\x7E]*([\x20-\x7E].+)$/, // Non-printable chars followed by printable chars
+    /[^\x20-\x7E]*([\x20-\x7E]+)$/, // Non-printable chars followed by printable chars
+    /.*?([a-zA-Z0-9_\-\.]+)$/, // Alphanumeric value at the end
   ];
 
   for (const pattern of cleanupPatterns) {
@@ -77,8 +101,10 @@ function extractValue(decodedString: string): string {
 export async function decrypt(
   encryptedValue: Buffer,
   password: string | Buffer,
+  metaVersion?: number,
 ): Promise<string> {
-  // Windows v10 cookies use AES-GCM with the DPAPI-decrypted key
+  // v10 cookies use AES-GCM on Windows only
+  // On macOS, cookies starting with v10 are actually v11 encrypted with a value that starts with "v10,"
   if (platform() === "win32" && isV10Cookie(encryptedValue)) {
     const keyBuffer = Buffer.isBuffer(password)
       ? password
@@ -86,7 +112,21 @@ export async function decrypt(
     return decryptV10Cookie(encryptedValue, keyBuffer);
   }
 
-  // macOS and older Windows cookies use AES-CBC with PBKDF2
+  // On macOS, cookies that don't start with v10 are considered 'old data' stored as plaintext
+  // Ref: https://chromium.googlesource.com/chromium/src/+/refs/heads/main/components/os_crypt/sync/os_crypt_mac.mm
+  if (platform() === "darwin") {
+    // Check if this looks like encrypted data (starts with common version prefixes)
+    const hasVersionPrefix = encryptedValue
+      .slice(0, 3)
+      .toString()
+      .match(/^v\d\d$/);
+    if (!hasVersionPrefix) {
+      // Not a version prefix - treat as plaintext on macOS
+      return Promise.resolve(encryptedValue.toString("utf8"));
+    }
+  }
+
+  // v11 cookies and other encrypted cookies use AES-CBC with PBKDF2
   if (typeof password !== "string") {
     throw new Error("password must be a string for non-v10 cookies");
   }
@@ -125,7 +165,16 @@ export async function decrypt(
         }
 
         decrypted = removePadding(decrypted);
-        const decodedString = decrypted.toString("utf8");
+
+        // Skip the first 32 bytes (hash prefix) if meta version >= 24
+        // Ref: https://chromium.googlesource.com/chromium/src/+/b02dcebd7cafab92770734dc2bc317bd07f1d891/net/extras/sqlite/sqlite_persistent_cookie_store.cc#223
+        const useHashPrefix = (metaVersion || 0) >= 24;
+        const finalDecrypted =
+          useHashPrefix && decrypted.length > 32
+            ? decrypted.slice(32)
+            : decrypted;
+
+        const decodedString = finalDecrypted.toString("utf8");
         resolve(extractValue(decodedString));
       } catch (e) {
         reject(new Error(`Decryption failed: ${(e as Error).message}`));

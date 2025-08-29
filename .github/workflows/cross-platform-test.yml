@@ -51,19 +51,17 @@ jobs:
       
       - name: Integration test - Chrome on Windows
         run: |
-          # Create integration test script
-          @"
-          const {ChromeCookieQueryStrategy} = require('./dist/index.cjs');
-          const strategy = new ChromeCookieQueryStrategy();
-          console.log('Chrome strategy initialized on Windows');
+          # Test the CLI with Chrome browser option
+          Write-Host "Testing Chrome cookie retrieval via CLI..."
           
-          // Test querying (will fail without real Chrome data, but tests the flow)
-          strategy.queryCookies('*', '.example.com')
-            .then(cookies => console.log('Query completed, found:', cookies.length, 'cookies'))
-            .catch(err => console.log('Expected error (no Chrome profile):', err.message));
-          "@ | Out-File -FilePath test-windows.cjs -Encoding UTF8
+          # Test --help to ensure CLI is working
+          node dist/cli.cjs --help
           
-          node test-windows.cjs
+          # Test Chrome cookie query (will fail gracefully without real Chrome data)
+          node dist/cli.cjs --browser chrome "*" .example.com
+          if ($LASTEXITCODE -ne 0) { Write-Host "Expected error: No Chrome profile found" }
+          
+          Write-Host "Chrome CLI integration test completed"
         shell: pwsh
 
   test-linux:
@@ -109,37 +107,28 @@ jobs:
       
       - name: Integration test - Chrome on Linux
         run: |
-          cat > test-linux.cjs << 'EOF'
-          const {ChromeCookieQueryStrategy} = require('./dist/index.cjs');
-          const strategy = new ChromeCookieQueryStrategy();
-          console.log('Chrome strategy initialized on Linux');
+          # Test the CLI with Chrome browser option
+          echo "Testing Chrome cookie retrieval via CLI..."
           
-          // Test querying (will fail without real Chrome data, but tests the flow)
-          strategy.queryCookies('*', '.example.com')
-            .then(cookies => console.log('Query completed, found:', cookies.length, 'cookies'))
-            .catch(err => console.log('Expected error (no Chrome profile):', err.message));
-          EOF
+          # Test --help to ensure CLI is working
+          node dist/cli.cjs --help
           
-          node test-linux.cjs
+          # Test Chrome cookie query (will fail gracefully without real Chrome data)
+          node dist/cli.cjs --browser chrome '*' .example.com || echo "Expected error: No Chrome profile found"
+          
+          echo "Chrome CLI integration test completed"
       
       - name: Test multiple browsers
         run: |
-          cat > test-browsers.cjs << 'EOF'
-          const {ChromiumCookieQueryStrategy} = require('./dist/index.cjs');
+          echo "Testing multiple browsers via CLI..."
           
-          const browsers = ['chrome', 'brave', 'edge', 'opera', 'vivaldi'];
+          # Test different browser options
+          for browser in chrome brave edge opera vivaldi; do
+            echo "Testing $browser..."
+            node dist/cli.cjs --browser $browser --help || echo "$browser: Expected error"
+          done
           
-          for (const browser of browsers) {
-            try {
-              const strategy = new ChromiumCookieQueryStrategy(browser);
-              console.log(`${browser} strategy initialized successfully`);
-            } catch (err) {
-              console.log(`${browser} initialization error:`, err.message);
-            }
-          }
-          EOF
-          
-          node test-browsers.cjs
+          echo "Multi-browser CLI test completed"
 
   test-macos:
     runs-on: macos-latest
@@ -179,15 +168,13 @@ jobs:
       
       - name: Integration test - Chrome on macOS
         run: |
-          cat > test-macos.cjs << 'EOF'
-          const {ChromeCookieQueryStrategy} = require('./dist/index.cjs');
-          const strategy = new ChromeCookieQueryStrategy();
-          console.log('Chrome strategy initialized on macOS');
+          # Test the CLI with Chrome browser option
+          echo "Testing Chrome cookie retrieval via CLI..."
           
-          // Test querying (will fail without real Chrome data, but tests the flow)
-          strategy.queryCookies('*', '.example.com')
-            .then(cookies => console.log('Query completed, found:', cookies.length, 'cookies'))
-            .catch(err => console.log('Expected error:', err.message));
-          EOF
+          # Test --help to ensure CLI is working
+          node dist/cli.cjs --help
           
-          node test-macos.cjs
+          # Test Chrome cookie query (will fail gracefully without real Chrome data)
+          node dist/cli.cjs --browser chrome '*' .example.com || echo "Expected error: No Chrome profile found"
+          
+          echo "Chrome CLI integration test completed"

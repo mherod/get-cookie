@@ -3,17 +3,16 @@ import { createDecipheriv, pbkdf2 } from "node:crypto";
 import { platform } from "node:os";
 
 /**
- * Simple memoization utility for caching function results
+ * Simple memoization utility for caching Buffer operations
  */
-// biome-ignore lint/suspicious/noExplicitAny: Generic utility needs to accept any function type
-function memoize<T extends (...args: unknown[]) => unknown>(
-  fn: T,
-  keyFn?: (...args: Parameters<T>) => string,
-): T {
-  const cache = new Map<string, ReturnType<T>>();
+function memoizeBuffer(
+  fn: (value: Buffer) => Buffer,
+  keyFn?: (value: Buffer) => string,
+): (value: Buffer) => Buffer {
+  const cache = new Map<string, Buffer>();
 
-  return ((...args: Parameters<T>): ReturnType<T> => {
-    const key = keyFn ? keyFn(...args) : JSON.stringify(args);
+  return (value: Buffer): Buffer => {
+    const key = keyFn ? keyFn(value) : value.toString("hex");
 
     if (cache.has(key)) {
       const cachedResult = cache.get(key);
@@ -22,10 +21,10 @@ function memoize<T extends (...args: unknown[]) => unknown>(
       }
     }
 
-    const result = fn(...args);
+    const result = fn(value);
     cache.set(key, result);
     return result;
-  }) as T;
+  };
 }
 
 import { decryptV10Cookie, isV10Cookie } from "./windows/decryptV10Cookie";
@@ -35,7 +34,7 @@ import { decryptV10Cookie, isV10Cookie } from "./windows/decryptV10Cookie";
  * @param value - The encrypted value
  * @returns The value without the v10 prefix
  */
-const removeV10Prefix = memoize(
+const removeV10Prefix = memoizeBuffer(
   (value: Buffer): Buffer => {
     if (
       value.length >= 3 &&
@@ -56,7 +55,7 @@ const removeV10Prefix = memoize(
  * @param decrypted - The decrypted buffer
  * @returns The buffer without padding
  */
-const removePadding = memoize(
+const removePadding = memoizeBuffer(
   (decrypted: Buffer): Buffer => {
     const padding = decrypted[decrypted.length - 1];
     if (padding && padding <= 16) {

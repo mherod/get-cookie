@@ -1,5 +1,3 @@
-import { detectFileHandles, getFileLockInfo } from "@utils/FileHandleDetector";
-import { getBrowserConflictAdvice } from "@utils/ProcessDetector";
 import type { createTaggedLogger } from "@utils/logHelpers";
 
 import {
@@ -7,6 +5,8 @@ import {
   closeBrowserGracefully,
   waitForBrowserToClose,
 } from "@utils/BrowserControl";
+import { detectFileHandles, getFileLockInfo } from "@utils/FileHandleDetector";
+import { getBrowserConflictAdvice } from "@utils/ProcessDetector";
 
 /**
  * Result of a browser conflict handling operation
@@ -56,7 +56,7 @@ export class BrowserLockHandler {
     }
 
     await this.logFileHandleInfo(file, processes);
-    return await this.handleProcessConflict(file, processes, autoClose);
+    return this.handleProcessConflict(file, processes, autoClose);
   }
 
   /**
@@ -168,7 +168,7 @@ export class BrowserLockHandler {
    * @param autoClose - Whether to attempt auto-closing
    * @returns Promise that resolves to lock result
    */
-  private async handleBrowserProcesses(
+  private handleBrowserProcesses(
     file: string,
     processes: Array<{ pid: number; command: string }>,
     autoClose: boolean,
@@ -185,7 +185,7 @@ export class BrowserLockHandler {
     });
 
     if (autoClose) {
-      return await this.attemptBrowserClose();
+      return this.attemptBrowserClose();
     }
 
     return { resolved: false, shouldRelaunch: false };

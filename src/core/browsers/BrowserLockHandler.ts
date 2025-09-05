@@ -1,5 +1,3 @@
-import type { createTaggedLogger } from "@utils/logHelpers";
-
 import {
   type BrowserName,
   closeBrowserGracefully,
@@ -7,6 +5,7 @@ import {
 } from "@utils/BrowserControl";
 import { detectFileHandles, getFileLockInfo } from "@utils/FileHandleDetector";
 import { getBrowserConflictAdvice } from "@utils/ProcessDetector";
+import type { createTaggedLogger } from "@utils/logHelpers";
 
 /**
  * Result of a browser conflict handling operation

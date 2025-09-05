@@ -1,4 +1,5 @@
 import { isChromeRunning } from "@utils/ProcessDetector";
+
 import type { CookieRow, ExportedCookie } from "../../../types/schemas";
 import { chromeTimestampToDate } from "../../../utils/chromeDates";
 import { BaseCookieQueryStrategy } from "../BaseCookieQueryStrategy";
@@ -62,7 +63,7 @@ export class ChromeCookieQueryStrategy extends BaseCookieQueryStrategy {
    * @param name - The name pattern to match cookies against
    * @param domain - The domain pattern to match cookies against
    * @param store - Optional path to a specific cookie store file
-   * @param _force - Whether to force operations despite warnings (e.g., locked databases)
+   * @param force - Whether to force operations despite warnings (e.g., locked databases)
    * @returns A promise that resolves to an array of exported cookies
    * @protected
    * @example
@@ -78,17 +79,11 @@ export class ChromeCookieQueryStrategy extends BaseCookieQueryStrategy {
     store?: string,
     force?: boolean,
   ): Promise<ExportedCookie[]> {
-    const supportedPlatforms = ["darwin", "win32", "linux"];
-    if (!supportedPlatforms.includes(process.platform)) {
-      this.logger.warn("Platform not supported", {
-        platform: process.platform,
-        supportedPlatforms,
-      });
+    if (!this.isPlatformSupported()) {
       return [];
     }
 
-    const cookieFiles = store ?? listChromeProfilePaths();
-    const files = Array.isArray(cookieFiles) ? cookieFiles : [cookieFiles];
+    const files = this.getCookieFiles(store);
     if (files.length === 0) {
       this.logger.warn("No Chrome cookie files found");
       return [];
@@ -98,82 +93,144 @@ export class ChromeCookieQueryStrategy extends BaseCookieQueryStrategy {
     const results: ExportedCookie[] = [];
 
     for (const file of files) {
-      let retryAfterClose = false;
-      let shouldRelaunch = false;
-
-      try {
-        const cookies = await this.processFile(file, name, domain, password);
-        results.push(...cookies);
-      } catch (error) {
-        // Check for database locks
-        const processes = await isChromeRunning();
-        const lockResult = await this.lockHandler.handleBrowserConflict(
-          error,
-          file,
-          processes,
-          force !== true,
-        );
-
-        if (lockResult.resolved) {
-          retryAfterClose = true;
-          shouldRelaunch = lockResult.shouldRelaunch;
-        } else {
-          if (error instanceof Error) {
-            this.logger.warn(`Error reading Chrome cookie file ${file}`, {
-              error: error.message,
-              file,
-              name,
-              domain,
-            });
-          } else {
-            this.logger.warn(`Error reading Chrome cookie file ${file}`, {
-              error: String(error),
-              file,
-              name,
-              domain,
-            });
-          }
-        }
-      }
-
-      // Retry if browser was closed
-      if (retryAfterClose) {
-        try {
-          this.logger.info(
-            "Retrying Chrome cookie extraction after browser close...",
-          );
-          const cookies = await this.processFile(file, name, domain, password);
-
-          results.push(...cookies);
-          this.logger.success(
-            "Successfully extracted cookies after closing Chrome",
-          );
-
-          // Relaunch Chrome if it was closed
-          if (shouldRelaunch) {
-            await this.lockHandler.relaunchBrowser();
-          }
-        } catch (retryError) {
-          this.logger.error(
-            "Failed to extract cookies even after closing Chrome",
-            {
-              error:
-                retryError instanceof Error
-                  ? retryError.message
-                  : String(retryError),
-              file,
-            },
-          );
-
-          // Still try to relaunch Chrome if needed
-          if (shouldRelaunch) {
-            await this.lockHandler.relaunchBrowser();
-          }
-        }
-      }
+      const fileResults = await this.processSingleFile(
+        file,
+        name,
+        domain,
+        password,
+        force,
+      );
+      results.push(...fileResults);
     }
 
     return results;
+  }
+
+  private isPlatformSupported(): boolean {
+    const supportedPlatforms = ["darwin", "win32", "linux"];
+    if (!supportedPlatforms.includes(process.platform)) {
+      this.logger.warn("Platform not supported", {
+        platform: process.platform,
+        supportedPlatforms,
+      });
+      return false;
+    }
+    return true;
+  }
+
+  private getCookieFiles(store?: string): string[] {
+    const cookieFiles = store ?? listChromeProfilePaths();
+    return Array.isArray(cookieFiles) ? cookieFiles : [cookieFiles];
+  }
+
+  private async processSingleFile(
+    file: string,
+    name: string,
+    domain: string,
+    password: string | Buffer,
+    force?: boolean,
+  ): Promise<ExportedCookie[]> {
+    let retryAfterClose = false;
+    let shouldRelaunch = false;
+
+    try {
+      return await this.processFile(file, name, domain, password);
+    } catch (error) {
+      const lockResult = await this.handleFileError(
+        error,
+        file,
+        name,
+        domain,
+        force,
+      );
+      retryAfterClose = lockResult.resolved;
+      shouldRelaunch = lockResult.shouldRelaunch;
+    }
+
+    if (retryAfterClose) {
+      return await this.retryAfterBrowserClose(
+        file,
+        name,
+        domain,
+        password,
+        shouldRelaunch,
+      );
+    }
+
+    return [];
+  }
+
+  private async handleFileError(
+    error: unknown,
+    file: string,
+    name: string,
+    domain: string,
+    force?: boolean,
+  ): Promise<{ resolved: boolean; shouldRelaunch: boolean }> {
+    const processes = await isChromeRunning();
+    const lockResult = await this.lockHandler.handleBrowserConflict(
+      error,
+      file,
+      processes,
+      force !== true,
+    );
+
+    if (!lockResult.resolved) {
+      this.logFileError(error, file, name, domain);
+    }
+
+    return lockResult;
+  }
+
+  private logFileError(
+    error: unknown,
+    file: string,
+    name: string,
+    domain: string,
+  ): void {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    this.logger.warn(`Error reading Chrome cookie file ${file}`, {
+      error: errorMessage,
+      file,
+      name,
+      domain,
+    });
+  }
+
+  private async retryAfterBrowserClose(
+    file: string,
+    name: string,
+    domain: string,
+    password: string | Buffer,
+    shouldRelaunch: boolean,
+  ): Promise<ExportedCookie[]> {
+    try {
+      this.logger.info(
+        "Retrying Chrome cookie extraction after browser close...",
+      );
+      const cookies = await this.processFile(file, name, domain, password);
+      this.logger.success(
+        "Successfully extracted cookies after closing Chrome",
+      );
+
+      if (shouldRelaunch) {
+        await this.lockHandler.relaunchBrowser();
+      }
+
+      return cookies;
+    } catch (retryError) {
+      this.logger.error("Failed to extract cookies even after closing Chrome", {
+        error:
+          retryError instanceof Error ? retryError.message : String(retryError),
+        file,
+      });
+
+      if (shouldRelaunch) {
+        await this.lockHandler.relaunchBrowser();
+      }
+
+      return [];
+    }
   }
 
   private async processFile(

@@ -28,17 +28,23 @@ function decryptDPAPIKey(encryptedKey: Buffer): Buffer {
   // Try to use native DPAPI if available on Windows
   if (process.platform === "win32") {
     try {
-      // Use require for the external module to work properly with the bundler
-      // This is marked as external in tsup config so won't be bundled
-      const dpapi = require("@primno/dpapi") as {
+      // Use eval to prevent bundlers from analyzing the require
+      // This ensures the module is loaded at runtime, not bundled
+      const moduleName = "@primno" + "/dpapi"; // Split to prevent static analysis
+      // biome-ignore lint/security/noGlobalEval: Required for dynamic optional dependency loading
+      const dpapi = eval(`require("${moduleName}")`) as {
         unprotectData: (data: Buffer) => Buffer;
       };
+
       if (dpapi && typeof dpapi.unprotectData === "function") {
         return dpapi.unprotectData(encryptedData);
       }
     } catch (error) {
-      // Module not available or failed to load
-      console.warn("DPAPI module not available, using fallback:", error);
+      // Module not available or failed to load - this is expected for optional dependency
+      // Don't log the full error to avoid cluttering output
+      if (process.env.VERBOSE) {
+        console.warn("DPAPI module not available:", error);
+      }
     }
   }
 

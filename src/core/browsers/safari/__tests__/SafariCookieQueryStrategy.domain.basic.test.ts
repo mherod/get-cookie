@@ -16,8 +16,8 @@ jest.mock("@utils/SystemPermissions", () => ({
 // Mock os.homedir and path.join
 jest.mock("node:os", () => ({
   homedir: jest.fn().mockReturnValue("/Users/testuser"),
+  platform: jest.fn().mockReturnValue("darwin"),
 }));
-
 jest.mock("node:path", () => ({
   join: jest.fn((...args) => args.join("/")),
 }));

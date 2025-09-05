@@ -188,13 +188,16 @@ export class ChromeCookieQueryStrategy extends BaseCookieQueryStrategy {
     name: string,
     domain: string,
   ): void {
-    const errorMessage = error instanceof Error ? error.message : String(error);
     this.logger.warn(`Error reading Chrome cookie file ${file}`, {
-      error: errorMessage,
+      error: this.getErrorMessage(error),
       file,
       name,
       domain,
     });
+  }
+
+  private getErrorMessage(error: unknown): string {
+    return error instanceof Error ? error.message : String(error);
   }
 
   private async retryAfterBrowserClose(
@@ -212,24 +215,21 @@ export class ChromeCookieQueryStrategy extends BaseCookieQueryStrategy {
       this.logger.success(
         "Successfully extracted cookies after closing Chrome",
       );
-
-      if (shouldRelaunch) {
-        await this.lockHandler.relaunchBrowser();
-      }
-
+      await this.handleRelaunch(shouldRelaunch);
       return cookies;
     } catch (retryError) {
       this.logger.error("Failed to extract cookies even after closing Chrome", {
-        error:
-          retryError instanceof Error ? retryError.message : String(retryError),
+        error: this.getErrorMessage(retryError),
         file,
       });
-
-      if (shouldRelaunch) {
-        await this.lockHandler.relaunchBrowser();
-      }
-
+      await this.handleRelaunch(shouldRelaunch);
       return [];
+    }
+  }
+
+  private async handleRelaunch(shouldRelaunch: boolean): Promise<void> {
+    if (shouldRelaunch) {
+      await this.lockHandler.relaunchBrowser();
     }
   }
 

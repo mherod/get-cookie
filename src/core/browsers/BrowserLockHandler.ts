@@ -5,6 +5,7 @@ import {
 } from "@utils/BrowserControl";
 import { detectFileHandles, getFileLockInfo } from "@utils/FileHandleDetector";
 import { getBrowserConflictAdvice } from "@utils/ProcessDetector";
+import { getDatabaseErrorType, getErrorMessage } from "@utils/errorUtils";
 import type { createTaggedLogger } from "@utils/logHelpers";
 import {
   type PlatformBrowserControl,
@@ -76,15 +77,8 @@ export class BrowserLockHandler {
    * @returns True if this is a lock-related error
    */
   private isLockError(error: Error): boolean {
-    const errorMessage = error.message.toLowerCase();
-    return (
-      errorMessage.includes("database is locked") ||
-      errorMessage.includes("database locked") ||
-      errorMessage.includes("sqlite_busy") ||
-      errorMessage.includes("eperm") ||
-      errorMessage.includes("operation not permitted") ||
-      errorMessage.includes("permission denied")
-    );
+    const dbErrorType = getDatabaseErrorType(error);
+    return dbErrorType === "locked" || dbErrorType === "permission";
   }
 
   /**
@@ -251,10 +245,7 @@ export class BrowserLockHandler {
       );
     } catch (relaunchError) {
       this.logger.warn(`Could not relaunch ${this.browserName} automatically`, {
-        error:
-          relaunchError instanceof Error
-            ? relaunchError.message
-            : String(relaunchError),
+        error: getErrorMessage(relaunchError),
         platform: this.platformControl.getPlatformName(),
       });
     }

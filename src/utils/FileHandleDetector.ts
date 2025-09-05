@@ -1,6 +1,7 @@
 import { execFile } from "node:child_process";
 import { platform } from "node:os";
 import { promisify } from "node:util";
+import { errorMessageContains, getErrorMessage } from "./errorUtils";
 import { createTaggedLogger } from "./logHelpers";
 
 const execFileAsync = promisify(execFile);
@@ -62,12 +63,12 @@ async function detectWithLsof(filePath: string): Promise<FileHandleInfo[]> {
 
     return handles;
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorMessage = getErrorMessage(error);
 
     // Check if lsof is not found
-    if (errorMessage.includes("ENOENT")) {
+    if (errorMessageContains(error, "ENOENT")) {
       logger.debug("lsof not available on this system");
-    } else if (errorMessage.includes("No such file")) {
+    } else if (errorMessageContains(error, "No such file")) {
       // File doesn't exist - return empty array
       logger.debug("File does not exist", { file: filePath });
     } else {
@@ -124,9 +125,9 @@ async function detectWithFuser(filePath: string): Promise<FileHandleInfo[]> {
 
     return handles;
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorMessage = getErrorMessage(error);
 
-    if (errorMessage.includes("ENOENT")) {
+    if (errorMessageContains(error, "ENOENT")) {
       logger.debug("fuser not available on this system");
     } else {
       logger.debug("fuser detection failed", { error: errorMessage });
@@ -215,8 +216,7 @@ async function detectOnWindows(filePath: string): Promise<FileHandleInfo[]> {
       }
     } catch (parseError) {
       logger.debug("Failed to parse PowerShell output", {
-        error:
-          parseError instanceof Error ? parseError.message : String(parseError),
+        error: getErrorMessage(parseError),
       });
     }
 
@@ -228,7 +228,7 @@ async function detectOnWindows(filePath: string): Promise<FileHandleInfo[]> {
     return handles;
   } catch (error) {
     logger.debug("Windows handle detection failed", {
-      error: error instanceof Error ? error.message : String(error),
+      error: getErrorMessage(error),
     });
     return [];
   }

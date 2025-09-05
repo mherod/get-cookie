@@ -2,6 +2,7 @@ import { exec } from "node:child_process";
 import { platform } from "node:os";
 import readline from "node:readline";
 import { promisify } from "node:util";
+import { errorMessageContains, getErrorMessage } from "./errorUtils";
 import { createTaggedLogger } from "./logHelpers";
 
 const execAsync = promisify(exec);
@@ -101,12 +102,11 @@ export async function handleSafariPermissionError(
     return false;
   }
 
-  const errorMessage = error.message.toLowerCase();
   const isPermissionError =
-    errorMessage.includes("eperm") ||
-    errorMessage.includes("operation not permitted") ||
-    errorMessage.includes("permission denied") ||
-    errorMessage.includes("authorization denied");
+    errorMessageContains(error, "eperm") ||
+    errorMessageContains(error, "operation not permitted") ||
+    errorMessageContains(error, "permission denied") ||
+    errorMessageContains(error, "authorization denied");
 
   if (!isPermissionError) {
     return false;
@@ -116,7 +116,7 @@ export async function handleSafariPermissionError(
 
   logger.warn(`${options.browserName} cookie access denied by macOS`, {
     app: terminalApp,
-    error: error.message,
+    error: getErrorMessage(error),
   });
 
   if (options.interactive !== false) {

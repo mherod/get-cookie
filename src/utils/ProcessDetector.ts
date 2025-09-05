@@ -1,3 +1,4 @@
+import { getErrorMessage } from "./errorUtils";
 import { execSimple } from "./execSimple";
 import { createTaggedLogger } from "./logHelpers";
 
@@ -78,7 +79,7 @@ async function detectBrowserProcesses(
     return processes;
   } catch (error) {
     logger.warn(`Failed to detect ${browserName} processes`, {
-      error: error instanceof Error ? error.message : String(error),
+      error: getErrorMessage(error),
     });
     return [];
   }

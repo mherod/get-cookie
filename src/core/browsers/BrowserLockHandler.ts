@@ -1,14 +1,20 @@
+import { detectFileHandles, getFileLockInfo } from "@utils/FileHandleDetector";
+import { getBrowserConflictAdvice } from "@utils/ProcessDetector";
+import type { createTaggedLogger } from "@utils/logHelpers";
+
 import {
   type BrowserName,
   closeBrowserGracefully,
   waitForBrowserToClose,
 } from "@utils/BrowserControl";
-import { detectFileHandles, getFileLockInfo } from "@utils/FileHandleDetector";
-import { getBrowserConflictAdvice } from "@utils/ProcessDetector";
-import type { createTaggedLogger } from "@utils/logHelpers";
 
+/**
+ * Result of a browser conflict handling operation
+ */
 export interface BrowserLockResult {
+  /** Whether the conflict was resolved */
   resolved: boolean;
+  /** Whether the browser should be relaunched */
   shouldRelaunch: boolean;
 }
 
@@ -17,7 +23,12 @@ export interface BrowserLockResult {
  * Follows DRY principle to avoid duplicating logic across browser strategies
  */
 export class BrowserLockHandler {
-  constructor(
+  /**
+   * Creates a new BrowserLockHandler instance
+   * @param logger - Tagged logger instance for this handler
+   * @param browserName - Name of the browser this handler manages
+   */
+  public constructor(
     private logger: ReturnType<typeof createTaggedLogger>,
     private browserName: BrowserName,
   ) {}
@@ -30,7 +41,7 @@ export class BrowserLockHandler {
    * @param autoClose - Whether to attempt auto-closing the browser
    * @returns Promise that resolves to lock result
    */
-  async handleBrowserConflict(
+  public async handleBrowserConflict(
     error: unknown,
     file: string,
     processes: Array<{ pid: number; command: string }>,
@@ -40,27 +51,46 @@ export class BrowserLockHandler {
       return { resolved: false, shouldRelaunch: false };
     }
 
+    if (!this.isLockError(error)) {
+      return { resolved: false, shouldRelaunch: false };
+    }
+
+    await this.logFileHandleInfo(file, processes);
+    return await this.handleProcessConflict(file, processes, autoClose);
+  }
+
+  /**
+   * Check if an error indicates a database lock or permission issue
+   * @param error - The error to check
+   * @returns True if this is a lock-related error
+   */
+  private isLockError(error: Error): boolean {
     const errorMessage = error.message.toLowerCase();
-    const isLockError =
+    return (
       errorMessage.includes("database is locked") ||
       errorMessage.includes("database locked") ||
       errorMessage.includes("sqlite_busy") ||
       errorMessage.includes("eperm") ||
       errorMessage.includes("operation not permitted") ||
-      errorMessage.includes("permission denied");
+      errorMessage.includes("permission denied")
+    );
+  }
 
-    if (!isLockError) {
-      return { resolved: false, shouldRelaunch: false };
-    }
-
-    // Check for file handles to get more detailed lock information
+  /**
+   * Log detailed file handle information
+   * @param file - The file that was locked
+   * @param processes - Browser processes detected
+   */
+  private async logFileHandleInfo(
+    file: string,
+    processes: Array<{ pid: number; command: string }>,
+  ): Promise<void> {
     try {
       const fileHandles = await detectFileHandles(file);
 
       if (fileHandles.length > 0) {
         const lockInfo = await getFileLockInfo(file);
 
-        // Log at warn level so it's visible to users
         this.logger.warn("Database locked by specific processes", {
           file,
           lockInfo,
@@ -73,7 +103,6 @@ export class BrowserLockHandler {
           })),
         });
 
-        // If we detect file handles but no browser processes, it might be a different issue
         if (processes.length === 0) {
           this.logger.info(
             "File is locked but no browser processes detected - another tool may be accessing the database",
@@ -93,46 +122,33 @@ export class BrowserLockHandler {
             : String(handleError),
       });
     }
+  }
 
+  /**
+   * Handle process conflicts and optionally close the browser
+   * @param file - The file that was locked
+   * @param processes - Browser processes detected
+   * @param autoClose - Whether to attempt auto-closing
+   * @returns Promise that resolves to lock result
+   */
+  private async handleProcessConflict(
+    file: string,
+    processes: Array<{ pid: number; command: string }>,
+    autoClose: boolean,
+  ): Promise<BrowserLockResult> {
     try {
       if (processes.length > 0) {
-        const advice = getBrowserConflictAdvice(
-          this.browserName.toLowerCase(),
-          processes,
-        );
-
-        this.logger.warn(`${this.browserName} process conflict detected`, {
-          file,
-          processCount: processes.length,
-          advice,
-        });
-
-        // If auto-close is enabled, try to close browser gracefully
-        if (autoClose) {
-          this.logger.info(
-            `Attempting to close ${this.browserName} gracefully...`,
-          );
-          const closed = await closeBrowserGracefully(this.browserName, {
-            interactive: true,
-            force: false,
-          });
-
-          if (closed) {
-            // Wait for browser to fully close
-            await waitForBrowserToClose(this.browserName, 5000);
-            return { resolved: true, shouldRelaunch: true };
-          }
-        }
-      } else {
-        this.logger.warn(
-          "Database/file locked but no browser processes detected",
-          {
-            file,
-            browserName: this.browserName,
-            suggestion: "Another process may be accessing the file",
-          },
-        );
+        return await this.handleBrowserProcesses(file, processes, autoClose);
       }
+
+      this.logger.warn(
+        "Database/file locked but no browser processes detected",
+        {
+          file,
+          browserName: this.browserName,
+          suggestion: "Another process may be accessing the file",
+        },
+      );
     } catch (processError) {
       this.logger.debug("Failed to check browser processes", {
         error:
@@ -146,10 +162,60 @@ export class BrowserLockHandler {
   }
 
   /**
+   * Handle detected browser processes
+   * @param file - The file that was locked
+   * @param processes - Browser processes detected
+   * @param autoClose - Whether to attempt auto-closing
+   * @returns Promise that resolves to lock result
+   */
+  private async handleBrowserProcesses(
+    file: string,
+    processes: Array<{ pid: number; command: string }>,
+    autoClose: boolean,
+  ): Promise<BrowserLockResult> {
+    const advice = getBrowserConflictAdvice(
+      this.browserName.toLowerCase(),
+      processes,
+    );
+
+    this.logger.warn(`${this.browserName} process conflict detected`, {
+      file,
+      processCount: processes.length,
+      advice,
+    });
+
+    if (autoClose) {
+      return await this.attemptBrowserClose();
+    }
+
+    return { resolved: false, shouldRelaunch: false };
+  }
+
+  /**
+   * Attempt to close the browser gracefully
+   * @returns Promise that resolves to lock result
+   */
+  private async attemptBrowserClose(): Promise<BrowserLockResult> {
+    this.logger.info(`Attempting to close ${this.browserName} gracefully...`);
+
+    const closed = await closeBrowserGracefully(this.browserName, {
+      interactive: true,
+      force: false,
+    });
+
+    if (closed) {
+      await waitForBrowserToClose(this.browserName, 5000);
+      return { resolved: true, shouldRelaunch: true };
+    }
+
+    return { resolved: false, shouldRelaunch: false };
+  }
+
+  /**
    * Relaunch browser after successful operation
    * @returns Promise that resolves when browser is relaunched
    */
-  async relaunchBrowser(): Promise<void> {
+  public async relaunchBrowser(): Promise<void> {
     this.logger.info(`Relaunching ${this.browserName}...`);
 
     try {

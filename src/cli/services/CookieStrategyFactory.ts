@@ -1,4 +1,5 @@
 import { existsSync, readFileSync } from "node:fs";
+
 import { CompositeCookieQueryStrategy } from "@core/browsers/CompositeCookieQueryStrategy";
 import { ChromeCookieQueryStrategy } from "@core/browsers/chrome/ChromeCookieQueryStrategy";
 import { FirefoxCookieQueryStrategy } from "@core/browsers/firefox/FirefoxCookieQueryStrategy";
@@ -68,9 +69,9 @@ export const CookieStrategyFactory = {
    */
   createStrategy(browser?: string, storePath?: string): CookieQueryStrategy {
     // If store path is provided, try to detect the browser type
-    if (storePath && !browser) {
+    if (storePath !== undefined && browser === undefined) {
       const detectedBrowser = this.detectStoreType(storePath);
-      if (detectedBrowser) {
+      if (detectedBrowser !== undefined) {
         const Strategy = this.strategies.get(detectedBrowser);
         if (Strategy) {
           return new Strategy();

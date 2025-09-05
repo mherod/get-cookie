@@ -8,6 +8,19 @@ import { createTaggedLogger } from "./logHelpers";
 const execAsync = promisify(exec);
 const logger = createTaggedLogger("BrowserControl");
 
+/**
+ * Check if the current environment supports interactive prompts
+ * @returns True if environment can handle interactive prompts
+ */
+function isInteractiveEnvironment(): boolean {
+  const isCI = process.env.CI === "true" || process.env.CI === "1";
+  const isTest =
+    process.env.NODE_ENV === "test" || process.env.JEST_WORKER_ID !== undefined;
+  const hasTTY = process.stdin.isTTY && process.stdout.isTTY;
+
+  return hasTTY && !isCI && !isTest;
+}
+
 export interface BrowserControlOptions {
   force?: boolean;
   interactive?: boolean;
@@ -126,6 +139,19 @@ async function saveBrowserSessionMacOS(
 async function promptUserConfirmation(
   browserName: BrowserName,
 ): Promise<boolean> {
+  // Check if we're in a TTY-capable environment
+  if (!isInteractiveEnvironment()) {
+    logger.debug("Non-interactive environment detected, skipping prompt", {
+      browserName,
+      CI: process.env.CI,
+      NODE_ENV: process.env.NODE_ENV,
+      JEST_WORKER_ID: process.env.JEST_WORKER_ID,
+      stdin_tty: process.stdin.isTTY,
+      stdout_tty: process.stdout.isTTY,
+    });
+    return false;
+  }
+
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,

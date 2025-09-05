@@ -1,7 +1,7 @@
 import { exec } from "node:child_process";
-import { platform } from "node:os";
 import readline from "node:readline";
 import { promisify } from "node:util";
+import { isMacOS } from "./platformUtils";
 
 import { createTaggedLogger } from "./logHelpers";
 
@@ -212,7 +212,7 @@ export async function closeBrowserGracefully(
   browserName: BrowserName,
   options: BrowserControlOptions = {},
 ): Promise<boolean> {
-  if (platform() !== "darwin") {
+  if (!isMacOS()) {
     logger.debug("Browser control only supported on macOS");
     return false;
   }
@@ -269,7 +269,7 @@ export async function closeBrowserForAction<T>(
   action: () => Promise<T>,
   options: BrowserControlOptions = {},
 ): Promise<T | null> {
-  if (platform() !== "darwin") {
+  if (!isMacOS()) {
     logger.debug("Browser control only supported on macOS");
     return null;
   }
@@ -334,7 +334,7 @@ export async function waitForBrowserToClose(
   browserName: BrowserName,
   maxWaitMs = 10000,
 ): Promise<boolean> {
-  if (platform() !== "darwin") {
+  if (!isMacOS()) {
     return false;
   }
 

@@ -1,5 +1,6 @@
-import { homedir, platform } from "node:os";
+import { homedir } from "node:os";
 import { join } from "node:path";
+import { assertPlatformSupported, getPlatform } from "@utils/platformUtils";
 
 /**
  * The path to Chrome's application support directory for the current platform
@@ -12,7 +13,9 @@ export const chromeApplicationSupport = (() => {
     throw new Error("Unable to determine user home directory");
   }
 
-  switch (platform()) {
+  assertPlatformSupported();
+
+  switch (getPlatform()) {
     case "darwin":
       return join(home, "Library", "Application Support", "Google", "Chrome");
     case "win32":
@@ -20,6 +23,7 @@ export const chromeApplicationSupport = (() => {
     case "linux":
       return join(home, ".config", "google-chrome");
     default:
-      throw new Error(`Platform ${platform()} is not supported`);
+      // This should never happen due to assertPlatformSupported
+      throw new Error(`Platform ${getPlatform()} is not supported`);
   }
 })();

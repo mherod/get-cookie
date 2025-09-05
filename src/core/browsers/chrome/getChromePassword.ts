@@ -1,5 +1,4 @@
-import { platform } from "node:os";
-
+import { assertPlatformSupported, getPlatform } from "@utils/platformUtils";
 import { getChromePassword as getLinuxPassword } from "./linux/getChromePassword";
 import { getChromePassword as getMacOSPassword } from "./macos/getChromePassword";
 import { getChromePassword as getWindowsPassword } from "./windows/getChromePassword";
@@ -12,7 +11,9 @@ import { getChromePassword as getWindowsPassword } from "./windows/getChromePass
  * @throws {Error} If the password cannot be retrieved or the platform is not supported
  */
 export async function getChromePassword(): Promise<string | Buffer> {
-  switch (platform()) {
+  assertPlatformSupported();
+
+  switch (getPlatform()) {
     case "darwin": {
       return await getMacOSPassword();
     }
@@ -23,6 +24,7 @@ export async function getChromePassword(): Promise<string | Buffer> {
       return await getLinuxPassword();
     }
     default:
-      throw new Error(`Platform ${platform()} is not supported`);
+      // This should never happen due to assertPlatformSupported
+      throw new Error(`Platform ${getPlatform()} is not supported`);
   }
 }

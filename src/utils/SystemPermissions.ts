@@ -1,9 +1,9 @@
 import { exec } from "node:child_process";
-import { platform } from "node:os";
 import readline from "node:readline";
 import { promisify } from "node:util";
 import { errorMessageContains, getErrorMessage } from "./errorUtils";
 import { createTaggedLogger } from "./logHelpers";
+import { isMacOS } from "./platformUtils";
 
 const execAsync = promisify(exec);
 const logger = createTaggedLogger("SystemPermissions");
@@ -98,7 +98,7 @@ export async function handleSafariPermissionError(
   error: Error,
   options: PermissionRequestOptions,
 ): Promise<boolean> {
-  if (platform() !== "darwin") {
+  if (!isMacOS()) {
     return false;
   }
 

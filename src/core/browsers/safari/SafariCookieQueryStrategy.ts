@@ -49,9 +49,12 @@ export class SafariCookieQueryStrategy extends BaseCookieQueryStrategy {
   /**
    * Formats the domain by removing leading dot if present
    * @param domain - Domain to format
-   * @returns Formatted domain
+   * @returns Formatted domain or empty string if domain is invalid
    */
-  private formatDomain(domain: string): string {
+  private formatDomain(domain: string | undefined | null): string {
+    if (!domain || typeof domain !== "string") {
+      return "";
+    }
     return domain.startsWith(".") ? domain.slice(1) : domain;
   }
 
@@ -206,12 +209,20 @@ export class SafariCookieQueryStrategy extends BaseCookieQueryStrategy {
 
       const cookies = decodeBinaryCookies(cookieDbPath);
       return cookies
-        .filter(
-          (cookie) =>
-            (name === "%" || cookie.name === name) &&
-            (domain === "%" ||
-              this.formatDomain(cookie.domain).includes(domain)),
-        )
+        .filter((cookie) => {
+          const formattedDomain = this.formatDomain(cookie.domain);
+
+          // Skip cookies with invalid domains
+          if (!formattedDomain) {
+            return false;
+          }
+
+          const nameMatches = name === "%" || cookie.name === name;
+          const domainMatches =
+            domain === "%" || formattedDomain.includes(domain);
+
+          return nameMatches && domainMatches;
+        })
         .map((cookie) => ({
           domain: this.formatDomain(cookie.domain),
           name: cookie.name,

@@ -5,6 +5,11 @@ import { decodeBinaryCookies } from "../decodeBinaryCookies";
 // Mock decodeBinaryCookies
 jest.mock("../decodeBinaryCookies");
 
+// Mock SystemPermissions utilities
+jest.mock("@utils/SystemPermissions", () => ({
+  checkFilePermission: jest.fn().mockResolvedValue(true),
+  handleSafariPermissionError: jest.fn().mockResolvedValue(false),
+}));
 // Mock os.homedir and path.join
 jest.mock("node:os", () => ({
   homedir: jest.fn().mockReturnValue("/Users/testuser"),

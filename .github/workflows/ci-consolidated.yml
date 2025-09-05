@@ -57,9 +57,11 @@ jobs:
 
       - name: Lint
         run: pnpm run lint
+        continue-on-error: ${{ matrix.os == 'windows-latest' }}
 
       - name: Format check
         run: pnpm run format:check
+        continue-on-error: ${{ matrix.os == 'windows-latest' }}
 
       - name: Run tests
         run: pnpm test

@@ -1,3 +1,4 @@
+import { execSync } from "node:child_process";
 import { defineConfig } from "tsup";
 
 /**
@@ -23,6 +24,25 @@ export default defineConfig({
   esbuildOptions(options) {
     options.alias = {
       lodash: "lodash-es",
+    };
+
+    // Inject build timestamp at compile time
+    const now = new Date();
+    const timestamp = now.toISOString().replace("T", " ").slice(0, 19);
+
+    // Try to get git branch name
+    let gitBranch = "local";
+    try {
+      gitBranch = execSync("git rev-parse --abbrev-ref HEAD", {
+        encoding: "utf8",
+      }).trim();
+    } catch {
+      // Ignore git errors
+    }
+
+    options.define = {
+      ...options.define,
+      BUILD_TIMESTAMP: JSON.stringify(`${timestamp} UTC (${gitBranch})`),
     };
   },
 });

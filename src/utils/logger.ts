@@ -12,7 +12,6 @@ import { env } from "../config";
  * - fatal: Critical errors that prevent the app from continuing
  */
 const consola = createConsola({
-  fancy: true,
   formatOptions: {
     showLogLevel: false,
     colors: true,

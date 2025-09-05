@@ -1,5 +1,6 @@
 import fg from "fast-glob";
 import type { CookieRow, ExportedCookie } from "../../../types/schemas";
+import { chromeTimestampToDate } from "../../../utils/chromeDates";
 import { BaseCookieQueryStrategy } from "../BaseCookieQueryStrategy";
 import {
   type ChromiumBrowser,
@@ -15,27 +16,6 @@ interface DecryptionContext {
   browser: ChromiumBrowser;
 }
 
-function getExpiryDate(
-  expiry: number | undefined | null,
-): Date | "Infinity" | undefined {
-  // Handle null or undefined expiry
-  if (expiry === null || expiry === undefined) {
-    return undefined;
-  }
-  if (typeof expiry !== "number" || expiry <= 0) {
-    return "Infinity";
-  }
-
-  // Chrome/Chromium uses microseconds since 1601-01-01 00:00:00 UTC
-  // JavaScript Date uses milliseconds since 1970-01-01 00:00:00 UTC
-  // The difference is 11644473600 seconds
-  const CHROME_EPOCH_OFFSET = 11644473600;
-  const unixTimestamp = expiry / 1000000 - CHROME_EPOCH_OFFSET;
-
-  // Convert to milliseconds for JavaScript Date
-  return new Date(unixTimestamp * 1000);
-}
-
 function createExportedCookie(
   domain: string,
   name: string,
@@ -49,7 +29,7 @@ function createExportedCookie(
     domain,
     name,
     value,
-    expiry: getExpiryDate(expiry),
+    expiry: chromeTimestampToDate(expiry),
     meta: {
       file,
       browser: browser.charAt(0).toUpperCase() + browser.slice(1),

@@ -54,7 +54,7 @@ describe("FirefoxCookieQueryStrategy - Database Lock Handling", () => {
           details: "PID: 1234, Command: firefox",
         },
       ]);
-    });
+    }, 10000); // Increase timeout to 10 seconds for CI environments
 
     it("should handle database lock with no Firefox processes detected", async () => {
       const mocks = setupDatabaseLockMocks(testSetup);

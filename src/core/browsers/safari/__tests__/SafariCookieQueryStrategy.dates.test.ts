@@ -106,9 +106,8 @@ describe("SafariCookieQueryStrategy - Expiry Dates", () => {
 
     const cookies = await strategy.queryCookies("test-cookie", "example.com");
     expect(cookies).toHaveLength(1);
-    expect(cookies[0].expiry).toBeInstanceOf(Date);
-    // Check if getTime() returns NaN
-    expect(Number.isNaN((cookies[0].expiry as Date).getTime())).toBe(true);
+    // Changed behavior: undefined expiry now returns undefined instead of NaN Date
+    expect(cookies[0].expiry).toBeUndefined();
   });
 });
 

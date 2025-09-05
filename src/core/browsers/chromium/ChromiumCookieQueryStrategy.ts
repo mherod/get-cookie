@@ -1,7 +1,11 @@
 import fg from "fast-glob";
+
+import { isChromeRunning } from "@utils/ProcessDetector";
+
 import type { CookieRow, ExportedCookie } from "../../../types/schemas";
 import { chromeTimestampToDate } from "../../../utils/chromeDates";
 import { BaseCookieQueryStrategy } from "../BaseCookieQueryStrategy";
+import { BrowserLockHandler } from "../BrowserLockHandler";
 import {
   type ChromiumBrowser,
   getChromiumBrowserPath,
@@ -45,6 +49,7 @@ function createExportedCookie(
  */
 export class ChromiumCookieQueryStrategy extends BaseCookieQueryStrategy {
   private browser: ChromiumBrowser;
+  private lockHandler: BrowserLockHandler;
 
   /**
    * Creates a new instance of ChromiumCookieQueryStrategy
@@ -55,6 +60,7 @@ export class ChromiumCookieQueryStrategy extends BaseCookieQueryStrategy {
     // Use "Chrome" for the base class since it expects specific browser names
     super(`${browserName}CookieQueryStrategy`, "Chrome");
     this.browser = browser;
+    this.lockHandler = new BrowserLockHandler(this.logger, "Chrome");
   }
 
   /**
@@ -81,24 +87,23 @@ export class ChromiumCookieQueryStrategy extends BaseCookieQueryStrategy {
 
   /**
    * Executes the Chromium-specific query logic
+   * @param name - The name pattern to match cookies against
+   * @param domain - The domain pattern to match cookies against
+   * @param store - Optional path to a specific cookie store file
+   * @param force - Whether to force operations despite warnings
+   * @returns A promise that resolves to an array of exported cookies
    */
   protected async executeQuery(
     name: string,
     domain: string,
     store?: string,
-    _force?: boolean,
+    force?: boolean,
   ): Promise<ExportedCookie[]> {
-    const supportedPlatforms = ["darwin", "win32", "linux"];
-    if (!supportedPlatforms.includes(process.platform)) {
-      this.logger.warn("Platform not supported", {
-        platform: process.platform,
-        supportedPlatforms,
-      });
+    if (!this.isPlatformSupported()) {
       return [];
     }
 
-    const cookieFiles = store ?? this.listBrowserCookiePaths();
-    const files = Array.isArray(cookieFiles) ? cookieFiles : [cookieFiles];
+    const files = this.getCookieFiles(store);
     if (files.length === 0) {
       this.logger.warn(`No ${this.browser} cookie files found`);
       return [];
@@ -106,14 +111,127 @@ export class ChromiumCookieQueryStrategy extends BaseCookieQueryStrategy {
 
     try {
       const password = await getChromePassword();
-      const results = await Promise.all(
-        files.map((file) => this.processFile(file, name, domain, password)),
-      );
-      return results.flat();
+      const results: ExportedCookie[] = [];
+
+      for (const file of files) {
+        const fileResults = await this.processFileWithRetry(
+          file,
+          name,
+          domain,
+          password,
+          force,
+        );
+        results.push(...fileResults);
+      }
+
+      return results;
     } catch (error) {
-      this.logger.error(`Failed to get ${this.browser} password`, { error });
+      this.logger.error(`Failed to get ${this.browser} password`, {
+        error: this.getErrorMessage(error),
+      });
       return [];
     }
+  }
+
+  /**
+   * Check if the current platform is supported
+   * @returns True if platform is supported
+   */
+  private isPlatformSupported(): boolean {
+    const supportedPlatforms = ["darwin", "win32", "linux"];
+    if (!supportedPlatforms.includes(process.platform)) {
+      this.logger.warn("Platform not supported", {
+        platform: process.platform,
+        supportedPlatforms,
+      });
+      return false;
+    }
+    return true;
+  }
+
+  /**
+   * Get cookie files to process
+   * @param store - Optional specific store path
+   * @returns Array of file paths
+   */
+  private getCookieFiles(store?: string): string[] {
+    const cookieFiles = store ?? this.listBrowserCookiePaths();
+    return Array.isArray(cookieFiles) ? cookieFiles : [cookieFiles];
+  }
+
+  /**
+   * Convert error to string message
+   * @param error - The error to convert
+   * @returns Error message string
+   */
+  private getErrorMessage(error: unknown): string {
+    return error instanceof Error ? error.message : String(error);
+  }
+
+  /**
+   * Process a file with retry logic for lock conflicts
+   * @param file - Cookie file path
+   * @param name - Cookie name pattern
+   * @param domain - Domain pattern
+   * @param password - Decryption password
+   * @param force - Force processing
+   * @returns Array of exported cookies
+   */
+  private async processFileWithRetry(
+    file: string,
+    name: string,
+    domain: string,
+    password: string | Buffer,
+    force?: boolean,
+  ): Promise<ExportedCookie[]> {
+    try {
+      return await this.processFile(file, name, domain, password);
+    } catch (error) {
+      // Check for database locks
+      const processes = await isChromeRunning();
+      const lockResult = await this.lockHandler.handleBrowserConflict(
+        error,
+        file,
+        processes,
+        force !== true,
+      );
+
+      if (lockResult.resolved) {
+        try {
+          this.logger.info(
+            `Retrying ${this.browser} cookie extraction after browser close...`,
+          );
+          const cookies = await this.processFile(file, name, domain, password);
+
+          if (lockResult.shouldRelaunch) {
+            await this.lockHandler.relaunchBrowser();
+          }
+
+          return cookies;
+        } catch (retryError) {
+          this.logger.error(
+            `Failed to extract cookies even after closing ${this.browser}`,
+            {
+              error: this.getErrorMessage(retryError),
+              file,
+            },
+          );
+
+          if (lockResult.shouldRelaunch) {
+            await this.lockHandler.relaunchBrowser();
+          }
+        }
+      } else {
+        this.logger.warn(`Error reading ${this.browser} cookie file ${file}`, {
+          error: this.getErrorMessage(error),
+          file,
+          name,
+          domain,
+        });
+      }
+    }
+
+    return [];
   }
 
   private async processFile(
@@ -143,7 +261,7 @@ export class ChromiumCookieQueryStrategy extends BaseCookieQueryStrategy {
         .filter((cookie): cookie is ExportedCookie => cookie !== null);
     } catch (error) {
       this.logger.error(`Failed to process ${this.browser} cookie file`, {
-        error: error instanceof Error ? error.message : String(error),
+        error: this.getErrorMessage(error),
         file,
         name,
         domain,
@@ -173,7 +291,7 @@ export class ChromiumCookieQueryStrategy extends BaseCookieQueryStrategy {
       );
     } catch (error) {
       this.logger.warn(`Failed to decrypt ${this.browser} cookie`, {
-        error: error instanceof Error ? error.message : String(error),
+        error: this.getErrorMessage(error),
       });
       return createExportedCookie(
         cookie.domain,

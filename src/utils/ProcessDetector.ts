@@ -95,24 +95,24 @@ async function detectBrowserProcesses(
  * }
  * ```
  */
-export async function isFirefoxRunning(): Promise<ProcessInfo[]> {
-  return await detectBrowserProcesses("Firefox", "firefox");
+export function isFirefoxRunning(): Promise<ProcessInfo[]> {
+  return detectBrowserProcesses("Firefox", "firefox");
 }
 
 /**
  * Check if Chrome browser is currently running
  * @returns Promise that resolves to array of Chrome process information
  */
-export async function isChromeRunning(): Promise<ProcessInfo[]> {
-  return await detectBrowserProcesses("Chrome", "google chrome\\|chromium");
+export function isChromeRunning(): Promise<ProcessInfo[]> {
+  return detectBrowserProcesses("Chrome", "google chrome\\|chromium");
 }
 
 /**
  * Check if Safari browser is currently running
  * @returns Promise that resolves to array of Safari process information
  */
-export async function isSafariRunning(): Promise<ProcessInfo[]> {
-  return await detectBrowserProcesses(
+export function isSafariRunning(): Promise<ProcessInfo[]> {
+  return detectBrowserProcesses(
     "Safari",
     "/Applications/Safari.app/Contents/MacOS/Safari",
   );

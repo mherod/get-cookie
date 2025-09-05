@@ -33,6 +33,8 @@
     "test": "jest",
     "type-check": "tsc --noEmit --skipLibCheck",
     "lint": "biome check --diagnostic-level=error .",
+    "lint:eslint": "eslint --config eslint.config.js \"src/**/*.{ts,js}\"",
+    "lint:all": "pnpm run lint && pnpm run lint:eslint",
     "lint:fix": "biome check --write .",
     "lint:staged": "biome check --staged --write .",
     "format": "biome format --write .",

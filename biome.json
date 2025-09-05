@@ -64,7 +64,10 @@
         "noPrototypeBuiltins": "error",
         "noUnsafeDeclarationMerging": "error",
         "useAwait": "error",
-        "useNamespaceKeyword": "error"
+        "useNamespaceKeyword": "error",
+        "noAsyncPromiseExecutor": "error",
+        "noMisleadingCharacterClass": "error",
+        "noThenProperty": "error"
       },
       "nursery": {
         "useSortedClasses": "off"

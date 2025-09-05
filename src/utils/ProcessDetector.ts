@@ -43,6 +43,48 @@ export interface ProcessInfo {
 }
 
 /**
+ * Generic browser process detection
+ * @param browserName - Name of the browser to detect
+ * @param grepPattern - Pattern to grep for in ps output
+ * @returns Promise that resolves to array of process information
+ */
+async function detectBrowserProcesses(
+  browserName: string,
+  grepPattern: string,
+): Promise<ProcessInfo[]> {
+  try {
+    const command = `ps aux | grep -i '${grepPattern}' | grep -v grep`;
+    const { stdout } = await execSimple(command);
+
+    if (!stdout || stdout.trim() === "") {
+      return [];
+    }
+
+    const processes: ProcessInfo[] = [];
+    const lines = stdout.split("\n").filter((line) => line.trim() !== "");
+
+    for (const line of lines) {
+      const processInfo = parseProcessLine(line, browserName.toLowerCase());
+      if (processInfo) {
+        processes.push(processInfo);
+      }
+    }
+
+    logger.debug(`${browserName} process detection completed`, {
+      processCount: processes.length,
+      processes: processes.map((p) => ({ pid: p.pid, command: p.command })),
+    });
+
+    return processes;
+  } catch (error) {
+    logger.warn(`Failed to detect ${browserName} processes`, {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return [];
+  }
+}
+
+/**
  * Check if Firefox browser is currently running
  * @returns Promise that resolves to array of Firefox process information
  * @example
@@ -54,38 +96,7 @@ export interface ProcessInfo {
  * ```
  */
 export async function isFirefoxRunning(): Promise<ProcessInfo[]> {
-  try {
-    // Use ps command to find Firefox processes
-    // Look for common Firefox process names across platforms
-    const command = "ps aux | grep -i firefox | grep -v grep";
-    const { stdout } = await execSimple(command);
-
-    if (!stdout || stdout.trim() === "") {
-      return [];
-    }
-
-    const processes: ProcessInfo[] = [];
-    const lines = stdout.split("\n").filter((line) => line.trim() !== "");
-
-    for (const line of lines) {
-      const processInfo = parseProcessLine(line, "firefox");
-      if (processInfo) {
-        processes.push(processInfo);
-      }
-    }
-
-    logger.debug("Firefox process detection completed", {
-      processCount: processes.length,
-      processes: processes.map((p) => ({ pid: p.pid, command: p.command })),
-    });
-
-    return processes;
-  } catch (error) {
-    logger.warn("Failed to detect Firefox processes", {
-      error: error instanceof Error ? error.message : String(error),
-    });
-    return [];
-  }
+  return await detectBrowserProcesses("Firefox", "firefox");
 }
 
 /**
@@ -93,37 +104,18 @@ export async function isFirefoxRunning(): Promise<ProcessInfo[]> {
  * @returns Promise that resolves to array of Chrome process information
  */
 export async function isChromeRunning(): Promise<ProcessInfo[]> {
-  try {
-    // Look for Chrome processes
-    const command =
-      "ps aux | grep -i 'google chrome\\|chromium' | grep -v grep";
-    const { stdout } = await execSimple(command);
+  return await detectBrowserProcesses("Chrome", "google chrome\\|chromium");
+}
 
-    if (!stdout || stdout.trim() === "") {
-      return [];
-    }
-
-    const processes: ProcessInfo[] = [];
-    const lines = stdout.split("\n").filter((line) => line.trim() !== "");
-
-    for (const line of lines) {
-      const processInfo = parseProcessLine(line, "chrome");
-      if (processInfo) {
-        processes.push(processInfo);
-      }
-    }
-
-    logger.debug("Chrome process detection completed", {
-      processCount: processes.length,
-    });
-
-    return processes;
-  } catch (error) {
-    logger.warn("Failed to detect Chrome processes", {
-      error: error instanceof Error ? error.message : String(error),
-    });
-    return [];
-  }
+/**
+ * Check if Safari browser is currently running
+ * @returns Promise that resolves to array of Safari process information
+ */
+export async function isSafariRunning(): Promise<ProcessInfo[]> {
+  return await detectBrowserProcesses(
+    "Safari",
+    "/Applications/Safari.app/Contents/MacOS/Safari",
+  );
 }
 
 /**

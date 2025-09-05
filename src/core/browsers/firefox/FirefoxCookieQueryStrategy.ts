@@ -3,11 +3,9 @@ import { join } from "node:path";
 
 import fg from "fast-glob";
 
-import {
-  getBrowserConflictAdvice,
-  isFirefoxRunning,
-} from "@utils/ProcessDetector";
+import { isFirefoxRunning } from "@utils/ProcessDetector";
 import type { createTaggedLogger } from "@utils/logHelpers";
+import { BrowserLockHandler } from "../BrowserLockHandler";
 
 import type { ExportedCookie } from "../../../types/schemas";
 import { BaseCookieQueryStrategy } from "../BaseCookieQueryStrategy";
@@ -64,55 +62,14 @@ function findFirefoxCookieFiles(
  * ```
  */
 export class FirefoxCookieQueryStrategy extends BaseCookieQueryStrategy {
+  private lockHandler: BrowserLockHandler;
+
   /**
    * Creates a new instance of FirefoxCookieQueryStrategy
    */
   public constructor() {
     super("FirefoxCookieQueryStrategy", "Firefox");
-  }
-
-  /**
-   * Check if an error indicates a database lock and provide helpful advice
-   * @param error - The error to check
-   * @param file - The database file that was locked
-   * @returns Promise that resolves after providing advice
-   * @private
-   */
-  private async handleDatabaseLockError(
-    error: unknown,
-    file: string,
-  ): Promise<void> {
-    if (
-      error instanceof Error &&
-      error.message.toLowerCase().includes("database is locked")
-    ) {
-      try {
-        const firefoxProcesses = await isFirefoxRunning();
-        if (firefoxProcesses.length > 0) {
-          const advice = getBrowserConflictAdvice("firefox", firefoxProcesses);
-          this.logger.warn("Firefox process conflict detected", {
-            file,
-            processCount: firefoxProcesses.length,
-            advice,
-          });
-        } else {
-          this.logger.warn(
-            "Database locked but no Firefox processes detected",
-            {
-              file,
-              suggestion: "Another process may be accessing the database",
-            },
-          );
-        }
-      } catch (processError) {
-        this.logger.debug("Failed to check Firefox processes", {
-          error:
-            processError instanceof Error
-              ? processError.message
-              : String(processError),
-        });
-      }
-    }
+    this.lockHandler = new BrowserLockHandler(this.logger, "Firefox");
   }
 
   /**
@@ -128,13 +85,16 @@ export class FirefoxCookieQueryStrategy extends BaseCookieQueryStrategy {
     name: string,
     domain: string,
     store?: string,
-    _force?: boolean,
+    force?: boolean,
   ): Promise<ExportedCookie[]> {
     const files = store ?? findFirefoxCookieFiles(this.logger);
     const fileList = Array.isArray(files) ? files : [files];
     const results: ExportedCookie[] = [];
 
     for (const file of fileList) {
+      let retryAfterClose = false;
+      let shouldRelaunch = false;
+
       try {
         const cookies = await querySqliteThenTransform<
           FirefoxCookieRow,
@@ -158,23 +118,89 @@ export class FirefoxCookieQueryStrategy extends BaseCookieQueryStrategy {
 
         results.push(...cookies);
       } catch (error) {
-        // Check for database locks and provide helpful advice
-        await this.handleDatabaseLockError(error, file);
+        // Check for database locks and offer to close browser (only if not forcing)
+        const processes = await isFirefoxRunning();
+        const lockResult = await this.lockHandler.handleBrowserConflict(
+          error,
+          file,
+          processes,
+          force !== true,
+        );
 
-        if (error instanceof Error) {
-          this.logger.warn(`Error reading Firefox cookie file ${file}`, {
-            error: error.message,
-            file,
-            name,
-            domain,
-          });
+        // If the browser was closed, retry once
+        if (lockResult.resolved) {
+          retryAfterClose = true;
+          shouldRelaunch = lockResult.shouldRelaunch;
         } else {
-          this.logger.warn(`Error reading Firefox cookie file ${file}`, {
-            error: String(error),
+          if (error instanceof Error) {
+            this.logger.warn(`Error reading Firefox cookie file ${file}`, {
+              error: error.message,
+              file,
+              name,
+              domain,
+            });
+          } else {
+            this.logger.warn(`Error reading Firefox cookie file ${file}`, {
+              error: String(error),
+              file,
+              name,
+              domain,
+            });
+          }
+        }
+      }
+
+      // Retry if browser was closed
+      if (retryAfterClose) {
+        try {
+          this.logger.info(
+            "Retrying Firefox cookie extraction after browser close...",
+          );
+          const cookies = await querySqliteThenTransform<
+            FirefoxCookieRow,
+            ExportedCookie
+          >({
             file,
-            name,
-            domain,
+            sql: "SELECT name, value, host as domain, expiry FROM moz_cookies WHERE name = ? AND host LIKE ?",
+            params: [name, `%${domain}%`],
+            rowTransform: (row) => ({
+              name: row.name,
+              value: row.value,
+              domain: row.domain,
+              expiry: row.expiry > 0 ? new Date(row.expiry * 1000) : "Infinity",
+              meta: {
+                file,
+                browser: "Firefox",
+                decrypted: false,
+              },
+            }),
           });
+
+          results.push(...cookies);
+          this.logger.success(
+            "Successfully extracted cookies after closing Firefox",
+          );
+
+          // Relaunch Firefox if it was closed
+          if (shouldRelaunch) {
+            await this.lockHandler.relaunchBrowser();
+          }
+        } catch (retryError) {
+          this.logger.error(
+            "Failed to extract cookies even after closing Firefox",
+            {
+              error:
+                retryError instanceof Error
+                  ? retryError.message
+                  : String(retryError),
+              file,
+            },
+          );
+
+          // Still try to relaunch Firefox if needed
+          if (shouldRelaunch) {
+            await this.lockHandler.relaunchBrowser();
+          }
         }
       }
     }

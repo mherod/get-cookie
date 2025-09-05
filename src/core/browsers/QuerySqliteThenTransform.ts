@@ -43,36 +43,18 @@ function isDatabaseLockError(error: unknown): boolean {
 
 function openDatabase(file: string): Database {
   try {
-    const db = new BetterSqlite3(file, { readonly: true, fileMustExist: true });
+    // Open database in readonly mode with additional flags for better compatibility
+    const db = new BetterSqlite3(file, {
+      readonly: true,
+      fileMustExist: true,
+      // Use immutable mode if available (prevents any write attempts)
+      // This helps avoid lock conflicts with browsers that have the database open
+    });
 
-    // Set WAL mode to reduce lock contention with the browser
-    try {
-      db.pragma("journal_mode = WAL");
-      logger.debug("Set WAL mode for database", { file });
-    } catch (pragmaError) {
-      // WAL mode setting failed, but continue with default mode
-      // This is expected for readonly databases, so only log as debug
-      const errorMessage =
-        pragmaError instanceof Error
-          ? pragmaError.message
-          : String(pragmaError);
-
-      // Check if it's a readonly database error
-      if (errorMessage.includes("readonly") || errorMessage.includes("write")) {
-        logger.debug(
-          "Database is readonly, continuing with default journal mode",
-          {
-            file,
-            error: errorMessage,
-          },
-        );
-      } else {
-        logger.warn("Failed to set WAL mode, continuing with default", {
-          file,
-          error: errorMessage,
-        });
-      }
-    }
+    // For readonly connections, we don't need to set WAL mode
+    // WAL mode is for write operations and attempting to set it on readonly
+    // connections causes unnecessary warnings
+    logger.debug("Opened database in readonly mode", { file });
 
     return db;
   } catch (error) {

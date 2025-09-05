@@ -22,7 +22,15 @@ function getExpiryDate(
   if (typeof expiry !== "number" || expiry <= 0) {
     return "Infinity";
   }
-  return new Date(expiry);
+
+  // Chrome uses microseconds since 1601-01-01 00:00:00 UTC
+  // JavaScript Date uses milliseconds since 1970-01-01 00:00:00 UTC
+  // The difference is 11644473600 seconds
+  const CHROME_EPOCH_OFFSET = 11644473600;
+  const unixTimestamp = expiry / 1000000 - CHROME_EPOCH_OFFSET;
+
+  // Convert to milliseconds for JavaScript Date
+  return new Date(unixTimestamp * 1000);
 }
 
 function createExportedCookie(

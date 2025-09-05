@@ -9,8 +9,17 @@ import type { CookieSpec } from "../types/schemas";
 
 import { cliQueryCookies } from "./cliQueryCookies";
 
+// This will be replaced at build time by esbuild
+declare const BUILD_TIMESTAMP: string;
+
 function showHelp(): void {
   logger.log("Usage: get-cookie [name] [domain] [options]");
+
+  // Show build info if available
+  if (typeof BUILD_TIMESTAMP !== "undefined") {
+    logger.log(`Build: ${BUILD_TIMESTAMP}`);
+  }
+
   logger.log("");
   logger.log("Examples:");
   logger.log("  get-cookie auth example.com           # Get specific cookie");

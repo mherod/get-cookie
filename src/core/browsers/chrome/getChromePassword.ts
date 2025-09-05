@@ -17,7 +17,7 @@ export async function getChromePassword(): Promise<string | Buffer> {
       return await getMacOSPassword();
     }
     case "win32": {
-      return await getWindowsPassword();
+      return getWindowsPassword();
     }
     case "linux": {
       return await getLinuxPassword();

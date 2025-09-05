@@ -16,7 +16,7 @@ interface WindowsChromeLocalState {
  * On Windows, Chrome uses DPAPI (Data Protection API) to encrypt the master key
  * which is then used to encrypt cookies.
  */
-async function decryptDPAPIKey(encryptedKey: Buffer): Promise<Buffer> {
+function decryptDPAPIKey(encryptedKey: Buffer): Buffer {
   // Remove the DPAPI prefix (first 5 bytes: "DPAPI")
   const DPAPI_PREFIX = Buffer.from("DPAPI");
   if (!encryptedKey.subarray(0, 5).equals(DPAPI_PREFIX)) {
@@ -28,15 +28,16 @@ async function decryptDPAPIKey(encryptedKey: Buffer): Promise<Buffer> {
   // Try to use native DPAPI if available on Windows
   if (process.platform === "win32") {
     try {
-      // Dynamically import DPAPI module if available
-      const dpapi = await import("@primno/dpapi" as string)
-        .then((module) => module as { unprotectData: (data: Buffer) => Buffer })
-        .catch(() => null);
-      if (dpapi) {
+      // Use require for the external module to work properly with the bundler
+      // This is marked as external in tsup config so won't be bundled
+      const dpapi = require("@primno/dpapi") as {
+        unprotectData: (data: Buffer) => Buffer;
+      };
+      if (dpapi && typeof dpapi.unprotectData === "function") {
         return dpapi.unprotectData(encryptedData);
       }
     } catch (error) {
-      // Fall through to manual implementation
+      // Module not available or failed to load
       console.warn("DPAPI module not available, using fallback:", error);
     }
   }
@@ -55,7 +56,7 @@ async function decryptDPAPIKey(encryptedKey: Buffer): Promise<Buffer> {
  * @returns A promise that resolves to the Chrome Safe Storage password
  * @throws {Error} If the password cannot be retrieved from Local State file
  */
-export async function getChromePassword(): Promise<string> {
+export function getChromePassword(): string {
   try {
     const localStatePath = join(chromeApplicationSupport, "Local State");
     const localStateContent = readFileSync(localStatePath, "utf8");
@@ -72,7 +73,7 @@ export async function getChromePassword(): Promise<string> {
     );
 
     // Decrypt using DPAPI
-    const masterKey = await decryptDPAPIKey(encryptedKeyBuffer);
+    const masterKey = decryptDPAPIKey(encryptedKeyBuffer);
 
     // Return the key as a buffer (not string) for use in AES-GCM decryption
     return masterKey.toString("latin1");

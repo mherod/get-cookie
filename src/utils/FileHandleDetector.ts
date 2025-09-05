@@ -1,7 +1,9 @@
+import { execFile } from "node:child_process";
 import { platform } from "node:os";
-import { execSimple } from "./execSimple";
+import { promisify } from "node:util";
 import { createTaggedLogger } from "./logHelpers";
 
+const execFileAsync = promisify(execFile);
 const logger = createTaggedLogger("FileHandleDetector");
 
 /**
@@ -22,15 +24,16 @@ export interface FileHandleInfo {
 
 /**
  * Detect processes holding handles to a specific file using lsof
+ * SECURITY: Uses execFile to prevent shell injection
  * @param filePath - Path to the file to check
  * @returns Array of processes holding handles to the file
  */
 async function detectWithLsof(filePath: string): Promise<FileHandleInfo[]> {
   try {
-    // lsof outputs: COMMAND PID USER FD TYPE DEVICE SIZE/OFF NODE NAME
-    const { stdout } = await execSimple(
-      `lsof "${filePath}" 2>/dev/null || true`,
-    );
+    // Use execFile instead of exec to prevent shell injection
+    const { stdout } = await execFileAsync("lsof", [filePath], {
+      encoding: "utf8",
+    });
 
     if (!stdout || stdout.trim() === "") {
       return [];
@@ -59,26 +62,39 @@ async function detectWithLsof(filePath: string): Promise<FileHandleInfo[]> {
 
     return handles;
   } catch (error) {
-    logger.debug("lsof detection failed", {
-      error: error instanceof Error ? error.message : String(error),
-    });
+    const errorMessage = error instanceof Error ? error.message : String(error);
+
+    // Check if lsof is not found
+    if (errorMessage.includes("ENOENT")) {
+      logger.debug("lsof not available on this system");
+    } else if (errorMessage.includes("No such file")) {
+      // File doesn't exist - return empty array
+      logger.debug("File does not exist", { file: filePath });
+    } else {
+      logger.debug("lsof detection failed", { error: errorMessage });
+    }
+
     return [];
   }
 }
 
 /**
  * Detect processes holding handles to a specific file using fuser
+ * SECURITY: Uses execFile to prevent shell injection
  * @param filePath - Path to the file to check
  * @returns Array of processes holding handles to the file
  */
 async function detectWithFuser(filePath: string): Promise<FileHandleInfo[]> {
   try {
-    // fuser outputs PIDs of processes using the file
-    const { stdout, stderr } = await execSimple(
-      `fuser -v "${filePath}" 2>&1 || true`,
-    );
+    // fuser outputs to stderr, not stdout
+    // Use execFile to prevent shell injection
+    const result = await execFileAsync("fuser", ["-v", filePath], {
+      encoding: "utf8",
+    });
 
-    const output = stdout || stderr || "";
+    // fuser writes to stderr even on success
+    const output = result.stderr || result.stdout || "";
+
     if (output.trim() === "") {
       return [];
     }
@@ -108,7 +124,110 @@ async function detectWithFuser(filePath: string): Promise<FileHandleInfo[]> {
 
     return handles;
   } catch (error) {
-    logger.debug("fuser detection failed", {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+
+    if (errorMessage.includes("ENOENT")) {
+      logger.debug("fuser not available on this system");
+    } else {
+      logger.debug("fuser detection failed", { error: errorMessage });
+    }
+
+    return [];
+  }
+}
+
+/**
+ * Windows-specific handle detection using PowerShell
+ * SECURITY: Properly escapes file path for PowerShell
+ * @param filePath - Path to the file to check
+ * @returns Array of processes holding handles to the file
+ */
+async function detectOnWindows(filePath: string): Promise<FileHandleInfo[]> {
+  try {
+    // Escape single quotes in the file path for PowerShell
+    const escapedPath = filePath.replace(/'/g, "''");
+
+    // Use Get-Process with error handling
+    const psScript = `
+      $ErrorActionPreference = 'SilentlyContinue'
+      $handles = @()
+      
+      # Try to find processes with the file open
+      Get-Process | ForEach-Object {
+        try {
+          $proc = $_
+          # Check if any modules match the file path
+          $modules = $proc.Modules | Where-Object { $_.FileName -eq '${escapedPath}' }
+          if ($modules) {
+            $handles += [PSCustomObject]@{
+              ProcessName = $proc.ProcessName
+              ProcessId = $proc.Id
+            }
+          }
+        } catch {
+          # Skip processes we can't access
+        }
+      }
+      
+      # Also try using Get-CimInstance for better file handle detection
+      try {
+        $query = "SELECT * FROM CIM_DataFile WHERE Name='${escapedPath.replace(/\\/g, "\\\\")}'"
+        $file = Get-CimInstance -Query $query -ErrorAction SilentlyContinue
+        if ($file) {
+          $assoc = Get-CimAssociatedInstance -InputObject $file -ResultClassName Win32_Process
+          foreach ($proc in $assoc) {
+            $handles += [PSCustomObject]@{
+              ProcessName = $proc.Name
+              ProcessId = $proc.ProcessId
+            }
+          }
+        }
+      } catch {
+        # WMI query failed, ignore
+      }
+      
+      $handles | ConvertTo-Json -Compress
+    `;
+
+    const { stdout } = await execFileAsync(
+      "powershell",
+      ["-NoProfile", "-NonInteractive", "-Command", psScript],
+      { encoding: "utf8", maxBuffer: 1024 * 1024 },
+    );
+
+    if (!stdout || stdout.trim() === "" || stdout.trim() === "null") {
+      return [];
+    }
+
+    const handles: FileHandleInfo[] = [];
+
+    try {
+      const parsed = JSON.parse(stdout);
+      const results = Array.isArray(parsed) ? parsed : [parsed];
+
+      for (const result of results) {
+        if (result?.ProcessId) {
+          handles.push({
+            command: result.ProcessName || "unknown",
+            pid: Number.parseInt(result.ProcessId, 10),
+          });
+        }
+      }
+    } catch (parseError) {
+      logger.debug("Failed to parse PowerShell output", {
+        error:
+          parseError instanceof Error ? parseError.message : String(parseError),
+      });
+    }
+
+    logger.debug("Detected file handles with PowerShell", {
+      file: filePath,
+      handleCount: handles.length,
+    });
+
+    return handles;
+  } catch (error) {
+    logger.debug("Windows handle detection failed", {
       error: error instanceof Error ? error.message : String(error),
     });
     return [];
@@ -116,38 +235,50 @@ async function detectWithFuser(filePath: string): Promise<FileHandleInfo[]> {
 }
 
 /**
- * Windows-specific handle detection using handle.exe or PowerShell
+ * Try to detect using handle.exe from Sysinternals (if available)
+ * SECURITY: Uses execFile to prevent shell injection
  * @param filePath - Path to the file to check
  * @returns Array of processes holding handles to the file
  */
-async function detectOnWindows(filePath: string): Promise<FileHandleInfo[]> {
+async function detectWithHandleExe(
+  filePath: string,
+): Promise<FileHandleInfo[]> {
   try {
-    // Try PowerShell approach
-    const psCommand = `Get-Process | ForEach-Object { $_.Modules } | Where-Object { $_.FileName -eq "${filePath}" } | Select-Object -Unique ProcessName, Id`;
-    const { stdout } = await execSimple(`powershell -Command "${psCommand}"`);
+    // handle.exe must be in PATH or current directory
+    const { stdout } = await execFileAsync("handle", ["-nobanner", filePath], {
+      encoding: "utf8",
+    });
 
     if (!stdout || stdout.trim() === "") {
       return [];
     }
 
     const handles: FileHandleInfo[] = [];
-    const lines = stdout.split("\n").slice(2); // Skip headers
+    const lines = stdout.split("\n");
 
     for (const line of lines) {
-      const parts = line.trim().split(/\s+/);
-      if (parts.length >= 2) {
+      // Format: process.exe pid: type handle: path
+      const match = line.match(
+        /^(.+?)\s+pid:\s+(\d+)\s+type:\s+(\w+)\s+.+:\s+(.+)$/i,
+      );
+      if (match) {
         handles.push({
-          command: parts[0],
-          pid: Number.parseInt(parts[1], 10),
+          command: match[1],
+          pid: Number.parseInt(match[2], 10),
+          fd: match[3],
+          mode: "unknown",
         });
       }
     }
 
-    return handles;
-  } catch (error) {
-    logger.debug("Windows handle detection failed", {
-      error: error instanceof Error ? error.message : String(error),
+    logger.debug("Detected file handles with handle.exe", {
+      file: filePath,
+      handleCount: handles.length,
     });
+
+    return handles;
+  } catch {
+    // handle.exe not available, silently fall back
     return [];
   }
 }
@@ -165,10 +296,17 @@ export async function detectFileHandles(
   logger.debug("Detecting file handles", { file: filePath, platform: os });
 
   if (os === "win32") {
+    // Try handle.exe first (most accurate)
+    const handles = await detectWithHandleExe(filePath);
+    if (handles.length > 0) {
+      return handles;
+    }
+
+    // Fall back to PowerShell
     return detectOnWindows(filePath);
   }
 
-  // Try lsof first (most common on Unix-like systems)
+  // Unix-like systems: try lsof first
   let handles = await detectWithLsof(filePath);
 
   // Fallback to fuser if lsof didn't work

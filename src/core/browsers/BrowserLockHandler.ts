@@ -167,14 +167,19 @@ export class BrowserLockHandler {
    * @param autoClose - Whether to attempt auto-closing
    * @returns Promise that resolves to lock result
    */
-  private handleBrowserProcesses(
+  private async handleBrowserProcesses(
     file: string,
     processes: Array<{ pid: number; command: string }>,
     autoClose: boolean,
   ): Promise<BrowserLockResult> {
+    const processesWithDetails = processes.map((p) => ({
+      ...p,
+      details: `PID: ${p.pid}, Command: ${p.command}`,
+    }));
+
     const advice = getBrowserConflictAdvice(
       this.browserName.toLowerCase(),
-      processes,
+      processesWithDetails,
     );
 
     this.logger.warn(`${this.browserName} process conflict detected`, {
@@ -187,7 +192,7 @@ export class BrowserLockHandler {
       return this.attemptBrowserClose();
     }
 
-    return { resolved: false, shouldRelaunch: false };
+    return Promise.resolve({ resolved: false, shouldRelaunch: false });
   }
 
   /**

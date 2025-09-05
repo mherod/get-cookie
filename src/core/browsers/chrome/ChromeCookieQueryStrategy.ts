@@ -12,7 +12,13 @@ interface DecryptionContext {
   metaVersion?: number;
 }
 
-function getExpiryDate(expiry: number | undefined | null): Date | "Infinity" {
+function getExpiryDate(
+  expiry: number | undefined | null,
+): Date | "Infinity" | undefined {
+  // Handle null or undefined expiry
+  if (expiry === null || expiry === undefined) {
+    return undefined;
+  }
   if (typeof expiry !== "number" || expiry <= 0) {
     return "Infinity";
   }

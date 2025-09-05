@@ -115,6 +115,13 @@ async function handleCookieQuery(
 
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
+
+  // Show help if no arguments provided
+  if (args.length === 0) {
+    showHelp();
+    return;
+  }
+
   const { values, positionals } = parseArgv(args);
 
   if (values.help === true) {

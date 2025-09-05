@@ -51,13 +51,27 @@ function openDatabase(file: string): Database {
       logger.debug("Set WAL mode for database", { file });
     } catch (pragmaError) {
       // WAL mode setting failed, but continue with default mode
-      logger.warn("Failed to set WAL mode, continuing with default", {
-        file,
-        error:
-          pragmaError instanceof Error
-            ? pragmaError.message
-            : String(pragmaError),
-      });
+      // This is expected for readonly databases, so only log as debug
+      const errorMessage =
+        pragmaError instanceof Error
+          ? pragmaError.message
+          : String(pragmaError);
+
+      // Check if it's a readonly database error
+      if (errorMessage.includes("readonly") || errorMessage.includes("write")) {
+        logger.debug(
+          "Database is readonly, continuing with default journal mode",
+          {
+            file,
+            error: errorMessage,
+          },
+        );
+      } else {
+        logger.warn("Failed to set WAL mode, continuing with default", {
+          file,
+          error: errorMessage,
+        });
+      }
     }
 
     return db;

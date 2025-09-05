@@ -70,7 +70,7 @@ export async function cliQueryCookies(
   try {
     const browser = typeof args.browser === "string" ? args.browser : undefined;
     const force = typeof args.force === "boolean" ? args.force : false;
-    const strategy = CookieStrategyFactory.createStrategy(browser);
+    const strategy = CookieStrategyFactory.createStrategy(browser, store);
     const queryService = new CookieQueryService(strategy);
     const specs = Array.isArray(cookieSpec) ? cookieSpec : [cookieSpec];
 

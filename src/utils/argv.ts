@@ -69,6 +69,47 @@ export function parseArgv(argv: string[]): ParsedArgs {
       r: "render",
       R: "render-grouped",
     },
+    unknown: (arg: string) => {
+      // Allow positional arguments (don't start with -)
+      if (!arg.startsWith("-")) {
+        return true;
+      }
+      // Check if it's a known flag or alias
+      const knownFlags = [
+        "--browser",
+        "-b",
+        "--profile",
+        "-p",
+        "--url",
+        "-u",
+        "--domain",
+        "-D",
+        "--name",
+        "-n",
+        "--output",
+        "--store",
+        "--help",
+        "-h",
+        "--version",
+        "--verbose",
+        "-v",
+        "--dump",
+        "-d",
+        "--dump-grouped",
+        "-G",
+        "--render",
+        "-r",
+        "--render-grouped",
+        "-R",
+        "--force",
+        "-f",
+      ];
+      const isKnown = knownFlags.some((flag) => arg.startsWith(flag));
+      if (!isKnown) {
+        throw new Error(`Unknown option: ${arg}`);
+      }
+      return true;
+    },
   });
 
   const { _, ...values } = parsed;

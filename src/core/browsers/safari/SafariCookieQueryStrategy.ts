@@ -51,20 +51,12 @@ export class SafariCookieQueryStrategy extends BaseCookieQueryStrategy {
    * @param expiry - Expiry timestamp (Unix epoch seconds)
    * @returns Formatted expiry date or "Infinity"
    */
-  private formatExpiry(expiry: number | undefined | null): Date | "Infinity" {
-    // Handle undefined or null specifically to match test expectations
+  private formatExpiry(
+    expiry: number | undefined | null,
+  ): Date | "Infinity" | undefined {
+    // Handle undefined or null - return undefined instead of NaN date
     if (expiry === undefined || expiry === null) {
-      // Create a custom Date object with a valueOf method that returns NaN
-      const nanDate = new Date();
-      // Override the valueOf method to return NaN
-      Object.defineProperty(nanDate, "valueOf", {
-        value: () => Number.NaN,
-      });
-      // Override the getTime method to return NaN
-      Object.defineProperty(nanDate, "getTime", {
-        value: () => Number.NaN,
-      });
-      return nanDate;
+      return undefined;
     }
 
     if (typeof expiry !== "number" || Number.isNaN(expiry) || expiry <= 0) {
@@ -188,7 +180,25 @@ export class SafariCookieQueryStrategy extends BaseCookieQueryStrategy {
           },
         }));
     } catch (error) {
-      if (error instanceof Error) {
+      // Permission errors are common on macOS, log as debug instead of error
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      const isPermissionError =
+        errorMessage.includes("EPERM") ||
+        errorMessage.includes("operation not permitted") ||
+        errorMessage.includes("Permission denied");
+
+      if (isPermissionError) {
+        this.logger.debug(
+          `Permission denied accessing Safari cookies at ${cookieDbPath}`,
+          {
+            error: errorMessage,
+            file: cookieDbPath,
+            name,
+            domain,
+          },
+        );
+      } else if (error instanceof Error) {
         this.logger.error(`Error decoding ${cookieDbPath}`, {
           error: error.message,
           file: cookieDbPath,

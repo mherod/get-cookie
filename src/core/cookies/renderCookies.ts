@@ -41,12 +41,16 @@ export function renderCookies(
   }
 
   if (format === "merged") {
-    return cookies.map((c) => c.value as string).join(separator);
+    // Format cookies as they would appear in a Cookie header or document.cookie
+    // Each cookie is "name=value" separated by "; "
+    return cookies.map((c) => `${c.name}=${c.value}`).join(separator);
   }
 
   const groupedByFile = groupBy(cookies, (c) => c.meta?.file ?? "unknown");
   return Object.entries(groupedByFile).map(([file, fileCookies]) => {
-    const values = fileCookies.map((c) => c.value as string).join(separator);
+    const values = fileCookies
+      .map((c) => `${c.name}=${c.value}`)
+      .join(separator);
     return showFilePaths ? `${file}: ${values}` : values;
   });
 }

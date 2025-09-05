@@ -1,8 +1,8 @@
 import { execFile } from "node:child_process";
-import { platform } from "node:os";
 import { promisify } from "node:util";
 import { errorMessageContains, getErrorMessage } from "./errorUtils";
 import { createTaggedLogger } from "./logHelpers";
+import { getPlatform, isWindows } from "./platformUtils";
 
 const execFileAsync = promisify(execFile);
 const logger = createTaggedLogger("FileHandleDetector");
@@ -291,11 +291,11 @@ async function detectWithHandleExe(
 export async function detectFileHandles(
   filePath: string,
 ): Promise<FileHandleInfo[]> {
-  const os = platform();
+  const os = getPlatform();
 
   logger.debug("Detecting file handles", { file: filePath, platform: os });
 
-  if (os === "win32") {
+  if (isWindows()) {
     // Try handle.exe first (most accurate)
     const handles = await detectWithHandleExe(filePath);
     if (handles.length > 0) {

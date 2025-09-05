@@ -1,10 +1,10 @@
-import { platform } from "node:os";
 import { ChromeCookieQueryStrategy } from "../../core/browsers/chrome/ChromeCookieQueryStrategy";
 import { getChromePassword } from "../../core/browsers/chrome/getChromePassword";
 import { ChromiumCookieQueryStrategy } from "../../core/browsers/chromium/ChromiumCookieQueryStrategy";
+import { getPlatform } from "../../utils/platformUtils";
 
 describe("Cross-Platform Cookie Extraction", () => {
-  const currentPlatform = platform();
+  const currentPlatform = getPlatform();
 
   describe(`Platform: ${currentPlatform}`, () => {
     it("should initialize Chrome strategy without errors", () => {

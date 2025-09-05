@@ -1,6 +1,6 @@
 // External imports
 import { createDecipheriv, pbkdf2 } from "node:crypto";
-import { platform } from "node:os";
+import { isMacOS, isWindows } from "@utils/platformUtils";
 
 /**
  * Simple memoization utility for caching Buffer operations
@@ -130,7 +130,7 @@ export async function decrypt(
   // On macOS, cookies starting with v10 are actually v11 encrypted with a value that starts with "v10,"
   // Only treat as v10 cookie if we're on Windows AND it has sufficient length AND password is a Buffer (real scenario)
   if (
-    platform() === "win32" &&
+    isWindows() &&
     isV10Cookie(encryptedValue) &&
     encryptedValue.length >= 31 &&
     Buffer.isBuffer(password)
@@ -140,7 +140,7 @@ export async function decrypt(
 
   // On macOS, cookies that don't start with v10 are considered 'old data' stored as plaintext
   // Ref: https://chromium.googlesource.com/chromium/src/+/refs/heads/main/components/os_crypt/sync/os_crypt_mac.mm
-  if (platform() === "darwin") {
+  if (isMacOS()) {
     // Check if this looks like encrypted data (starts with common version prefixes)
     const hasVersionPrefix = encryptedValue
       .slice(0, 3)

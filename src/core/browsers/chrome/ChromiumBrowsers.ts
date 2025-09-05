@@ -1,5 +1,6 @@
-import { homedir, platform } from "node:os";
+import { homedir } from "node:os";
 import { join } from "node:path";
+import { assertPlatformSupported, getPlatform } from "@utils/platformUtils";
 
 /**
  * Chromium browser configuration and path management
@@ -40,7 +41,8 @@ export function getChromiumBrowserPath(browser: ChromiumBrowser): string {
     throw new Error("Unable to determine user home directory");
   }
 
-  const currentPlatform = platform();
+  assertPlatformSupported();
+  const currentPlatform = getPlatform();
 
   const browserPaths: Record<ChromiumBrowser, BrowserPaths> = {
     chrome: {

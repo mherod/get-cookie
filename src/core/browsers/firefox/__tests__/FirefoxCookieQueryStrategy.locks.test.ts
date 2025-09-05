@@ -48,7 +48,11 @@ describe("FirefoxCookieQueryStrategy - Database Lock Handling", () => {
       // Verify that Firefox process detection was called
       expect(mocks.isFirefoxRunning).toHaveBeenCalled();
       expect(getBrowserConflictAdvice).toHaveBeenCalledWith("firefox", [
-        { pid: 1234, command: "firefox", details: "firefox process" },
+        {
+          pid: 1234,
+          command: "firefox",
+          details: "PID: 1234, Command: firefox",
+        },
       ]);
     });
 

@@ -20,6 +20,7 @@ export default defineConfig({
   bundle: true,
   tsconfig: "./tsconfig.cli.json",
   noExternal: ["lodash-es"],
+  external: ["@primno/dpapi"],
   esbuildOptions(options) {
     options.alias = {
       lodash: "lodash-es",

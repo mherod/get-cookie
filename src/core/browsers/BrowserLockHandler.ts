@@ -6,6 +6,10 @@ import {
 import { detectFileHandles, getFileLockInfo } from "@utils/FileHandleDetector";
 import { getBrowserConflictAdvice } from "@utils/ProcessDetector";
 import type { createTaggedLogger } from "@utils/logHelpers";
+import {
+  type PlatformBrowserControl,
+  createPlatformBrowserControl,
+} from "./platform/PlatformBrowserControl";
 
 /**
  * Result of a browser conflict handling operation
@@ -20,17 +24,25 @@ export interface BrowserLockResult {
 /**
  * Shared handler for browser lock/permission issues
  * Follows DRY principle to avoid duplicating logic across browser strategies
+ * Uses Strategy pattern for platform-specific operations
  */
 export class BrowserLockHandler {
+  private readonly platformControl: PlatformBrowserControl;
+
   /**
    * Creates a new BrowserLockHandler instance
    * @param logger - Tagged logger instance for this handler
    * @param browserName - Name of the browser this handler manages
+   * @param platformControl - Optional platform control strategy (for testing)
    */
   public constructor(
     private logger: ReturnType<typeof createTaggedLogger>,
     private browserName: BrowserName,
-  ) {}
+    platformControl?: PlatformBrowserControl,
+  ) {
+    // Use provided control or create platform-specific one
+    this.platformControl = platformControl || createPlatformBrowserControl();
+  }
 
   /**
    * Handle database lock or permission errors
@@ -223,21 +235,16 @@ export class BrowserLockHandler {
     this.logger.info(`Relaunching ${this.browserName}...`);
 
     try {
-      const { exec } = await import("node:child_process");
-      const { promisify } = await import("node:util");
-      const execAsync = promisify(exec);
+      // Check if browser is supported on this platform
+      if (!this.platformControl.isBrowserSupported(this.browserName)) {
+        this.logger.warn(
+          `${this.browserName} is not available on ${this.platformControl.getPlatformName()}`,
+        );
+        return;
+      }
 
-      // Map browser names to their app names
-      const appNames: Record<BrowserName, string> = {
-        Firefox: "Firefox",
-        Chrome: "Google Chrome",
-        Safari: "Safari",
-      };
-
-      const appName = appNames[this.browserName];
-      await execAsync(
-        `osascript -e 'tell application "${appName}" to activate'`,
-      );
+      // Use platform-specific strategy to launch browser
+      await this.platformControl.launchBrowser(this.browserName);
 
       this.logger.success(
         `${this.browserName} has been relaunched with your tabs restored`,
@@ -248,6 +255,7 @@ export class BrowserLockHandler {
           relaunchError instanceof Error
             ? relaunchError.message
             : String(relaunchError),
+        platform: this.platformControl.getPlatformName(),
       });
     }
   }

@@ -48,7 +48,13 @@
     "docs": "typedoc && ./scripts/fix-typedoc.sh && vitepress build docs",
     "docs:dev": "vitepress dev docs",
     "docs:preview": "vitepress preview docs",
-    "check-links": "./scripts/check-vitepress-links.sh"
+    "check-links": "./scripts/check-vitepress-links.sh",
+    "deps": "madge --ts-config ./tsconfig.json src/index.ts",
+    "deps:circular": "madge --circular --ts-config ./tsconfig.json src/",
+    "deps:orphans": "madge --orphans --ts-config ./tsconfig.json src/",
+    "deps:text": "depcruise src --include-only \"^src\" --output-type text",
+    "deps:html": "depcruise src --include-only \"^src\" --output-type html --output-to dependency-report.html",
+    "deps:validate": "depcruise src --config .dependency-cruiser.js"
   },
   "engines": {
     "node": "^20.0.0 || ^22.0.0 || ^24.0.0"
@@ -86,6 +92,7 @@
     "@types/node": "^24.0.14",
     "@typescript-eslint/eslint-plugin": "^8.34.0",
     "@typescript-eslint/parser": "^8.35.1",
+    "dependency-cruiser": "17.0.1",
     "eslint": "^9.31.0",
     "eslint-formatter-codeframe": "^7.32.1",
     "eslint-import-resolver-typescript": "^3.7.0",
@@ -96,6 +103,7 @@
     "jest": "^29.7.0",
     "lint-staged": "^15.3.0",
     "lodash": "4.17.21",
+    "madge": "8.0.0",
     "pnpm": "10.12.4",
     "prettier": "^3.4.2",
     "ts-jest": "^29.4.0",

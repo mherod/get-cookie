@@ -1,6 +1,8 @@
+import { isChromeRunning } from "@utils/ProcessDetector";
 import type { CookieRow, ExportedCookie } from "../../../types/schemas";
 import { chromeTimestampToDate } from "../../../utils/chromeDates";
 import { BaseCookieQueryStrategy } from "../BaseCookieQueryStrategy";
+import { BrowserLockHandler } from "../BrowserLockHandler";
 import { getEncryptedChromeCookie } from "../getEncryptedChromeCookie";
 import { listChromeProfilePaths } from "../listChromeProfiles";
 
@@ -45,11 +47,14 @@ function createExportedCookie(
  * ```
  */
 export class ChromeCookieQueryStrategy extends BaseCookieQueryStrategy {
+  private lockHandler: BrowserLockHandler;
+
   /**
    * Creates a new instance of ChromeCookieQueryStrategy
    */
   public constructor() {
     super("ChromeCookieQueryStrategy", "Chrome");
+    this.lockHandler = new BrowserLockHandler(this.logger, "Chrome");
   }
 
   /**
@@ -71,7 +76,7 @@ export class ChromeCookieQueryStrategy extends BaseCookieQueryStrategy {
     name: string,
     domain: string,
     store?: string,
-    _force?: boolean,
+    force?: boolean,
   ): Promise<ExportedCookie[]> {
     const supportedPlatforms = ["darwin", "win32", "linux"];
     if (!supportedPlatforms.includes(process.platform)) {
@@ -90,11 +95,85 @@ export class ChromeCookieQueryStrategy extends BaseCookieQueryStrategy {
     }
 
     const password = await getChromePassword();
-    const results = await Promise.all(
-      files.map((file) => this.processFile(file, name, domain, password)),
-    );
+    const results: ExportedCookie[] = [];
 
-    return results.flat();
+    for (const file of files) {
+      let retryAfterClose = false;
+      let shouldRelaunch = false;
+
+      try {
+        const cookies = await this.processFile(file, name, domain, password);
+        results.push(...cookies);
+      } catch (error) {
+        // Check for database locks
+        const processes = await isChromeRunning();
+        const lockResult = await this.lockHandler.handleBrowserConflict(
+          error,
+          file,
+          processes,
+          force !== true,
+        );
+
+        if (lockResult.resolved) {
+          retryAfterClose = true;
+          shouldRelaunch = lockResult.shouldRelaunch;
+        } else {
+          if (error instanceof Error) {
+            this.logger.warn(`Error reading Chrome cookie file ${file}`, {
+              error: error.message,
+              file,
+              name,
+              domain,
+            });
+          } else {
+            this.logger.warn(`Error reading Chrome cookie file ${file}`, {
+              error: String(error),
+              file,
+              name,
+              domain,
+            });
+          }
+        }
+      }
+
+      // Retry if browser was closed
+      if (retryAfterClose) {
+        try {
+          this.logger.info(
+            "Retrying Chrome cookie extraction after browser close...",
+          );
+          const cookies = await this.processFile(file, name, domain, password);
+
+          results.push(...cookies);
+          this.logger.success(
+            "Successfully extracted cookies after closing Chrome",
+          );
+
+          // Relaunch Chrome if it was closed
+          if (shouldRelaunch) {
+            await this.lockHandler.relaunchBrowser();
+          }
+        } catch (retryError) {
+          this.logger.error(
+            "Failed to extract cookies even after closing Chrome",
+            {
+              error:
+                retryError instanceof Error
+                  ? retryError.message
+                  : String(retryError),
+              file,
+            },
+          );
+
+          // Still try to relaunch Chrome if needed
+          if (shouldRelaunch) {
+            await this.lockHandler.relaunchBrowser();
+          }
+        }
+      }
+    }
+
+    return results;
   }
 
   private async processFile(

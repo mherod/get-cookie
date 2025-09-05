@@ -1,8 +1,14 @@
 import { homedir } from "node:os";
 import { join } from "node:path";
 
+import { isSafariRunning } from "@utils/ProcessDetector";
+import {
+  checkFilePermission,
+  handleSafariPermissionError,
+} from "@utils/SystemPermissions";
 import type { ExportedCookie } from "../../../types/schemas";
 import { BaseCookieQueryStrategy } from "../BaseCookieQueryStrategy";
+import { BrowserLockHandler } from "../BrowserLockHandler";
 
 import { decodeBinaryCookies } from "./decodeBinaryCookies";
 
@@ -12,11 +18,14 @@ import { decodeBinaryCookies } from "./decodeBinaryCookies";
  * cookie extraction logic.
  */
 export class SafariCookieQueryStrategy extends BaseCookieQueryStrategy {
+  private lockHandler: BrowserLockHandler;
+
   /**
    * Creates a new instance of SafariCookieQueryStrategy
    */
   public constructor() {
     super("SafariCookieQueryStrategy", "Safari");
+    this.lockHandler = new BrowserLockHandler(this.logger, "Safari");
   }
 
   /**
@@ -144,14 +153,57 @@ export class SafariCookieQueryStrategy extends BaseCookieQueryStrategy {
    * @param cookieDbPath - Path to the cookie database
    * @param name - Name of the cookie to find
    * @param domain - Domain to filter cookies by
+   * @param force - Whether to skip interactive prompts
    * @returns Array of exported cookies
    */
-  private decodeCookies(
+  private async decodeCookies(
     cookieDbPath: string,
     name: string,
     domain: string,
-  ): ExportedCookie[] {
+    force?: boolean,
+  ): Promise<ExportedCookie[]> {
     try {
+      // First check if we can access the file
+      const hasPermission = await checkFilePermission(cookieDbPath);
+      if (!hasPermission) {
+        this.logger.warn(
+          "Cannot access Safari cookies due to macOS permissions",
+          {
+            file: cookieDbPath,
+            suggestion:
+              "Terminal application needs Full Disk Access permission",
+          },
+        );
+
+        // Try to handle the permission error interactively
+        const permissionGranted = await handleSafariPermissionError(
+          new Error("EPERM: operation not permitted"),
+          {
+            appName: process.env.TERM_PROGRAM || "Terminal",
+            browserName: "Safari",
+            interactive: force !== true,
+          },
+        );
+
+        if (!permissionGranted) {
+          return [];
+        }
+
+        // Check again after permission might have been granted
+        const stillNoPermission = !(await checkFilePermission(cookieDbPath));
+        if (stillNoPermission) {
+          this.logger.error(
+            "Still cannot access Safari cookies after permission attempt",
+            {
+              file: cookieDbPath,
+              advice:
+                "Please restart your terminal application after granting Full Disk Access",
+            },
+          );
+          return [];
+        }
+      }
+
       const cookies = decodeBinaryCookies(cookieDbPath);
       return cookies
         .filter(
@@ -180,7 +232,7 @@ export class SafariCookieQueryStrategy extends BaseCookieQueryStrategy {
           },
         }));
     } catch (error) {
-      // Permission errors are common on macOS, log as debug instead of error
+      // Permission errors are common on macOS
       const errorMessage =
         error instanceof Error ? error.message : String(error);
       const isPermissionError =
@@ -189,15 +241,30 @@ export class SafariCookieQueryStrategy extends BaseCookieQueryStrategy {
         errorMessage.includes("Permission denied");
 
       if (isPermissionError) {
-        this.logger.debug(
-          `Permission denied accessing Safari cookies at ${cookieDbPath}`,
-          {
-            error: errorMessage,
-            file: cookieDbPath,
-            name,
-            domain,
-          },
-        );
+        // Try to handle permission error with System Settings
+        const handled = await handleSafariPermissionError(error as Error, {
+          appName: process.env.TERM_PROGRAM || "Terminal",
+          browserName: "Safari",
+          interactive: force !== true,
+        });
+
+        if (handled) {
+          this.logger.info(
+            "Permission flow completed. Please run the command again after granting access.",
+          );
+        } else {
+          this.logger.warn(
+            `Permission denied accessing Safari cookies at ${cookieDbPath}`,
+            {
+              error: errorMessage,
+              file: cookieDbPath,
+              name,
+              domain,
+              advice:
+                "Grant Full Disk Access to your terminal in System Settings > Privacy & Security",
+            },
+          );
+        }
       } else if (error instanceof Error) {
         this.logger.error(`Error decoding ${cookieDbPath}`, {
           error: error.message,
@@ -222,15 +289,15 @@ export class SafariCookieQueryStrategy extends BaseCookieQueryStrategy {
    * @param name - Name of the cookie to find
    * @param domain - Domain to filter cookies by
    * @param store - Optional store path
-   * @param _force - Whether to force operations despite warnings (e.g., locked databases)
+   * @param force - Whether to force operations despite warnings (e.g., locked databases)
    * @returns Array of matching cookies, or empty array if none found
    * @protected
    */
-  protected executeQuery(
+  protected async executeQuery(
     name: string,
     domain: string,
     store?: string,
-    _force?: boolean,
+    force?: boolean,
   ): Promise<ExportedCookie[]> {
     try {
       this.logger.info("Querying cookies", { name, domain, store });
@@ -238,13 +305,100 @@ export class SafariCookieQueryStrategy extends BaseCookieQueryStrategy {
       const home = homedir();
       if (typeof home !== "string" || home.length === 0) {
         this.logger.error("Failed to get home directory");
-        return Promise.resolve([]);
+        return [];
       }
 
       const cookieDbPath = store ?? this.getCookieDbPath(home);
-      return Promise.resolve(
-        this.decodeCookies(cookieDbPath, name || "%", domain || "%"),
-      );
+      let retryAfterClose = false;
+      let shouldRelaunch = false;
+
+      try {
+        return await this.decodeCookies(
+          cookieDbPath,
+          name || "%",
+          domain || "%",
+          force,
+        );
+      } catch (error) {
+        // Check for file lock errors (Safari often locks its cookie file)
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        if (
+          errorMessage.includes("EPERM") ||
+          errorMessage.includes("operation not permitted") ||
+          errorMessage.includes("Permission denied") ||
+          errorMessage.includes("EBUSY")
+        ) {
+          const processes = await isSafariRunning();
+          const lockResult = await this.lockHandler.handleBrowserConflict(
+            error,
+            cookieDbPath,
+            processes,
+            force !== true,
+          );
+
+          if (lockResult.resolved) {
+            retryAfterClose = true;
+            shouldRelaunch = lockResult.shouldRelaunch;
+          } else {
+            this.logger.warn("Safari cookie file locked", {
+              error: errorMessage,
+              file: cookieDbPath,
+              advice:
+                "Safari may be accessing the cookie file. Try closing Safari and running again.",
+            });
+            return [];
+          }
+        } else {
+          throw error;
+        }
+      }
+
+      // Retry if browser was closed
+      if (retryAfterClose) {
+        try {
+          this.logger.info(
+            "Retrying Safari cookie extraction after browser close...",
+          );
+          const cookies = await this.decodeCookies(
+            cookieDbPath,
+            name || "%",
+            domain || "%",
+            force,
+          );
+
+          this.logger.success(
+            "Successfully extracted cookies after closing Safari",
+          );
+
+          // Relaunch Safari if it was closed
+          if (shouldRelaunch) {
+            await this.lockHandler.relaunchBrowser();
+          }
+
+          return cookies;
+        } catch (retryError) {
+          this.logger.error(
+            "Failed to extract cookies even after closing Safari",
+            {
+              error:
+                retryError instanceof Error
+                  ? retryError.message
+                  : String(retryError),
+              file: cookieDbPath,
+            },
+          );
+
+          // Still try to relaunch Safari if needed
+          if (shouldRelaunch) {
+            await this.lockHandler.relaunchBrowser();
+          }
+
+          return [];
+        }
+      }
+
+      return [];
     } catch (error) {
       if (error instanceof Error) {
         this.logger.error("Failed to query cookies", {
@@ -259,7 +413,7 @@ export class SafariCookieQueryStrategy extends BaseCookieQueryStrategy {
           domain,
         });
       }
-      return Promise.resolve([]);
+      return [];
     }
   }
 }

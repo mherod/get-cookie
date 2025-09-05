@@ -67,6 +67,9 @@
     "tsconfig-paths": "^4.2.0",
     "zod": "^3.24.1"
   },
+  "optionalDependencies": {
+    "@primno/dpapi": "^2.0.1"
+  },
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
     "@commitlint/cli": "19.8.1",

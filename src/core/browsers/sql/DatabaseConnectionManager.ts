@@ -237,6 +237,9 @@ export class DatabaseConnectionManager extends EventEmitter {
     } catch (error) {
       const duration = Date.now() - startTime;
 
+      // Increment query count even for failed queries
+      this.totalQueries++;
+
       // Record error metrics
       if (this.config.enableMonitoring) {
         const metrics: QueryMetrics = {

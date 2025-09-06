@@ -37,9 +37,19 @@ jest.mock("@utils/logHelpers", () => ({
   }),
 }));
 
-// Mock the QuerySqliteThenTransform to simulate database operations
-jest.mock("../../QuerySqliteThenTransform", () => ({
-  querySqliteThenTransform: jest.fn(),
+// Mock the new SQL utilities to simulate database operations
+jest.mock("../../sql/DatabaseConnectionManager", () => ({
+  getGlobalConnectionManager: jest.fn(() => ({
+    executeQuery: jest.fn(),
+  })),
+  resetGlobalConnectionManager: jest.fn(),
+}));
+
+jest.mock("../../sql/QueryMonitor", () => ({
+  getGlobalQueryMonitor: jest.fn(() => ({
+    executeQuery: jest.fn(),
+  })),
+  resetGlobalQueryMonitor: jest.fn(),
 }));
 
 // Mock fast-glob to control which files are found
@@ -62,9 +72,10 @@ export interface MockProcessDetector {
   getBrowserConflictAdvice: jest.Mock;
 }
 
-/** Mock interface for QuerySqliteThenTransform */
-export interface MockQuerySqlite {
-  querySqliteThenTransform: jest.Mock;
+/** Mock interface for SQL utilities */
+export interface MockSQLUtilities {
+  getGlobalConnectionManager: jest.Mock;
+  getGlobalQueryMonitor: jest.Mock;
 }
 
 /** Mock interface for fast-glob */

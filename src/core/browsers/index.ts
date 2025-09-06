@@ -7,6 +7,7 @@ export * from "./opera/OperaCookieQueryStrategy";
 export * from "./opera/OperaGXCookieQueryStrategy";
 export * from "./getEncryptedChromeCookie";
 export * from "./listChromeProfiles";
-export * from "./QuerySqliteThenTransform";
+// QuerySqliteThenTransform has been inlined - use sql/ utilities directly
 export * from "./safari";
 export * from "./safari/decodeBinaryCookies";
+export * from "./sql"; // Export new SQL utilities

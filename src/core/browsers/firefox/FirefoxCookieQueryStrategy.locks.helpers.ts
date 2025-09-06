@@ -7,7 +7,7 @@
 import type {
   MockFastGlob,
   MockProcessDetector,
-  MockQuerySqlite,
+  MockSQLUtilities,
   TestSetup,
 } from "./__tests__/FirefoxCookieQueryStrategy.locks.setup";
 
@@ -17,12 +17,16 @@ import type {
  * @returns Object containing all the mocked functions
  */
 export function setupDatabaseLockMocks(testSetup: TestSetup): {
-  querySqliteThenTransform: MockQuerySqlite["querySqliteThenTransform"];
+  connectionManager: { executeQuery: jest.Mock };
+  queryMonitor: { executeQuery: jest.Mock };
   sync: MockFastGlob["sync"];
   isFirefoxRunning: MockProcessDetector["isFirefoxRunning"];
 } {
-  const { querySqliteThenTransform } = jest.requireMock<MockQuerySqlite>(
-    "../QuerySqliteThenTransform",
+  const { getGlobalConnectionManager } = jest.requireMock<MockSQLUtilities>(
+    "../sql/DatabaseConnectionManager",
+  );
+  const { getGlobalQueryMonitor } = jest.requireMock<MockSQLUtilities>(
+    "../sql/QueryMonitor",
   );
   const { sync } = jest.requireMock<MockFastGlob>("fast-glob");
   const { isFirefoxRunning } = jest.requireMock<MockProcessDetector>(
@@ -34,7 +38,16 @@ export function setupDatabaseLockMocks(testSetup: TestSetup): {
 
   // Mock database lock error
   const lockError = new Error("database is locked");
-  querySqliteThenTransform.mockRejectedValue(lockError);
+  const mockExecuteQuery = jest.fn().mockRejectedValue(lockError);
+  const connectionManager = {
+    executeQuery: mockExecuteQuery,
+  };
+  const queryMonitor = {
+    executeQuery: jest.fn(),
+  };
 
-  return { querySqliteThenTransform, sync, isFirefoxRunning };
+  getGlobalConnectionManager.mockReturnValue(connectionManager);
+  getGlobalQueryMonitor.mockReturnValue(queryMonitor);
+
+  return { connectionManager, queryMonitor, sync, isFirefoxRunning };
 }

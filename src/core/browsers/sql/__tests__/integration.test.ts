@@ -30,7 +30,7 @@ import {
   getGlobalQueryMonitor,
   resetGlobalQueryMonitor,
 } from "../QueryMonitor";
-import { querySqliteThenTransform } from "../../QuerySqliteThenTransform";
+// QuerySqliteThenTransform has been deprecated and inlined
 
 // Mock better-sqlite3
 jest.mock("better-sqlite3");
@@ -262,42 +262,76 @@ describe("SQL Integration Tests", () => {
     });
   });
 
-  describe("QuerySqliteThenTransform Integration", () => {
-    it("should use new connection manager", async () => {
-      const result = await querySqliteThenTransform({
-        file: testDbPath,
-        sql: "SELECT * FROM cookies",
-        params: [],
-      });
+  describe("Direct SQL Utilities Usage (replaced QuerySqliteThenTransform)", () => {
+    it("should use connection manager and monitor directly", async () => {
+      const manager = getGlobalConnectionManager();
+      const monitor = getGlobalQueryMonitor();
+
+      const result = await manager.executeQuery(
+        testDbPath,
+        (db) => {
+          return monitor.executeQuery(
+            db,
+            "SELECT * FROM cookies",
+            [],
+            testDbPath,
+          );
+        },
+        "SELECT * FROM cookies",
+      );
 
       expect(result).toHaveLength(1);
       expect(mockDb.prepare).toHaveBeenCalledWith("SELECT * FROM cookies");
     });
 
-    it("should apply transformations", async () => {
-      const result = await querySqliteThenTransform({
-        file: testDbPath,
-        sql: "SELECT * FROM cookies",
-        rowTransform: (row: unknown) => ({
-          ...(row as Record<string, unknown>),
-          transformed: true,
-        }),
-      });
+    it("should apply transformations with new utilities", async () => {
+      const manager = getGlobalConnectionManager();
+      const monitor = getGlobalQueryMonitor();
+
+      const result = await manager.executeQuery(
+        testDbPath,
+        (db) => {
+          const rows = monitor.executeQuery(
+            db,
+            "SELECT * FROM cookies",
+            [],
+            testDbPath,
+          );
+          return rows.map((row: unknown) => ({
+            ...(row as Record<string, unknown>),
+            transformed: true,
+          }));
+        },
+        "SELECT * FROM cookies",
+      );
 
       expect(result[0]).toHaveProperty("transformed", true);
     });
 
-    it("should apply filters", async () => {
+    it("should apply filters with new utilities", async () => {
       mockStmt.all.mockReturnValue([
         { name: "keep", value: "1" },
         { name: "filter", value: "2" },
       ]);
 
-      const result = await querySqliteThenTransform({
-        file: testDbPath,
-        sql: "SELECT * FROM cookies",
-        rowFilter: (row: unknown) => (row as { name: string }).name === "keep",
-      });
+      const manager = getGlobalConnectionManager();
+      const monitor = getGlobalQueryMonitor();
+
+      const result = await manager.executeQuery(
+        testDbPath,
+        (db) => {
+          const rows = monitor.executeQuery(
+            db,
+            "SELECT * FROM cookies",
+            [],
+            testDbPath,
+          );
+          return rows.filter(
+            (row: unknown) => (row as { name: string }).name === "keep",
+          );
+        },
+        "SELECT * FROM cookies",
+      );
 
       expect(result).toHaveLength(1);
       expect((result as unknown as Array<{ name: string }>)[0].name).toBe(

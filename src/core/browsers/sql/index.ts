@@ -23,6 +23,15 @@ export {
   type PoolStatistics,
 } from "./DatabaseConnectionManager";
 
+// Query monitor exports
+export {
+  QueryMonitor,
+  getGlobalQueryMonitor,
+  resetGlobalQueryMonitor,
+  type MonitoringOptions,
+  type QueryExecution,
+} from "./QueryMonitor";
+
 // Enhanced query service exports
 export {
   EnhancedCookieQueryService,

@@ -331,20 +331,21 @@ export abstract class BaseChromiumCookieQueryStrategy extends BaseCookieQueryStr
       const encryptedCookies = await connectionManager.executeQuery(
         file,
         (db) => {
+          // The CookieQueryBuilder aliases columns, so we get 'domain' not 'host_key'
           const rows = monitor.executeQuery<{
             encrypted_value: Buffer;
             name: string;
-            host_key: string;
-            expires_utc: number;
+            domain: string;
+            expiry: number;
           }>(db, queryConfig.sql, queryConfig.params, file);
 
           // Transform to CookieRow format
           return rows.map(
             (row): CookieRow => ({
               name: row.name,
-              domain: row.host_key,
+              domain: row.domain,
               value: row.encrypted_value,
-              expiry: row.expires_utc,
+              expiry: row.expiry,
             }),
           );
         },

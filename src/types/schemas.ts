@@ -388,14 +388,80 @@ export type CookieQueryStrategy = z.infer<typeof CookieQueryStrategySchema>;
 export type MultiCookieSpec = CookieSpec | CookieSpec[];
 
 /**
- *
+ * Schema for base cookie query options
  */
-export interface CookieQueryOptions<
+export const BaseCookieQueryOptionsSchema = z.object({
+  /** Maximum number of cookies to return */
+  limit: z.number().int().positive().optional(),
+  /** Whether to remove expired cookies from results */
+  removeExpired: z.boolean().optional(),
+  /** Include expired cookies in results */
+  includeExpired: z.boolean().optional(),
+  /** Storage location override */
+  store: z.string().optional(),
+  /** Force query even if browser is running */
+  force: z.boolean().optional(),
+});
+
+/**
+ * Schema for strategy-based cookie query options
+ */
+export const CookieQueryOptionsSchema = BaseCookieQueryOptionsSchema.extend({
+  /** Strategy to use for querying cookies */
+  strategy: CookieQueryStrategySchema.optional(),
+});
+
+/**
+ * Schema for SQL browser types
+ */
+export const SqlBrowserTypeSchema = z.enum([
+  "chrome",
+  "chromium",
+  "edge",
+  "firefox",
+  "opera",
+  "brave",
+  "arc",
+]);
+
+/**
+ * Schema for SQL-specific cookie query options
+ */
+export const SqlCookieQueryOptionsSchema = CookieSpecSchema.extend({
+  /** Browser type for SQL queries */
+  browser: SqlBrowserTypeSchema,
+  /** Enable exact domain matching instead of wildcard */
+  exactDomain: z.boolean().optional(),
+  /** Enable case-sensitive matching */
+  caseSensitive: z.boolean().optional(),
+  /** Maximum number of results */
+  limit: z.number().int().positive().optional(),
+  /** Include expired cookies */
+  includeExpired: z.boolean().optional(),
+});
+
+/**
+ * Type for base cookie query options
+ */
+export type BaseCookieQueryOptions = z.infer<
+  typeof BaseCookieQueryOptionsSchema
+>;
+
+/**
+ * Type for strategy-based cookie query options
+ */
+export type CookieQueryOptions<
   T extends CookieQueryStrategy = CookieQueryStrategy,
-> {
-  strategy: T;
-  limit?: number;
-  removeExpired?: boolean;
-  store?: string;
-  force?: boolean;
-}
+> = BaseCookieQueryOptions & {
+  strategy?: T;
+};
+
+/**
+ * Type for SQL browser types
+ */
+export type SqlBrowserType = z.infer<typeof SqlBrowserTypeSchema>;
+
+/**
+ * Type for SQL-specific cookie query options
+ */
+export type SqlCookieQueryOptions = z.infer<typeof SqlCookieQueryOptionsSchema>;

@@ -40,8 +40,8 @@ export const mockCookieData = {
 export const mockSqlRow = {
   encrypted_value: mockCookieData.value,
   name: mockCookieData.name,
-  host_key: mockCookieData.domain,
-  expires_utc: mockCookieData.expiry,
+  domain: mockCookieData.domain,
+  expiry: mockCookieData.expiry,
 };
 
 /**

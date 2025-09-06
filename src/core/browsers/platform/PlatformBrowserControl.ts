@@ -54,7 +54,7 @@ export interface PlatformBrowserControl {
 export abstract class BasePlatformBrowserControl
   implements PlatformBrowserControl
 {
-  protected readonly browserExecutables: Record<BrowserName, string[]>;
+  protected readonly browserExecutables: Partial<Record<BrowserName, string[]>>;
 
   /**
    * Creates a new instance of BasePlatformBrowserControl
@@ -67,18 +67,17 @@ export abstract class BasePlatformBrowserControl
    * Initialize browser executables for this platform
    * @returns Record mapping browser names to their executable names
    */
-  protected abstract initializeBrowserExecutables(): Record<
-    BrowserName,
-    string[]
+  protected abstract initializeBrowserExecutables(): Partial<
+    Record<BrowserName, string[]>
   >;
 
   public isBrowserSupported(browserName: BrowserName): boolean {
     const executables = this.browserExecutables[browserName];
-    return Boolean(executables.length > 0);
+    return Boolean(executables && executables.length > 0);
   }
 
   public getBrowserExecutables(browserName: BrowserName): string[] {
-    return this.browserExecutables[browserName];
+    return this.browserExecutables[browserName] || [];
   }
 
   /**
@@ -182,7 +181,9 @@ export class MacOSBrowserControl extends BasePlatformBrowserControl {
    * Initialize browser executables for macOS platform
    * @returns Record mapping browser names to their executable names on macOS
    */
-  protected initializeBrowserExecutables(): Record<BrowserName, string[]> {
+  protected initializeBrowserExecutables(): Partial<
+    Record<BrowserName, string[]>
+  > {
     return {
       Firefox: ["Firefox"],
       Chrome: ["Google Chrome"],
@@ -197,7 +198,7 @@ export class MacOSBrowserControl extends BasePlatformBrowserControl {
    * @throws {Error} When the browser is not supported on macOS
    */
   public async launchBrowser(browserName: BrowserName): Promise<void> {
-    const appNames: Record<BrowserName, string> = {
+    const appNames: Partial<Record<BrowserName, string>> = {
       Firefox: "Firefox",
       Chrome: "Google Chrome",
       Safari: "Safari",
@@ -233,7 +234,9 @@ export class WindowsBrowserControl extends BasePlatformBrowserControl {
    * Initialize browser executables for Windows platform
    * @returns Record mapping browser names to their executable names on Windows
    */
-  protected initializeBrowserExecutables(): Record<BrowserName, string[]> {
+  protected initializeBrowserExecutables(): Partial<
+    Record<BrowserName, string[]>
+  > {
     return {
       Firefox: ["firefox.exe", "Firefox"],
       Chrome: ["chrome.exe", "Google Chrome"],
@@ -301,7 +304,9 @@ export class LinuxBrowserControl extends BasePlatformBrowserControl {
    * Initialize browser executables for Linux platform
    * @returns Record mapping browser names to their executable names on Linux
    */
-  protected initializeBrowserExecutables(): Record<BrowserName, string[]> {
+  protected initializeBrowserExecutables(): Partial<
+    Record<BrowserName, string[]>
+  > {
     return {
       Firefox: ["firefox", "firefox-bin"],
       Chrome: [

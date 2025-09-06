@@ -12,7 +12,9 @@ import {
 import type { CookieRow } from "../../types/schemas";
 
 import { chromeApplicationSupport } from "./chrome/ChromeApplicationSupport";
-import { querySqliteThenTransform } from "./QuerySqliteThenTransform";
+import { CookieQueryBuilder } from "./sql/CookieQueryBuilder";
+import { getGlobalConnectionManager } from "./sql/DatabaseConnectionManager";
+import { getGlobalQueryMonitor } from "./sql/QueryMonitor";
 
 const logger = createTaggedLogger("getEncryptedChromeCookie");
 
@@ -77,19 +79,23 @@ async function getCookieFiles(): Promise<string[]> {
 }
 
 /**
- * Builds the SQL query for retrieving cookies
+ * Builds the SQL query for retrieving cookies using the new query builder
  * @param name - Cookie name to search for
  * @param domain - Domain to filter by
- * @returns SQL query and parameters
+ * @returns SQL query configuration
  */
 function buildSqlQuery(name: string, domain: string): SqlQuery {
-  const isWildcard = name === "%";
-  const sql = isWildcard
-    ? "SELECT name, encrypted_value, host_key, expires_utc FROM cookies WHERE host_key LIKE ?"
-    : "SELECT name, encrypted_value, host_key, expires_utc FROM cookies WHERE name = ? AND host_key LIKE ?";
-  const params = isWildcard ? [`%${domain}%`] : [name, `%${domain}%`];
+  const queryBuilder = new CookieQueryBuilder("chrome");
+  const queryConfig = queryBuilder.buildSelectQuery({
+    name,
+    domain,
+    browser: "chrome",
+  });
 
-  return { sql, params };
+  return {
+    sql: queryConfig.sql,
+    params: queryConfig.params as string[], // Cast since we know Chrome queries use string params
+  };
 }
 
 /**
@@ -108,17 +114,32 @@ async function processCookieFile(
     const { sql, params } = buildSqlQuery(name, domain);
     logger.debug("ChromeCookies", "Executing query", { sql, params });
 
-    const rows = await querySqliteThenTransform<ChromeCookieRow, CookieRow>({
-      file: cookieFile,
-      sql,
-      params,
-      rowTransform: (row: ChromeCookieRow): CookieRow => ({
-        name: row.name,
-        domain: row.host_key,
-        value: row.encrypted_value,
-        expiry: row.expires_utc,
-      }),
-    });
+    // Use the new connection manager and query monitor
+    const connectionManager = getGlobalConnectionManager();
+    const monitor = getGlobalQueryMonitor();
+
+    const rows = await connectionManager.executeQuery(
+      cookieFile,
+      (db) => {
+        const results = monitor.executeQuery<ChromeCookieRow>(
+          db,
+          sql,
+          params,
+          cookieFile,
+        );
+
+        // Transform the rows
+        return results.map(
+          (row): CookieRow => ({
+            name: row.name,
+            domain: row.host_key,
+            value: row.encrypted_value,
+            expiry: row.expires_utc,
+          }),
+        );
+      },
+      sql, // Pass SQL for monitoring
+    );
 
     logOperationResult("QueryCookies", true, {
       file: cookieFile,

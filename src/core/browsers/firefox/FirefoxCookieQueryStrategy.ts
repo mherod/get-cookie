@@ -115,27 +115,37 @@ export class FirefoxCookieQueryStrategy extends BaseCookieQueryStrategy {
   }
 
   /**
-   * Creates the query parameters for cookie extraction
+   * Creates the query parameters for cookie extraction using the new query builder
    * @param name - The cookie name to search for
    * @param domain - The domain pattern to match cookies against
    * @param file - The database file path for metadata
    * @returns Query configuration object
    * @private
    */
-  private createCookieQueryConfig(
+  private async createCookieQueryConfig(
     name: string,
     domain: string,
     file: string,
-  ): {
+  ): Promise<{
     file: string;
     sql: string;
-    params: string[];
+    params: unknown[];
     rowTransform: (row: FirefoxCookieRow) => ExportedCookie;
-  } {
+  }> {
+    // Import the query builder dynamically to avoid circular dependencies
+    const { CookieQueryBuilder } = await import("../sql/CookieQueryBuilder");
+    const queryBuilder = new CookieQueryBuilder("firefox");
+
+    const queryConfig = queryBuilder.buildSelectQuery({
+      name,
+      domain,
+      browser: "firefox",
+    });
+
     return {
       file,
-      sql: "SELECT name, value, host as domain, expiry FROM moz_cookies WHERE name = ? AND host LIKE ?",
-      params: [name, `%${domain}%`],
+      sql: queryConfig.sql,
+      params: queryConfig.params,
       rowTransform: (row: FirefoxCookieRow): ExportedCookie => ({
         name: row.name,
         value: row.value,
@@ -217,7 +227,7 @@ export class FirefoxCookieQueryStrategy extends BaseCookieQueryStrategy {
    * @private
    */
   private async performRetryAfterClose(
-    queryConfig: ReturnType<typeof this.createCookieQueryConfig>,
+    queryConfig: Awaited<ReturnType<typeof this.createCookieQueryConfig>>,
     shouldRelaunch: boolean,
   ): Promise<ExportedCookie[]> {
     this.logger.info(
@@ -273,7 +283,7 @@ export class FirefoxCookieQueryStrategy extends BaseCookieQueryStrategy {
     domain: string,
     force?: boolean,
   ): Promise<ExportedCookie[]> {
-    const queryConfig = this.createCookieQueryConfig(name, domain, file);
+    const queryConfig = await this.createCookieQueryConfig(name, domain, file);
 
     try {
       return await querySqliteThenTransform<FirefoxCookieRow, ExportedCookie>(

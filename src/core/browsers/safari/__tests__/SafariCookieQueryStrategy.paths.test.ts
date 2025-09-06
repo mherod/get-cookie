@@ -1,4 +1,5 @@
 import { homedir } from "node:os";
+import { join } from "node:path";
 
 import type { BinaryCookieRow } from "../../../../types/schemas";
 import { SafariCookieQueryStrategy } from "../SafariCookieQueryStrategy";
@@ -12,13 +13,10 @@ jest.mock("@utils/SystemPermissions", () => ({
   checkFilePermission: jest.fn().mockResolvedValue(true),
   handleSafariPermissionError: jest.fn().mockResolvedValue(false),
 }));
-// Mock os.homedir and path.join
+// Mock os.homedir
 jest.mock("node:os", () => ({
   homedir: jest.fn().mockReturnValue("/Users/testuser"),
   platform: jest.fn().mockReturnValue("darwin"),
-}));
-jest.mock("node:path", () => ({
-  join: jest.fn((...args) => args.join("/")),
 }));
 
 describe("SafariCookieQueryStrategy - Path Handling", () => {
@@ -54,7 +52,16 @@ describe("SafariCookieQueryStrategy - Path Handling", () => {
 
       await strategy.queryCookies("test-cookie", "example.com");
       expect(mockDecodeBinaryCookies).toHaveBeenCalledWith(
-        "/Users/testuser/Library/Containers/com.apple.Safari/Data/Library/Cookies/Cookies.binarycookies",
+        join(
+          "/Users/testuser",
+          "Library",
+          "Containers",
+          "com.apple.Safari",
+          "Data",
+          "Library",
+          "Cookies",
+          "Cookies.binarycookies",
+        ),
       );
     });
 

@@ -1,6 +1,7 @@
 import { homedir } from "node:os";
 import { join } from "node:path";
 
+import { errorMessageContains, formatErrorForLogging } from "@utils/errorUtils";
 import { isSafariRunning } from "@utils/ProcessDetector";
 import {
   checkFilePermission,
@@ -391,11 +392,10 @@ export class SafariCookieQueryStrategy extends BaseCookieQueryStrategy {
     domain: string,
     force?: boolean,
   ): Promise<ExportedCookie[]> {
-    const errorMessage = error instanceof Error ? error.message : String(error);
     const isPermissionError =
-      errorMessage.includes("EPERM") ||
-      errorMessage.includes("operation not permitted") ||
-      errorMessage.includes("Permission denied");
+      errorMessageContains(error, "EPERM") ||
+      errorMessageContains(error, "operation not permitted") ||
+      errorMessageContains(error, "Permission denied");
 
     if (isPermissionError) {
       await this.handlePermissionError(
@@ -438,18 +438,15 @@ export class SafariCookieQueryStrategy extends BaseCookieQueryStrategy {
         "Permission flow completed. Please run the command again after granting access.",
       );
     } else {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
       this.logger.warn(
         `Permission denied accessing Safari cookies at ${cookieDbPath}`,
-        {
-          error: errorMessage,
+        formatErrorForLogging(error, {
           file: cookieDbPath,
           name,
           domain,
           advice:
             "Grant Full Disk Access to your terminal in System Settings > Privacy & Security",
-        },
+        }),
       );
     }
   }
@@ -467,23 +464,14 @@ export class SafariCookieQueryStrategy extends BaseCookieQueryStrategy {
     name: string,
     domain: string,
   ): void {
-    const errorInfo = {
-      file: cookieDbPath,
-      name,
-      domain,
-    };
-
-    if (error instanceof Error) {
-      this.logger.error(`Error decoding ${cookieDbPath}`, {
-        ...errorInfo,
-        error: error.message,
-      });
-    } else {
-      this.logger.error(`Error decoding ${cookieDbPath}`, {
-        ...errorInfo,
-        error: String(error),
-      });
-    }
+    this.logger.error(
+      `Error decoding ${cookieDbPath}`,
+      formatErrorForLogging(error, {
+        file: cookieDbPath,
+        name,
+        domain,
+      }),
+    );
   }
 
   /**
@@ -611,9 +599,7 @@ export class SafariCookieQueryStrategy extends BaseCookieQueryStrategy {
     shouldRetry: boolean;
     shouldRelaunch: boolean;
   }> {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-
-    if (!this.isLockError(errorMessage)) {
+    if (!this.isLockError(error)) {
       throw error; // Re-throw non-lock errors
     }
 
@@ -634,12 +620,14 @@ export class SafariCookieQueryStrategy extends BaseCookieQueryStrategy {
       };
     }
 
-    this.logger.warn("Safari cookie file locked", {
-      error: errorMessage,
-      file: cookieDbPath,
-      advice:
-        "Safari may be accessing the cookie file. Try closing Safari and running again.",
-    });
+    this.logger.warn(
+      "Safari cookie file locked",
+      formatErrorForLogging(error, {
+        file: cookieDbPath,
+        advice:
+          "Safari may be accessing the cookie file. Try closing Safari and running again.",
+      }),
+    );
 
     return {
       success: false,
@@ -651,15 +639,15 @@ export class SafariCookieQueryStrategy extends BaseCookieQueryStrategy {
 
   /**
    * Check if error indicates a lock conflict
-   * @param errorMessage - Error message to check
+   * @param error - Error to check
    * @returns True if this is a lock-related error
    */
-  private isLockError(errorMessage: string): boolean {
+  private isLockError(error: unknown): boolean {
     return (
-      errorMessage.includes("EPERM") ||
-      errorMessage.includes("operation not permitted") ||
-      errorMessage.includes("Permission denied") ||
-      errorMessage.includes("EBUSY")
+      errorMessageContains(error, "EPERM") ||
+      errorMessageContains(error, "operation not permitted") ||
+      errorMessageContains(error, "Permission denied") ||
+      errorMessageContains(error, "EBUSY")
     );
   }
 
@@ -717,11 +705,10 @@ export class SafariCookieQueryStrategy extends BaseCookieQueryStrategy {
     cookieDbPath: string,
     shouldRelaunch?: boolean,
   ): Promise<ExportedCookie[]> {
-    this.logger.error("Failed to extract cookies even after closing Safari", {
-      error:
-        retryError instanceof Error ? retryError.message : String(retryError),
-      file: cookieDbPath,
-    });
+    this.logger.error(
+      "Failed to extract cookies even after closing Safari",
+      formatErrorForLogging(retryError, { file: cookieDbPath }),
+    );
 
     // Still try to relaunch Safari if needed
     if (shouldRelaunch === true) {
@@ -738,18 +725,9 @@ export class SafariCookieQueryStrategy extends BaseCookieQueryStrategy {
    * @param domain - Domain filter
    */
   private logQueryError(error: unknown, name: string, domain: string): void {
-    const errorInfo = { name, domain };
-
-    if (error instanceof Error) {
-      this.logger.error("Failed to query cookies", {
-        ...errorInfo,
-        error: error.message,
-      });
-    } else {
-      this.logger.error("Failed to query cookies", {
-        ...errorInfo,
-        error: String(error),
-      });
-    }
+    this.logger.error(
+      "Failed to query cookies",
+      formatErrorForLogging(error, { name, domain }),
+    );
   }
 }

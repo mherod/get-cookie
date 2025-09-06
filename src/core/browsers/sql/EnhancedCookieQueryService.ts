@@ -4,9 +4,12 @@
  */
 
 import type { Database } from "better-sqlite3";
+
 import { createTaggedLogger, logError } from "@utils/logHelpers";
+
 import type { ExportedCookie } from "../../../types/schemas";
 import { chromeTimestampToDate } from "../../../utils/chromeDates";
+
 import {
   CookieQueryBuilder,
   type CookieQueryOptions,
@@ -74,6 +77,10 @@ export class EnhancedCookieQueryService {
   private readonly defaultCacheTTL = 5000; // 5 seconds
   private lastCacheCleanup: number;
 
+  /**
+   *
+   * @param connectionManager
+   */
   constructor(connectionManager?: DatabaseConnectionManager) {
     this.connectionManager =
       connectionManager ||
@@ -91,6 +98,7 @@ export class EnhancedCookieQueryService {
 
   /**
    * Query cookies with enhanced features
+   * @param options
    */
   async queryCookies(
     options: EnhancedQueryOptions,
@@ -223,6 +231,12 @@ export class EnhancedCookieQueryService {
 
   /**
    * Query a single file
+   * @param filepath
+   * @param queryConfig
+   * @param queryConfig.sql
+   * @param queryConfig.params
+   * @param options
+   * @param _builder
    */
   private async queryFile(
     filepath: string,
@@ -264,6 +278,16 @@ export class EnhancedCookieQueryService {
 
   /**
    * Transform database row to ExportedCookie
+   * @param row
+   * @param row.name
+   * @param row.domain
+   * @param row.value
+   * @param row.encrypted_value
+   * @param row.expiry
+   * @param row.path
+   * @param row.is_secure
+   * @param row.is_httponly
+   * @param options
    */
   private transformRow(
     row: {
@@ -310,6 +334,7 @@ export class EnhancedCookieQueryService {
 
   /**
    * Get filepaths to query based on browser
+   * @param options
    */
   private async getFilepaths(options: EnhancedQueryOptions): Promise<string[]> {
     if (options.filepath) {
@@ -323,6 +348,7 @@ export class EnhancedCookieQueryService {
 
   /**
    * Discover browser-specific cookie files
+   * @param browser
    */
   private async discoverBrowserFiles(
     browser: SqlBrowserType,
@@ -337,6 +363,7 @@ export class EnhancedCookieQueryService {
 
   /**
    * Validate query options
+   * @param options
    */
   private validateOptions(options: EnhancedQueryOptions): void {
     // Use the static validator from CookieQueryBuilder
@@ -352,6 +379,7 @@ export class EnhancedCookieQueryService {
 
   /**
    * Get or create query builder for browser
+   * @param browser
    */
   private getQueryBuilder(browser: SqlBrowserType): CookieQueryBuilder {
     let builder = this.queryBuilder.get(browser);
@@ -366,6 +394,7 @@ export class EnhancedCookieQueryService {
 
   /**
    * Generate cache key for query
+   * @param options
    */
   private getCacheKey(options: EnhancedQueryOptions): string {
     return `${options.browser}:${options.name}:${options.domain}:${options.exactDomain}:${options.includeExpired}`;
@@ -373,6 +402,7 @@ export class EnhancedCookieQueryService {
 
   /**
    * Get cached result if available
+   * @param options
    */
   private getCachedResult<T>(options: EnhancedQueryOptions): T[] | null {
     // Clean cache periodically (every 30 seconds)
@@ -402,6 +432,8 @@ export class EnhancedCookieQueryService {
 
   /**
    * Cache query result
+   * @param options
+   * @param data
    */
   private cacheResult<T>(options: EnhancedQueryOptions, data: T[]): void {
     const key = this.getCacheKey(options);
@@ -457,6 +489,10 @@ export class EnhancedCookieQueryService {
 
 /**
  * Create a preconfigured query service
+ * @param config
+ * @param config.enableCache
+ * @param config.cacheTTL
+ * @param config.maxConnections
  */
 export function createCookieQueryService(config?: {
   enableCache?: boolean;
@@ -475,6 +511,10 @@ export function createCookieQueryService(config?: {
 
 /**
  * Batch query cookies from multiple browsers
+ * @param browsers
+ * @param name
+ * @param domain
+ * @param options
  */
 export async function batchQueryCookies(
   browsers: SqlBrowserType[],

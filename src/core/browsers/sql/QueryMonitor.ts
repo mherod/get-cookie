@@ -4,6 +4,7 @@
  */
 
 import type { Database, Statement } from "better-sqlite3";
+
 import { createTaggedLogger } from "@utils/logHelpers";
 
 const logger = createTaggedLogger("QueryMonitor");
@@ -47,6 +48,14 @@ export class QueryMonitor {
   private slowQueries: number;
   private errors: number;
 
+  /**
+   * Creates a new QueryMonitor instance for tracking SQL query performance and metrics.
+   * @param options - Configuration options for monitoring behavior
+   * @param options.slowQueryThreshold - Milliseconds before a query is considered slow (default: 100ms)
+   * @param options.verbose - Whether to log detailed query information (default: false)
+   * @param options.trackHistory - Whether to maintain query history (default: true)
+   * @param options.maxHistorySize - Maximum number of queries to keep in history (default: 1000)
+   */
   constructor(options: MonitoringOptions = {}) {
     this.options = {
       slowQueryThreshold: options.slowQueryThreshold ?? 100,
@@ -64,6 +73,10 @@ export class QueryMonitor {
 
   /**
    * Execute a query with monitoring
+   * @param db
+   * @param sql
+   * @param params
+   * @param filepath
    */
   executeQuery<T>(
     db: Database,
@@ -75,8 +88,10 @@ export class QueryMonitor {
       sql,
       params,
       startTime: Date.now(),
-      filepath,
     };
+    if (filepath !== undefined) {
+      execution.filepath = filepath;
+    }
 
     try {
       // Execute the query (timeout is already set on the connection)
@@ -105,6 +120,10 @@ export class QueryMonitor {
 
   /**
    * Execute a single row query with monitoring
+   * @param db
+   * @param sql
+   * @param params
+   * @param filepath
    */
   executeGet<T>(
     db: Database,
@@ -116,8 +135,10 @@ export class QueryMonitor {
       sql,
       params,
       startTime: Date.now(),
-      filepath,
     };
+    if (filepath !== undefined) {
+      execution.filepath = filepath;
+    }
 
     try {
       // Execute the query (timeout is already set on the connection)
@@ -146,6 +167,9 @@ export class QueryMonitor {
 
   /**
    * Create a monitored statement wrapper
+   * @param db
+   * @param sql
+   * @param filepath
    */
   prepareStatement<T>(
     db: Database,
@@ -158,6 +182,7 @@ export class QueryMonitor {
 
   /**
    * Record query execution
+   * @param execution
    */
   private recordExecution(execution: QueryExecution): void {
     // Update statistics
@@ -230,6 +255,7 @@ export class QueryMonitor {
 
   /**
    * Get query history
+   * @param limit
    */
   getHistory(limit?: number): QueryExecution[] {
     if (limit) {
@@ -261,6 +287,14 @@ export class QueryMonitor {
  * Monitored statement wrapper
  */
 export class MonitoredStatement<T> {
+  /**
+   * Creates a monitored wrapper around a prepared SQL statement.
+   * This wrapper automatically tracks execution metrics for all queries run through it.
+   * @param statement - The prepared SQLite statement to monitor
+   * @param sql - The SQL query string for logging and debugging
+   * @param monitor - The QueryMonitor instance that will track metrics
+   * @param filepath - Optional database file path for additional context in logs
+   */
   constructor(
     private readonly statement: Statement,
     private readonly sql: string,
@@ -270,6 +304,7 @@ export class MonitoredStatement<T> {
 
   /**
    * Execute all with monitoring
+   * @param {...any} params
    */
   all(...params: unknown[]): T[] {
     return this.monitor.executeQuery<T>(
@@ -282,6 +317,7 @@ export class MonitoredStatement<T> {
 
   /**
    * Execute get with monitoring
+   * @param {...any} params
    */
   get(...params: unknown[]): T | undefined {
     return this.monitor.executeGet<T>(
@@ -307,6 +343,7 @@ let globalMonitor: QueryMonitor | null = null;
 
 /**
  * Get or create global query monitor
+ * @param options
  */
 export function getGlobalQueryMonitor(
   options?: MonitoringOptions,

@@ -3,9 +3,11 @@
  * Manages SQLite connections efficiently with automatic cleanup and monitoring
  */
 
-import BetterSqlite3, { type Database } from "better-sqlite3";
-import { createTaggedLogger, logError } from "@utils/logHelpers";
 import { EventEmitter } from "node:events";
+
+import BetterSqlite3, { type Database } from "better-sqlite3";
+
+import { createTaggedLogger, logError } from "@utils/logHelpers";
 
 const logger = createTaggedLogger("DatabaseConnectionManager");
 
@@ -80,6 +82,10 @@ export class DatabaseConnectionManager extends EventEmitter {
   private cacheHits: number;
   private connectionReuses: number;
 
+  /**
+   *
+   * @param config
+   */
   constructor(config: PoolConfig = {}) {
     super();
 
@@ -103,6 +109,7 @@ export class DatabaseConnectionManager extends EventEmitter {
 
   /**
    * Get or create a database connection
+   * @param filepath
    */
   async getConnection(filepath: string): Promise<Database> {
     // Perform cleanup if needed (every 30 seconds)
@@ -138,6 +145,7 @@ export class DatabaseConnectionManager extends EventEmitter {
 
   /**
    * Create a new database connection
+   * @param filepath
    */
   private async createConnection(filepath: string): Promise<Database> {
     const startTime = Date.now();
@@ -200,6 +208,9 @@ export class DatabaseConnectionManager extends EventEmitter {
   /**
    * Execute a query with the connection manager
    * The connection already has busy_timeout set, so queries will timeout appropriately
+   * @param filepath
+   * @param queryFn
+   * @param queryDescription
    */
   async executeQuery<T>(
     filepath: string,
@@ -279,6 +290,7 @@ export class DatabaseConnectionManager extends EventEmitter {
 
   /**
    * Release a connection back to the pool
+   * @param filepath
    */
   releaseConnection(filepath: string): void {
     const metadata = this.connections.get(filepath);
@@ -291,6 +303,7 @@ export class DatabaseConnectionManager extends EventEmitter {
 
   /**
    * Close a specific connection
+   * @param filepath
    */
   closeConnection(filepath: string): void {
     const metadata = this.connections.get(filepath);
@@ -364,6 +377,7 @@ export class DatabaseConnectionManager extends EventEmitter {
 
   /**
    * Get recent query metrics
+   * @param limit
    */
   getQueryMetrics(limit = 100): QueryMetrics[] {
     return this.queryMetrics.slice(-limit);
@@ -426,6 +440,7 @@ export class DatabaseConnectionManager extends EventEmitter {
 
   /**
    * Record query metrics
+   * @param metrics
    */
   private recordMetrics(metrics: QueryMetrics): void {
     this.queryMetrics.push(metrics);
@@ -440,6 +455,7 @@ export class DatabaseConnectionManager extends EventEmitter {
 
   /**
    * Check if error indicates database lock
+   * @param error
    */
   private isDatabaseLocked(error: unknown): boolean {
     if (error instanceof Error) {
@@ -455,8 +471,9 @@ export class DatabaseConnectionManager extends EventEmitter {
 
   /**
    * Delay helper
+   * @param ms
    */
-  private delay(ms: number): Promise<void> {
+  private async delay(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }
@@ -473,6 +490,7 @@ let exitHandler: (() => void) | null = null;
 
 /**
  * Get or create global connection manager
+ * @param config
  */
 export function getGlobalConnectionManager(
   config?: PoolConfig,

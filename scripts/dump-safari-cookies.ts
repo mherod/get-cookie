@@ -17,7 +17,11 @@ function createHexDump(buffer: Buffer, offset: number, length: number): string {
       }
       hexDump += `${(offset + i).toString(16).padStart(4, "0")}: `;
     }
-    hexDump += `${buffer[offset + i].toString(16).padStart(2, "0")} `;
+    const byte = buffer[offset + i];
+    if (byte === undefined) {
+      continue;
+    }
+    hexDump += `${byte.toString(16).padStart(2, "0")} `;
 
     // Add ASCII representation at the end of each line
     if ((i + 1) % 16 === 0 || i === length - 1) {
@@ -28,6 +32,9 @@ function createHexDump(buffer: Buffer, offset: number, length: number): string {
       // Add ASCII representation
       for (let j = i - (i % 16); j <= i; j++) {
         const byte = buffer[offset + j];
+        if (byte === undefined) {
+          continue;
+        }
         hexDump += byte >= 32 && byte <= 126 ? String.fromCharCode(byte) : ".";
       }
     }

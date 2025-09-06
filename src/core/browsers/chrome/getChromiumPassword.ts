@@ -1,7 +1,8 @@
 import { assertPlatformSupported, getPlatform } from "@utils/platformUtils";
 
-import type { ChromiumBrowser } from "./ChromiumBrowsers";
 import { execSimple } from "../../../utils/execSimple";
+
+import type { ChromiumBrowser } from "./ChromiumBrowsers";
 
 /**
  * Maps browser types to their keychain service names on macOS
@@ -75,7 +76,6 @@ async function getLinuxPassword(): Promise<string> {
  * Gets the Chromium-based browser Safe Storage password for the current platform.
  * This password is used to decrypt cookies stored in the browser's cookie database.
  * Supports macOS (keychain), Windows (DPAPI), and Linux (keyring/libsecret).
- *
  * @param browser - The Chromium-based browser to get the password for
  * @returns A promise that resolves to the browser's Safe Storage password or Buffer
  * @throws {Error} If the password cannot be retrieved or the platform is not supported

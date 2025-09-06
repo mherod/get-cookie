@@ -12,7 +12,14 @@ import { defineConfig } from "tsup";
 export default defineConfig({
   entry: ["src/index.ts"],
   format: ["cjs", "esm"],
-  dts: true,
+  dts: {
+    resolve: true,
+    entry: ["src/index.ts"],
+    compilerOptions: {
+      strict: true,
+      noEmitOnError: true,
+    },
+  },
   clean: true,
   sourcemap: true,
   minify: true,
@@ -20,6 +27,9 @@ export default defineConfig({
   bundle: true,
   tsconfig: "./tsconfig.tsup.json",
   external: ["fs", "path", "crypto", "os", "child_process", "lodash-es"],
+  treeshake: true,
+  splitting: false,
+  skipNodeModulesBundle: true,
   esbuildOptions(options) {
     options.alias = {
       lodash: "lodash-es",

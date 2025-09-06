@@ -23,7 +23,7 @@ import type { OutputHandler, ParsedArgs } from "./types";
  * ```
  */
 export class OutputHandlerFactory {
-  private handlers: OutputHandler[];
+  private readonly handlers: OutputHandler[];
   private readonly validOutputFormats = ["json"] as const;
 
   /**

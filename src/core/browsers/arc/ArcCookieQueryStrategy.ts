@@ -3,7 +3,6 @@ import { ChromiumCookieQueryStrategy } from "../chromium/ChromiumCookieQueryStra
 /**
  * Strategy for querying cookies from Arc browser.
  * Arc is a Chromium-based browser with unique features but standard cookie storage.
- *
  * @example
  * ```typescript
  * const strategy = new ArcCookieQueryStrategy();

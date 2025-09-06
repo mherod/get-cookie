@@ -40,7 +40,7 @@ export default class MockCookieQueryStrategy implements CookieQueryStrategy {
    * const strategy = new MockCookieQueryStrategy(mockCookies);
    * ```
    */
-  public constructor(private mockCookies: ExportedCookie[]) {}
+  public constructor(private readonly mockCookies: ExportedCookie[]) {}
 
   /**
    * Queries mock cookies based on name and domain patterns

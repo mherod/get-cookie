@@ -1,9 +1,9 @@
 import { jest } from "@jest/globals";
 
 import { listChromeProfilePaths } from "../../listChromeProfiles";
+import { CookieQueryBuilder } from "../../sql/CookieQueryBuilder";
 import { getGlobalConnectionManager } from "../../sql/DatabaseConnectionManager";
 import { getGlobalQueryMonitor } from "../../sql/QueryMonitor";
-import { CookieQueryBuilder } from "../../sql/CookieQueryBuilder";
 import { ChromeCookieQueryStrategy } from "../ChromeCookieQueryStrategy";
 import { decrypt } from "../decrypt";
 import { getChromiumPassword } from "../getChromiumPassword";

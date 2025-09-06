@@ -17,7 +17,7 @@ import { BaseChromiumCookieQueryStrategy } from "./BaseChromiumCookieQueryStrate
  * ```
  */
 export class ChromiumCookieQueryStrategy extends BaseChromiumCookieQueryStrategy {
-  private browser: ChromiumBrowser;
+  private readonly browser: ChromiumBrowser;
 
   /**
    * Creates a new instance of ChromiumCookieQueryStrategy

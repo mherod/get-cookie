@@ -2,6 +2,10 @@
  * Integration tests for SQL utilities with browser strategies
  */
 
+import * as fs from "node:fs";
+import * as os from "node:os";
+import * as path from "node:path";
+
 import {
   describe,
   it,
@@ -10,10 +14,8 @@ import {
   afterEach,
   jest,
 } from "@jest/globals";
-import * as fs from "node:fs";
-import * as path from "node:path";
-import * as os from "node:os";
 import BetterSqlite3, { type Database } from "better-sqlite3";
+
 import {
   CookieQueryBuilder,
   createQueryBuilder,
@@ -487,7 +489,7 @@ describe("SQL Integration Tests", () => {
       });
 
       try {
-        const queries = Array.from({ length: 5 }, (_, i) =>
+        const queries = Array.from({ length: 5 }, async (_, i) =>
           manager.executeQuery(
             `db${i}.db`,
             (db) => {

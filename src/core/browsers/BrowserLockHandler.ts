@@ -38,8 +38,8 @@ export class BrowserLockHandler {
    * @param platformControl - Optional platform control strategy (for testing)
    */
   public constructor(
-    private logger: ReturnType<typeof createTaggedLogger>,
-    private browserName: BrowserName,
+    private readonly logger: ReturnType<typeof createTaggedLogger>,
+    private readonly browserName: BrowserName,
     platformControl?: PlatformBrowserControl,
   ) {
     // Use provided control or create platform-specific one

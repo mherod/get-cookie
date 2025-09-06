@@ -80,7 +80,7 @@ function extractValue(decodedString: string): string {
   const uuidMatch = decodedString.match(
     /([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i,
   );
-  if (uuidMatch) {
+  if (uuidMatch?.[1]) {
     return uuidMatch[1];
   }
 
@@ -93,7 +93,7 @@ function extractValue(decodedString: string): string {
 
   for (const pattern of endPatterns) {
     const match = decodedString.match(pattern);
-    if (match) {
+    if (match?.[1]) {
       return match[1];
     }
   }

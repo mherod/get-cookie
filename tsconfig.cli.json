@@ -7,6 +7,10 @@
     "moduleResolution": "bundler",
     "composite": false,
     "declaration": true,
-    "declarationMap": true
+    "declarationMap": true,
+    "strict": true,
+    "noEmitOnError": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": false
   }
 }

@@ -35,7 +35,7 @@
     "lint": "biome check --diagnostic-level=error .",
     "lint:eslint": "eslint --config eslint.config.js \"src/**/*.{ts,js}\"",
     "lint:all": "pnpm run lint && pnpm run lint:eslint",
-    "lint:fix": "biome check --write .",
+    "lint:fix": "biome check --write --unsafe . && eslint --config eslint.config.js --fix \"src/**/*.{ts,js}\"",
     "lint:staged": "biome check --staged --write .",
     "format": "biome format --write .",
     "format:check": "biome check --diagnostic-level=error .",

@@ -1,7 +1,7 @@
-import { ChromeCookieQueryStrategy } from "../ChromeCookieQueryStrategy";
+import { CookieQueryBuilder } from "../../sql/CookieQueryBuilder";
 import { getGlobalConnectionManager } from "../../sql/DatabaseConnectionManager";
 import { getGlobalQueryMonitor } from "../../sql/QueryMonitor";
-import { CookieQueryBuilder } from "../../sql/CookieQueryBuilder";
+import { ChromeCookieQueryStrategy } from "../ChromeCookieQueryStrategy";
 
 jest.mock("../../sql/DatabaseConnectionManager");
 jest.mock("../../sql/QueryMonitor");

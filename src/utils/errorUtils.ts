@@ -47,12 +47,17 @@ export function getErrorDetails(error: unknown): {
   const message = getErrorMessage(error);
 
   if (error instanceof Error) {
-    return {
-      message,
-      stack: error.stack,
-      name: error.name,
-      code: "code" in error ? String(error.code) : undefined,
-    };
+    const result: ReturnType<typeof getErrorDetails> = { message };
+    if (error.stack !== undefined) {
+      result.stack = error.stack;
+    }
+    if (error.name !== undefined) {
+      result.name = error.name;
+    }
+    if ("code" in error && error.code !== undefined) {
+      result.code = String(error.code);
+    }
+    return result;
   }
 
   return { message };

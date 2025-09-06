@@ -4,6 +4,9 @@
  */
 
 // Query builder exports
+/**
+ *
+ */
 export {
   CookieQueryBuilder,
   createQueryBuilder,
@@ -14,6 +17,9 @@ export {
 } from "./CookieQueryBuilder";
 
 // Connection manager exports
+/**
+ *
+ */
 export {
   DatabaseConnectionManager,
   getGlobalConnectionManager,
@@ -24,6 +30,9 @@ export {
 } from "./DatabaseConnectionManager";
 
 // Query monitor exports
+/**
+ *
+ */
 export {
   QueryMonitor,
   getGlobalQueryMonitor,
@@ -33,6 +42,9 @@ export {
 } from "./QueryMonitor";
 
 // Enhanced query service exports
+/**
+ *
+ */
 export {
   EnhancedCookieQueryService,
   createCookieQueryService,

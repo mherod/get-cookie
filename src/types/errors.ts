@@ -30,11 +30,11 @@
  */
 export class CookieExtractionError extends Error {
   /**
-   *
+   * The browser where the error occurred (e.g., 'Chrome', 'Firefox', 'Safari')
    */
   public readonly browser: string;
   /**
-   *
+   * Additional context information about the error (e.g., file paths, error codes)
    */
   public readonly context: Record<string, unknown>;
 
@@ -70,7 +70,7 @@ export class CookieExtractionError extends Error {
  */
 export class BrowserLockError extends CookieExtractionError {
   /**
-   *
+   * The path to the locked database file
    */
   public readonly filePath: string;
 
@@ -107,7 +107,7 @@ export class BrowserLockError extends CookieExtractionError {
  */
 export class DecryptionError extends CookieExtractionError {
   /**
-   *
+   * The type of encryption that failed (e.g., 'AES-256-CBC', 'AES-256-GCM', 'DPAPI')
    */
   public readonly encryptionType: string;
 
@@ -145,11 +145,11 @@ export class DecryptionError extends CookieExtractionError {
  */
 export class InvalidTimestampError extends CookieExtractionError {
   /**
-   *
+   * The invalid timestamp value that was encountered
    */
   public readonly timestamp: number;
   /**
-   *
+   * The expected valid range for timestamps (min and max values)
    */
   public readonly expectedRange: { min: number; max: number };
 
@@ -191,7 +191,7 @@ export class InvalidTimestampError extends CookieExtractionError {
  */
 export class BinaryParsingError extends CookieExtractionError {
   /**
-   *
+   * The byte offset in the binary data where parsing failed
    */
   public readonly offset: number;
 

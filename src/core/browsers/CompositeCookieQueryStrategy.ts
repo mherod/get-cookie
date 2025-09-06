@@ -45,7 +45,7 @@ export class CompositeCookieQueryStrategy implements CookieQueryStrategy {
    * ]);
    * ```
    */
-  public constructor(private strategies: CookieQueryStrategy[]) {}
+  public constructor(private readonly strategies: CookieQueryStrategy[]) {}
 
   /**
    * Handles strategy-specific errors and logs them appropriately

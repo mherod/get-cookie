@@ -154,7 +154,7 @@ export class BinaryCodableCookies {
       }
 
       // Read metadata plist
-      const _plistData = container.buffer.subarray(container.offset);
+      // const plistData = container.buffer.subarray(container.offset);
       // Note: You'll need to implement or use a plist parser library here
       this.metadata = {}; // Placeholder for plist data
     } catch (error) {

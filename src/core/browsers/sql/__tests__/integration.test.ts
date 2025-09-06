@@ -190,7 +190,7 @@ describe("SQL Integration Tests", () => {
       );
 
       expect(result).toHaveLength(1);
-      expect((result as unknown as Array<{ name: string }>)[0].name).toBe(
+      expect((result as unknown as Array<{ name: string }>)[0]!.name).toBe(
         "session",
       );
     });
@@ -203,7 +203,7 @@ describe("SQL Integration Tests", () => {
       try {
         // Create multiple connections
         const conn1 = await manager.getConnection("db1.db");
-        const _conn2 = await manager.getConnection("db2.db");
+        await manager.getConnection("db2.db");
 
         manager.releaseConnection("db1.db");
 
@@ -260,7 +260,7 @@ describe("SQL Integration Tests", () => {
       expect(stats.totalQueries).toBe(1);
 
       const history = monitor.getHistory();
-      expect(history[0].sql).toBe("SELECT * FROM cookies");
+      expect(history[0]!.sql).toBe("SELECT * FROM cookies");
     });
 
     it("should track slow queries", async () => {
@@ -362,7 +362,7 @@ describe("SQL Integration Tests", () => {
       );
 
       expect(result).toHaveLength(1);
-      expect((result as unknown as Array<{ name: string }>)[0].name).toBe(
+      expect((result as unknown as Array<{ name: string }>)[0]!.name).toBe(
         "keep",
       );
     });
@@ -423,7 +423,7 @@ describe("SQL Integration Tests", () => {
       );
 
       expect(result).toHaveLength(1);
-      expect((result as unknown as Array<{ name: string }>)[0].name).toBe(
+      expect((result as unknown as Array<{ name: string }>)[0]!.name).toBe(
         "session",
       );
     });

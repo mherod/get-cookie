@@ -1,4 +1,3 @@
-import { homedir } from "node:os";
 import { join } from "node:path";
 
 import type { BinaryCookieRow } from "../../../../types/schemas";
@@ -24,7 +23,6 @@ describe("SafariCookieQueryStrategy - Path Handling", () => {
   const mockDecodeBinaryCookies = decodeBinaryCookies as jest.MockedFunction<
     typeof decodeBinaryCookies
   >;
-  const _mockHomedir = homedir as jest.MockedFunction<typeof homedir>;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -89,7 +87,7 @@ describe("SafariCookieQueryStrategy - Path Handling", () => {
 
       const cookies = await strategy.queryCookies("test-cookie", "example.com");
       expect(cookies).toHaveLength(1);
-      expect(cookies[0].meta?.path).toBeUndefined();
+      expect(cookies[0]!.meta?.path).toBeUndefined();
     });
 
     it("should include cookie path in meta", async () => {
@@ -108,7 +106,7 @@ describe("SafariCookieQueryStrategy - Path Handling", () => {
 
       const cookies = await strategy.queryCookies("test-cookie", "example.com");
       expect(cookies).toHaveLength(1);
-      expect(cookies[0].meta?.path).toBe("/custom/path");
+      expect(cookies[0]!.meta?.path).toBe("/custom/path");
     });
   });
 });

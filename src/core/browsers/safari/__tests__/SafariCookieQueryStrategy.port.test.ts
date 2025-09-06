@@ -1,5 +1,3 @@
-import { homedir } from "node:os";
-
 import type { BinaryCookieRow } from "../../../../types/schemas";
 import { decodeBinaryCookies } from "../decodeBinaryCookies";
 import { SafariCookieQueryStrategy } from "../SafariCookieQueryStrategy";
@@ -26,7 +24,6 @@ describe("SafariCookieQueryStrategy - Port Properties", () => {
   const mockDecodeBinaryCookies = decodeBinaryCookies as jest.MockedFunction<
     typeof decodeBinaryCookies
   >;
-  const _mockHomedir = homedir as jest.MockedFunction<typeof homedir>;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -54,6 +51,6 @@ describe("SafariCookieQueryStrategy - Port Properties", () => {
 
     const cookies = await strategy.queryCookies("test-cookie", "example.com");
     expect(cookies).toHaveLength(1);
-    expect(cookies[0].meta?.port).toBe(8080);
+    expect(cookies[0]!.meta?.port).toBe(8080);
   });
 });

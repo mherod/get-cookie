@@ -1,5 +1,3 @@
-import { homedir } from "node:os";
-
 import type { BinaryCookieRow } from "../../../../types/schemas";
 import { decodeBinaryCookies } from "../decodeBinaryCookies";
 import { SafariCookieQueryStrategy } from "../SafariCookieQueryStrategy";
@@ -26,7 +24,6 @@ describe("SafariCookieQueryStrategy - Domain Wildcards", () => {
   const mockDecodeBinaryCookies = decodeBinaryCookies as jest.MockedFunction<
     typeof decodeBinaryCookies
   >;
-  const _mockHomedir = homedir as jest.MockedFunction<typeof homedir>;
 
   beforeEach(() => {
     jest.clearAllMocks();

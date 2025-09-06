@@ -187,7 +187,7 @@ describe("QueryMonitor", () => {
       expect(result).toBeUndefined();
 
       const history = monitor.getHistory(1);
-      expect(history[0].rowCount).toBe(0);
+      expect(history[0]!.rowCount).toBe(0);
     });
   });
 
@@ -248,8 +248,8 @@ describe("QueryMonitor", () => {
 
       const history = monitor.getHistory();
       expect(history).toHaveLength(2);
-      expect(history[0].sql).toBe("SELECT 1");
-      expect(history[1].sql).toBe("SELECT 2");
+      expect(history[0]!.sql).toBe("SELECT 1");
+      expect(history[1]!.sql).toBe("SELECT 2");
     });
 
     it("should limit history size", () => {
@@ -260,7 +260,7 @@ describe("QueryMonitor", () => {
 
       const history = monitor.getHistory();
       expect(history).toHaveLength(10); // maxHistorySize is 10
-      expect(history[0].sql).toBe("SELECT 5"); // First 5 should be trimmed
+      expect(history[0]!.sql).toBe("SELECT 5"); // First 5 should be trimmed
     });
 
     it("should get limited history", () => {
@@ -270,8 +270,8 @@ describe("QueryMonitor", () => {
 
       const history = monitor.getHistory(2);
       expect(history).toHaveLength(2);
-      expect(history[0].sql).toBe("SELECT 3");
-      expect(history[1].sql).toBe("SELECT 4");
+      expect(history[0]!.sql).toBe("SELECT 3");
+      expect(history[1]!.sql).toBe("SELECT 4");
     });
 
     it("should clear history", () => {
@@ -479,9 +479,9 @@ describe("QueryMonitor", () => {
         filepath: "test.db",
         rowCount: 2,
       });
-      expect(execution.startTime).toBe(baseTime);
-      expect(execution.endTime).toBe(baseTime + 10);
-      expect(execution.duration).toBe(10);
+      expect(execution!.startTime).toBe(baseTime);
+      expect(execution!.endTime).toBe(baseTime + 10);
+      expect(execution!.duration).toBe(10);
 
       // Restore Date.now
       Date.now = originalDateNow;
@@ -502,8 +502,8 @@ describe("QueryMonitor", () => {
       const history = monitor.getHistory(1);
       const execution = history[0];
 
-      expect(execution.error).toBe(error);
-      expect(execution.duration).toBeGreaterThanOrEqual(0);
+      expect(execution!.error).toBe(error);
+      expect(execution!.duration).toBeGreaterThanOrEqual(0);
     });
   });
 });

@@ -92,7 +92,7 @@ export class BinaryCodablePage {
     // Read cookies at their offsets
     for (let i = 0; i < cookieCount; i++) {
       try {
-        const cookieOffset = cookieOffsets[i];
+        const cookieOffset = cookieOffsets[i]!;
         logger.debug(`Reading cookie ${i} at offset:`, cookieOffset);
 
         // Read cookie size from the cookie header

@@ -40,7 +40,7 @@ describe("comboQueryCookieSpec basic functionality", () => {
   it("should return cookies with correct properties", async () => {
     const result = await comboQueryCookieSpec(cookieSpec, options);
     const cookies = result;
-    const cookie = cookies[0];
+    const cookie = cookies[0]!;
 
     expect(cookie.domain).toBe("example.com");
     expect(cookie.name).toBe("test");
@@ -74,7 +74,7 @@ describe("comboQueryCookieSpec options handling", () => {
   });
 
   it("should handle undefined limit", async () => {
-    options.limit = undefined;
+    delete options.limit;
     const result = await comboQueryCookieSpec(cookieSpec, options);
     const cookies = result;
     expect(Array.isArray(cookies)).toBe(true);

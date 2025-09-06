@@ -1,5 +1,3 @@
-import { homedir } from "node:os";
-
 import type { BinaryCookieRow } from "../../../../types/schemas";
 import { decodeBinaryCookies } from "../decodeBinaryCookies";
 import { SafariCookieQueryStrategy } from "../SafariCookieQueryStrategy";
@@ -26,7 +24,6 @@ describe("SafariCookieQueryStrategy - Cookie Name Edge Cases", () => {
   const mockDecodeBinaryCookies = decodeBinaryCookies as jest.MockedFunction<
     typeof decodeBinaryCookies
   >;
-  const _mockHomedir = homedir as jest.MockedFunction<typeof homedir>;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -53,7 +50,7 @@ describe("SafariCookieQueryStrategy - Cookie Name Edge Cases", () => {
 
     const cookies = await strategy.queryCookies("", "example.com");
     expect(cookies).toHaveLength(1);
-    expect(cookies[0].name).toBe("");
+    expect(cookies[0]!.name).toBe("");
   });
 
   it("should handle special characters in cookie name", async () => {
@@ -72,7 +69,7 @@ describe("SafariCookieQueryStrategy - Cookie Name Edge Cases", () => {
 
     const cookies = await strategy.queryCookies("!@#$%^&*()", "example.com");
     expect(cookies).toHaveLength(1);
-    expect(cookies[0].name).toBe("!@#$%^&*()");
+    expect(cookies[0]!.name).toBe("!@#$%^&*()");
   });
 
   it("should handle unicode characters in cookie name", async () => {
@@ -91,6 +88,6 @@ describe("SafariCookieQueryStrategy - Cookie Name Edge Cases", () => {
 
     const cookies = await strategy.queryCookies("🍪", "example.com");
     expect(cookies).toHaveLength(1);
-    expect(cookies[0].name).toBe("🍪");
+    expect(cookies[0]!.name).toBe("🍪");
   });
 });

@@ -315,17 +315,17 @@ describe("DatabaseConnectionManager", () => {
   describe("Connection Pooling", () => {
     it("should evict least recently used connection", async () => {
       // Fill the pool
-      const _conn1 = await manager.getConnection("db1.db");
+      await manager.getConnection("db1.db");
       manager.releaseConnection("db1.db");
 
       await new Promise((resolve) => setTimeout(resolve, 10));
 
-      const _conn2 = await manager.getConnection("db2.db");
+      await manager.getConnection("db2.db");
       manager.releaseConnection("db2.db");
 
       await new Promise((resolve) => setTimeout(resolve, 10));
 
-      const _conn3 = await manager.getConnection("db3.db");
+      await manager.getConnection("db3.db");
       manager.releaseConnection("db3.db");
 
       // This should evict db1.db (LRU)
@@ -335,9 +335,9 @@ describe("DatabaseConnectionManager", () => {
     });
 
     it("should handle connection reuse tracking", async () => {
-      const _conn1 = await manager.getConnection(testDbPath);
+      await manager.getConnection(testDbPath);
       manager.releaseConnection(testDbPath);
-      const _conn2 = await manager.getConnection(testDbPath);
+      await manager.getConnection(testDbPath);
 
       const stats = manager.getStatistics();
       expect(stats.connectionReuse).toBe(1);
@@ -413,7 +413,7 @@ describe("DatabaseConnectionManager", () => {
         throw new Error("Close failed");
       });
 
-      const _conn = await manager.getConnection(testDbPath);
+      await manager.getConnection(testDbPath);
 
       // Should not throw
       expect(() => manager.closeConnection(testDbPath)).not.toThrow();

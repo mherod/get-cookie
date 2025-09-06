@@ -23,9 +23,6 @@ jest.mock("node:path", () => ({
 
 describe("SafariCookieQueryStrategy - Core", () => {
   let strategy: SafariCookieQueryStrategy;
-  const _mockDecodeBinaryCookies = decodeBinaryCookies as jest.MockedFunction<
-    typeof decodeBinaryCookies
-  >;
   const mockHomedir = homedir as jest.MockedFunction<typeof homedir>;
   const originalHome = process.env.HOME;
 

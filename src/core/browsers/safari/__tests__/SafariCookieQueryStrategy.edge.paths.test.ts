@@ -1,5 +1,3 @@
-import { homedir } from "node:os";
-
 import type { BinaryCookieRow } from "../../../../types/schemas";
 import { decodeBinaryCookies } from "../decodeBinaryCookies";
 import { SafariCookieQueryStrategy } from "../SafariCookieQueryStrategy";
@@ -26,7 +24,6 @@ describe("SafariCookieQueryStrategy - Path Edge Cases", () => {
   const mockDecodeBinaryCookies = decodeBinaryCookies as jest.MockedFunction<
     typeof decodeBinaryCookies
   >;
-  const _mockHomedir = homedir as jest.MockedFunction<typeof homedir>;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -53,7 +50,7 @@ describe("SafariCookieQueryStrategy - Path Edge Cases", () => {
 
     const cookies = await strategy.queryCookies("test-cookie", "example.com");
     expect(cookies).toHaveLength(1);
-    expect(cookies[0].meta?.path).toBe("/");
+    expect(cookies[0]!.meta?.path).toBe("/");
   });
 
   it("should handle deep nested paths", async () => {
@@ -72,7 +69,7 @@ describe("SafariCookieQueryStrategy - Path Edge Cases", () => {
 
     const cookies = await strategy.queryCookies("test-cookie", "example.com");
     expect(cookies).toHaveLength(1);
-    expect(cookies[0].meta?.path).toBe("/very/deep/nested/path/structure");
+    expect(cookies[0]!.meta?.path).toBe("/very/deep/nested/path/structure");
   });
 
   it("should handle paths with special characters", async () => {
@@ -91,7 +88,7 @@ describe("SafariCookieQueryStrategy - Path Edge Cases", () => {
 
     const cookies = await strategy.queryCookies("test-cookie", "example.com");
     expect(cookies).toHaveLength(1);
-    expect(cookies[0].meta?.path).toBe("/path/with/!@#$%^&*()/chars");
+    expect(cookies[0]!.meta?.path).toBe("/path/with/!@#$%^&*()/chars");
   });
 
   it("should handle paths with unicode characters", async () => {
@@ -110,6 +107,6 @@ describe("SafariCookieQueryStrategy - Path Edge Cases", () => {
 
     const cookies = await strategy.queryCookies("test-cookie", "example.com");
     expect(cookies).toHaveLength(1);
-    expect(cookies[0].meta?.path).toBe("/path/with/🍪/emoji");
+    expect(cookies[0]!.meta?.path).toBe("/path/with/🍪/emoji");
   });
 });

@@ -117,7 +117,11 @@ export class BinaryCodableCookie {
     }
 
     try {
-      const payload = Buffer.from(parts[1], "base64").toString("utf8");
+      const payloadPart = parts[1];
+      if (!payloadPart) {
+        return null;
+      }
+      const payload = Buffer.from(payloadPart, "base64").toString("utf8");
       const parsed = JSON.parse(payload) as Record<string, unknown>;
       return JSON.stringify(parsed);
     } catch {
@@ -315,24 +319,6 @@ export class BinaryCodableCookie {
   }
 
   /**
-   * Read a null-terminated string from the container buffer
-   * @param container - The binary container
-   * @param offset - Starting offset in the buffer
-   * @returns The null-terminated string
-   */
-  private readNullTerminatedString(
-    container: BinaryCodableContainer,
-    offset: number,
-  ): string {
-    let end = offset;
-    while (end < container.buffer.length && container.buffer[end] !== 0) {
-      end++;
-    }
-    const value = container.buffer.toString("utf8", offset, end);
-    return value || "";
-  }
-
-  /**
    * Read the cookie header information
    * @param container - The binary container
    * @returns Object containing size, port flag, and string offsets
@@ -390,7 +376,7 @@ export class BinaryCodableCookie {
     // Read expiration time (8 bytes, little-endian double)
     const expirationBuffer = Buffer.alloc(8);
     for (let i = 0; i < 8; i++) {
-      expirationBuffer[i] = container.buffer[container.offset + i];
+      expirationBuffer[i] = container.buffer[container.offset + i]!;
     }
     const expiration = expirationBuffer.readDoubleLE(0);
     container.offset += 8;
@@ -398,7 +384,7 @@ export class BinaryCodableCookie {
     // Read creation time (8 bytes, little-endian double)
     const creationBuffer = Buffer.alloc(8);
     for (let i = 0; i < 8; i++) {
-      creationBuffer[i] = container.buffer[container.offset + i];
+      creationBuffer[i] = container.buffer[container.offset + i]!;
     }
     const creation = creationBuffer.readDoubleLE(0);
     container.offset += 8;
@@ -443,9 +429,10 @@ export class BinaryCodableCookie {
 
     // Calculate string lengths based on offset differences
     for (let i = 0; i < offsetEntries.length; i++) {
-      const { field, offset } = offsetEntries[i];
+      const entry = offsetEntries[i]!;
+      const { field, offset } = entry;
       const nextOffset =
-        i < offsetEntries.length - 1 ? offsetEntries[i + 1].offset : size;
+        i < offsetEntries.length - 1 ? offsetEntries[i + 1]!.offset : size;
       const length = nextOffset - offset;
 
       // Read string up to null terminator

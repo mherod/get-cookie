@@ -30,7 +30,7 @@ const cookies = await getCookie({
 ## Why get-cookie? ✨
 
 - 🔐 **Battle-tested Security**: Handles complex browser encryption with ease
-- 🎯 **Universal Browser Support**: Chrome, Edge, Firefox, Safari - we've got you covered
+- 🎯 **Universal Browser Support**: Chrome, Edge, Arc, Opera, Opera GX, Firefox, Safari - we've got you covered
 - 🚀 **Developer Experience**: Rich CLI options and type-safe Node.js API
 - ⚡ **Lightning Fast**: Optimised binary parsing and decryption
 - 🛠️ **Production Ready**: Used in critical testing pipelines worldwide
@@ -88,7 +88,7 @@ const cookies = await getCookie({
 
 ## Core Features 🎯
 
-- 🌐 **Cross-Platform**: Chrome & Edge (macOS/Linux/Windows), Firefox (macOS/Linux), Safari (macOS)
+- 🌐 **Cross-Platform**: Chrome, Edge, Arc, Opera & Opera GX (macOS/Linux/Windows), Firefox (macOS/Linux), Safari (macOS)
 - 🔒 **Enterprise Security**: Browser-native encryption handling
 - 📝 **TypeScript First**: Complete type safety and IntelliSense
 - 🎨 **Flexible Output**: JSON, rendered, or grouped results

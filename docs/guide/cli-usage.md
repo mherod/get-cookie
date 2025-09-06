@@ -76,6 +76,18 @@ get-cookie auth example.com --dump-grouped
 # Chrome only
 get-cookie auth example.com --browser chrome
 
+# Edge only
+get-cookie auth example.com --browser edge
+
+# Arc only
+get-cookie auth example.com --browser arc
+
+# Opera only
+get-cookie auth example.com --browser opera
+
+# Opera GX only
+get-cookie auth example.com --browser opera-gx
+
 # Firefox only
 get-cookie auth example.com --browser firefox
 

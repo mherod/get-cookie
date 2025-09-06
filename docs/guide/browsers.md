@@ -4,18 +4,21 @@ Understanding how get-cookie works with different browsers and platforms.
 
 ## Platform Support Matrix
 
-| Browser | macOS | Linux | Windows |
-| ------- | ----- | ----- | ------- |
-| Chrome  | ✅    | ✅    | ✅      |
-| Edge    | ✅    | ✅    | ✅      |
-| Firefox | ✅    | ✅    | ❌      |
-| Safari  | ✅    | ❌    | ❌      |
+| Browser  | macOS | Linux | Windows |
+| -------- | ----- | ----- | ------- |
+| Chrome   | ✅    | ✅    | ✅      |
+| Edge     | ✅    | ✅    | ✅      |
+| Arc      | ✅    | ✅    | ✅      |
+| Opera    | ✅    | ✅    | ✅      |
+| Opera GX | ✅    | ✅    | ✅      |
+| Firefox  | ✅    | ✅    | ❌      |
+| Safari   | ✅    | ❌    | ❌      |
 
 ✅ Full Support | ❌ Not Supported
 
-## Chrome & Edge (Cross-Platform)
+## Chromium-Based Browsers (Cross-Platform)
 
-Both Chrome and Microsoft Edge are Chromium-based browsers that share the same cookie storage format and encryption methods. The only difference is the storage location.
+Chrome, Edge, Arc, Opera, and Opera GX are all Chromium-based browsers that share the same cookie storage format and encryption methods. The main differences are their storage locations and keychain service names.
 
 ### Storage Location
 
@@ -55,14 +58,69 @@ Chrome and Edge store cookies in SQLite databases:
 %LOCALAPPDATA%\Microsoft\Edge\User Data\Default\Cookies
 ```
 
+#### Arc Browser
+
+**macOS:**
+```
+~/Library/Application Support/Arc/User Data/Default/Cookies
+```
+
+**Linux:**
+```
+~/.config/arc/Default/Cookies
+```
+
+**Windows:**
+```
+%LOCALAPPDATA%\Arc\User Data\Default\Cookies
+```
+
+#### Opera
+
+**macOS:**
+```
+~/Library/Application Support/com.operasoftware.Opera/Default/Cookies
+```
+
+**Linux:**
+```
+~/.config/opera/Default/Cookies
+```
+
+**Windows:**
+```
+%APPDATA%\Opera Software\Opera Stable\Default\Cookies
+```
+
+#### Opera GX
+
+**macOS:**
+```
+~/Library/Application Support/com.operasoftware.OperaGX/Default/Cookies
+```
+
+**Linux:**
+```
+~/.config/opera-gx/Default/Cookies
+```
+
+**Windows:**
+```
+%APPDATA%\Opera Software\Opera GX Stable\Default\Cookies
+```
+
 ### Security Model
 
-Chrome and Edge use identical encryption methods depending on the platform and cookie version:
+All Chromium-based browsers use identical encryption methods depending on the platform and cookie version:
 
 #### macOS
 - **v11+ cookies**: AES-128-CBC with PBKDF2 key derivation
 - **Plaintext cookies**: Legacy cookies without version prefix are stored as plaintext
-- Encryption key stored in macOS Keychain (Safe Storage)
+- Encryption keys stored in macOS Keychain with browser-specific service names:
+  - Chrome: "Chrome Safe Storage"
+  - Edge: "Microsoft Edge Safe Storage"
+  - Arc: "Arc Safe Storage"
+  - Opera/Opera GX: "Opera Safe Storage"
 - Hash prefix support for database meta version ≥ 24
 
 #### Windows  
@@ -96,11 +154,12 @@ Chrome and Edge use identical encryption methods depending on the platform and c
 ### Limitations
 
 - Requires appropriate system permissions
-- Chrome must be installed
+- Browser must be installed
 - Session cookies not accessible
 - Incognito mode not supported
 - Profile must be accessible
 - Platform-specific security requirements
+- Each browser requires its own keychain entry (macOS)
 
 ## Firefox (macOS & Linux)
 
@@ -187,13 +246,23 @@ Safari uses a binary cookie format:
 
 ## Implementation Examples
 
-### Chrome Strategy (Cross-Platform)
+### Chromium Browser Strategies (Cross-Platform)
 
 ```typescript
-import { ChromeCookieQueryStrategy } from "@mherod/get-cookie";
+import { 
+  ChromeCookieQueryStrategy,
+  EdgeCookieQueryStrategy,
+  ArcCookieQueryStrategy,
+  OperaCookieQueryStrategy,
+  OperaGXCookieQueryStrategy 
+} from "@mherod/get-cookie";
 
-// Create strategy
-const strategy = new ChromeCookieQueryStrategy();
+// Create strategy for specific browser
+const chromeStrategy = new ChromeCookieQueryStrategy();
+const edgeStrategy = new EdgeCookieQueryStrategy();
+const arcStrategy = new ArcCookieQueryStrategy();
+const operaStrategy = new OperaCookieQueryStrategy();
+const operaGXStrategy = new OperaGXCookieQueryStrategy();
 
 try {
   // Query cookies (works on macOS, Linux, and Windows)

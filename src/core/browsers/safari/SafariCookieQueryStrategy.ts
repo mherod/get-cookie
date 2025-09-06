@@ -2,6 +2,7 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 
 import { errorMessageContains, formatErrorForLogging } from "@utils/errorUtils";
+import { isMacOS } from "@utils/platformUtils";
 import { isSafariRunning } from "@utils/ProcessDetector";
 import {
   checkFilePermission,
@@ -489,6 +490,12 @@ export class SafariCookieQueryStrategy extends BaseCookieQueryStrategy {
     store?: string,
     force?: boolean,
   ): Promise<ExportedCookie[]> {
+    // Fast path: Safari only exists on macOS
+    if (!isMacOS()) {
+      this.logger.debug("Safari strategy skipped on non-macOS platform");
+      return [];
+    }
+
     try {
       this.logger.info("Querying cookies", { name, domain, store });
 

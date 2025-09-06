@@ -7,16 +7,21 @@ Understanding how get-cookie works with different browsers and platforms.
 | Browser | macOS | Linux | Windows |
 | ------- | ----- | ----- | ------- |
 | Chrome  | ✅    | ✅    | ✅      |
+| Edge    | ✅    | ✅    | ✅      |
 | Firefox | ✅    | ✅    | ❌      |
 | Safari  | ✅    | ❌    | ❌      |
 
 ✅ Full Support | ❌ Not Supported
 
-## Chrome (Cross-Platform)
+## Chrome & Edge (Cross-Platform)
+
+Both Chrome and Microsoft Edge are Chromium-based browsers that share the same cookie storage format and encryption methods. The only difference is the storage location.
 
 ### Storage Location
 
-Chrome stores cookies in an SQLite database across all platforms:
+Chrome and Edge store cookies in SQLite databases:
+
+#### Chrome
 
 **macOS:**
 ```
@@ -33,9 +38,26 @@ Chrome stores cookies in an SQLite database across all platforms:
 %LOCALAPPDATA%\Google\Chrome\User Data\Default\Cookies
 ```
 
+#### Microsoft Edge
+
+**macOS:**
+```
+~/Library/Application Support/Microsoft Edge/Default/Cookies
+```
+
+**Linux:**
+```
+~/.config/microsoft-edge/Default/Cookies
+```
+
+**Windows:**
+```
+%LOCALAPPDATA%\Microsoft\Edge\User Data\Default\Cookies
+```
+
 ### Security Model
 
-Chrome uses different encryption methods depending on the platform and cookie version:
+Chrome and Edge use identical encryption methods depending on the platform and cookie version:
 
 #### macOS
 - **v11+ cookies**: AES-128-CBC with PBKDF2 key derivation

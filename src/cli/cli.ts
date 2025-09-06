@@ -42,7 +42,7 @@ function showHelp(): void {
   logger.log("  -D, --domain PATTERN      Cookie domain pattern");
   logger.log("  -u, --url URL             URL to extract cookie specs from");
   logger.log(
-    "  --browser BROWSER         Target specific browser (chrome|firefox|safari)",
+    "  --browser BROWSER         Target specific browser (chrome|edge|arc|opera|opera-gx|firefox|safari)",
   );
   logger.log(
     "  --store PATH              Path to a specific cookie store file",

@@ -17,7 +17,9 @@ export const CHROMIUM_BASED_BROWSERS = [
   "chromium",
   "brave",
   "edge",
+  "arc",
   "opera",
+  "opera-gx",
   "vivaldi",
   "whale",
 ] as const;
@@ -85,6 +87,11 @@ export function getChromiumBrowserPath(browser: ChromiumBrowser): string {
       macos: join(home, "Library", "Application Support", "Microsoft Edge"),
       linux: join(home, ".config", "microsoft-edge"),
     },
+    arc: {
+      windows: join(home, "AppData", "Local", "Arc", "User Data"),
+      macos: join(home, "Library", "Application Support", "Arc", "User Data"),
+      linux: join(home, ".config", "arc"),
+    },
     opera: {
       windows: join(
         home,
@@ -100,6 +107,22 @@ export function getChromiumBrowserPath(browser: ChromiumBrowser): string {
         "com.operasoftware.Opera",
       ),
       linux: join(home, ".config", "opera"),
+    },
+    "opera-gx": {
+      windows: join(
+        home,
+        "AppData",
+        "Roaming",
+        "Opera Software",
+        "Opera GX Stable",
+      ),
+      macos: join(
+        home,
+        "Library",
+        "Application Support",
+        "com.operasoftware.OperaGX",
+      ),
+      linux: join(home, ".config", "opera-gx"),
     },
     vivaldi: {
       windows: join(home, "AppData", "Local", "Vivaldi", "User Data"),

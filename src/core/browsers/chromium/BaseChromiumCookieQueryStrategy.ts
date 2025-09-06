@@ -4,8 +4,9 @@ import type { CookieRow, ExportedCookie } from "../../../types/schemas";
 import { chromeTimestampToDate } from "../../../utils/chromeDates";
 import { BaseCookieQueryStrategy } from "../BaseCookieQueryStrategy";
 import { BrowserLockHandler } from "../BrowserLockHandler";
+import type { ChromiumBrowser } from "../chrome/ChromiumBrowsers";
 import { decrypt } from "../chrome/decrypt";
-import { getChromePassword } from "../chrome/getChromePassword";
+import { getChromiumPassword } from "../chrome/getChromiumPassword";
 import { getEncryptedChromeCookie } from "../getEncryptedChromeCookie";
 
 interface DecryptionContext {
@@ -55,15 +56,22 @@ export function createExportedCookie(
 export abstract class BaseChromiumCookieQueryStrategy extends BaseCookieQueryStrategy {
   protected lockHandler: BrowserLockHandler;
   protected browserDisplayName: string;
+  protected browserType: ChromiumBrowser;
 
   /**
    * Creates a new instance of BaseChromiumCookieQueryStrategy
    * @param strategyName - Name of the strategy for logging
    * @param browserName - Display name of the browser
+   * @param browserType - The Chromium browser type for password retrieval
    */
-  public constructor(strategyName: string, browserName: string) {
+  public constructor(
+    strategyName: string,
+    browserName: string,
+    browserType: ChromiumBrowser = "chrome",
+  ) {
     super(strategyName, "Chrome"); // Use "Chrome" for base class compatibility
     this.browserDisplayName = browserName;
+    this.browserType = browserType;
     this.lockHandler = new BrowserLockHandler(this.logger, "Chrome");
   }
 
@@ -107,7 +115,7 @@ export abstract class BaseChromiumCookieQueryStrategy extends BaseCookieQueryStr
     }
 
     try {
-      const password = await getChromePassword();
+      const password = await getChromiumPassword(this.browserType);
       const results: ExportedCookie[] = [];
 
       for (const file of files) {

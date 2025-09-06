@@ -7,6 +7,7 @@ This guide details the current platform support status and requirements for get-
 | Browser | macOS | Linux | Windows |
 | ------- | ----- | ----- | ------- |
 | Chrome  | ✅    | ✅    | ✅      |
+| Edge    | ✅    | ✅    | ✅      |
 | Firefox | ✅    | ⚠️    | ❌      |
 | Safari  | ✅    | ❌    | ❌      |
 
@@ -25,6 +26,10 @@ Primary supported platform with full functionality across all major browsers.
   - Plaintext cookies: Legacy cookies stored without encryption
   - Keychain integration for encryption keys
   - Hash prefix handling for modern database versions
+- **Edge**: Full support (Chromium-based, same as Chrome)
+  - Identical encryption and storage format as Chrome
+  - Keychain integration for encryption keys
+  - All Chrome features supported
 - **Firefox**: Full support with profile management
 - **Safari**: Full support with container access
 
@@ -45,7 +50,7 @@ Primary supported platform with full functionality across all major browsers.
 
 ### Linux
 
-Full Chrome support with experimental Firefox support.
+Full Chrome and Edge support with experimental Firefox support.
 
 #### Supported Browsers
 
@@ -54,30 +59,36 @@ Full Chrome support with experimental Firefox support.
   - System keyring integration (libsecret)
   - Fallback encryption key support
   - Hash prefix handling for modern database versions
+- **Edge**: Full support (Chromium-based, same as Chrome)
+  - Identical encryption and storage format as Chrome
+  - System keyring integration (libsecret)
+  - All Chrome features supported
 - **Firefox**: Basic support (experimental)
 - **Safari**: Not available on platform
 
 #### Requirements
 
 - **Chrome**: Google Chrome installation, system keyring (libsecret) recommended
+- **Edge**: Microsoft Edge installation, system keyring (libsecret) recommended
 - **Firefox**: Firefox installation, read access to `~/.mozilla/firefox`
 - SQLite database access
 - Appropriate file permissions
 
 #### Known Limitations
 
-- **Chrome**: Requires keyring access or falls back to hardcoded key
+- **Chrome/Edge**: Requires keyring access or falls back to hardcoded key
 - **Firefox**: Database locking issues possible, experimental feature set
 - Profile discovery may be limited
 - Some system configurations may require additional setup
 
 ### Windows
 
-Chrome support available with Firefox support planned.
+Chrome and Edge support available with Firefox support planned.
 
 #### Supported Browsers
 
 - **Chrome**: Full support with comprehensive cookie decryption
+- **Edge**: Full support (Chromium-based, same as Chrome)
   - v10 cookies: AES-256-GCM with DPAPI-protected keys
   - v11+ cookies: AES-128-CBC with PBKDF2 key derivation
   - Windows DPAPI integration for encryption keys

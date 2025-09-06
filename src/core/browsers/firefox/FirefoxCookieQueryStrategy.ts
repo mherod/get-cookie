@@ -50,12 +50,61 @@ function findFirefoxCookieFiles(
         ),
       );
       break;
-    case "win32":
-      profileDirs.push(join(home, "AppData/Roaming/Mozilla/Firefox"));
+    case "win32": {
+      // Regular Firefox
+      profileDirs.push(join(home, "AppData", "Roaming", "Mozilla", "Firefox"));
       patterns.push(
-        join(home, "AppData/Roaming/Mozilla/Firefox/Profiles/*/cookies.sqlite"),
+        join(
+          home,
+          "AppData",
+          "Roaming",
+          "Mozilla",
+          "Firefox",
+          "Profiles",
+          "*",
+          "cookies.sqlite",
+        ),
       );
+      // Firefox Developer Edition
+      const devEditionPath = join(
+        home,
+        "AppData",
+        "Roaming",
+        "Mozilla",
+        "Firefox Developer Edition",
+      );
+      if (existsSync(devEditionPath)) {
+        profileDirs.push(devEditionPath);
+        patterns.push(join(devEditionPath, "Profiles", "*", "cookies.sqlite"));
+      }
+      // Firefox ESR (Extended Support Release)
+      const esrPath = join(
+        home,
+        "AppData",
+        "Roaming",
+        "Mozilla",
+        "Firefox ESR",
+      );
+      if (existsSync(esrPath)) {
+        profileDirs.push(esrPath);
+        patterns.push(join(esrPath, "Profiles", "*", "cookies.sqlite"));
+      }
+      // Also check Local AppData for some installations
+      const localFirefoxPath = join(
+        home,
+        "AppData",
+        "Local",
+        "Mozilla",
+        "Firefox",
+      );
+      if (existsSync(localFirefoxPath)) {
+        profileDirs.push(localFirefoxPath);
+        patterns.push(
+          join(localFirefoxPath, "Profiles", "*", "cookies.sqlite"),
+        );
+      }
       break;
+    }
     case "linux":
       profileDirs.push(join(home, ".mozilla/firefox"));
       patterns.push(join(home, ".mozilla/firefox/*/cookies.sqlite"));

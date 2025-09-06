@@ -1,6 +1,7 @@
 import { getErrorMessage } from "./errorUtils";
 import { execSimple } from "./execSimple";
 import { createTaggedLogger } from "./logHelpers";
+import { isWindows, getPlatform } from "./platformUtils";
 
 const logger = createTaggedLogger("ProcessDetector");
 
@@ -84,9 +85,8 @@ async function detectBrowserProcesses(
 ): Promise<ProcessInfo[]> {
   try {
     let command: string;
-    const isWindows = process.platform === "win32";
 
-    if (isWindows) {
+    if (isWindows()) {
       // On Windows, use tasklist or wmic to find processes
       // Map common browser names to Windows process names
       const windowsProcessMap: Record<string, string> = {
@@ -120,7 +120,7 @@ async function detectBrowserProcesses(
     const lines = stdout.split("\n").filter((line) => line.trim() !== "");
 
     for (const line of lines) {
-      const processInfo = isWindows
+      const processInfo = isWindows()
         ? parseWindowsProcessLine(line, browserName.toLowerCase())
         : parseProcessLine(line, browserName.toLowerCase());
       if (processInfo) {
@@ -131,14 +131,14 @@ async function detectBrowserProcesses(
     logger.debug(`${browserName} process detection completed`, {
       processCount: processes.length,
       processes: processes.map((p) => ({ pid: p.pid, command: p.command })),
-      platform: process.platform,
+      platform: getPlatform(),
     });
 
     return processes;
   } catch (error) {
     logger.debug(`Failed to detect ${browserName} processes`, {
       error: getErrorMessage(error),
-      platform: process.platform,
+      platform: getPlatform(),
     });
     return [];
   }

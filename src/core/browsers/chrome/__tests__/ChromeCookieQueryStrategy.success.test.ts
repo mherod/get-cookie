@@ -52,8 +52,8 @@ describe("ChromeCookieQueryStrategy - Success", () => {
         {
           encrypted_value: mockCookieValue,
           name: "test-cookie",
-          host_key: "example.com",
-          expires_utc: Math.floor(Date.now() / 1000) + 86400, // 24 hours from now
+          domain: "example.com",
+          expiry: Math.floor(Date.now() / 1000) + 86400, // 24 hours from now
         },
       ]),
       // biome-ignore lint/suspicious/noExplicitAny: Mock objects in tests need flexible types

@@ -2,8 +2,12 @@ import { exec } from "node:child_process";
 import readline from "node:readline";
 import { promisify } from "node:util";
 
+import type { BrowserName } from "../types/schemas";
 import { createTaggedLogger } from "./logHelpers";
 import { isMacOS } from "./platformUtils";
+
+// Re-export BrowserName from schemas for backward compatibility
+export type { BrowserName } from "../types/schemas";
 
 const execAsync = promisify(exec);
 const logger = createTaggedLogger("BrowserControl");
@@ -30,14 +34,10 @@ export interface BrowserControlOptions {
 }
 
 /**
- * Browser names that can be controlled
- */
-export type BrowserName = "Firefox" | "Chrome" | "Safari";
-
-/**
  * Map of browser names to their macOS application names
+ * Only includes browsers that can be controlled on macOS
  */
-const BROWSER_APP_NAMES: Record<BrowserName, string> = {
+const BROWSER_APP_NAMES: Partial<Record<BrowserName, string>> = {
   Firefox: "Firefox",
   Chrome: "Google Chrome",
   Safari: "Safari",
@@ -53,6 +53,10 @@ async function isBrowserRunningMacOS(
 ): Promise<boolean> {
   try {
     const appName = BROWSER_APP_NAMES[browserName];
+    if (!appName) {
+      logger.debug("Browser not supported for macOS control", { browserName });
+      return false;
+    }
     const script = `tell application "System Events" to (name of processes) contains "${appName}"`;
     const { stdout } = await execAsync(`osascript -e '${script}'`);
     return stdout.trim() === "true";
@@ -73,6 +77,10 @@ async function isBrowserRunningMacOS(
 async function quitBrowserMacOS(browserName: BrowserName): Promise<boolean> {
   try {
     const appName = BROWSER_APP_NAMES[browserName];
+    if (!appName) {
+      logger.debug("Browser not supported for macOS control", { browserName });
+      return false;
+    }
 
     // First, try to quit gracefully
     const quitScript = `tell application "${appName}" to quit`;
@@ -107,6 +115,10 @@ async function saveBrowserSessionMacOS(
 ): Promise<void> {
   try {
     const appName = BROWSER_APP_NAMES[browserName];
+    if (!appName) {
+      logger.debug("Browser not supported for macOS control", { browserName });
+      return;
+    }
 
     if (browserName === "Firefox") {
       // Firefox: Use keyboard shortcut to save session (Cmd+Shift+D to bookmark all tabs)

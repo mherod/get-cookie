@@ -97,8 +97,8 @@ describe("ChromeCookieQueryStrategy - Value Handling", () => {
       {
         encrypted_value: "non-buffer-value",
         name: mockCookieData.name,
-        host_key: mockCookieData.domain,
-        expires_utc: mockCookieData.expiry,
+        domain: mockCookieData.domain,
+        expiry: mockCookieData.expiry,
       },
     ]);
     mockDecrypt.mockResolvedValueOnce("decrypted-value");

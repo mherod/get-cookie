@@ -5,16 +5,16 @@ import { getEncryptedChromeCookie } from "../../getEncryptedChromeCookie";
 import { listChromeProfilePaths } from "../../listChromeProfiles";
 import { ChromeCookieQueryStrategy } from "../ChromeCookieQueryStrategy";
 import { decrypt } from "../decrypt";
-import { getChromePassword } from "../getChromePassword";
+import { getChromiumPassword } from "../getChromiumPassword";
 
 jest.mock("../decrypt");
-jest.mock("../getChromePassword");
+jest.mock("../getChromiumPassword");
 jest.mock("../../getEncryptedChromeCookie");
 jest.mock("../../listChromeProfiles");
 
 const mockListChromeProfilePaths = jest.mocked(listChromeProfilePaths);
 const mockGetEncryptedChromeCookie = jest.mocked(getEncryptedChromeCookie);
-const mockGetChromePassword = jest.mocked(getChromePassword);
+const mockGetChromiumPassword = jest.mocked(getChromiumPassword);
 const mockDecrypt = jest.mocked(decrypt);
 
 describe("ChromeCookieQueryStrategy - Success", () => {
@@ -28,7 +28,7 @@ describe("ChromeCookieQueryStrategy - Success", () => {
     const mockDecryptedValue = "decrypted-value";
 
     mockListChromeProfilePaths.mockReturnValue(["/path/to/profile"]);
-    mockGetChromePassword.mockResolvedValue(mockPassword);
+    mockGetChromiumPassword.mockResolvedValue(mockPassword);
     mockGetEncryptedChromeCookie.mockResolvedValue([
       {
         name: "test-cookie",
@@ -50,7 +50,7 @@ describe("ChromeCookieQueryStrategy - Success", () => {
     });
 
     expect(mockListChromeProfilePaths).toHaveBeenCalled();
-    expect(mockGetChromePassword).toHaveBeenCalled();
+    expect(mockGetChromiumPassword).toHaveBeenCalled();
     expect(mockGetEncryptedChromeCookie).toHaveBeenCalledWith({
       name: "%",
       domain: "example.com",

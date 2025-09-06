@@ -1,24 +1,30 @@
 import { platform as osPlatform } from "node:os";
 
 /**
- * Supported platform types
+ * Cache for platform value
  */
-export type Platform = "darwin" | "win32" | "linux" | "unknown";
+let platformCache: string | undefined;
 
 /**
- * Get the current platform in a normalized format
- * @returns The current platform
+ * Clear the platform cache (for testing)
+ * @internal
  */
-export function getPlatform(): Platform {
-  const p = osPlatform();
-  switch (p) {
-    case "darwin":
-    case "win32":
-    case "linux":
-      return p;
-    default:
-      return "unknown";
-  }
+export function clearPlatformCache(): void {
+  platformCache = undefined;
+}
+
+/**
+ * Supported platform types
+ */
+export type Platform = "darwin" | "win32" | "linux";
+
+/**
+ * Get the current platform (with caching)
+ * @returns The current platform from os.platform()
+ */
+export function getPlatform(): string {
+  platformCache ??= osPlatform();
+  return platformCache;
 }
 
 /**
@@ -46,12 +52,12 @@ export function isLinux(): boolean {
 }
 
 /**
- * Check if the current platform is Unix-like (macOS or Linux)
+ * Check if the current platform is Unix-like (macOS, Linux, FreeBSD, etc.)
  * @returns True if running on a Unix-like system
  */
 export function isUnixLike(): boolean {
   const p = getPlatform();
-  return p === "darwin" || p === "linux";
+  return p !== "win32";
 }
 
 /**
@@ -59,7 +65,8 @@ export function isUnixLike(): boolean {
  * @returns True if the platform is supported
  */
 export function isPlatformSupported(): boolean {
-  return getPlatform() !== "unknown";
+  const p = getPlatform();
+  return p === "darwin" || p === "win32" || p === "linux";
 }
 
 /**
@@ -67,7 +74,8 @@ export function isPlatformSupported(): boolean {
  * @returns A human-readable platform name
  */
 export function getPlatformDisplayName(): string {
-  switch (getPlatform()) {
+  const platform = getPlatform();
+  switch (platform) {
     case "darwin":
       return "macOS";
     case "win32":
@@ -75,7 +83,7 @@ export function getPlatformDisplayName(): string {
     case "linux":
       return "Linux";
     default:
-      return "Unknown Platform";
+      return platform;
   }
 }
 
@@ -86,7 +94,7 @@ export function getPlatformDisplayName(): string {
 export function assertPlatformSupported(): void {
   if (!isPlatformSupported()) {
     throw new Error(
-      `Platform ${osPlatform()} is not supported. Supported platforms: macOS, Windows, Linux`,
+      `Unsupported platform: ${getPlatform()}. Supported platforms are: darwin, win32, linux`,
     );
   }
 }
@@ -108,10 +116,11 @@ export function getExecutableExtension(): string {
 }
 
 /**
- * Check if a given platform string matches the current platform
- * @param platformToCheck - The platform to check against
- * @returns True if the platform matches
+ * Check if the current platform matches any of the specified platforms
+ * @param platforms - Platform or platforms to check against current platform
+ * @returns True if the current platform matches any of the specified platforms
  */
-export function isPlatform(platformToCheck: string): boolean {
-  return osPlatform() === platformToCheck;
+export function isPlatform(...platforms: string[]): boolean {
+  const current = osPlatform();
+  return platforms.includes(current);
 }

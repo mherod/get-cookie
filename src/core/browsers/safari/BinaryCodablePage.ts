@@ -1,8 +1,7 @@
 import type { Buffer } from "node:buffer";
 
 import type { BinaryCookieRow } from "../../../types/schemas";
-import { logWarn } from "../../../utils/logHelpers";
-import { createTaggedLogger } from "../../../utils/logHelpers";
+import { createTaggedLogger, logWarn } from "../../../utils/logHelpers";
 
 import { BinaryCodableCookie } from "./BinaryCodableCookie";
 import type { BinaryCodableContainer } from "./interfaces/BinaryCodableContainer";

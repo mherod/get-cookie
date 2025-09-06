@@ -3,13 +3,14 @@ import {
   closeBrowserGracefully,
   waitForBrowserToClose,
 } from "@utils/BrowserControl";
-import { detectFileHandles, getFileLockInfo } from "@utils/FileHandleDetector";
-import { getBrowserConflictAdvice } from "@utils/ProcessDetector";
 import { getDatabaseErrorType, getErrorMessage } from "@utils/errorUtils";
+import { detectFileHandles, getFileLockInfo } from "@utils/FileHandleDetector";
 import type { createTaggedLogger } from "@utils/logHelpers";
+import { getBrowserConflictAdvice } from "@utils/ProcessDetector";
+
 import {
-  type PlatformBrowserControl,
   createPlatformBrowserControl,
+  type PlatformBrowserControl,
 } from "./platform/PlatformBrowserControl";
 
 /**
@@ -42,7 +43,7 @@ export class BrowserLockHandler {
     platformControl?: PlatformBrowserControl,
   ) {
     // Use provided control or create platform-specific one
-    this.platformControl = platformControl || createPlatformBrowserControl();
+    this.platformControl = platformControl ?? createPlatformBrowserControl();
   }
 
   /**

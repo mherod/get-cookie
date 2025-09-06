@@ -14,42 +14,51 @@ const logger = createTaggedLogger("BinaryCodableCookie");
 
 /**
  * Represents a single cookie within a page
+ * Handles decoding of Safari's binary cookie format
  */
 export class BinaryCodableCookie {
   /**
-   *
+   * Cookie version number
    */
   public version = 0;
+
   /**
-   *
+   * URL the cookie is associated with
    */
   public url = "";
+
   /**
-   *
+   * Port number if specified
    */
   public port?: number;
+
   /**
-   *
+   * Cookie name
    */
   public name = "";
+
   /**
-   *
+   * Cookie path
    */
   public path = "";
+
   /**
-   *
+   * Cookie value
    */
   public value = "";
+
   /**
-   *
+   * Optional comment
    */
   public comment?: string;
+
   /**
-   *
+   * Optional comment URL
    */
   public commentURL?: string;
+
   /**
-   *
+   * Cookie flags (secure, httpOnly, etc.)
    */
   public flags: BinaryCodableFlags = {
     isSecure: false,
@@ -57,12 +66,14 @@ export class BinaryCodableCookie {
     unknown1: false,
     unknown2: false,
   };
+
   /**
-   *
+   * Expiration timestamp (Mac epoch seconds)
    */
   public expiration = 0;
+
   /**
-   *
+   * Creation timestamp (Mac epoch seconds)
    */
   public creation = 0;
 
@@ -75,6 +86,11 @@ export class BinaryCodableCookie {
     this.decode(container);
   }
 
+  /**
+   * Decode URL encoded values with multiple passes
+   * @param value - The URL encoded string
+   * @returns Decoded string
+   */
   private decodeUrlValue(value: string): string {
     let processed = value;
     let lastProcessed: string;
@@ -89,6 +105,11 @@ export class BinaryCodableCookie {
     return processed;
   }
 
+  /**
+   * Decode JWT payload if the value is a valid JWT token
+   * @param token - The JWT token string
+   * @returns Decoded payload as JSON string or null if invalid
+   */
   private decodeJwtPayload(token: string): string | null {
     const parts = token.split(".");
     if (parts.length !== 3) {
@@ -104,6 +125,11 @@ export class BinaryCodableCookie {
     }
   }
 
+  /**
+   * Parse JSON value and return formatted JSON string
+   * @param value - The JSON string to parse
+   * @returns Formatted JSON string or null if invalid
+   */
   private parseJsonValue(value: string): string | null {
     try {
       const parsed = JSON.parse(value) as Record<string, unknown>;
@@ -113,8 +139,34 @@ export class BinaryCodableCookie {
     }
   }
 
+  /**
+   * Process cookie value with appropriate decoding
+   * @param value - The raw cookie value
+   * @returns Processed and decoded value as string
+   */
   private processValue(value: unknown): string {
     // Handle non-string values
+    const primitiveResult = this.handlePrimitiveValues(value);
+    if (primitiveResult !== null) {
+      return primitiveResult;
+    }
+
+    // Must be a string at this point
+    const stringValue = value as string;
+
+    // First, try URL decoding
+    const decoded = this.decodeUrlValue(stringValue);
+
+    // Try specialized decoding
+    return this.trySpecializedDecoding(decoded);
+  }
+
+  /**
+   * Handle primitive value types (null, undefined, buffer, non-string)
+   * @param value - The value to check
+   * @returns String representation or null if not a primitive type
+   */
+  private handlePrimitiveValues(value: unknown): string | null {
     if (value === null) {
       return "null";
     }
@@ -128,36 +180,85 @@ export class BinaryCodableCookie {
     }
 
     if (typeof value !== "string") {
-      return String(value);
+      return this.safeStringify(value);
     }
 
-    // First, try URL decoding
-    const decoded = this.decodeUrlValue(value);
+    return null; // Not a primitive type
+  }
 
-    // Then, try JWT decoding if it looks like a JWT token
-    if (decoded.match(/^ey[A-Za-z0-9_-]+\.ey[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/)) {
-      const jwtPayload = this.decodeJwtPayload(decoded);
-      if (typeof jwtPayload === "string" && jwtPayload.length > 0) {
-        return jwtPayload;
-      }
+  /**
+   * Try specialized decoding (JWT, JSON) on the decoded string
+   * @param decoded - The URL-decoded string
+   * @returns Specialized decoded value or the original decoded string
+   */
+  private trySpecializedDecoding(decoded: string): string {
+    // Try JWT decoding if it looks like a JWT token
+    const jwtResult = this.tryJwtDecoding(decoded);
+    if (jwtResult !== null) {
+      return jwtResult;
     }
 
-    // Finally, try JSON parsing if it looks like JSON
-    if (decoded.startsWith("{") || decoded.startsWith("[")) {
-      const jsonValue = this.parseJsonValue(decoded);
-      if (typeof jsonValue === "string" && jsonValue.length > 0) {
-        return jsonValue;
-      }
+    // Try JSON parsing if it looks like JSON
+    const jsonResult = this.tryJsonDecoding(decoded);
+    if (jsonResult !== null) {
+      return jsonResult;
     }
 
     return decoded;
   }
 
   /**
+   * Try JWT decoding if the value looks like a JWT token
+   * @param decoded - The decoded string to check
+   * @returns Decoded JWT payload or null if not a JWT or decoding failed
+   */
+  private tryJwtDecoding(decoded: string): string | null {
+    if (decoded.match(/^ey[A-Za-z0-9_-]+\.ey[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/)) {
+      const jwtPayload = this.decodeJwtPayload(decoded);
+      if (typeof jwtPayload === "string" && jwtPayload.length > 0) {
+        return jwtPayload;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Try JSON decoding if the value looks like JSON
+   * @param decoded - The decoded string to check
+   * @returns Decoded JSON string or null if not JSON or decoding failed
+   */
+  private tryJsonDecoding(decoded: string): string | null {
+    if (decoded.startsWith("{") || decoded.startsWith("[")) {
+      const jsonValue = this.parseJsonValue(decoded);
+      if (typeof jsonValue === "string" && jsonValue.length > 0) {
+        return jsonValue;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Safely convert unknown value to string
+   * @param value - The value to stringify
+   * @returns String representation of the value
+   */
+  private safeStringify(value: unknown): string {
+    try {
+      if (typeof value === "object" && value !== null) {
+        // For objects, use JSON.stringify if possible, otherwise use toString
+        return JSON.stringify(value);
+      }
+      return String(value);
+    } catch {
+      // Fallback to String() if JSON.stringify fails
+      return String(value);
+    }
+  }
+
+  /**
    * Validates and converts Mac epoch timestamp to Unix epoch
    * @param macTimestamp - Timestamp in Mac epoch (seconds since 2001-01-01)
    * @returns Unix epoch timestamp or 0 for invalid timestamps
-   * @private
    */
   private convertMacTimestamp(macTimestamp: number): number {
     const macToUnixOffset = 978307200; // Seconds between 1970-01-01 and 2001-01-01
@@ -213,6 +314,12 @@ export class BinaryCodableCookie {
     }
   }
 
+  /**
+   * Read a null-terminated string from the container buffer
+   * @param container - The binary container
+   * @param offset - Starting offset in the buffer
+   * @returns The null-terminated string
+   */
   private readNullTerminatedString(
     container: BinaryCodableContainer,
     offset: number,
@@ -225,6 +332,11 @@ export class BinaryCodableCookie {
     return value || "";
   }
 
+  /**
+   * Read the cookie header information
+   * @param container - The binary container
+   * @returns Object containing size, port flag, and string offsets
+   */
   private readHeader(container: BinaryCodableContainer): {
     size: number;
     hasPort: number;
@@ -270,6 +382,10 @@ export class BinaryCodableCookie {
     return { size, hasPort, offsets };
   }
 
+  /**
+   * Read expiration and creation timestamps from the container
+   * @param container - The binary container
+   */
   private readTimestamps(container: BinaryCodableContainer): void {
     // Read expiration time (8 bytes, little-endian double)
     const expirationBuffer = Buffer.alloc(8);
@@ -294,6 +410,12 @@ export class BinaryCodableCookie {
     this.creation = creation;
   }
 
+  /**
+   * Read cookie string fields from the container
+   * @param container - The binary container
+   * @param size - Total size of the cookie
+   * @param offsets - String field offsets
+   */
   private readStrings(
     container: BinaryCodableContainer,
     size: number,
@@ -361,6 +483,10 @@ export class BinaryCodableCookie {
     }
   }
 
+  /**
+   * Decode the cookie from the binary container
+   * @param container - The binary container with cookie data
+   */
   private decode(container: BinaryCodableContainer): void {
     const { size, hasPort, offsets } = this.readHeader(container);
 
@@ -380,6 +506,10 @@ export class BinaryCodableCookie {
     this.readStrings(container, size, offsets);
   }
 
+  /**
+   * Convert cookie flags to numeric representation
+   * @returns Numeric flags value
+   */
   private convertFlags(): number {
     return (
       (this.flags.isSecure ? 0x1 : 0) |

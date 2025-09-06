@@ -1,11 +1,88 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
+
 import { errorMessageContains, getErrorMessage } from "./errorUtils";
 import { createTaggedLogger } from "./logHelpers";
 import { getPlatform, isWindows } from "./platformUtils";
 
 const execFileAsync = promisify(execFile);
 const logger = createTaggedLogger("FileHandleDetector");
+
+/**
+ * Parse a fuser output line into FileHandleInfo
+ * @param line - Line from fuser output
+ * @returns FileHandleInfo or null if parsing fails
+ */
+function parseFuserLine(line: string): FileHandleInfo | null {
+  const parts = line.trim().split(/\s+/);
+  if (parts.length < 2) {
+    return null;
+  }
+
+  const pid = Number.parseInt(parts[1], 10);
+  if (Number.isNaN(pid)) {
+    return null;
+  }
+
+  return {
+    user: parts[0],
+    pid: pid,
+    command: parts[2] || "unknown",
+    mode: parts[3] || "unknown",
+  };
+}
+
+/**
+ * Check if value is a valid process result object
+ * @param value - Value to check
+ * @returns True if valid process result
+ */
+function isValidProcessResult(
+  value: unknown,
+): value is Record<string, unknown> {
+  return (
+    value !== null &&
+    typeof value === "object" &&
+    "ProcessId" in value &&
+    "ProcessName" in value
+  );
+}
+
+/**
+ * Parse PowerShell output into FileHandleInfo array
+ * @param stdout - PowerShell command output
+ * @returns Array of FileHandleInfo
+ */
+function parsePowerShellOutput(stdout: string): FileHandleInfo[] {
+  const handles: FileHandleInfo[] = [];
+
+  try {
+    const parsed: unknown = JSON.parse(stdout);
+    const results = Array.isArray(parsed) ? parsed : [parsed];
+
+    for (const result of results) {
+      if (!isValidProcessResult(result)) {
+        continue;
+      }
+
+      const processId = result.ProcessId;
+      const processName = result.ProcessName;
+
+      if (typeof processId === "string" && processId !== "") {
+        handles.push({
+          command: typeof processName === "string" ? processName : "unknown",
+          pid: Number.parseInt(processId, 10),
+        });
+      }
+    }
+  } catch (parseError) {
+    logger.debug("Failed to parse PowerShell output", {
+      error: getErrorMessage(parseError),
+    });
+  }
+
+  return handles;
+}
 
 /**
  * Information about a process holding a file handle
@@ -104,17 +181,9 @@ async function detectWithFuser(filePath: string): Promise<FileHandleInfo[]> {
     const lines = output.split("\n").slice(1); // Skip header
 
     for (const line of lines) {
-      const parts = line.trim().split(/\s+/);
-      if (parts.length >= 2) {
-        const pid = Number.parseInt(parts[1], 10);
-        if (!Number.isNaN(pid)) {
-          handles.push({
-            user: parts[0],
-            pid: pid,
-            command: parts[2] || "unknown",
-            mode: parts[3] || "unknown",
-          });
-        }
+      const handle = parseFuserLine(line);
+      if (handle) {
+        handles.push(handle);
       }
     }
 
@@ -200,25 +269,7 @@ async function detectOnWindows(filePath: string): Promise<FileHandleInfo[]> {
       return [];
     }
 
-    const handles: FileHandleInfo[] = [];
-
-    try {
-      const parsed = JSON.parse(stdout);
-      const results = Array.isArray(parsed) ? parsed : [parsed];
-
-      for (const result of results) {
-        if (result?.ProcessId) {
-          handles.push({
-            command: result.ProcessName || "unknown",
-            pid: Number.parseInt(result.ProcessId, 10),
-          });
-        }
-      }
-    } catch (parseError) {
-      logger.debug("Failed to parse PowerShell output", {
-        error: getErrorMessage(parseError),
-      });
-    }
+    const handles = parsePowerShellOutput(stdout);
 
     logger.debug("Detected file handles with PowerShell", {
       file: filePath,
@@ -354,7 +405,7 @@ export async function getFileLockInfo(filePath: string): Promise<string> {
   const processInfo = handles
     .map(
       (h) =>
-        `${h.command} (PID: ${h.pid}${h.user ? `, User: ${h.user}` : ""}${h.mode ? `, Mode: ${h.mode}` : ""})`,
+        `${h.command} (PID: ${h.pid}${h.user !== undefined && h.user !== "" ? `, User: ${h.user}` : ""}${h.mode !== undefined && h.mode !== "" ? `, Mode: ${h.mode}` : ""})`,
     )
     .join(", ");
 

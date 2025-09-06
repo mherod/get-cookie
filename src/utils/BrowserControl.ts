@@ -1,9 +1,9 @@
 import { exec } from "node:child_process";
 import readline from "node:readline";
 import { promisify } from "node:util";
-import { isMacOS } from "./platformUtils";
 
 import { createTaggedLogger } from "./logHelpers";
+import { isMacOS } from "./platformUtils";
 
 const execAsync = promisify(exec);
 const logger = createTaggedLogger("BrowserControl");
@@ -21,6 +21,9 @@ function isInteractiveEnvironment(): boolean {
   return hasTTY && !isCI && !isTest;
 }
 
+/**
+ *
+ */
 export interface BrowserControlOptions {
   force?: boolean;
   interactive?: boolean;
@@ -122,7 +125,7 @@ async function saveBrowserSessionMacOS(
     } else if (browserName === "Chrome") {
       // Chrome will restore tabs automatically if quit gracefully
       logger.debug("Chrome will restore tabs automatically", { browserName });
-    } else if (browserName === "Safari") {
+    } else {
       // Safari will restore tabs if quit gracefully
       logger.debug("Safari will restore tabs automatically", { browserName });
     }
@@ -226,7 +229,7 @@ export async function closeBrowserGracefully(
     }
 
     // If interactive mode, prompt user
-    if (options.interactive && !options.force) {
+    if (options.interactive === true && options.force !== true) {
       const confirmed = await promptUserConfirmation(browserName);
       if (!confirmed) {
         logger.info("User cancelled browser close", { browserName });

@@ -3,6 +3,29 @@ import { createTaggedLogger } from "./logHelpers";
 
 const logger = createTaggedLogger("WaitForFileLock");
 
+/**
+ * Handle retry after lock release
+ * @param operation - Operation to retry
+ * @returns Operation result or throws error
+ */
+async function handleRetryAfterRelease<T>(
+  operation: () => Promise<T>,
+): Promise<T> {
+  logger.info("Retrying operation after lock release");
+  try {
+    return await operation();
+  } catch (retryError) {
+    logger.error("Operation failed even after lock release", {
+      error:
+        retryError instanceof Error ? retryError.message : String(retryError),
+    });
+    throw retryError;
+  }
+}
+
+/**
+ *
+ */
 export interface WaitForLockOptions {
   /** Maximum time to wait in milliseconds */
   maxWaitTime?: number;
@@ -120,22 +143,11 @@ export async function tryWithLockWait<T>(
       const released = await waitForFileLockRelease(filePath, options);
 
       if (released) {
-        logger.info("Retrying operation after lock release");
-        try {
-          return await operation();
-        } catch (retryError) {
-          logger.error("Operation failed even after lock release", {
-            error:
-              retryError instanceof Error
-                ? retryError.message
-                : String(retryError),
-          });
-          throw retryError;
-        }
-      } else {
-        logger.error("Timeout waiting for lock release");
-        return null;
+        return handleRetryAfterRelease(operation);
       }
+
+      logger.error("Timeout waiting for lock release");
+      return null;
     }
 
     throw error;

@@ -1,5 +1,6 @@
 import { homedir } from "node:os";
 import { join } from "node:path";
+
 import { assertPlatformSupported, getPlatform } from "@utils/platformUtils";
 
 /**
@@ -21,6 +22,9 @@ export const CHROMIUM_BASED_BROWSERS = [
   "whale",
 ] as const;
 
+/**
+ *
+ */
 export type ChromiumBrowser = (typeof CHROMIUM_BASED_BROWSERS)[number];
 
 /**
@@ -34,6 +38,9 @@ interface BrowserPaths {
 
 /**
  * Get the browser configuration directory for a specific browser and platform
+ * @param browser - The chromium browser type
+ * @returns The path to the browser's configuration directory
+ * @throws {Error} If the user home directory cannot be determined or platform is unsupported
  */
 export function getChromiumBrowserPath(browser: ChromiumBrowser): string {
   const home = homedir();
@@ -114,9 +121,6 @@ export function getChromiumBrowserPath(browser: ChromiumBrowser): string {
   };
 
   const paths = browserPaths[browser];
-  if (!paths) {
-    throw new Error(`Unknown browser: ${browser}`);
-  }
 
   switch (currentPlatform) {
     case "win32":
@@ -132,6 +136,7 @@ export function getChromiumBrowserPath(browser: ChromiumBrowser): string {
 
 /**
  * Get all Chromium browser paths for the current platform
+ * @returns Record mapping browser names to their configuration directory paths
  */
 export function getAllChromiumBrowserPaths(): Record<ChromiumBrowser, string> {
   const result: Partial<Record<ChromiumBrowser, string>> = {};

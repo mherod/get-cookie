@@ -1,6 +1,7 @@
 import { exec } from "node:child_process";
 import readline from "node:readline";
 import { promisify } from "node:util";
+
 import { errorMessageContains, getErrorMessage } from "./errorUtils";
 import { createTaggedLogger } from "./logHelpers";
 import { isMacOS } from "./platformUtils";
@@ -8,6 +9,9 @@ import { isMacOS } from "./platformUtils";
 const execAsync = promisify(exec);
 const logger = createTaggedLogger("SystemPermissions");
 
+/**
+ *
+ */
 export interface PermissionRequestOptions {
   appName: string;
   browserName: string;
@@ -43,6 +47,7 @@ async function openFullDiskAccessSettings(): Promise<void> {
 
 /**
  * Check which terminal application is running
+ * @returns The name of the terminal application or a fallback message
  */
 function getTerminalApp(): string {
   const termProgram = process.env.TERM_PROGRAM;
@@ -56,11 +61,14 @@ function getTerminalApp(): string {
   if (termProgram === "vscode") {
     return "Visual Studio Code";
   }
-  return termProgram || "your terminal application";
+  return termProgram ?? "your terminal application";
 }
 
 /**
  * Prompt user to grant permissions
+ * @param appName - The name of the application requesting permissions
+ * @param browserName - The name of the browser being accessed
+ * @returns A promise that resolves to true if user grants permission
  */
 async function promptForPermissionGrant(
   appName: string,
@@ -93,6 +101,9 @@ Please enter your choice (1/2/3): `);
 
 /**
  * Handle Safari permission errors with user guidance
+ * @param error - The error encountered when accessing Safari cookies
+ * @param options - Configuration options for permission requests
+ * @returns A promise that resolves to true if permissions should be granted
  */
 export async function handleSafariPermissionError(
   error: Error,
@@ -165,6 +176,8 @@ Press Enter when you've completed these steps...`);
 
 /**
  * Check if we have permission to access a file
+ * @param filePath - The path to the file to check permissions for
+ * @returns A promise that resolves to true if file is accessible
  */
 export async function checkFilePermission(filePath: string): Promise<boolean> {
   try {

@@ -49,7 +49,7 @@ export const CookieNameSchema = z
   .trim()
   .min(1, "Cookie name cannot be empty")
   .refine(
-    (name) => name === "%" || /^[!#$%&'()*+\-.:0-9A-Z \^_`a-z|~]+$/.test(name),
+    (name) => name === "%" || /^[!#$%&'()*+\-.:0-9A-Z ^_`a-z|~]+$/.test(name),
     "Invalid cookie name format - must contain only valid characters (letters, numbers, and certain symbols) or be '%' for wildcard",
   );
 

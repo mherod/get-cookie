@@ -84,11 +84,11 @@ describe("CompositeCookieQueryStrategy", () => {
     );
     const failingStrategy: CookieQueryStrategy = {
       browserName: "Firefox",
-      queryCookies: (
+      queryCookies: async (
         _name: string,
         _domain: string,
       ): Promise<ExportedCookie[]> => {
-        throw new Error("Strategy failed");
+        return Promise.reject(new Error("Strategy failed"));
       },
     };
 

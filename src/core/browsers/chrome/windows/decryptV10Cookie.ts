@@ -6,10 +6,10 @@ import { createDecipheriv } from "node:crypto";
  * Chrome v10 cookies use AES-256-GCM encryption with:
  * - 12-byte nonce (96 bits)
  * - 16-byte authentication tag
- *
  * @param encryptedValue - The encrypted cookie value starting with 'v10' prefix
  * @param key - The decrypted master key from DPAPI
  * @returns The decrypted cookie value
+ * @throws {Error} If the cookie is not v10 format or decryption fails
  */
 export function decryptV10Cookie(encryptedValue: Buffer, key: Buffer): string {
   // Check for v10 prefix

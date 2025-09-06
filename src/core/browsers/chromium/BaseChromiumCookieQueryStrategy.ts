@@ -193,7 +193,7 @@ export abstract class BaseChromiumCookieQueryStrategy extends BaseCookieQueryStr
       );
 
       if (lockResult.resolved) {
-        return await this.retryAfterBrowserClose(
+        return this.retryAfterBrowserClose(
           file,
           name,
           domain,
@@ -322,7 +322,9 @@ export abstract class BaseChromiumCookieQueryStrategy extends BaseCookieQueryStr
       };
 
       const results = await Promise.allSettled(
-        encryptedCookies.map((cookie) => this.processCookie(cookie, context)),
+        encryptedCookies.map(async (cookie) =>
+          this.processCookie(cookie, context),
+        ),
       );
 
       return results

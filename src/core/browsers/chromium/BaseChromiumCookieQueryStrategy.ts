@@ -359,16 +359,26 @@ export abstract class BaseChromiumCookieQueryStrategy extends BaseCookieQueryStr
    */
   protected async getMetaVersion(file: string): Promise<number> {
     try {
-      const Database = await import("better-sqlite3");
-      const db = new Database.default(file, { readonly: true });
-      try {
-        const metaResult = db
-          .prepare("SELECT value FROM meta WHERE key = ?")
-          .get("version") as { value: string } | undefined;
-        return metaResult ? Number.parseInt(metaResult.value, 10) : 0;
-      } finally {
-        db.close();
-      }
+      // Use the new SQL utilities for database access
+      const { getGlobalConnectionManager } = await import(
+        "../sql/DatabaseConnectionManager"
+      );
+      const { CookieQueryBuilder } = await import("../sql/CookieQueryBuilder");
+
+      const connectionManager = getGlobalConnectionManager();
+      const queryBuilder = new CookieQueryBuilder("chrome");
+      const metaQuery = queryBuilder.buildMetaQuery("version");
+
+      const metaResult = await connectionManager.executeQuery(
+        file,
+        (db) => {
+          const stmt = db.prepare(metaQuery.sql);
+          return stmt.get(...metaQuery.params) as { value: string } | undefined;
+        },
+        "Get meta version",
+      );
+
+      return metaResult ? Number.parseInt(metaResult.value, 10) : 0;
     } catch (error) {
       this.logger.debug("Could not retrieve meta version, defaulting to 0", {
         error: this.getErrorMessage(error),

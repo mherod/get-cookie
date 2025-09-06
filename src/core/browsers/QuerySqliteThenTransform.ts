@@ -1,10 +1,12 @@
-// External imports
+/**
+ * DEPRECATED: Legacy query function - use sql/DatabaseConnectionManager instead
+ * This file is maintained for backward compatibility but all new code should use
+ * the new SQL utilities in src/core/browsers/sql/
+ */
 
-import BetterSqlite3, { type Database } from "better-sqlite3";
-
-import { createTaggedLogger, logError } from "@utils/logHelpers";
-
-// Internal imports
+import { createTaggedLogger } from "@utils/logHelpers";
+import { getGlobalConnectionManager } from "./sql/DatabaseConnectionManager";
+import { getGlobalQueryMonitor } from "./sql/QueryMonitor";
 
 const logger = createTaggedLogger("QuerySqliteThenTransform");
 
@@ -18,99 +20,10 @@ interface QuerySqliteThenTransformOptions<TRow, TResult> {
 }
 
 /**
- * Sleep for a specified number of milliseconds
- * @param ms - Number of milliseconds to sleep
- * @returns Promise that resolves after the specified time
- */
-async function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-/**
- * Check if an error indicates a database lock
- * @param error - The error to check
- * @returns True if the error indicates a database lock
- */
-function isDatabaseLockError(error: unknown): boolean {
-  if (error instanceof Error) {
-    const message = error.message.toLowerCase();
-    return (
-      message.includes("database is locked") ||
-      message.includes("database locked") ||
-      message.includes("sqlite_busy")
-    );
-  }
-  return false;
-}
-
-function openDatabase(file: string): Database {
-  try {
-    // Open database in readonly mode with additional flags for better compatibility
-    const db = new BetterSqlite3(file, {
-      readonly: true,
-      fileMustExist: true,
-      // Use immutable mode if available (prevents any write attempts)
-      // This helps avoid lock conflicts with browsers that have the database open
-    });
-
-    // For readonly connections, we don't need to set WAL mode
-    // WAL mode is for write operations and attempting to set it on readonly
-    // connections causes unnecessary warnings
-    logger.debug("Opened database in readonly mode", { file });
-
-    return db;
-  } catch (error) {
-    logError("Database open failed", error, { file });
-    throw error;
-  }
-}
-
-async function closeDatabase(db: Database): Promise<void> {
-  try {
-    db.close();
-    return Promise.resolve();
-  } catch (error) {
-    logError("Database close failed", error);
-    return Promise.reject(
-      error instanceof Error
-        ? error
-        : new Error("Failed to close database: Unknown error"),
-    );
-  }
-}
-
-/**
- * Execute a single query attempt
- * @param options - Query options
- * @returns Promise that resolves to transformed results
- */
-async function executeQueryAttempt<TRow, TResult>(
-  options: QuerySqliteThenTransformOptions<TRow, TResult>,
-): Promise<TResult[]> {
-  const { file, sql, params, rowFilter, rowTransform } = options;
-  let db: Database | undefined;
-
-  try {
-    db = openDatabase(file);
-    const stmt = db.prepare(sql);
-    const rows = stmt.all(params) as TRow[];
-
-    const filteredRows = rowFilter ? rows.filter(rowFilter) : rows;
-    const transformedRows = rowTransform
-      ? filteredRows.map(rowTransform)
-      : (filteredRows as unknown as TResult[]);
-
-    return transformedRows;
-  } finally {
-    if (db) {
-      await closeDatabase(db);
-    }
-  }
-}
-
-/**
  * Executes a SQL query on a SQLite database file and transforms the results
- * Includes retry logic with exponential backoff for database lock errors
+ *
+ * @deprecated Use DatabaseConnectionManager.executeQuery() instead for better performance and monitoring
+ *
  * @param options - The options object containing query parameters
  * @param options.file - The path to the SQLite database file
  * @param options.sql - The SQL query to execute
@@ -123,51 +36,52 @@ async function executeQueryAttempt<TRow, TResult>(
 export async function querySqliteThenTransform<TRow, TResult>(
   options: QuerySqliteThenTransformOptions<TRow, TResult>,
 ): Promise<TResult[]> {
-  const { file, sql, retryAttempts = 3 } = options;
-  const retryDelays = [100, 500, 1000]; // Exponential backoff delays
+  const {
+    file,
+    sql,
+    params,
+    rowFilter,
+    rowTransform,
+    retryAttempts = 3,
+  } = options;
 
-  let lastError: unknown;
+  // Use the new connection manager with built-in retry logic
+  const connectionManager = getGlobalConnectionManager({
+    retryAttempts,
+    retryDelay: 100,
+    enableMonitoring: true,
+  });
 
-  for (let attempt = 0; attempt < retryAttempts; attempt++) {
-    try {
-      const results = await executeQueryAttempt(options);
+  const monitor = getGlobalQueryMonitor();
 
-      if (attempt > 0) {
-        logger.info("Database query succeeded after retry", {
-          file,
-          attempt: attempt + 1,
-          totalAttempts: retryAttempts,
-        });
-      }
+  try {
+    // Execute using the connection manager
+    const results = await connectionManager.executeQuery(
+      file,
+      (db) => {
+        // Use the query monitor for tracking
+        const rows = monitor.executeQuery<TRow>(db, sql, params || [], file);
 
-      return results;
-    } catch (error) {
-      lastError = error;
+        // Apply filtering
+        const filteredRows = rowFilter ? rows.filter(rowFilter) : rows;
 
-      if (isDatabaseLockError(error) && attempt < retryAttempts - 1) {
-        const delay = retryDelays[attempt] || 1000;
-        logger.warn("Database locked, retrying after delay", {
-          file,
-          attempt: attempt + 1,
-          totalAttempts: retryAttempts,
-          delay,
-          error: error instanceof Error ? error.message : String(error),
-        });
+        // Apply transformation
+        const transformedRows = rowTransform
+          ? filteredRows.map(rowTransform)
+          : (filteredRows as unknown as TResult[]);
 
-        await sleep(delay);
-        continue;
-      }
+        return transformedRows;
+      },
+      sql, // Pass SQL for monitoring
+    );
 
-      // Not a lock error or final attempt - throw the error
-      logError("Database query failed", error, {
-        file,
-        sql,
-        attempt: attempt + 1,
-      });
-      throw error;
-    }
+    return results;
+  } catch (error) {
+    logger.error("Query failed using new connection manager", {
+      file,
+      sql,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
   }
-
-  // Should never reach here, but TypeScript requires it
-  throw lastError;
 }

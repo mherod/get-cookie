@@ -1,5 +1,6 @@
 import { existsSync } from "node:fs";
 import { homedir } from "node:os";
+import { join } from "node:path";
 import fg from "fast-glob";
 
 import { FirefoxCookieQueryStrategy } from "../FirefoxCookieQueryStrategy";
@@ -60,7 +61,7 @@ describe("FirefoxCookieQueryStrategy - Fast Path Optimization", () => {
       await strategy.queryCookies("test", "example.com");
 
       expect(mockExistsSync).toHaveBeenCalledWith(
-        "/Users/test/Library/Application Support/Firefox",
+        join("/Users/test", "Library/Application Support/Firefox"),
       );
     });
 
@@ -73,7 +74,7 @@ describe("FirefoxCookieQueryStrategy - Fast Path Optimization", () => {
       await strategy.queryCookies("test", "example.com");
 
       expect(mockExistsSync).toHaveBeenCalledWith(
-        "/Users/test/AppData/Roaming/Mozilla/Firefox",
+        join("/Users/test", "AppData/Roaming/Mozilla/Firefox"),
       );
     });
 
@@ -86,7 +87,7 @@ describe("FirefoxCookieQueryStrategy - Fast Path Optimization", () => {
       await strategy.queryCookies("test", "example.com");
 
       expect(mockExistsSync).toHaveBeenCalledWith(
-        "/Users/test/.mozilla/firefox",
+        join("/Users/test", ".mozilla/firefox"),
       );
     });
   });
@@ -99,22 +100,34 @@ describe("FirefoxCookieQueryStrategy - Fast Path Optimization", () => {
       // Firefox profile directory exists
       mockExistsSync.mockReturnValue(true);
       mockFg.sync.mockReturnValue([
-        "/Users/test/Library/Application Support/Firefox/Profiles/abc123/cookies.sqlite",
+        join(
+          "/Users/test",
+          "Library/Application Support/Firefox/Profiles/abc123/cookies.sqlite",
+        ),
       ]);
 
       await strategy.queryCookies("test", "example.com");
 
       // Should call fast-glob since directory exists
       expect(mockFg.sync).toHaveBeenCalledWith(
-        "/Users/test/Library/Application Support/Firefox/Profiles/*/cookies.sqlite",
+        join(
+          "/Users/test",
+          "Library/Application Support/Firefox/Profiles/*/cookies.sqlite",
+        ),
       );
     });
 
     it("should find multiple Firefox profiles", async () => {
       mockExistsSync.mockReturnValue(true);
       mockFg.sync.mockReturnValue([
-        "/Users/test/Library/Application Support/Firefox/Profiles/profile1/cookies.sqlite",
-        "/Users/test/Library/Application Support/Firefox/Profiles/profile2/cookies.sqlite",
+        join(
+          "/Users/test",
+          "Library/Application Support/Firefox/Profiles/profile1/cookies.sqlite",
+        ),
+        join(
+          "/Users/test",
+          "Library/Application Support/Firefox/Profiles/profile2/cookies.sqlite",
+        ),
       ]);
 
       await strategy.queryCookies("test", "example.com");

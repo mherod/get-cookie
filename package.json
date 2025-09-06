@@ -79,7 +79,7 @@
     "@primno/dpapi": "^2.0.1"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.0.6",
+    "@biomejs/biome": "2.2.3",
     "@commitlint/cli": "19.8.1",
     "@commitlint/config-conventional": "19.8.1",
     "@jest/globals": "^30.0.4",

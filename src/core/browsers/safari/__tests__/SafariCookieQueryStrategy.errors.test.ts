@@ -80,7 +80,7 @@ describe("SafariCookieQueryStrategy - Error Handling", () => {
 
       const cookies = await strategy.queryCookies("test-cookie", "example.com");
       expect(cookies).toHaveLength(1);
-      expect(cookies[0].value).toBe("[object Object]");
+      expect(cookies[0].value).toBe("{}");
     });
 
     it("should handle null cookie values", async () => {

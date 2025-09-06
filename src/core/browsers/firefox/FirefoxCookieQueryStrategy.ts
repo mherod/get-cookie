@@ -276,7 +276,7 @@ export class FirefoxCookieQueryStrategy extends BaseCookieQueryStrategy {
     const queryConfig = this.createCookieQueryConfig(name, domain, file);
 
     try {
-      return querySqliteThenTransform<FirefoxCookieRow, ExportedCookie>(
+      return await querySqliteThenTransform<FirefoxCookieRow, ExportedCookie>(
         queryConfig,
       );
     } catch (error) {

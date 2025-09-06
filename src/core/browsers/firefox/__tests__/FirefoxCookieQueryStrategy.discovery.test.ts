@@ -5,6 +5,28 @@ jest.mock("fast-glob", () => ({
   sync: jest.fn(),
 }));
 
+// Mock file system for directory checks
+jest.mock("node:fs", () => ({
+  existsSync: jest.fn().mockReturnValue(true),
+}));
+
+// Mock platform utils
+jest.mock("@utils/platformUtils", () => ({
+  getPlatform: jest.fn(),
+  isMacOS: jest.fn(),
+  isWindows: jest.fn(),
+  isLinux: jest.fn(),
+}));
+
+// Mock PlatformBrowserControl
+jest.mock("../../platform/PlatformBrowserControl", () => ({
+  createPlatformBrowserControl: jest.fn().mockReturnValue({
+    closeBrowserGracefully: jest.fn().mockResolvedValue(false),
+    closeBrowserForAction: jest.fn().mockResolvedValue(null),
+    waitForBrowserToClose: jest.fn().mockResolvedValue(false),
+  }),
+}));
+
 interface MockFastGlob {
   sync: jest.Mock;
 }
@@ -24,6 +46,9 @@ describe("FirefoxCookieQueryStrategy - File Discovery", () => {
   });
 
   it("should find cookie files in macOS paths", async () => {
+    const { getPlatform } = require("@utils/platformUtils");
+    getPlatform.mockReturnValue("darwin");
+
     const { sync } = jest.requireMock<MockFastGlob>("fast-glob");
     sync.mockImplementation((pattern: string) => {
       if (pattern.includes("Library/Application Support/Firefox")) {
@@ -43,6 +68,9 @@ describe("FirefoxCookieQueryStrategy - File Discovery", () => {
   });
 
   it("should find cookie files in Linux paths", async () => {
+    const { getPlatform } = require("@utils/platformUtils");
+    getPlatform.mockReturnValue("linux");
+
     const { sync } = jest.requireMock<MockFastGlob>("fast-glob");
     sync.mockImplementation((pattern: string) => {
       if (pattern.includes(".mozilla/firefox")) {

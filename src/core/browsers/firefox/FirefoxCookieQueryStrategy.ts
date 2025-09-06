@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
@@ -5,6 +6,7 @@ import fg from "fast-glob";
 
 import { isFirefoxRunning } from "@utils/ProcessDetector";
 import type { createTaggedLogger } from "@utils/logHelpers";
+import { getPlatform } from "@utils/platformUtils";
 import { BrowserLockHandler } from "../BrowserLockHandler";
 
 import type { ExportedCookie } from "../../../types/schemas";
@@ -32,10 +34,50 @@ function findFirefoxCookieFiles(
     return [];
   }
 
-  const patterns = [
-    join(home, "Library/Application Support/Firefox/Profiles/*/cookies.sqlite"),
-    join(home, ".mozilla/firefox/*/cookies.sqlite"),
-  ];
+  // Fast path: Check if Firefox profile directories exist before attempting glob
+  const platform = getPlatform();
+  const profileDirs: string[] = [];
+  const patterns: string[] = [];
+
+  switch (platform) {
+    case "darwin":
+      profileDirs.push(join(home, "Library/Application Support/Firefox"));
+      patterns.push(
+        join(
+          home,
+          "Library/Application Support/Firefox/Profiles/*/cookies.sqlite",
+        ),
+      );
+      break;
+    case "win32":
+      profileDirs.push(join(home, "AppData/Roaming/Mozilla/Firefox"));
+      patterns.push(
+        join(home, "AppData/Roaming/Mozilla/Firefox/Profiles/*/cookies.sqlite"),
+      );
+      break;
+    case "linux":
+      profileDirs.push(join(home, ".mozilla/firefox"));
+      patterns.push(join(home, ".mozilla/firefox/*/cookies.sqlite"));
+      break;
+    default:
+      logger.debug("Unsupported platform for Firefox cookie extraction", {
+        platform,
+      });
+      return [];
+  }
+
+  const existingProfileDirs = profileDirs.filter((dir) => existsSync(dir));
+
+  if (existingProfileDirs.length === 0) {
+    logger.debug(
+      "No Firefox profile directories found - Firefox may not be installed",
+      {
+        checked: profileDirs,
+        platform,
+      },
+    );
+    return [];
+  }
 
   const files: string[] = [];
   for (const pattern of patterns) {
@@ -89,6 +131,14 @@ export class FirefoxCookieQueryStrategy extends BaseCookieQueryStrategy {
   ): Promise<ExportedCookie[]> {
     const files = store ?? findFirefoxCookieFiles(this.logger);
     const fileList = Array.isArray(files) ? files : [files];
+
+    // Fast path: If no Firefox cookie files found (Firefox not installed),
+    // return early to avoid unnecessary database queries and process detection
+    if (fileList.length === 0 || (fileList.length === 1 && !fileList[0])) {
+      this.logger.debug("No Firefox cookie files to query");
+      return [];
+    }
+
     const results: ExportedCookie[] = [];
 
     for (const file of fileList) {

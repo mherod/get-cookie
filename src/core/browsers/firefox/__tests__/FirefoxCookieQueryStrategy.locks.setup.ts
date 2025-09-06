@@ -7,6 +7,23 @@ import { FirefoxCookieQueryStrategy } from "../FirefoxCookieQueryStrategy";
 // Mock the ProcessDetector
 jest.mock("@utils/ProcessDetector");
 
+// Mock platform utils to ensure consistent behavior across platforms
+jest.mock("@utils/platformUtils", () => ({
+  getPlatform: jest.fn().mockReturnValue("darwin"),
+  isMacOS: jest.fn().mockReturnValue(true),
+  isWindows: jest.fn().mockReturnValue(false),
+  isLinux: jest.fn().mockReturnValue(false),
+}));
+
+// Mock PlatformBrowserControl to avoid platform-specific issues
+jest.mock("../../platform/PlatformBrowserControl", () => ({
+  createPlatformBrowserControl: jest.fn().mockReturnValue({
+    closeBrowserGracefully: jest.fn().mockResolvedValue(false),
+    closeBrowserForAction: jest.fn().mockResolvedValue(null),
+    waitForBrowserToClose: jest.fn().mockResolvedValue(false),
+  }),
+}));
+
 // Mock the logger to avoid console output during tests
 jest.mock("@utils/logHelpers", () => ({
   createTaggedLogger: jest.fn().mockReturnValue({
@@ -28,6 +45,12 @@ jest.mock("../../QuerySqliteThenTransform", () => ({
 // Mock fast-glob to control which files are found
 jest.mock("fast-glob", () => ({
   sync: jest.fn(),
+}));
+
+// Mock file system existsSync while keeping other fs functions
+jest.mock("node:fs", () => ({
+  ...jest.requireActual("node:fs"),
+  existsSync: jest.fn().mockReturnValue(true), // Assume Firefox is installed for these tests
 }));
 
 /** Mock interface for ProcessDetector */

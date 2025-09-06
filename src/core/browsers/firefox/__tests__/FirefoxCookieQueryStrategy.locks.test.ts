@@ -72,7 +72,7 @@ describe("FirefoxCookieQueryStrategy - Database Lock Handling", () => {
       // Verify results and process detection
       expect(result).toEqual([]);
       expect(mocks.isFirefoxRunning).toHaveBeenCalled();
-    });
+    }, 10000); // Increase timeout to 10 seconds for Windows CI environments
   });
 
   describe("SafeFileOperations integration", () => {

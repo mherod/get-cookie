@@ -49,8 +49,15 @@ async function example() {
 }
 ```
 
+## Platform Support
+
+- **Windows**: Chrome, Edge, Arc, Opera, Opera GX, Firefox
+- **macOS**: Chrome, Edge, Arc, Opera, Opera GX, Firefox, Safari
+- **Linux**: Chrome, Edge, Arc, Opera, Opera GX, Firefox
+
 ## Next Steps
 
-- Check out the [API Reference](/reference/) for detailed documentation
-- Learn about browser-specific features
-- Explore advanced configuration options
+- Check out the [API Reference](/reference/api) for detailed documentation
+- Learn about [browser-specific features](/guide/browsers)
+- Explore the [architecture overview](/guide/architecture)
+- See [CLI usage examples](/guide/cli-usage)

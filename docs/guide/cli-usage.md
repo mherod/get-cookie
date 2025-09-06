@@ -44,7 +44,7 @@ get-cookie auth example.com --output json
 # }
 ```
 
-### Pretty Printed
+### Rendered Output
 
 ```bash
 get-cookie auth example.com --render
@@ -52,10 +52,12 @@ get-cookie auth example.com --render
 get-cookie auth example.com -r
 
 # Output:
-# 🍪 Cookie: auth
-# 📍 Domain: example.com
-# 📝 Value: value1234
-# ⏰ Expires: 31 Dec 2024
+# Cookie: auth
+# Domain: example.com
+# Value: value1234
+# Expires: 31 Dec 2024
+# Browser: Chrome
+# Profile: Default
 ```
 
 ### Detailed Dump
@@ -68,20 +70,24 @@ get-cookie auth example.com -d
 # Dumps all cookie details including metadata
 ```
 
-### Grouped by Browser
+### Grouped Output
 
 ```bash
+# Grouped dump output
 get-cookie auth example.com --dump-grouped
 # Or short form:
 get-cookie auth example.com -G
 
-# Output:
-# Chrome (Default Profile):
-#   - auth=value1234
-# Firefox (default):
-#   - auth=value5678
+# Output groups cookies by browser and profile:
+# Chrome (Default):
+#   auth: value1234
+#   (expires: 2024-12-31T23:59:59.000Z)
+# Firefox (default-release):
+#   auth: value5678
+#   (expires: 2024-12-31T23:59:59.000Z)
 # Safari:
-#   - auth=value90ab
+#   auth: value90ab
+#   (expires: 2024-12-31T23:59:59.000Z)
 ```
 
 ## Advanced Usage
@@ -172,38 +178,37 @@ get-cookie --name "session*" --domain example.com
 
 | Option      | Short | Description                                         | Example     |
 |-------------|-------|-----------------------------------------------------|-------------|
-| `--help`    | `-h`  | Show help message                                   | `--help`    |
-| `--verbose` | `-v`  | Enable verbose output                               | `--verbose` |
-| `--force`   | `-f`  | Force operation despite warnings (e.g., locked DBs) | `--force`   |
-| `--version` |       | Show version                                        | `--version` |
+| `--help`           | `-h`  | Show help message with build timestamp             | `--help`           |
+| `--verbose`        | `-v`  | Enable verbose output                               | `--verbose`        |
+| `--force`          | `-f`  | Force operation despite warnings (e.g., locked DBs) | `--force`          |
+| `--remove-expired` |       | Remove expired cookies from results                 | `--remove-expired` |
 
 ### Query Options
 
 | Option      | Short | Description                          | Example                  |
 |-------------|-------|--------------------------------------|--------------------------|
-| `--name`    | `-n`  | Cookie name pattern (% for wildcard) | `--name auth%`           |
-| `--domain`  | `-D`  | Cookie domain pattern                | `--domain *.example.com` |
-| `--url`     | `-u`  | URL to extract cookie specs from     | `--url https://...`      |
-| `--browser` |       | Target specific browser              | `--browser chrome`       |
-| `--store`   |       | Path to specific cookie store file   | `--store /path/to/db`    |
+| `--name`    | `-n`  | Cookie name pattern (% or * for wildcard)| `--name auth%`           |
+| `--domain`  | `-D`  | Cookie domain pattern                    | `--domain *.example.com` |
+| `--url`     | `-u`  | URL to extract cookie specs from         | `--url https://...`      |
+| `--browser` |       | Target specific browser                  | `--browser chrome`       |
+| `--store`   |       | Path to specific cookie store file       | `--store /path/to/db`    |
 
 ### Output Options
 
 | Option           | Short | Description                     | Example          |
 |------------------|-------|---------------------------------|------------------|
-| `--output`       |       | Output format (json)            | `--output json`  |
-| `--dump`         | `-d`  | Dump all cookie details         | `--dump`         |
-| `--dump-grouped` | `-G`  | Dump results grouped by profile | `--dump-grouped` |
-| `--render`       | `-r`  | Render formatted output         | `--render`       |
+| `--output`       |       | Output format (json)                | `--output json`  |
+| `--dump`         | `-d`  | Dump all cookie details             | `--dump`         |
+| `--dump-grouped` | `-G`  | Dump results grouped by browser     | `--dump-grouped` |
+| `--render`       | `-r`  | Render formatted human-readable output | `--render`    |
 
 ## Environment Variables
 
 | Variable          | Description             | Default     |
 |-------------------|-------------------------|-------------|
-| `DEBUG`           | Enable debug logging    | `false`     |
-| `NO_COLOR`        | Disable colored output  | `false`     |
-| `CHROME_PROFILE`  | Default Chrome profile  | `"Default"` |
-| `FIREFOX_PROFILE` | Default Firefox profile | `null`      |
+| `DEBUG`    | Enable debug logging           | `false`     |
+| `NO_COLOR` | Disable colored output         | `false`     |
+| `NODE_ENV` | Set to 'production' for less verbose output | `development` |
 
 ## Examples
 
@@ -227,8 +232,8 @@ get-cookie % example.com --output json > cookies.json
 # Enable verbose logging
 DEBUG=* get-cookie auth example.com
 
-# Show browser paths
-get-cookie --debug-paths
+# Or use verbose flag
+get-cookie auth example.com --verbose
 ```
 
 ### Automation

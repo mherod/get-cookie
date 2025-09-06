@@ -16,6 +16,8 @@ Understanding how get-cookie works with different browsers and platforms.
 
 ✅ Full Support | ❌ Not Supported
 
+All Chromium-based browsers (Chrome, Edge, Arc, Opera, Opera GX) share the same underlying cookie extraction implementation with browser-specific paths and keychain entries.
+
 ## Chromium-Based Browsers (Cross-Platform)
 
 Chrome, Edge, Arc, Opera, and Opera GX are all Chromium-based browsers that share the same cookie storage format and encryption methods. The main differences are their storage locations and keychain service names.
@@ -111,7 +113,7 @@ Chrome and Edge store cookies in SQLite databases:
 
 ### Security Model
 
-All Chromium-based browsers use identical encryption methods depending on the platform and cookie version:
+All Chromium-based browsers use platform-specific encryption methods:
 
 #### macOS
 - **v11+ cookies**: AES-128-CBC with PBKDF2 key derivation
@@ -119,9 +121,10 @@ All Chromium-based browsers use identical encryption methods depending on the pl
 - Encryption keys stored in macOS Keychain with browser-specific service names:
   - Chrome: "Chrome Safe Storage"
   - Edge: "Microsoft Edge Safe Storage"
-  - Arc: "Arc Safe Storage"
+  - Arc: "Arc Safe Storage" 
   - Opera/Opera GX: "Opera Safe Storage"
 - Hash prefix support for database meta version ≥ 24
+- Automatic retry with graceful degradation on keychain access failures
 
 #### Windows  
 - **v10 cookies**: AES-256-GCM with DPAPI-protected key
@@ -145,21 +148,23 @@ All Chromium-based browsers use identical encryption methods depending on the pl
 
 - Multiple profiles supported across all platforms
 - Default profile: "Default"
-- Profile list in `Local State` file
+- Profile list discovered from `Local State` file
 - Each profile has:
-  - Separate cookie database
+  - Separate cookie database (`Profile Name/Cookies`)
   - Platform-specific encryption handling
   - Independent security context
+  - Automatic profile detection and enumeration
 
 ### Limitations
 
-- Requires appropriate system permissions
-- Browser must be installed
-- Session cookies not accessible
-- Incognito mode not supported
-- Profile must be accessible
-- Platform-specific security requirements
+- Requires appropriate system permissions (keychain access on macOS, DPAPI on Windows)
+- Browser must be installed and cookie database must exist
+- Session cookies (without expiry) not accessible
+- Incognito/Private mode cookies not supported
+- Profile directory must be accessible and readable
+- Platform-specific security requirements apply
 - Each browser requires its own keychain entry (macOS)
+- Database locking handled with automatic retry mechanism
 
 ## Firefox (Cross-Platform)
 
@@ -197,30 +202,33 @@ Firefox uses SQLite for cookie storage:
 
 ### Security Model
 
-- SQLite database with no additional encryption
+- SQLite database with no additional encryption layer
 - File system permissions-based security
-- Database locking mechanism for concurrent access
-- Platform-specific profile paths
-- Direct database access required
-- Handles database busy states gracefully
+- Database locking mechanism with automatic retry on SQLITE_BUSY
+- Platform-specific profile path detection
+- Direct database access via optimized SQL queries
+- Graceful handling of locked databases with exponential backoff
+- Connection pooling for improved performance
 
 ### Profile Support
 
-- Multiple profiles supported
-- Profile list in `profiles.ini`
-- Each profile is separate directory
+- Multiple profiles supported across all Firefox variants
+- Profile list discovered from `profiles.ini` 
+- Each profile is a separate directory with its own cookie database
 - Custom profile paths supported
-- Cross-platform profile handling
-- Automatic profile discovery
+- Cross-platform profile handling with OS-specific paths
+- Automatic profile discovery including Developer Edition and ESR variants
+- Support for both relative and absolute profile paths
 
 ### Limitations
 
-- Database must be unlocked
-- Firefox must be installed
-- Profile directory must be readable
-- Some cookies may be protected
-- Database may be temporarily locked
-- Fails gracefully if database is busy
+- Database must be unlocked (handled with automatic retry)
+- Firefox must be installed with valid profile
+- Profile directory must be readable with proper permissions
+- httpOnly cookies included but may have access restrictions
+- Database temporarily locked during Firefox operations (handled gracefully)
+- Automatic retry with exponential backoff on SQLITE_BUSY errors
+- WAL mode databases supported
 
 ## Safari (macOS Only)
 
@@ -234,12 +242,13 @@ Safari uses a binary cookie format:
 
 ### Security Model
 
-- Custom binary format
-- Container-based security
-- System-level permissions
-- No additional encryption
-- macOS container isolation
-- Requires container access permission
+- Custom binary cookie format ("cook" magic header)
+- Container-based security via macOS sandboxing
+- System-level permissions required for container access
+- No additional encryption beyond file system protection
+- macOS container isolation (com.apple.Safari)
+- Requires Full Disk Access or specific container permissions
+- Binary format parsing with comprehensive error handling
 
 ### Profile Support
 
@@ -252,13 +261,14 @@ Safari uses a binary cookie format:
 
 ### Limitations
 
-- macOS only
-- Binary format can change between versions
-- Safari must be installed
-- Container permissions needed
-- No profile separation
-- Some cookies may be restricted
-- Fails silently if container inaccessible
+- macOS only (no Windows or Linux support)
+- Binary format may change between Safari versions
+- Safari must be installed with valid container
+- Full Disk Access or container permissions required
+- No profile separation (single system-wide store)
+- Some cookies may be restricted by Safari's security model
+- Graceful fallback with detailed permission error messages
+- Binary format requires custom decoder implementation
 
 ## Implementation Examples
 

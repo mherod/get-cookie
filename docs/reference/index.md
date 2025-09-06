@@ -15,28 +15,37 @@
 
 ## Platform Requirements
 
-This package is currently only supported on macOS. Support for other platforms is planned for future releases.
+This package supports Windows, macOS, and Linux platforms with browser-specific compatibility.
 
 ## Browser Support
 
-The package supports the following browsers on macOS:
+The package supports the following browsers:
 
-- **Chrome**: Requires macOS Keychain access for cookie decryption
-- **Firefox**: Reads from SQLite database in profile directories
-- **Safari**: Reads binary cookie format from Safari container
+- **Chrome, Edge, Arc, Opera, Opera GX**: Cross-platform support (Windows, macOS, Linux)
+  - macOS: Keychain access for cookie decryption
+  - Windows: DPAPI for cookie decryption  
+  - Linux: Keyring (libsecret) for cookie decryption
+- **Firefox**: Cross-platform support (Windows, macOS, Linux)
+  - Direct SQLite database access
+  - No additional encryption layer
+- **Safari**: macOS only
+  - Binary cookie format parsing
+  - Container access required
 
 ## Core Functions
 
 ### getCookie(options)
 
-Retrieves cookies from installed browsers on macOS.
+Retrieves cookies from installed browsers across all supported platforms.
 
 ```typescript
 interface GetCookieOptions {
-  name: string; // Cookie name to search for (use "%" for all)
-  domain: string; // Domain to filter cookies by
+  name: string;          // Cookie name to search for (use "%" for all)
+  domain: string;        // Domain to filter cookies by
   removeExpired?: boolean; // Remove expired cookies from results
-  limit?: number; // Limit number of results
+  limit?: number;        // Limit number of results
+  browser?: string;      // Target specific browser
+  store?: string;        // Path to specific cookie store
 }
 
 // Returns: Promise<ExportedCookie[]>
@@ -44,9 +53,12 @@ interface GetCookieOptions {
 
 **Error Handling**:
 
-- Throws if not running on macOS
+- Returns empty array if platform not supported for specific browser
 - Throws if unable to access browser profiles
-- Throws if unable to access macOS Keychain (Chrome)
+- Platform-specific errors:
+  - macOS: Keychain access errors
+  - Windows: DPAPI decryption errors
+  - Linux: Keyring access errors
 - May return empty array if cookies can't be decrypted
 
 ### comboQueryCookieSpec(specs, options)
@@ -81,9 +93,12 @@ Queries cookies from Chrome browser.
 
 **Requirements**:
 
-- macOS only
+- Cross-platform support (Windows, macOS, Linux)
 - Access to Chrome profile directory
-- Access to macOS Keychain
+- Platform-specific decryption:
+  - macOS: Keychain access
+  - Windows: DPAPI access
+  - Linux: Keyring or fallback key
 
 ### FirefoxCookieQueryStrategy
 
@@ -91,8 +106,10 @@ Queries cookies from Firefox browser.
 
 **Requirements**:
 
+- Cross-platform support (Windows, macOS, Linux)
 - Access to Firefox profile directory
 - Read permission for SQLite database
+- Automatic retry on database lock
 
 ### SafariCookieQueryStrategy
 
@@ -113,11 +130,12 @@ interface ExportedCookie {
   domain: string;
   name: string;
   value: string;
-  expiry: Date | "Infinity";
+  expiry: Date | "Infinity" | undefined;
   meta: {
     file: string;
-    browser: "Chrome" | "Firefox" | "Safari";
+    browser: string; // "Chrome", "Edge", "Arc", "Opera", "Opera GX", "Firefox", "Safari"
     decrypted: boolean;
+    profile?: string;
   };
 }
 ```
@@ -128,8 +146,9 @@ The package uses a comprehensive error handling strategy:
 
 1. **Platform Checks**:
 
-   - All functions verify macOS platform
-   - Non-macOS platforms throw early
+   - Functions verify platform compatibility
+   - Safari-specific functions require macOS
+   - Other browsers support all platforms
 
 2. **Browser Access**:
 
@@ -170,7 +189,9 @@ The package uses a comprehensive error handling strategy:
 
 3. **Handle platform limitations**:
    ```typescript
-   if (process.platform !== "darwin") {
-     throw new Error("This package only supports macOS");
+   // Safari is macOS-only
+   if (browser === "safari" && process.platform !== "darwin") {
+     console.warn("Safari is only supported on macOS");
+     return [];
    }
    ```

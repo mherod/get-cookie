@@ -155,7 +155,8 @@ export class SafariCookieQueryStrategy extends BaseCookieQueryStrategy {
       try {
         return JSON.stringify(value);
       } catch {
-        return String(value);
+        // If JSON.stringify fails (e.g., circular reference), return a placeholder
+        return "[object]";
       }
     }
 

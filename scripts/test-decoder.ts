@@ -90,9 +90,9 @@ function main(): void {
     const cookies = decodeBinaryCookies(cookieDbPath);
     logger.success(`Successfully decoded ${cookies.length} cookies\n`);
     logger.info("Sample cookies (first 5):");
-    cookies
-      .slice(0, 5)
-      .forEach((cookie, index) => displayCookie(cookie, index));
+    cookies.slice(0, 5).forEach((cookie, index) => {
+      displayCookie(cookie, index);
+    });
   } catch (error) {
     logger.error("Error decoding cookies", { error });
   }

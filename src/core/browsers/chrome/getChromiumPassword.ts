@@ -35,6 +35,7 @@ async function getMacOSPassword(browser: ChromiumBrowser): Promise<string> {
     return result.stdout.trim();
   } catch (error) {
     // Fallback to Chrome if browser-specific key not found
+    // This is useful for browsers that share Chrome's encryption
     if (browser !== "chrome") {
       const chromeCommand = `security find-generic-password -w -s "Chrome Safe Storage"`;
       try {
@@ -54,7 +55,7 @@ async function getMacOSPassword(browser: ChromiumBrowser): Promise<string> {
  * Gets the Chromium browser password for Windows
  * Windows uses DPAPI which is browser-agnostic
  */
-async function getWindowsPassword(): Promise<Buffer> {
+async function getWindowsPassword(): Promise<string | Buffer> {
   // Import dynamically to avoid loading on non-Windows platforms
   const { getChromePassword } = await import("./windows/getChromePassword");
   return getChromePassword();

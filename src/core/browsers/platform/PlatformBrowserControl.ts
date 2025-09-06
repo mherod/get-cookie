@@ -1,5 +1,9 @@
-import { platform as osPlatform } from "node:os";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 import type { BrowserName } from "@utils/BrowserControl";
+import { type Platform, getPlatform, isWindows } from "@utils/platformUtils";
+
+const execFileAsync = promisify(execFile);
 
 /**
  * Interface for platform-specific browser control operations
@@ -25,6 +29,11 @@ export interface PlatformBrowserControl {
    * Get the platform name
    */
   getPlatformName(): string;
+
+  /**
+   * Check if a browser is installed
+   */
+  isBrowserInstalled(browserName: BrowserName): Promise<boolean>;
 }
 
 /**
@@ -62,13 +71,49 @@ export abstract class BasePlatformBrowserControl
   public abstract getPlatformName(): string;
 
   /**
-   * Execute command helper
+   * Default implementation to check if browser is installed
+   * Can be overridden by platform-specific implementations
    */
-  protected async executeCommand(command: string): Promise<void> {
-    const { exec } = await import("node:child_process");
-    const { promisify } = await import("node:util");
-    const execAsync = promisify(exec);
-    await execAsync(command);
+  public async isBrowserInstalled(browserName: BrowserName): Promise<boolean> {
+    const executables = this.getBrowserExecutables(browserName);
+
+    for (const exe of executables) {
+      try {
+        // Try to check if executable exists using 'which' or 'where'
+        const checkCommand = isWindows() ? "where" : "which";
+        await execFileAsync(checkCommand, [exe], { timeout: 1000 });
+        return true;
+      } catch {
+        // Continue checking other executables
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * Execute command helper with proper escaping
+   * @param command - The command to execute
+   * @param args - Arguments to pass to the command
+   */
+  protected async executeCommand(
+    command: string,
+    args: string[] = [],
+  ): Promise<void> {
+    try {
+      await execFileAsync(command, args, {
+        timeout: 5000,
+        windowsHide: true,
+      });
+    } catch (error) {
+      // Log but don't throw - browser may still launch
+      if (error && typeof error === "object" && "code" in error) {
+        // Ignore expected errors like ENOENT when browser isn't installed
+        if (error.code !== "ENOENT") {
+          console.debug(`Browser launch warning: ${String(error)}`);
+        }
+      }
+    }
   }
 }
 
@@ -96,9 +141,11 @@ export class MacOSBrowserControl extends BasePlatformBrowserControl {
       throw new Error(`${browserName} not supported on macOS`);
     }
 
-    await this.executeCommand(
-      `osascript -e 'tell application "${appName}" to activate'`,
-    );
+    // Use osascript with proper argument separation to avoid injection
+    await this.executeCommand("osascript", [
+      "-e",
+      `tell application "${appName}" to activate`,
+    ]);
   }
 
   public getPlatformName(): string {
@@ -125,8 +172,21 @@ export class WindowsBrowserControl extends BasePlatformBrowserControl {
       throw new Error(`${browserName} not available on Windows`);
     }
 
-    // Try to launch via start command
-    await this.executeCommand(`start "" "${executables[0]}"`);
+    // Try each executable until one works
+    for (const exe of executables) {
+      try {
+        // Use cmd.exe with /c flag to run start command safely
+        await execFileAsync("cmd.exe", ["/c", "start", "", exe], {
+          timeout: 5000,
+          windowsHide: true,
+        });
+        return; // Success, exit early
+      } catch {
+        // Try next executable
+      }
+    }
+
+    throw new Error(`Failed to launch ${browserName} on Windows`);
   }
 
   public getPlatformName(): string {
@@ -159,21 +219,26 @@ export class LinuxBrowserControl extends BasePlatformBrowserControl {
     }
 
     // Try each possible command
-    let launched = false;
     for (const cmd of executables) {
       try {
-        await this.executeCommand(`nohup ${cmd} > /dev/null 2>&1 &`);
-        launched = true;
-        break;
+        // Use direct execution without shell to avoid injection
+        await execFileAsync(cmd, [], {
+          timeout: 5000,
+        });
+        return; // Success, exit early
       } catch {
         // Try next command
       }
     }
 
-    if (!launched) {
-      // Fallback to xdg-open
-      await this.executeCommand(
-        `xdg-open "http://localhost" > /dev/null 2>&1 &`,
+    // Fallback to xdg-open if no browser executable worked
+    try {
+      await execFileAsync("xdg-open", ["http://localhost"], {
+        timeout: 5000,
+      });
+    } catch (error) {
+      throw new Error(
+        `Failed to launch ${browserName} on Linux: ${String(error)}`,
       );
     }
   }
@@ -190,14 +255,14 @@ export class LinuxBrowserControl extends BasePlatformBrowserControl {
 let platformControlInstance: PlatformBrowserControl | null = null;
 
 export function createPlatformBrowserControl(
-  platformOverride?: NodeJS.Platform,
+  platformOverride?: Platform | NodeJS.Platform,
 ): PlatformBrowserControl {
   // Use singleton for efficiency when not overriding
   if (platformControlInstance && !platformOverride) {
     return platformControlInstance;
   }
 
-  const currentPlatform = platformOverride || osPlatform();
+  const currentPlatform = platformOverride || getPlatform();
 
   let control: PlatformBrowserControl;
 
@@ -213,8 +278,11 @@ export function createPlatformBrowserControl(
     case "openbsd":
       control = new LinuxBrowserControl();
       break;
+    case "unknown":
+      throw new Error("Platform not supported for browser control");
     default:
-      throw new Error(`Unsupported platform: ${currentPlatform}`);
+      // For any other platform string, try Linux as fallback
+      control = new LinuxBrowserControl();
   }
 
   if (!platformOverride) {
@@ -222,4 +290,11 @@ export function createPlatformBrowserControl(
   }
 
   return control;
+}
+
+/**
+ * Clear the singleton instance (useful for testing)
+ */
+export function clearPlatformControlInstance(): void {
+  platformControlInstance = null;
 }

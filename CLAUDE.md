@@ -45,18 +45,29 @@ The codebase follows a **Strategy Pattern** for browser-specific cookie extracti
 - **CompositeCookieQueryStrategy**: Combines multiple strategies for querying across all browsers
 - **CookieStrategyFactory**: Factory for creating browser-specific or composite strategies
 
+### SQL Infrastructure
+
+Modern SQL utilities for efficient database operations:
+
+- **DatabaseConnectionManager**: Connection pooling with lifecycle management and retry logic
+- **QueryMonitor**: Performance tracking, slow query detection, and metrics collection
+- **CookieQueryBuilder**: Type-safe SQL query construction with security validation
+- **BrowserLockHandler**: Graceful handling of locked databases with automatic retry
+
 ### Key Directories
 
 - `src/core/browsers/`: Browser-specific cookie query implementations
+- `src/core/browsers/sql/`: SQL utilities (DatabaseConnectionManager, QueryMonitor, CookieQueryBuilder)
 - `src/cli/`: Command-line interface and output handlers
-- `src/utils/`: Shared utilities (logging, date handling, JWT validation)
+- `src/utils/`: Shared utilities (logging, date handling, JWT validation, platform detection)
 - `src/types/`: TypeScript schemas and type definitions
 
 ### Browser-Specific Handling
 
-- **Chrome**: Handles keychain password decryption and SQLite database queries
-- **Safari**: Parses binary cookie files with custom decoder
-- **Firefox**: Queries SQLite databases with profile discovery
+- **Chrome/Chromium-based**: Handles keychain password decryption (macOS), DPAPI (Windows), keyring (Linux)
+- **Safari**: Parses binary cookie files with custom decoder (macOS only)
+- **Firefox**: SQLite database queries with multi-variant support (regular, Developer Edition, ESR)
+- **Cross-platform**: Full Windows, macOS, and Linux support for Chrome and Firefox
 
 ### Path Aliases
 
@@ -85,8 +96,10 @@ The CLI uses a factory pattern for different output formats:
 
 ### Key Technical Considerations
 
-- Handles browser encryption (Chrome keychain, Safari binary formats)
-- Cross-platform SQLite database querying
-- Extensive error handling and graceful degradation
+- Handles browser encryption (Chrome keychain/DPAPI/keyring, Safari binary formats)
+- Cross-platform SQLite database querying with optimized indexed queries
+- Extensive error handling and graceful degradation with retry mechanisms
 - TypeScript-first with comprehensive type safety
 - Zod schemas for runtime validation
+- Platform-aware process detection and browser conflict resolution
+- Debug-level logging for clean stderr output in normal operation

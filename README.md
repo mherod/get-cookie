@@ -88,11 +88,37 @@ const cookies = await getCookie({
 
 ## Core Features 🎯
 
-- 🌐 **Cross-Platform**: Chrome, Edge, Arc, Opera & Opera GX (macOS/Linux/Windows), Firefox (macOS/Linux), Safari (macOS)
+- 🌐 **Cross-Platform**: Chrome, Edge, Arc, Opera & Opera GX (macOS/Linux/Windows), Firefox (macOS/Linux/Windows), Safari (macOS)
 - 🔒 **Enterprise Security**: Browser-native encryption handling
 - 📝 **TypeScript First**: Complete type safety and IntelliSense
 - 🎨 **Flexible Output**: JSON, rendered, or grouped results
 - 👥 **Multi-Profile**: Full support for browser profiles
+
+## Browser Support 🌐
+
+### Supported Browsers by Platform
+
+| Browser                   | macOS | Linux | Windows |
+|---------------------------|-------|-------|---------|
+| Chrome                    | ✅     | ✅     | ✅       |
+| Edge                      | ✅     | ✅     | ✅       |
+| Arc                       | ✅     | ❌     | ❌       |
+| Opera                     | ✅     | ✅     | ✅       |
+| Opera GX                  | ✅     | ✅     | ✅       |
+| Firefox                   | ✅     | ✅     | ✅       |
+| Firefox Developer Edition | ✅     | ✅     | ✅       |
+| Firefox ESR               | ✅     | ✅     | ✅       |
+| Safari                    | ✅     | ❌     | ❌       |
+| Chromium                  | ✅     | ✅     | ✅       |
+| Brave                     | ✅     | ✅     | ✅       |
+
+### Windows Firefox Support
+
+Full support for all Firefox variants on Windows:
+- **Regular Firefox**: Standard installation in AppData\Roaming
+- **Firefox Developer Edition**: Separate profile support
+- **Firefox ESR**: Extended Support Release detection
+- **Local AppData**: Handles both Roaming and Local installations
 
 ## Documentation 📚
 

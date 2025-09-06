@@ -11,7 +11,7 @@ Understanding how get-cookie works with different browsers and platforms.
 | Arc      | ✅    | ✅    | ✅      |
 | Opera    | ✅    | ✅    | ✅      |
 | Opera GX | ✅    | ✅    | ✅      |
-| Firefox  | ✅    | ✅    | ❌      |
+| Firefox  | ✅    | ✅    | ✅      |
 | Safari   | ✅    | ❌    | ❌      |
 
 ✅ Full Support | ❌ Not Supported
@@ -161,22 +161,38 @@ All Chromium-based browsers use identical encryption methods depending on the pl
 - Platform-specific security requirements
 - Each browser requires its own keychain entry (macOS)
 
-## Firefox (macOS & Linux)
+## Firefox (Cross-Platform)
 
 ### Storage Location
 
 Firefox uses SQLite for cookie storage:
 
-macOS:
-
+**macOS:**
 ```
 ~/Library/Application Support/Firefox/Profiles/<profile>/cookies.sqlite
 ```
 
-Linux:
-
+**Linux:**
 ```
 ~/.mozilla/firefox/<profile>/cookies.sqlite
+```
+
+**Windows:**
+```
+%APPDATA%\Mozilla\Firefox\Profiles\<profile>\cookies.sqlite
+%LOCALAPPDATA%\Mozilla\Firefox\Profiles\<profile>\cookies.sqlite
+```
+
+#### Windows Firefox Variants
+
+**Firefox Developer Edition:**
+```
+%APPDATA%\Mozilla\Firefox Developer Edition\Profiles\<profile>\cookies.sqlite
+```
+
+**Firefox ESR (Extended Support Release):**
+```
+%APPDATA%\Mozilla\Firefox ESR\Profiles\<profile>\cookies.sqlite
 ```
 
 ### Security Model
@@ -300,7 +316,7 @@ import { FirefoxCookieQueryStrategy } from "@mherod/get-cookie";
 const strategy = new FirefoxCookieQueryStrategy();
 
 try {
-  // Works on macOS and Linux
+  // Works on macOS, Linux, and Windows
   const cookies = await strategy.queryCookies("auth", "example.com");
 } catch (error) {
   if (error.message.includes("SQLITE_BUSY")) {
@@ -356,15 +372,15 @@ try {
 2. **Check platform compatibility**
 
    ```typescript
-   // Chrome now works on all platforms
+   // Chrome and Firefox now work on all platforms
    const supportedPlatforms = ["darwin", "linux", "win32"];
    if (!supportedPlatforms.includes(process.platform)) {
      console.warn("Platform not supported");
    }
    
-   // Firefox works on macOS and Linux
-   if (process.platform === "win32") {
-     console.warn("Firefox support not available on Windows");
+   // Safari only works on macOS
+   if (browserName === "safari" && process.platform !== "darwin") {
+     console.warn("Safari support only available on macOS");
    }
    ```
 

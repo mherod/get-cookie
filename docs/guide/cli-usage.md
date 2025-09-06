@@ -48,6 +48,9 @@ get-cookie auth example.com --output json
 
 ```bash
 get-cookie auth example.com --render
+# Or short form:
+get-cookie auth example.com -r
+
 # Output:
 # 🍪 Cookie: auth
 # 📍 Domain: example.com
@@ -55,10 +58,23 @@ get-cookie auth example.com --render
 # ⏰ Expires: 31 Dec 2024
 ```
 
+### Detailed Dump
+
+```bash
+get-cookie auth example.com --dump
+# Or short form:
+get-cookie auth example.com -d
+
+# Dumps all cookie details including metadata
+```
+
 ### Grouped by Browser
 
 ```bash
 get-cookie auth example.com --dump-grouped
+# Or short form:
+get-cookie auth example.com -G
+
 # Output:
 # Chrome (Default Profile):
 #   - auth=value1234
@@ -95,6 +111,36 @@ get-cookie auth example.com --browser firefox
 get-cookie auth example.com --browser safari
 ```
 
+### Force Operations
+
+```bash
+# Force extraction despite locked database
+get-cookie auth example.com --force
+
+# Short form
+get-cookie auth example.com -f
+```
+
+### Verbose Logging
+
+```bash
+# Enable verbose output for debugging
+get-cookie auth example.com --verbose
+
+# Short form
+get-cookie auth example.com -v
+```
+
+### Use Custom Cookie Store
+
+```bash
+# Specify path to cookie database
+get-cookie auth example.com --store ~/custom/path/cookies.sqlite
+
+# Use with Firefox profile
+get-cookie auth example.com --store ~/.mozilla/firefox/abc123.default/cookies.sqlite
+```
+
 ### Handle Multiple Domains
 
 ```bash
@@ -105,33 +151,55 @@ get-cookie auth "*.example.com"
 get-cookie % "*.example.com"
 ```
 
-### Profile Selection
+### Alternative Query Methods
 
 ```bash
-# List available profiles
-get-cookie --list-profiles
+# Using --name and --domain flags
+get-cookie --name auth --domain example.com
+get-cookie -n auth -D example.com
 
-# Use specific profile
-get-cookie auth example.com --profile "Profile 1"
+# Wildcard pattern for all cookies
+get-cookie --name % --domain example.com
+get-cookie -n % -D example.com
+
+# Pattern matching in name
+get-cookie --name "session*" --domain example.com
 ```
 
 ## Options Reference
 
-| Option           | Description                    | Example               |
-| ---------------- | ------------------------------ | --------------------- |
-| `--output`       | Output format (json, rendered) | `--output json`       |
-| `--browser`      | Target browser                 | `--browser chrome`    |
-| `--profile`      | Browser profile                | `--profile "Default"` |
-| `--url`          | Get cookies for URL            | `--url https://...`   |
-| `--render`       | Pretty print output            | `--render`            |
-| `--dump-grouped` | Group by browser/profile       | `--dump-grouped`      |
-| `--version`      | Show version                   | `--version`           |
-| `--help`         | Show help                      | `--help`              |
+### General Options
+
+| Option      | Short | Description                                         | Example     |
+|-------------|-------|-----------------------------------------------------|-------------|
+| `--help`    | `-h`  | Show help message                                   | `--help`    |
+| `--verbose` | `-v`  | Enable verbose output                               | `--verbose` |
+| `--force`   | `-f`  | Force operation despite warnings (e.g., locked DBs) | `--force`   |
+| `--version` |       | Show version                                        | `--version` |
+
+### Query Options
+
+| Option      | Short | Description                          | Example                  |
+|-------------|-------|--------------------------------------|--------------------------|
+| `--name`    | `-n`  | Cookie name pattern (% for wildcard) | `--name auth%`           |
+| `--domain`  | `-D`  | Cookie domain pattern                | `--domain *.example.com` |
+| `--url`     | `-u`  | URL to extract cookie specs from     | `--url https://...`      |
+| `--browser` |       | Target specific browser              | `--browser chrome`       |
+| `--store`   |       | Path to specific cookie store file   | `--store /path/to/db`    |
+
+### Output Options
+
+| Option           | Short | Description                     | Example          |
+|------------------|-------|---------------------------------|------------------|
+| `--output`       |       | Output format (json)            | `--output json`  |
+| `--dump`         | `-d`  | Dump all cookie details         | `--dump`         |
+| `--dump-grouped` | `-G`  | Dump results grouped by profile | `--dump-grouped` |
+| `--render`       | `-r`  | Render formatted output         | `--render`       |
 
 ## Environment Variables
 
 | Variable          | Description             | Default     |
-| ----------------- | ----------------------- | ----------- |
+|-------------------|-------------------------|-------------|
 | `DEBUG`           | Enable debug logging    | `false`     |
 | `NO_COLOR`        | Disable colored output  | `false`     |
 | `CHROME_PROFILE`  | Default Chrome profile  | `"Default"` |
@@ -178,7 +246,7 @@ fi
 The CLI uses exit codes to indicate status:
 
 | Code | Meaning           |
-| ---- | ----------------- |
+|------|-------------------|
 | `0`  | Success           |
 | `1`  | General error     |
 | `2`  | Invalid arguments |

@@ -102,6 +102,16 @@
     {
       "includes": ["**/.prettierrc/**", "**/.parcelrc/**"],
       "formatter": { "indentWidth": 2 }
+    },
+    {
+      "includes": ["**/*.test.ts", "**/*.spec.ts", "**/BinaryCodable*.ts"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noNonNullAssertion": "off"
+          }
+        }
+      }
     }
   ]
 }

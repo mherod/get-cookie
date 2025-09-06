@@ -52,7 +52,7 @@ describe("OutputHandlerFactory", () => {
 
     it("should not validate when output is undefined", () => {
       expect(() => {
-        factory.getHandler({ output: undefined });
+        factory.getHandler({});
       }).not.toThrow();
     });
 

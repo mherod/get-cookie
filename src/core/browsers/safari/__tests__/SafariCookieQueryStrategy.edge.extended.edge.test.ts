@@ -1,5 +1,3 @@
-import { homedir } from "node:os";
-
 import type { BinaryCookieRow } from "../../../../types/schemas";
 import { decodeBinaryCookies } from "../decodeBinaryCookies";
 import { SafariCookieQueryStrategy } from "../SafariCookieQueryStrategy";
@@ -26,7 +24,6 @@ describe("SafariCookieQueryStrategy - Extended Properties Edge Cases", () => {
   const mockDecodeBinaryCookies = decodeBinaryCookies as jest.MockedFunction<
     typeof decodeBinaryCookies
   >;
-  const _mockHomedir = homedir as jest.MockedFunction<typeof homedir>;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -57,10 +54,10 @@ describe("SafariCookieQueryStrategy - Extended Properties Edge Cases", () => {
 
     const cookies = await strategy.queryCookies("test-cookie", "example.com");
     expect(cookies).toHaveLength(1);
-    expect(cookies[0].meta?.comment).toBeUndefined();
-    expect(cookies[0].meta?.commentURL).toBeUndefined();
-    expect(cookies[0].meta?.port).toBeUndefined();
-    expect(cookies[0].meta?.version).toBeUndefined();
+    expect(cookies[0]!.meta?.comment).toBeUndefined();
+    expect(cookies[0]!.meta?.commentURL).toBeUndefined();
+    expect(cookies[0]!.meta?.port).toBeUndefined();
+    expect(cookies[0]!.meta?.version).toBeUndefined();
   });
 
   it("should handle null extended properties", async () => {
@@ -83,9 +80,9 @@ describe("SafariCookieQueryStrategy - Extended Properties Edge Cases", () => {
 
     const cookies = await strategy.queryCookies("test-cookie", "example.com");
     expect(cookies).toHaveLength(1);
-    expect(cookies[0].meta?.comment).toBeUndefined();
-    expect(cookies[0].meta?.commentURL).toBeUndefined();
-    expect(cookies[0].meta?.port).toBeNull();
-    expect(cookies[0].meta?.version).toBeNull();
+    expect(cookies[0]!.meta?.comment).toBeUndefined();
+    expect(cookies[0]!.meta?.commentURL).toBeUndefined();
+    expect(cookies[0]!.meta?.port).toBeNull();
+    expect(cookies[0]!.meta?.version).toBeNull();
   });
 });

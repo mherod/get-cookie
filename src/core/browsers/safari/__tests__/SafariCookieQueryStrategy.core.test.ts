@@ -55,9 +55,6 @@ describe("SafariCookieQueryStrategy - Basic", () => {
 
 describe("SafariCookieQueryStrategy - Edge Cases", () => {
   let strategy: SafariCookieQueryStrategy;
-  const _mockDecodeBinaryCookies = decodeBinaryCookies as jest.MockedFunction<
-    typeof decodeBinaryCookies
-  >;
   const mockHomedir = homedir as jest.MockedFunction<typeof homedir>;
 
   beforeEach(() => {

@@ -1,5 +1,3 @@
-import { homedir } from "node:os";
-
 import type { BinaryCookieRow } from "../../../../types/schemas";
 import { decodeBinaryCookies } from "../decodeBinaryCookies";
 import { SafariCookieQueryStrategy } from "../SafariCookieQueryStrategy";
@@ -26,7 +24,6 @@ describe("SafariCookieQueryStrategy - Basic Flags", () => {
   const mockDecodeBinaryCookies = decodeBinaryCookies as jest.MockedFunction<
     typeof decodeBinaryCookies
   >;
-  const _mockHomedir = homedir as jest.MockedFunction<typeof homedir>;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -54,8 +51,8 @@ describe("SafariCookieQueryStrategy - Basic Flags", () => {
 
     const cookies = await strategy.queryCookies("test-cookie", "example.com");
     expect(cookies).toHaveLength(1);
-    expect(cookies[0].meta?.secure).toBe(true);
-    expect(cookies[0].meta?.httpOnly).toBe(false);
+    expect(cookies[0]!.meta?.secure).toBe(true);
+    expect(cookies[0]!.meta?.httpOnly).toBe(false);
   });
 
   it("should handle cookies with httpOnly flag", async () => {
@@ -75,8 +72,8 @@ describe("SafariCookieQueryStrategy - Basic Flags", () => {
 
     const cookies = await strategy.queryCookies("test-cookie", "example.com");
     expect(cookies).toHaveLength(1);
-    expect(cookies[0].meta?.secure).toBe(false);
-    expect(cookies[0].meta?.httpOnly).toBe(true);
+    expect(cookies[0]!.meta?.secure).toBe(false);
+    expect(cookies[0]!.meta?.httpOnly).toBe(true);
   });
 
   it("should handle cookies with both secure and httpOnly flags", async () => {
@@ -96,8 +93,8 @@ describe("SafariCookieQueryStrategy - Basic Flags", () => {
 
     const cookies = await strategy.queryCookies("test-cookie", "example.com");
     expect(cookies).toHaveLength(1);
-    expect(cookies[0].meta?.secure).toBe(true);
-    expect(cookies[0].meta?.httpOnly).toBe(true);
+    expect(cookies[0]!.meta?.secure).toBe(true);
+    expect(cookies[0]!.meta?.httpOnly).toBe(true);
   });
 });
 
@@ -106,7 +103,6 @@ describe("SafariCookieQueryStrategy - Edge Case Flags", () => {
   const mockDecodeBinaryCookies = decodeBinaryCookies as jest.MockedFunction<
     typeof decodeBinaryCookies
   >;
-  const _mockHomedir = homedir as jest.MockedFunction<typeof homedir>;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -134,8 +130,8 @@ describe("SafariCookieQueryStrategy - Edge Case Flags", () => {
 
     const cookies = await strategy.queryCookies("test-cookie", "example.com");
     expect(cookies).toHaveLength(1);
-    expect(cookies[0].meta?.secure).toBe(false);
-    expect(cookies[0].meta?.httpOnly).toBe(false);
+    expect(cookies[0]!.meta?.secure).toBe(false);
+    expect(cookies[0]!.meta?.httpOnly).toBe(false);
   });
 
   it("should handle cookies with undefined flags", async () => {
@@ -155,7 +151,7 @@ describe("SafariCookieQueryStrategy - Edge Case Flags", () => {
 
     const cookies = await strategy.queryCookies("test-cookie", "example.com");
     expect(cookies).toHaveLength(1);
-    expect(cookies[0].meta?.secure).toBe(false);
-    expect(cookies[0].meta?.httpOnly).toBe(false);
+    expect(cookies[0]!.meta?.secure).toBe(false);
+    expect(cookies[0]!.meta?.httpOnly).toBe(false);
   });
 });

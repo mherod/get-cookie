@@ -119,20 +119,23 @@ export class EnhancedCookieQueryService {
             domain: options.domain,
           });
 
-          return {
+          const result: QueryResult<ExportedCookie> = {
             data: cached,
             cached: true,
-            metrics: options.includeMetrics
-              ? {
-                  query: this.getCacheKey(options),
-                  duration: Date.now() - startTime,
-                  rowCount: cached.length,
-                  filepath: options.filepath || "cache",
-                  timestamp: Date.now(),
-                  success: true,
-                }
-              : undefined,
           };
+
+          if (options.includeMetrics) {
+            result.metrics = {
+              query: this.getCacheKey(options),
+              duration: Date.now() - startTime,
+              rowCount: cached.length,
+              filepath: options.filepath || "cache",
+              timestamp: Date.now(),
+              success: true,
+            };
+          }
+
+          return result;
         }
       }
 
@@ -176,16 +179,6 @@ export class EnhancedCookieQueryService {
 
       // Aggregate metrics
       const totalDuration = Date.now() - startTime;
-      const aggregatedMetrics = options.includeMetrics
-        ? {
-            query: queryConfig.description || queryConfig.sql,
-            duration: totalDuration,
-            rowCount: results.length,
-            filepath: filepaths.join(", "),
-            timestamp: Date.now(),
-            success: true,
-          }
-        : undefined;
 
       logger.info("Query completed", {
         browser: options.browser,
@@ -194,11 +187,23 @@ export class EnhancedCookieQueryService {
         duration: totalDuration,
       });
 
-      return {
+      const result: QueryResult<ExportedCookie> = {
         data: results,
-        metrics: aggregatedMetrics,
         cached: false,
       };
+
+      if (options.includeMetrics) {
+        result.metrics = {
+          query: queryConfig.description || queryConfig.sql,
+          duration: totalDuration,
+          rowCount: results.length,
+          filepath: filepaths.join(", "),
+          timestamp: Date.now(),
+          success: true,
+        };
+      }
+
+      return result;
     } catch (error) {
       const duration = Date.now() - startTime;
 

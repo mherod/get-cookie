@@ -1,5 +1,3 @@
-import { homedir } from "node:os";
-
 import type { BinaryCookieRow } from "../../../../types/schemas";
 import { decodeBinaryCookies } from "../decodeBinaryCookies";
 import { SafariCookieQueryStrategy } from "../SafariCookieQueryStrategy";
@@ -26,7 +24,6 @@ describe("SafariCookieQueryStrategy - Expiry Dates", () => {
   const mockDecodeBinaryCookies = decodeBinaryCookies as jest.MockedFunction<
     typeof decodeBinaryCookies
   >;
-  const _mockHomedir = homedir as jest.MockedFunction<typeof homedir>;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -53,8 +50,8 @@ describe("SafariCookieQueryStrategy - Expiry Dates", () => {
 
     const cookies = await strategy.queryCookies("test-cookie", "example.com");
     expect(cookies).toHaveLength(1);
-    expect(cookies[0].expiry).toBeInstanceOf(Date);
-    expect((cookies[0].expiry as Date).getTime()).toBe(1234567890 * 1000);
+    expect(cookies[0]!.expiry).toBeInstanceOf(Date);
+    expect((cookies[0]!.expiry as Date).getTime()).toBe(1234567890 * 1000);
   });
 
   it("should handle session cookies (expiry = 0)", async () => {
@@ -73,7 +70,7 @@ describe("SafariCookieQueryStrategy - Expiry Dates", () => {
 
     const cookies = await strategy.queryCookies("test-cookie", "example.com");
     expect(cookies).toHaveLength(1);
-    expect(cookies[0].expiry).toBe("Infinity");
+    expect(cookies[0]!.expiry).toBe("Infinity");
   });
 
   it("should handle negative expiry", async () => {
@@ -92,7 +89,7 @@ describe("SafariCookieQueryStrategy - Expiry Dates", () => {
 
     const cookies = await strategy.queryCookies("test-cookie", "example.com");
     expect(cookies).toHaveLength(1);
-    expect(cookies[0].expiry).toBe("Infinity");
+    expect(cookies[0]!.expiry).toBe("Infinity");
   });
 
   it("should handle undefined expiry", async () => {
@@ -112,7 +109,7 @@ describe("SafariCookieQueryStrategy - Expiry Dates", () => {
     const cookies = await strategy.queryCookies("test-cookie", "example.com");
     expect(cookies).toHaveLength(1);
     // Changed behavior: undefined expiry now returns undefined instead of NaN Date
-    expect(cookies[0].expiry).toBeUndefined();
+    expect(cookies[0]!.expiry).toBeUndefined();
   });
 });
 
@@ -121,7 +118,6 @@ describe("SafariCookieQueryStrategy - Creation Dates", () => {
   const mockDecodeBinaryCookies = decodeBinaryCookies as jest.MockedFunction<
     typeof decodeBinaryCookies
   >;
-  const _mockHomedir = homedir as jest.MockedFunction<typeof homedir>;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -148,7 +144,7 @@ describe("SafariCookieQueryStrategy - Creation Dates", () => {
 
     const cookies = await strategy.queryCookies("test-cookie", "example.com");
     expect(cookies).toHaveLength(1);
-    expect(cookies[0].meta?.creation).toBeUndefined();
+    expect(cookies[0]!.meta?.creation).toBeUndefined();
   });
 
   it("should include creation date in meta", async () => {
@@ -167,6 +163,6 @@ describe("SafariCookieQueryStrategy - Creation Dates", () => {
 
     const cookies = await strategy.queryCookies("test-cookie", "example.com");
     expect(cookies).toHaveLength(1);
-    expect(cookies[0].meta?.creation).toBe(1234567890 * 1000);
+    expect(cookies[0]!.meta?.creation).toBe(1234567890 * 1000);
   });
 });

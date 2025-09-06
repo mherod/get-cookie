@@ -1,5 +1,3 @@
-import { homedir } from "node:os";
-
 import type { BinaryCookieRow } from "../../../../types/schemas";
 import { decodeBinaryCookies } from "../decodeBinaryCookies";
 import { SafariCookieQueryStrategy } from "../SafariCookieQueryStrategy";
@@ -26,7 +24,6 @@ describe("SafariCookieQueryStrategy - Value Types", () => {
   const mockDecodeBinaryCookies = decodeBinaryCookies as jest.MockedFunction<
     typeof decodeBinaryCookies
   >;
-  const _mockHomedir = homedir as jest.MockedFunction<typeof homedir>;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -53,7 +50,7 @@ describe("SafariCookieQueryStrategy - Value Types", () => {
 
     const cookies = await strategy.queryCookies("test-cookie", "example.com");
     expect(cookies).toHaveLength(1);
-    expect(cookies[0].value).toBe("test-value");
+    expect(cookies[0]!.value).toBe("test-value");
   });
 
   it("should handle Buffer values", async () => {
@@ -72,7 +69,7 @@ describe("SafariCookieQueryStrategy - Value Types", () => {
 
     const cookies = await strategy.queryCookies("test-cookie", "example.com");
     expect(cookies).toHaveLength(1);
-    expect(cookies[0].value).toBe("buffer-value");
+    expect(cookies[0]!.value).toBe("buffer-value");
   });
 
   it("should handle number values", async () => {
@@ -91,7 +88,7 @@ describe("SafariCookieQueryStrategy - Value Types", () => {
 
     const cookies = await strategy.queryCookies("test-cookie", "example.com");
     expect(cookies).toHaveLength(1);
-    expect(cookies[0].value).toBe("12345");
+    expect(cookies[0]!.value).toBe("12345");
   });
 
   it("should handle boolean values", async () => {
@@ -110,7 +107,7 @@ describe("SafariCookieQueryStrategy - Value Types", () => {
 
     const cookies = await strategy.queryCookies("test-cookie", "example.com");
     expect(cookies).toHaveLength(1);
-    expect(cookies[0].value).toBe("true");
+    expect(cookies[0]!.value).toBe("true");
   });
 });
 
@@ -119,7 +116,6 @@ describe("SafariCookieQueryStrategy - Invalid Values", () => {
   const mockDecodeBinaryCookies = decodeBinaryCookies as jest.MockedFunction<
     typeof decodeBinaryCookies
   >;
-  const _mockHomedir = homedir as jest.MockedFunction<typeof homedir>;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -146,7 +142,7 @@ describe("SafariCookieQueryStrategy - Invalid Values", () => {
 
     const cookies = await strategy.queryCookies("test-cookie", "example.com");
     expect(cookies).toHaveLength(1);
-    expect(cookies[0].value).toBe("undefined");
+    expect(cookies[0]!.value).toBe("undefined");
   });
 
   it("should handle null values", async () => {
@@ -165,6 +161,6 @@ describe("SafariCookieQueryStrategy - Invalid Values", () => {
 
     const cookies = await strategy.queryCookies("test-cookie", "example.com");
     expect(cookies).toHaveLength(1);
-    expect(cookies[0].value).toBe("null");
+    expect(cookies[0]!.value).toBe("null");
   });
 });

@@ -1,5 +1,3 @@
-import { homedir } from "node:os";
-
 import type { BinaryCookieRow } from "../../../../types/schemas";
 import { decodeBinaryCookies } from "../decodeBinaryCookies";
 import { SafariCookieQueryStrategy } from "../SafariCookieQueryStrategy";
@@ -26,7 +24,6 @@ describe("SafariCookieQueryStrategy - Name Wildcards", () => {
   const mockDecodeBinaryCookies = decodeBinaryCookies as jest.MockedFunction<
     typeof decodeBinaryCookies
   >;
-  const _mockHomedir = homedir as jest.MockedFunction<typeof homedir>;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -61,8 +58,8 @@ describe("SafariCookieQueryStrategy - Name Wildcards", () => {
 
     const cookies = await strategy.queryCookies("%", "example.com");
     expect(cookies).toHaveLength(2);
-    expect(cookies[0].name).toBe("test-cookie-1");
-    expect(cookies[1].name).toBe("test-cookie-2");
+    expect(cookies[0]!.name).toBe("test-cookie-1");
+    expect(cookies[1]!.name).toBe("test-cookie-2");
   });
 
   it("should handle empty name", async () => {
@@ -89,7 +86,6 @@ describe("SafariCookieQueryStrategy - Domain Wildcards", () => {
   const mockDecodeBinaryCookies = decodeBinaryCookies as jest.MockedFunction<
     typeof decodeBinaryCookies
   >;
-  const _mockHomedir = homedir as jest.MockedFunction<typeof homedir>;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -124,8 +120,8 @@ describe("SafariCookieQueryStrategy - Domain Wildcards", () => {
 
     const cookies = await strategy.queryCookies("test-cookie", "%");
     expect(cookies).toHaveLength(2);
-    expect(cookies[0].domain).toBe("example.com");
-    expect(cookies[1].domain).toBe("test.com");
+    expect(cookies[0]!.domain).toBe("example.com");
+    expect(cookies[1]!.domain).toBe("test.com");
   });
 
   it("should handle empty domain", async () => {
@@ -152,7 +148,6 @@ describe("SafariCookieQueryStrategy - Double Wildcards", () => {
   const mockDecodeBinaryCookies = decodeBinaryCookies as jest.MockedFunction<
     typeof decodeBinaryCookies
   >;
-  const _mockHomedir = homedir as jest.MockedFunction<typeof homedir>;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -179,8 +174,8 @@ describe("SafariCookieQueryStrategy - Double Wildcards", () => {
 
     const cookies = await strategy.queryCookies("%", "%");
     expect(cookies).toHaveLength(1);
-    expect(cookies[0].name).toBe("any-cookie");
-    expect(cookies[0].domain).toBe("any-domain.com");
+    expect(cookies[0]!.name).toBe("any-cookie");
+    expect(cookies[0]!.domain).toBe("any-domain.com");
   });
 
   it("should handle both empty name and domain", async () => {

@@ -307,9 +307,21 @@ export class CookieQueryBuilder {
         conditions.push(`${schema.domainColumn} = ?`);
         params.push(domain);
       } else {
-        // Use LIKE for flexible domain matching
-        conditions.push(`${schema.domainColumn} LIKE ?`);
-        params.push(`%${domain}%`);
+        // Optimize domain matching:
+        // 1. For domains starting with ".", use suffix match (more efficient)
+        // 2. For regular domains, try to match the domain and subdomains
+        if (domain.startsWith(".")) {
+          // Match exact suffix (e.g., ".github.com")
+          conditions.push(`${schema.domainColumn} LIKE ?`);
+          params.push(`%${domain}`);
+        } else {
+          // Match domain and all subdomains efficiently
+          // This matches "github.com", ".github.com", "api.github.com", etc.
+          conditions.push(
+            `(${schema.domainColumn} = ? OR ${schema.domainColumn} = ? OR ${schema.domainColumn} LIKE ?)`,
+          );
+          params.push(domain, `.${domain}`, `%.${domain}`);
+        }
       }
     }
 
@@ -317,7 +329,10 @@ export class CookieQueryBuilder {
     if (!includeExpired) {
       // Firefox uses seconds, Chrome uses microseconds since 1601
       if (this.browser === "firefox") {
-        conditions.push(`${schema.expiryColumn} > strftime('%s', 'now')`);
+        // Pre-calculate the timestamp to avoid function call per row
+        const nowSeconds = Math.floor(Date.now() / 1000);
+        conditions.push(`${schema.expiryColumn} > ?`);
+        params.push(nowSeconds);
       } else {
         // Chrome timestamp: microseconds since January 1, 1601
         // We'll let the caller handle the conversion

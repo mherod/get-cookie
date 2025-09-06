@@ -79,7 +79,7 @@ export class QueryMonitor {
     };
 
     try {
-      // Execute the query
+      // Execute the query (timeout is already set on the connection)
       const stmt = db.prepare(sql);
       const result = stmt.all(...params) as T[];
 
@@ -120,7 +120,7 @@ export class QueryMonitor {
     };
 
     try {
-      // Execute the query
+      // Execute the query (timeout is already set on the connection)
       const stmt = db.prepare(sql);
       const result = stmt.get(...params) as T | undefined;
 

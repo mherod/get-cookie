@@ -186,17 +186,22 @@ describe("SQL Integration Tests", () => {
         maxConnections: 2,
       });
 
-      // Create multiple connections
-      const conn1 = await manager.getConnection("db1.db");
-      const _conn2 = await manager.getConnection("db2.db");
+      try {
+        // Create multiple connections
+        const conn1 = await manager.getConnection("db1.db");
+        const _conn2 = await manager.getConnection("db2.db");
 
-      manager.releaseConnection("db1.db");
+        manager.releaseConnection("db1.db");
 
-      // This should reuse conn1
-      const conn3 = await manager.getConnection("db1.db");
+        // This should reuse conn1
+        const conn3 = await manager.getConnection("db1.db");
 
-      expect(conn3).toBe(conn1);
-      expect(BetterSqlite3).toHaveBeenCalledTimes(2);
+        expect(conn3).toBe(conn1);
+        expect(BetterSqlite3).toHaveBeenCalledTimes(2);
+      } finally {
+        // Clean up the manager to stop its timers
+        manager.closeAll();
+      }
     });
 
     it("should track metrics", async () => {
@@ -469,19 +474,24 @@ describe("SQL Integration Tests", () => {
         maxConnections: 3,
       });
 
-      const queries = Array.from({ length: 5 }, (_, i) =>
-        manager.executeQuery(
-          `db${i}.db`,
-          (db) => {
-            const stmt = db.prepare("SELECT ?");
-            return stmt.get(i);
-          },
-          `Query ${i}`,
-        ),
-      );
+      try {
+        const queries = Array.from({ length: 5 }, (_, i) =>
+          manager.executeQuery(
+            `db${i}.db`,
+            (db) => {
+              const stmt = db.prepare("SELECT ?");
+              return stmt.get(i);
+            },
+            `Query ${i}`,
+          ),
+        );
 
-      const results = await Promise.all(queries);
-      expect(results).toHaveLength(5);
+        const results = await Promise.all(queries);
+        expect(results).toHaveLength(5);
+      } finally {
+        // Clean up the manager to stop its timers
+        manager.closeAll();
+      }
     });
   });
 
@@ -520,9 +530,14 @@ describe("SQL Integration Tests", () => {
         retryAttempts: 1,
       });
 
-      await expect(manager.getConnection("invalid.db")).rejects.toThrow(
-        "Cannot open database",
-      );
+      try {
+        await expect(manager.getConnection("invalid.db")).rejects.toThrow(
+          "Cannot open database",
+        );
+      } finally {
+        // Clean up the manager to stop its timers
+        manager.closeAll();
+      }
     });
   });
 });

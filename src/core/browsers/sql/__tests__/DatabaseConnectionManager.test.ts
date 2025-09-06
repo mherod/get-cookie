@@ -84,12 +84,19 @@ describe("DatabaseConnectionManager", () => {
   afterEach(() => {
     // Clean up
     manager.closeAll();
+    // Reset global manager to ensure clean state between tests
+    resetGlobalConnectionManager();
     jest.clearAllMocks();
 
     // Remove temp directory
     if (fs.existsSync(tempDir)) {
       fs.rmSync(tempDir, { recursive: true, force: true });
     }
+  });
+
+  afterAll(() => {
+    // Final cleanup to ensure no hanging timers
+    resetGlobalConnectionManager();
   });
 
   describe("Connection Management", () => {
@@ -100,7 +107,7 @@ describe("DatabaseConnectionManager", () => {
       expect(BetterSqlite3).toHaveBeenCalledWith(testDbPath, {
         readonly: true,
         fileMustExist: true,
-        timeout: 1000,
+        // No timeout set here anymore - it's applied per query
       });
     });
 

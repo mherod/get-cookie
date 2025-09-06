@@ -153,7 +153,7 @@ export class SafariCookieQueryStrategy extends BaseCookieQueryStrategy {
       try {
         return JSON.stringify(value);
       } catch {
-        return "[object Object]";
+        return String(value);
       }
     }
 
@@ -365,10 +365,11 @@ export class SafariCookieQueryStrategy extends BaseCookieQueryStrategy {
         secure: this.isFlagSet(cookieObj.flags, 0x1),
         httpOnly: this.isFlagSet(cookieObj.flags, 0x4),
         path: cookieObj.path ?? undefined,
-        version: cookieObj.version ?? undefined,
+        version:
+          cookieObj.version === undefined ? undefined : cookieObj.version,
         comment: cookieObj.comment ?? undefined,
         commentURL: cookieObj.commentURL ?? undefined,
-        port: cookieObj.port ?? undefined,
+        port: cookieObj.port === undefined ? undefined : cookieObj.port,
         creation: this.formatCreation(cookieObj.creation),
       },
     };

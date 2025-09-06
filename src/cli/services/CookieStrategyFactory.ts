@@ -1,8 +1,12 @@
 import { existsSync, readFileSync } from "node:fs";
 
+import { ArcCookieQueryStrategy } from "@core/browsers/arc/ArcCookieQueryStrategy";
 import { ChromeCookieQueryStrategy } from "@core/browsers/chrome/ChromeCookieQueryStrategy";
 import { CompositeCookieQueryStrategy } from "@core/browsers/CompositeCookieQueryStrategy";
+import { EdgeCookieQueryStrategy } from "@core/browsers/edge/EdgeCookieQueryStrategy";
 import { FirefoxCookieQueryStrategy } from "@core/browsers/firefox/FirefoxCookieQueryStrategy";
+import { OperaCookieQueryStrategy } from "@core/browsers/opera/OperaCookieQueryStrategy";
+import { OperaGXCookieQueryStrategy } from "@core/browsers/opera/OperaGXCookieQueryStrategy";
 import { SafariCookieQueryStrategy } from "@core/browsers/safari/SafariCookieQueryStrategy";
 
 /**
@@ -11,6 +15,10 @@ import { SafariCookieQueryStrategy } from "@core/browsers/safari/SafariCookieQue
 export type CookieQueryStrategy =
   | CompositeCookieQueryStrategy
   | ChromeCookieQueryStrategy
+  | EdgeCookieQueryStrategy
+  | ArcCookieQueryStrategy
+  | OperaCookieQueryStrategy
+  | OperaGXCookieQueryStrategy
   | FirefoxCookieQueryStrategy
   | SafariCookieQueryStrategy;
 
@@ -22,6 +30,10 @@ export const CookieStrategyFactory = {
     ["safari", SafariCookieQueryStrategy],
     ["firefox", FirefoxCookieQueryStrategy],
     ["chrome", ChromeCookieQueryStrategy],
+    ["edge", EdgeCookieQueryStrategy],
+    ["arc", ArcCookieQueryStrategy],
+    ["opera", OperaCookieQueryStrategy],
+    ["opera-gx", OperaGXCookieQueryStrategy],
   ]),
 
   /**
@@ -56,6 +68,18 @@ export const CookieStrategyFactory = {
     if (filename.includes("chrome") || filename.includes("chromium")) {
       return "chrome";
     }
+    if (filename.includes("edge") || filename.includes("microsoft")) {
+      return "edge";
+    }
+    if (filename.includes("arc")) {
+      return "arc";
+    }
+    if (filename.includes("operagx") || filename.includes("opera-gx")) {
+      return "opera-gx";
+    }
+    if (filename.includes("opera")) {
+      return "opera";
+    }
 
     // Default to trying all strategies
     return undefined;
@@ -82,6 +106,10 @@ export const CookieStrategyFactory = {
     if (typeof browser !== "string") {
       return new CompositeCookieQueryStrategy([
         new ChromeCookieQueryStrategy(),
+        new EdgeCookieQueryStrategy(),
+        new ArcCookieQueryStrategy(),
+        new OperaCookieQueryStrategy(),
+        new OperaGXCookieQueryStrategy(),
         new FirefoxCookieQueryStrategy(),
         new SafariCookieQueryStrategy(),
       ]);
@@ -94,6 +122,10 @@ export const CookieStrategyFactory = {
 
     return new CompositeCookieQueryStrategy([
       new ChromeCookieQueryStrategy(),
+      new EdgeCookieQueryStrategy(),
+      new ArcCookieQueryStrategy(),
+      new OperaCookieQueryStrategy(),
+      new OperaGXCookieQueryStrategy(),
       new FirefoxCookieQueryStrategy(),
       new SafariCookieQueryStrategy(),
     ]);

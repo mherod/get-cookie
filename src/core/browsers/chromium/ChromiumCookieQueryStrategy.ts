@@ -25,7 +25,7 @@ export class ChromiumCookieQueryStrategy extends BaseChromiumCookieQueryStrategy
    */
   public constructor(browser: ChromiumBrowser = "chrome") {
     const browserName = browser.charAt(0).toUpperCase() + browser.slice(1);
-    super(`${browserName}CookieQueryStrategy`, browserName);
+    super(`${browserName}CookieQueryStrategy`, browserName, browser);
     this.browser = browser;
   }
 

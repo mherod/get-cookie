@@ -273,7 +273,7 @@ export class MonitoredStatement<T> {
    */
   all(...params: unknown[]): T[] {
     return this.monitor.executeQuery<T>(
-      { prepare: () => this.statement } as Database,
+      { prepare: () => this.statement } as unknown as Database,
       this.sql,
       params,
       this.filepath,
@@ -285,7 +285,7 @@ export class MonitoredStatement<T> {
    */
   get(...params: unknown[]): T | undefined {
     return this.monitor.executeGet<T>(
-      { prepare: () => this.statement } as Database,
+      { prepare: () => this.statement } as unknown as Database,
       this.sql,
       params,
       this.filepath,

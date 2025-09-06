@@ -27,11 +27,11 @@ jest.mock("better-sqlite3");
 describe("DatabaseConnectionManager", () => {
   let manager: DatabaseConnectionManager;
   let mockDb: jest.Mocked<Database>;
-  let mockStmt: jest.Mocked<{
+  let mockStmt: {
     all: jest.Mock;
     get: jest.Mock;
     run: jest.Mock;
-  }>;
+  };
   let tempDir: string;
   let testDbPath: string;
 
@@ -132,13 +132,13 @@ describe("DatabaseConnectionManager", () => {
       let attempt = 0;
       (
         BetterSqlite3 as unknown as jest.MockedFunction<typeof BetterSqlite3>
-      ).mockImplementation(() => {
+      ).mockImplementation((() => {
         attempt++;
         if (attempt === 1) {
           throw new Error("database is locked");
         }
         return mockDb;
-      });
+      }) as unknown as typeof BetterSqlite3);
 
       const connection = await manager.getConnection(testDbPath);
 
@@ -149,9 +149,9 @@ describe("DatabaseConnectionManager", () => {
     it("should fail after max retry attempts", async () => {
       (
         BetterSqlite3 as unknown as jest.MockedFunction<typeof BetterSqlite3>
-      ).mockImplementation(() => {
+      ).mockImplementation((() => {
         throw new Error("database is locked");
-      });
+      }) as unknown as typeof BetterSqlite3);
 
       await expect(manager.getConnection(testDbPath)).rejects.toThrow(
         "database is locked",
@@ -370,9 +370,9 @@ describe("DatabaseConnectionManager", () => {
     it("should handle non-lock database errors", async () => {
       (
         BetterSqlite3 as unknown as jest.MockedFunction<typeof BetterSqlite3>
-      ).mockImplementation(() => {
+      ).mockImplementation((() => {
         throw new Error("File not found");
-      });
+      }) as unknown as typeof BetterSqlite3);
 
       await expect(manager.getConnection(testDbPath)).rejects.toThrow(
         "File not found",

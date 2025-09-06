@@ -39,11 +39,11 @@ describe("SQL Integration Tests", () => {
   let tempDir: string;
   let testDbPath: string;
   let mockDb: jest.Mocked<Database>;
-  let mockStmt: jest.Mocked<{
+  let mockStmt: {
     all: jest.Mock;
     get: jest.Mock;
     run: jest.Mock;
-  }>;
+  };
 
   beforeEach(() => {
     // Reset global instances
@@ -279,7 +279,7 @@ describe("SQL Integration Tests", () => {
         file: testDbPath,
         sql: "SELECT * FROM cookies",
         rowTransform: (row: unknown) => ({
-          ...row,
+          ...(row as Record<string, unknown>),
           transformed: true,
         }),
       });
@@ -469,9 +469,9 @@ describe("SQL Integration Tests", () => {
     it("should handle connection failures", async () => {
       (
         BetterSqlite3 as unknown as jest.MockedFunction<typeof BetterSqlite3>
-      ).mockImplementation(() => {
+      ).mockImplementation((() => {
         throw new Error("Cannot open database");
-      });
+      }) as unknown as typeof BetterSqlite3);
 
       const manager = new DatabaseConnectionManager({
         retryAttempts: 1,

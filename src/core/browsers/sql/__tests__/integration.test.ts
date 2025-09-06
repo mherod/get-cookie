@@ -94,9 +94,18 @@ describe("SQL Integration Tests", () => {
 
   afterEach(() => {
     jest.clearAllMocks();
+    // Reset global instances to cleanup intervals and connections
+    resetGlobalConnectionManager();
+    resetGlobalQueryMonitor();
     if (fs.existsSync(tempDir)) {
       fs.rmSync(tempDir, { recursive: true, force: true });
     }
+  });
+
+  afterAll(() => {
+    // Final cleanup to ensure no hanging processes
+    resetGlobalConnectionManager();
+    resetGlobalQueryMonitor();
   });
 
   describe("Query Builder Integration", () => {

@@ -9,11 +9,14 @@ description: A powerful Node.js module for querying browser cookies
 
 ## Key Features
 
-- **Multi-Browser Support**: Query cookies from Chrome, Firefox, and Safari browsers
-- **Secure Handling**: Safe cookie extraction with proper encryption handling
+- **Multi-Browser Support**: Query cookies from Chrome, Edge, Arc, Opera, Opera GX, Firefox, and Safari browsers
+- **Cross-Platform**: Full support for Windows, macOS, and Linux (Safari is macOS-only)
+- **Secure Handling**: Safe cookie extraction with proper encryption handling (Keychain on macOS, DPAPI on Windows, keyring on Linux)
 - **TypeScript Ready**: Built with TypeScript for excellent type safety and IDE support
-- **Profile Support**: Access cookies from different browser profiles
-- **CLI Tool**: Easy to use command-line interface included
+- **Profile Support**: Access cookies from different browser profiles with automatic discovery
+- **CLI Tool**: Easy to use command-line interface with multiple output formats
+- **Performance Optimized**: Connection pooling, query monitoring, and automatic retry mechanisms
+- **Graceful Degradation**: Handles locked databases and permission issues elegantly
 
 ## Use Cases
 

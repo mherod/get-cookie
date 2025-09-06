@@ -5,11 +5,8 @@ import { getPlatform } from "../../utils/platformUtils";
 
 /**
  * Test Chrome password retrieval for the current platform
- * @param currentPlatform - The platform being tested
  */
-async function testChromePasswordRetrieval(
-  _currentPlatform: string,
-): Promise<void> {
+async function testChromePasswordRetrieval(): Promise<void> {
   // This might fail in CI without Chrome installed, but that's ok
   try {
     const password = await getChromePassword();
@@ -132,7 +129,7 @@ describe("Cross-Platform Cookie Extraction", () => {
     });
 
     it("should get Chrome password for current platform", async () => {
-      await testChromePasswordRetrieval(currentPlatform);
+      await testChromePasswordRetrieval();
     });
 
     it("should query cookies without throwing", async () => {

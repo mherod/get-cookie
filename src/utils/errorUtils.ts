@@ -22,7 +22,12 @@ export function getErrorMessage(error: unknown): string {
   if (typeof error === "string") {
     return error;
   }
-  if (error && typeof error === "object" && "message" in error) {
+  if (
+    error !== null &&
+    error !== undefined &&
+    typeof error === "object" &&
+    "message" in error
+  ) {
     return String(error.message);
   }
   return String(error);
@@ -68,6 +73,34 @@ export function errorMessageContains(
 }
 
 /**
+ * Error pattern constants for database error classification
+ */
+const DATABASE_ERROR_PATTERNS = {
+  locked: ["database is locked", "database locked", "sqlite_busy"],
+  busy: ["busy"],
+  permission: [
+    "eperm",
+    "permission denied",
+    "operation not permitted",
+    "eacces",
+  ],
+  not_found: ["enoent", "no such file", "not found"],
+} as const;
+
+/**
+ * Checks if a message contains any of the given patterns
+ * @param message - The error message to check
+ * @param patterns - Array of patterns to match against
+ * @returns True if any pattern is found
+ */
+function containsAnyPattern(
+  message: string,
+  patterns: readonly string[],
+): boolean {
+  return patterns.some((pattern) => message.includes(pattern));
+}
+
+/**
  * Check if error is a specific type of database error
  * @param error - Any thrown value
  * @returns Type of database error or null
@@ -77,32 +110,19 @@ export function getDatabaseErrorType(
 ): "locked" | "busy" | "permission" | "not_found" | null {
   const message = getErrorMessage(error).toLowerCase();
 
-  if (
-    message.includes("database is locked") ||
-    message.includes("database locked") ||
-    message.includes("sqlite_busy")
-  ) {
+  if (containsAnyPattern(message, DATABASE_ERROR_PATTERNS.locked)) {
     return "locked";
   }
 
-  if (message.includes("busy")) {
+  if (containsAnyPattern(message, DATABASE_ERROR_PATTERNS.busy)) {
     return "busy";
   }
 
-  if (
-    message.includes("eperm") ||
-    message.includes("permission denied") ||
-    message.includes("operation not permitted") ||
-    message.includes("eacces")
-  ) {
+  if (containsAnyPattern(message, DATABASE_ERROR_PATTERNS.permission)) {
     return "permission";
   }
 
-  if (
-    message.includes("enoent") ||
-    message.includes("no such file") ||
-    message.includes("not found")
-  ) {
+  if (containsAnyPattern(message, DATABASE_ERROR_PATTERNS.not_found)) {
     return "not_found";
   }
 
@@ -127,7 +147,9 @@ export function formatErrorForLogging(
     errorName: details.name,
     errorCode: details.code,
     // Only include stack in development/debug mode
-    ...(process.env.NODE_ENV !== "production" && details.stack
+    ...(process.env.NODE_ENV !== "production" &&
+    details.stack !== undefined &&
+    details.stack !== ""
       ? { errorStack: details.stack }
       : {}),
   };
@@ -203,6 +225,10 @@ export async function withErrorHandling<T>(
  * Retry an operation with exponential backoff
  * @param operation - Async function to execute
  * @param options - Retry options
+ * @param options.maxAttempts - Maximum number of retry attempts
+ * @param options.initialDelay - Initial delay in milliseconds
+ * @param options.maxDelay - Maximum delay in milliseconds
+ * @param options.shouldRetry - Function to determine if retry should be attempted
  * @returns Result of successful operation
  */
 export async function retryWithBackoff<T>(

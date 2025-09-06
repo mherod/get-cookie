@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+
 import { chromeApplicationSupport } from "../ChromeApplicationSupport";
 
 /**
@@ -15,6 +16,9 @@ interface WindowsChromeLocalState {
  * Decrypts Windows DPAPI encrypted key using Windows CryptoAPI
  * On Windows, Chrome uses DPAPI (Data Protection API) to encrypt the master key
  * which is then used to encrypt cookies.
+ * @param encryptedKey - The DPAPI encrypted key buffer
+ * @returns The decrypted key as a Buffer
+ * @throws {Error} If DPAPI decryption fails or key format is invalid
  */
 function decryptDPAPIKey(encryptedKey: Buffer): Buffer {
   // Remove the DPAPI prefix (first 5 bytes: "DPAPI")
@@ -36,13 +40,13 @@ function decryptDPAPIKey(encryptedKey: Buffer): Buffer {
         unprotectData: (data: Buffer) => Buffer;
       };
 
-      if (dpapi && typeof dpapi.unprotectData === "function") {
+      if (typeof dpapi.unprotectData === "function") {
         return dpapi.unprotectData(encryptedData);
       }
     } catch (error) {
       // Module not available or failed to load - this is expected for optional dependency
       // Don't log the full error to avoid cluttering output
-      if (process.env.VERBOSE) {
+      if (process.env.VERBOSE !== undefined && process.env.VERBOSE !== "") {
         console.warn("DPAPI module not available:", error);
       }
     }
@@ -68,7 +72,7 @@ export function getChromePassword(): string {
     const localStateContent = readFileSync(localStatePath, "utf8");
     const localState = JSON.parse(localStateContent) as WindowsChromeLocalState;
 
-    if (!localState.os_crypt?.encrypted_key) {
+    if (!localState.os_crypt.encrypted_key) {
       throw new Error("No encrypted key found in Chrome Local State");
     }
 

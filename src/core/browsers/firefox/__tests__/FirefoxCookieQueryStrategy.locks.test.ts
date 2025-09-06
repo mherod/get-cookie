@@ -1,11 +1,11 @@
 import { setupDatabaseLockMocks } from "../FirefoxCookieQueryStrategy.locks.helpers";
 
 import {
-  type MockProcessDetector,
-  type TestSetup,
   cleanupTest,
   createMockCookieDatabase,
+  type MockProcessDetector,
   setupTest,
+  type TestSetup,
 } from "./FirefoxCookieQueryStrategy.locks.setup";
 
 describe("FirefoxCookieQueryStrategy - Database Lock Handling", () => {
@@ -75,15 +75,12 @@ describe("FirefoxCookieQueryStrategy - Database Lock Handling", () => {
     }, 10000); // Increase timeout to 10 seconds for Windows CI environments
   });
 
-  describe("SafeFileOperations integration", () => {
-    it("should have SafeFileOperations available for fallback operations", () => {
-      // This test verifies that the SafeFileOperations utility exists
-      // and can be imported for use in database lock scenarios
-      expect(() => {
-        // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-unsafe-assignment
-        const SafeFileOperations = require("../../../../utils/SafeFileOperations");
-        expect(SafeFileOperations).toBeDefined();
-      }).not.toThrow();
+  describe("File operations integration", () => {
+    it("should have node:fs available for file operations", async () => {
+      // This test verifies that node:fs is available for file operations
+      const fs = await import("node:fs");
+      expect(fs).toBeDefined();
+      expect(fs.readFileSync).toBeDefined();
     });
   });
 });

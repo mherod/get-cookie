@@ -48,10 +48,13 @@ jest.mock("fast-glob", () => ({
 }));
 
 // Mock file system existsSync while keeping other fs functions
-jest.mock("node:fs", () => ({
-  ...jest.requireActual("node:fs"),
-  existsSync: jest.fn().mockReturnValue(true), // Assume Firefox is installed for these tests
-}));
+jest.mock("node:fs", () => {
+  const actualFs = jest.requireActual<typeof import("node:fs")>("node:fs");
+  return {
+    ...actualFs,
+    existsSync: jest.fn().mockReturnValue(true), // Assume Firefox is installed for these tests
+  };
+});
 
 /** Mock interface for ProcessDetector */
 export interface MockProcessDetector {

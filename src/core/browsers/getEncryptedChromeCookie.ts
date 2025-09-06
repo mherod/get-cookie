@@ -11,8 +11,8 @@ import {
 
 import type { CookieRow } from "../../types/schemas";
 
-import { querySqliteThenTransform } from "./QuerySqliteThenTransform";
 import { chromeApplicationSupport } from "./chrome/ChromeApplicationSupport";
+import { querySqliteThenTransform } from "./QuerySqliteThenTransform";
 
 const logger = createTaggedLogger("getEncryptedChromeCookie");
 

@@ -1,8 +1,10 @@
 // External imports
+
 import BetterSqlite3, { type Database } from "better-sqlite3";
 
-// Internal imports
 import { createTaggedLogger, logError } from "@utils/logHelpers";
+
+// Internal imports
 
 const logger = createTaggedLogger("QuerySqliteThenTransform");
 
@@ -63,7 +65,7 @@ function openDatabase(file: string): Database {
   }
 }
 
-function closeDatabase(db: Database): Promise<void> {
+async function closeDatabase(db: Database): Promise<void> {
   try {
     db.close();
     return Promise.resolve();

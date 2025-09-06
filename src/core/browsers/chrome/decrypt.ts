@@ -1,9 +1,13 @@
 // External imports
 import { createDecipheriv, pbkdf2 } from "node:crypto";
+
 import { isMacOS, isWindows } from "@utils/platformUtils";
 
 /**
  * Simple memoization utility for caching Buffer operations
+ * @param fn - The function to memoize that takes a Buffer and returns a Buffer
+ * @param keyFn - Optional function to generate cache keys from Buffer values
+ * @returns A memoized version of the input function
  */
 function memoizeBuffer(
   fn: (value: Buffer) => Buffer,
@@ -100,7 +104,7 @@ function extractValue(decodedString: string): string {
     /.*?1e`(.+)$/, // Pattern ending in "1e`" followed by value
     /.*?[`'](.+)$/, // Any backtick or quote followed by value
     /[^\x20-\x7E]*([\x20-\x7E]+)$/, // Non-printable chars followed by printable chars
-    /.*?([a-zA-Z0-9_\-\.]+)$/, // Alphanumeric value at the end
+    /.*?([a-zA-Z0-9_\-.]+)$/, // Alphanumeric value at the end
   ];
 
   for (const pattern of cleanupPatterns) {
@@ -117,6 +121,7 @@ function extractValue(decodedString: string): string {
  * Decrypts Chrome's encrypted cookie values
  * @param encryptedValue - The encrypted cookie value as a Buffer
  * @param password - The Chrome encryption password
+ * @param metaVersion - Optional meta version for determining decryption behavior
  * @returns A promise that resolves to the decrypted cookie value
  * @throws {Error} If decryption fails
  * @example
@@ -194,7 +199,7 @@ export async function decrypt(
 
         // Skip the first 32 bytes (hash prefix) if meta version >= 24
         // Ref: https://chromium.googlesource.com/chromium/src/+/b02dcebd7cafab92770734dc2bc317bd07f1d891/net/extras/sqlite/sqlite_persistent_cookie_store.cc#223
-        const useHashPrefix = (metaVersion || 0) >= 24;
+        const useHashPrefix = (metaVersion ?? 0) >= 24;
         const finalDecrypted =
           useHashPrefix && decrypted.length > 32
             ? decrypted.slice(32)

@@ -1,15 +1,19 @@
 /**
  *
  */
+
+/**
+ *
+ */
+export { BinaryCodableCookie } from "./BinaryCodableCookie";
+/**
+ *
+ */
 export { BinaryCodableCookies } from "./BinaryCodableCookies";
 /**
  *
  */
 export { BinaryCodablePage } from "./BinaryCodablePage";
-/**
- *
- */
-export { BinaryCodableCookie } from "./BinaryCodableCookie";
 /**
  *
  */

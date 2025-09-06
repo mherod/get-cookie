@@ -4,8 +4,8 @@ import type {
   ExportedCookie,
   MultiCookieSpec,
 } from "../../types/schemas";
-import { CompositeCookieQueryStrategy } from "../browsers/CompositeCookieQueryStrategy";
 import { ChromeCookieQueryStrategy } from "../browsers/chrome/ChromeCookieQueryStrategy";
+import { CompositeCookieQueryStrategy } from "../browsers/CompositeCookieQueryStrategy";
 import { FirefoxCookieQueryStrategy } from "../browsers/firefox/FirefoxCookieQueryStrategy";
 import { SafariCookieQueryStrategy } from "../browsers/safari/SafariCookieQueryStrategy";
 

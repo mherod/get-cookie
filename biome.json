@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.0.6/schema.json",
   "vcs": {
     "enabled": true,
     "clientKind": "git",
@@ -8,13 +8,14 @@
   },
   "files": {
     "ignoreUnknown": false,
-    "ignore": [
-      "dist/**",
-      "node_modules/**",
-      "coverage/**",
-      "docs/.vitepress/cache/**",
-      "**/*.log",
-      ".parcel-cache/**"
+    "includes": [
+      "**",
+      "!**/dist/**",
+      "!**/node_modules/**",
+      "!**/coverage/**",
+      "!**/docs/.vitepress/cache/**",
+      "!**/*.log",
+      "!**/.parcel-cache/**"
     ]
   },
   "formatter": {
@@ -28,25 +29,33 @@
     "attributePosition": "auto",
     "bracketSpacing": true
   },
-  "organizeImports": { "enabled": true },
+  "assist": { "actions": { "source": { "organizeImports": "off" } } },
   "linter": {
     "enabled": true,
     "rules": {
       "recommended": true,
       "correctness": {
         "noUnusedImports": "error",
-        "noUnusedVariables": "error",
-        "useArrayLiterals": "off"
+        "noUnusedVariables": "error"
       },
       "style": {
         "useImportType": "error",
         "noNamespace": "error",
         "noNonNullAssertion": "error",
-        "noVar": "error",
         "useAsConstAssertion": "error",
         "useBlockStatements": "error",
         "useConst": "error",
-        "useLiteralEnumMembers": "error"
+        "useLiteralEnumMembers": "error",
+        "noParameterAssign": "error",
+        "useDefaultParameterLast": "error",
+        "useEnumInitializers": "error",
+        "useSelfClosingElements": "error",
+        "useSingleVarDeclarator": "error",
+        "noUnusedTemplateLiteral": "error",
+        "useNumberNamespace": "error",
+        "noInferrableTypes": "error",
+        "noUselessElse": "error",
+        "useArrayLiterals": "off"
       },
       "complexity": {
         "noStaticOnlyClass": "error",
@@ -63,11 +72,12 @@
         "noMisleadingInstantiator": "error",
         "noPrototypeBuiltins": "error",
         "noUnsafeDeclarationMerging": "error",
-        "useAwait": "error",
+        "useAwait": "off",
         "useNamespaceKeyword": "error",
         "noAsyncPromiseExecutor": "error",
         "noMisleadingCharacterClass": "error",
-        "noThenProperty": "error"
+        "noThenProperty": "error",
+        "noVar": "error"
       },
       "nursery": {
         "useSortedClasses": "off"
@@ -90,7 +100,7 @@
   },
   "overrides": [
     {
-      "include": [".prettierrc", ".parcelrc"],
+      "includes": ["**/.prettierrc/**", "**/.parcelrc/**"],
       "formatter": { "indentWidth": 2 }
     }
   ]

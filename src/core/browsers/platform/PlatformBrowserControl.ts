@@ -1,7 +1,8 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
+
 import type { BrowserName } from "@utils/BrowserControl";
-import { type Platform, getPlatform, isWindows } from "@utils/platformUtils";
+import { getPlatform, isWindows, type Platform } from "@utils/platformUtils";
 
 const execFileAsync = promisify(execFile);
 
@@ -12,26 +13,36 @@ const execFileAsync = promisify(execFile);
 export interface PlatformBrowserControl {
   /**
    * Check if the browser is supported on this platform
+   * @param browserName - The name of the browser to check
+   * @returns True if the browser is supported on this platform
    */
   isBrowserSupported(browserName: BrowserName): boolean;
 
   /**
    * Get executable names for a browser on this platform
+   * @param browserName - The name of the browser
+   * @returns Array of executable names for the browser
    */
   getBrowserExecutables(browserName: BrowserName): string[];
 
   /**
    * Launch a browser on this platform
+   * @param browserName - The name of the browser to launch
+   * @returns Promise that resolves when the browser is launched
+   * @throws {Error} When the browser is not supported or cannot be launched
    */
   launchBrowser(browserName: BrowserName): Promise<void>;
 
   /**
    * Get the platform name
+   * @returns The name of the current platform
    */
   getPlatformName(): string;
 
   /**
    * Check if a browser is installed
+   * @param browserName - The name of the browser to check
+   * @returns Promise that resolves to true if the browser is installed
    */
   isBrowserInstalled(browserName: BrowserName): Promise<boolean>;
 }
@@ -45,12 +56,16 @@ export abstract class BasePlatformBrowserControl
 {
   protected readonly browserExecutables: Record<BrowserName, string[]>;
 
-  constructor() {
+  /**
+   * Creates a new instance of BasePlatformBrowserControl
+   */
+  public constructor() {
     this.browserExecutables = this.initializeBrowserExecutables();
   }
 
   /**
    * Initialize browser executables for this platform
+   * @returns Record mapping browser names to their executable names
    */
   protected abstract initializeBrowserExecutables(): Record<
     BrowserName,
@@ -59,20 +74,32 @@ export abstract class BasePlatformBrowserControl
 
   public isBrowserSupported(browserName: BrowserName): boolean {
     const executables = this.browserExecutables[browserName];
-    return executables && executables.length > 0;
+    return Boolean(executables.length > 0);
   }
 
   public getBrowserExecutables(browserName: BrowserName): string[] {
-    return this.browserExecutables[browserName] || [];
+    return this.browserExecutables[browserName];
   }
 
+  /**
+   * Launch a browser on this platform
+   * @param browserName - The name of the browser to launch
+   * @returns Promise that resolves when the browser is launched
+   * @throws {Error} When the browser is not supported or cannot be launched
+   */
   public abstract launchBrowser(browserName: BrowserName): Promise<void>;
 
+  /**
+   * Get the platform name
+   * @returns The name of the current platform
+   */
   public abstract getPlatformName(): string;
 
   /**
    * Default implementation to check if browser is installed
    * Can be overridden by platform-specific implementations
+   * @param browserName - The name of the browser to check
+   * @returns Promise that resolves to true if the browser is installed
    */
   public async isBrowserInstalled(browserName: BrowserName): Promise<boolean> {
     const executables = this.getBrowserExecutables(browserName);
@@ -95,6 +122,7 @@ export abstract class BasePlatformBrowserControl
    * Execute command helper with proper escaping
    * @param command - The command to execute
    * @param args - Arguments to pass to the command
+   * @returns Promise that resolves when the command completes
    */
   protected async executeCommand(
     command: string,
@@ -105,22 +133,55 @@ export abstract class BasePlatformBrowserControl
         timeout: 5000,
         windowsHide: true,
       });
-    } catch (error) {
+    } catch (error: unknown) {
       // Log but don't throw - browser may still launch
-      if (error && typeof error === "object" && "code" in error) {
-        // Ignore expected errors like ENOENT when browser isn't installed
-        if (error.code !== "ENOENT") {
-          console.debug(`Browser launch warning: ${String(error)}`);
-        }
+      if (this.isNodeError(error) && error.code !== "ENOENT") {
+        console.debug(
+          `Browser launch warning: ${BasePlatformBrowserControl.getErrorMessage(error)}`,
+        );
       }
     }
+  }
+
+  /**
+   * Helper to check if error is a Node.js error with code property
+   * @param error - The error to check
+   * @returns True if the error has a code property
+   */
+  private isNodeError(error: unknown): error is { code: string } {
+    return (
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      typeof (error as { code: unknown }).code === "string"
+    );
+  }
+
+  /**
+   * Helper to get error message from unknown error
+   * @param error - The error to get message from
+   * @returns Error message as string
+   */
+  protected static getErrorMessage(error: unknown): string {
+    if (error instanceof Error) {
+      return error.message;
+    }
+    if (typeof error === "string") {
+      return error;
+    }
+    return String(error);
   }
 }
 
 /**
- * macOS implementation
+ * macOS implementation for browser control operations
+ * Handles browser launching using AppleScript on macOS systems
  */
 export class MacOSBrowserControl extends BasePlatformBrowserControl {
+  /**
+   * Initialize browser executables for macOS platform
+   * @returns Record mapping browser names to their executable names on macOS
+   */
   protected initializeBrowserExecutables(): Record<BrowserName, string[]> {
     return {
       Firefox: ["Firefox"],
@@ -129,6 +190,12 @@ export class MacOSBrowserControl extends BasePlatformBrowserControl {
     };
   }
 
+  /**
+   * Launch a browser on macOS using AppleScript
+   * @param browserName - The name of the browser to launch
+   * @returns Promise that resolves when the browser is launched
+   * @throws {Error} When the browser is not supported on macOS
+   */
   public async launchBrowser(browserName: BrowserName): Promise<void> {
     const appNames: Record<BrowserName, string> = {
       Firefox: "Firefox",
@@ -148,15 +215,24 @@ export class MacOSBrowserControl extends BasePlatformBrowserControl {
     ]);
   }
 
+  /**
+   * Get the platform name for macOS
+   * @returns The platform name "macOS"
+   */
   public getPlatformName(): string {
     return "macOS";
   }
 }
 
 /**
- * Windows implementation
+ * Windows implementation for browser control operations
+ * Handles browser launching using cmd.exe start command on Windows systems
  */
 export class WindowsBrowserControl extends BasePlatformBrowserControl {
+  /**
+   * Initialize browser executables for Windows platform
+   * @returns Record mapping browser names to their executable names on Windows
+   */
   protected initializeBrowserExecutables(): Record<BrowserName, string[]> {
     return {
       Firefox: ["firefox.exe", "Firefox"],
@@ -165,6 +241,12 @@ export class WindowsBrowserControl extends BasePlatformBrowserControl {
     };
   }
 
+  /**
+   * Launch a browser on Windows using cmd.exe start command
+   * @param browserName - The name of the browser to launch
+   * @returns Promise that resolves when the browser is launched
+   * @throws {Error} When the browser is not available or fails to launch
+   */
   public async launchBrowser(browserName: BrowserName): Promise<void> {
     const executables = this.getBrowserExecutables(browserName);
 
@@ -174,30 +256,51 @@ export class WindowsBrowserControl extends BasePlatformBrowserControl {
 
     // Try each executable until one works
     for (const exe of executables) {
-      try {
-        // Use cmd.exe with /c flag to run start command safely
-        await execFileAsync("cmd.exe", ["/c", "start", "", exe], {
-          timeout: 5000,
-          windowsHide: true,
-        });
+      if (await this.tryLaunchExecutable(exe)) {
         return; // Success, exit early
-      } catch {
-        // Try next executable
       }
     }
 
     throw new Error(`Failed to launch ${browserName} on Windows`);
   }
 
+  /**
+   * Try to launch a specific executable on Windows
+   * @param exe - The executable name to launch
+   * @returns Promise that resolves to true if launch was successful
+   */
+  private async tryLaunchExecutable(exe: string): Promise<boolean> {
+    try {
+      // Use cmd.exe with /c flag to run start command safely
+      await execFileAsync("cmd.exe", ["/c", "start", "", exe], {
+        timeout: 5000,
+        windowsHide: true,
+      });
+      return true;
+    } catch {
+      // Try next executable
+      return false;
+    }
+  }
+
+  /**
+   * Get the platform name for Windows
+   * @returns The platform name "Windows"
+   */
   public getPlatformName(): string {
     return "Windows";
   }
 }
 
 /**
- * Linux implementation
+ * Linux implementation for browser control operations
+ * Handles browser launching using direct executable calls or xdg-open on Linux systems
  */
 export class LinuxBrowserControl extends BasePlatformBrowserControl {
+  /**
+   * Initialize browser executables for Linux platform
+   * @returns Record mapping browser names to their executable names on Linux
+   */
   protected initializeBrowserExecutables(): Record<BrowserName, string[]> {
     return {
       Firefox: ["firefox", "firefox-bin"],
@@ -211,6 +314,12 @@ export class LinuxBrowserControl extends BasePlatformBrowserControl {
     };
   }
 
+  /**
+   * Launch a browser on Linux using direct executable calls or xdg-open fallback
+   * @param browserName - The name of the browser to launch
+   * @returns Promise that resolves when the browser is launched
+   * @throws {Error} When the browser is not available or fails to launch
+   */
   public async launchBrowser(browserName: BrowserName): Promise<void> {
     const executables = this.getBrowserExecutables(browserName);
 
@@ -219,30 +328,54 @@ export class LinuxBrowserControl extends BasePlatformBrowserControl {
     }
 
     // Try each possible command
+    if (await this.tryLaunchExecutables(executables)) {
+      return; // Success
+    }
+
+    // Fallback to xdg-open if no browser executable worked
+    await this.tryXdgOpenFallback(browserName);
+  }
+
+  /**
+   * Try to launch browser executables
+   * @param executables - Array of executable names to try
+   * @returns Promise that resolves to true if any executable was successful
+   */
+  private async tryLaunchExecutables(executables: string[]): Promise<boolean> {
     for (const cmd of executables) {
       try {
         // Use direct execution without shell to avoid injection
         await execFileAsync(cmd, [], {
           timeout: 5000,
         });
-        return; // Success, exit early
-      } catch {
-        // Try next command
-      }
+        return true; // Success
+      } catch {}
     }
+    return false;
+  }
 
-    // Fallback to xdg-open if no browser executable worked
+  /**
+   * Try xdg-open as fallback when direct executables fail
+   * @param browserName - The name of the browser that failed to launch
+   * @returns Promise that resolves when xdg-open succeeds
+   * @throws {Error} When xdg-open also fails
+   */
+  private async tryXdgOpenFallback(browserName: BrowserName): Promise<void> {
     try {
       await execFileAsync("xdg-open", ["http://localhost"], {
         timeout: 5000,
       });
-    } catch (error) {
+    } catch (error: unknown) {
       throw new Error(
-        `Failed to launch ${browserName} on Linux: ${String(error)}`,
+        `Failed to launch ${browserName} on Linux: ${BasePlatformBrowserControl.getErrorMessage(error)}`,
       );
     }
   }
 
+  /**
+   * Get the platform name for Linux
+   * @returns The platform name "Linux"
+   */
   public getPlatformName(): string {
     return "Linux";
   }
@@ -254,42 +387,50 @@ export class LinuxBrowserControl extends BasePlatformBrowserControl {
  */
 let platformControlInstance: PlatformBrowserControl | null = null;
 
+/**
+ * Creates platform-specific browser control instance
+ * @param platformOverride - Optional platform override for testing
+ * @returns Platform-specific browser control instance
+ * @throws {Error} When platform is not supported
+ */
 export function createPlatformBrowserControl(
   platformOverride?: Platform | NodeJS.Platform,
 ): PlatformBrowserControl {
   // Use singleton for efficiency when not overriding
-  if (platformControlInstance && !platformOverride) {
+  if (platformControlInstance !== null && platformOverride === undefined) {
     return platformControlInstance;
   }
 
-  const currentPlatform = platformOverride || getPlatform();
+  const currentPlatform = platformOverride ?? getPlatform();
+  const control = createControlForPlatform(currentPlatform);
 
-  let control: PlatformBrowserControl;
-
-  switch (currentPlatform) {
-    case "darwin":
-      control = new MacOSBrowserControl();
-      break;
-    case "win32":
-      control = new WindowsBrowserControl();
-      break;
-    case "linux":
-    case "freebsd":
-    case "openbsd":
-      control = new LinuxBrowserControl();
-      break;
-    case "unknown":
-      throw new Error("Platform not supported for browser control");
-    default:
-      // For any other platform string, try Linux as fallback
-      control = new LinuxBrowserControl();
-  }
-
-  if (!platformOverride) {
+  if (platformOverride === undefined) {
     platformControlInstance = control;
   }
 
   return control;
+}
+
+/**
+ * Creates the appropriate control instance for the given platform
+ * @param platform - The platform to create control for
+ * @returns Platform-specific browser control instance
+ * @throws {Error} When platform is not supported
+ */
+function createControlForPlatform(platform: string): PlatformBrowserControl {
+  switch (platform) {
+    case "darwin":
+      return new MacOSBrowserControl();
+    case "win32":
+      return new WindowsBrowserControl();
+    case "linux":
+    case "freebsd":
+    case "openbsd":
+      return new LinuxBrowserControl();
+    default:
+      // For any other platform string, try Linux as fallback
+      return new LinuxBrowserControl();
+  }
 }
 
 /**

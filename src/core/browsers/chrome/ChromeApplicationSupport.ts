@@ -1,5 +1,6 @@
 import { homedir } from "node:os";
 import { join } from "node:path";
+
 import { assertPlatformSupported, getPlatform } from "@utils/platformUtils";
 
 /**

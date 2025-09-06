@@ -46,8 +46,8 @@ describe("FirefoxCookieQueryStrategy - File Discovery", () => {
   });
 
   it("should find cookie files in macOS paths", async () => {
-    const { getPlatform } = require("@utils/platformUtils");
-    getPlatform.mockReturnValue("darwin");
+    const { getPlatform } = await import("@utils/platformUtils");
+    jest.mocked(getPlatform).mockReturnValue("darwin");
 
     const { sync } = jest.requireMock<MockFastGlob>("fast-glob");
     sync.mockImplementation((pattern: string) => {
@@ -62,14 +62,14 @@ describe("FirefoxCookieQueryStrategy - File Discovery", () => {
     await strategy.queryCookies("test-cookie", "example.com");
     expect(sync).toHaveBeenCalledWith(
       expect.stringMatching(
-        /Library[\/\\]Application Support[\/\\]Firefox[\/\\]Profiles[\/\\]\*[\/\\]cookies\.sqlite/,
+        /Library[/\\]Application Support[/\\]Firefox[/\\]Profiles[/\\]\*[/\\]cookies\.sqlite/,
       ),
     );
   });
 
   it("should find cookie files in Linux paths", async () => {
-    const { getPlatform } = require("@utils/platformUtils");
-    getPlatform.mockReturnValue("linux");
+    const { getPlatform } = await import("@utils/platformUtils");
+    jest.mocked(getPlatform).mockReturnValue("linux");
 
     const { sync } = jest.requireMock<MockFastGlob>("fast-glob");
     sync.mockImplementation((pattern: string) => {
@@ -81,9 +81,7 @@ describe("FirefoxCookieQueryStrategy - File Discovery", () => {
 
     await strategy.queryCookies("test-cookie", "example.com");
     expect(sync).toHaveBeenCalledWith(
-      expect.stringMatching(
-        /\.mozilla[\/\\]firefox[\/\\]\*[\/\\]cookies\.sqlite/,
-      ),
+      expect.stringMatching(/\.mozilla[/\\]firefox[/\\]\*[/\\]cookies\.sqlite/),
     );
   });
 

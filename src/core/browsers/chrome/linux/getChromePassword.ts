@@ -7,7 +7,6 @@ import { execSimple } from "../../../../utils/execSimple";
  * 1. GNOME Keyring (via libsecret)
  * 2. KWallet (KDE)
  * 3. Basic password store (plaintext "peanuts")
- *
  * @returns The Chrome Safe Storage password
  */
 export async function getChromePassword(): Promise<string> {

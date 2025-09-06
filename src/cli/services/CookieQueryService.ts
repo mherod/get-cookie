@@ -22,7 +22,7 @@ export class CookieQueryService {
    * @param options - Query options including limit, removeExpired, store path, and force flag
    * @returns Array of exported cookies
    */
-  public queryCookies(
+  public async queryCookies(
     spec: CookieSpec,
     options?: CookieQueryOptions,
   ): Promise<ExportedCookie[]> {

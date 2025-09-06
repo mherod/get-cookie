@@ -35,7 +35,7 @@ export class ChromiumCookieQueryStrategy extends BaseChromiumCookieQueryStrategy
    * @returns Array of cookie file paths
    */
   protected getCookieFilePaths(store?: string): string[] {
-    if (store) {
+    if (store !== undefined && store !== "") {
       return [store];
     }
 

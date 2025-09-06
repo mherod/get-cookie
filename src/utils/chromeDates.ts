@@ -92,7 +92,10 @@ export function isChromeSessionCookie(
     chromeTimestamp === null ||
     chromeTimestamp === undefined ||
     chromeTimestamp === 0 ||
-    (typeof chromeTimestamp === "number" && chromeTimestamp <= 0)
+    (typeof chromeTimestamp === "number" && chromeTimestamp <= 0) ||
+    // Far future dates (like year 4000) are treated as session cookies by Chrome
+    (typeof chromeTimestamp === "number" &&
+      chromeTimestamp >= 64092211200 * MICROSECONDS_PER_SECOND)
   );
 }
 
@@ -104,14 +107,18 @@ export function isChromeSessionCookie(
 export function formatChromeTimestamp(
   chromeTimestamp: number | undefined | null,
 ): string {
+  if (isChromeSessionCookie(chromeTimestamp)) {
+    return "Session";
+  }
+
   const date = chromeTimestampToDate(chromeTimestamp);
 
   if (date === undefined) {
-    return "No expiry";
+    return "Session";
   }
 
   if (date === "Infinity") {
-    return "Session cookie";
+    return "Session";
   }
 
   return date.toISOString();

@@ -96,7 +96,7 @@ async function detectBrowserProcesses(
  * }
  * ```
  */
-export function isFirefoxRunning(): Promise<ProcessInfo[]> {
+export async function isFirefoxRunning(): Promise<ProcessInfo[]> {
   return detectBrowserProcesses("Firefox", "firefox");
 }
 
@@ -104,7 +104,7 @@ export function isFirefoxRunning(): Promise<ProcessInfo[]> {
  * Check if Chrome browser is currently running
  * @returns Promise that resolves to array of Chrome process information
  */
-export function isChromeRunning(): Promise<ProcessInfo[]> {
+export async function isChromeRunning(): Promise<ProcessInfo[]> {
   return detectBrowserProcesses("Chrome", "google chrome\\|chromium");
 }
 
@@ -112,7 +112,7 @@ export function isChromeRunning(): Promise<ProcessInfo[]> {
  * Check if Safari browser is currently running
  * @returns Promise that resolves to array of Safari process information
  */
-export function isSafariRunning(): Promise<ProcessInfo[]> {
+export async function isSafariRunning(): Promise<ProcessInfo[]> {
   return detectBrowserProcesses(
     "Safari",
     "/Applications/Safari.app/Contents/MacOS/Safari",

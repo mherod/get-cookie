@@ -53,7 +53,7 @@ export async function queryCookies(
    * don't prevent results from other strategies
    */
   const results = await Promise.allSettled(
-    strategies.map((strategy) => strategy.queryCookies(name, domain)),
+    strategies.map(async (strategy) => strategy.queryCookies(name, domain)),
   );
 
   /**

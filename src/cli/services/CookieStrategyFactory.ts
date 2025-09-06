@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 
-import { CompositeCookieQueryStrategy } from "@core/browsers/CompositeCookieQueryStrategy";
 import { ChromeCookieQueryStrategy } from "@core/browsers/chrome/ChromeCookieQueryStrategy";
+import { CompositeCookieQueryStrategy } from "@core/browsers/CompositeCookieQueryStrategy";
 import { FirefoxCookieQueryStrategy } from "@core/browsers/firefox/FirefoxCookieQueryStrategy";
 import { SafariCookieQueryStrategy } from "@core/browsers/safari/SafariCookieQueryStrategy";
 

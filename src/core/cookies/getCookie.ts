@@ -33,6 +33,7 @@ export async function getCookie(
 ): Promise<ExportedCookie[]> {
   try {
     const cookies = await queryCookies(cookieSpec);
+    logger.debug("Cookies retrieved:", cookies);
     return cookies;
   } catch (error: unknown) {
     logger.warn(

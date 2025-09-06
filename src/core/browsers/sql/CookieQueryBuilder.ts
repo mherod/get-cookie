@@ -3,6 +3,8 @@
  * Provides a centralized, type-safe way to build SQL queries for different browsers
  */
 
+import type { SqlCookieQueryOptions } from "../../../types/schemas";
+
 /**
  * Browser types that use SQL databases for cookie storage
  */
@@ -25,21 +27,9 @@ export interface SqlQueryConfig {
 }
 
 /**
- * Cookie query options
+ * Cookie query options - re-export from schemas for backward compatibility
  */
-export interface CookieQueryOptions {
-  name: string;
-  domain: string;
-  browser: SqlBrowserType;
-  /** Enable exact domain matching instead of wildcard */
-  exactDomain?: boolean;
-  /** Enable case-sensitive matching */
-  caseSensitive?: boolean;
-  /** Limit number of results */
-  limit?: number;
-  /** Include expired cookies */
-  includeExpired?: boolean;
-}
+export type CookieQueryOptions = SqlCookieQueryOptions;
 
 /**
  * Database schema information

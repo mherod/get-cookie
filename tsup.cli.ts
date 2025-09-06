@@ -14,7 +14,14 @@ import { defineConfig } from "tsup";
 export default defineConfig({
   entry: ["src/cli/cli.ts"],
   format: ["cjs"],
-  dts: true,
+  dts: {
+    resolve: true,
+    entry: ["src/cli/cli.ts"],
+    compilerOptions: {
+      strict: true,
+      noEmitOnError: true,
+    },
+  },
   clean: false,
   sourcemap: true,
   minify: true,
@@ -22,11 +29,13 @@ export default defineConfig({
   bundle: true,
   tsconfig: "./tsconfig.cli.json",
   noExternal: ["lodash-es"],
+  treeshake: true,
+  splitting: false,
+  skipNodeModulesBundle: true,
   esbuildOptions(options) {
     options.alias = {
       lodash: "lodash-es",
     };
-
     // Inject build timestamp at compile time
     const now = new Date();
     const timestamp = now.toISOString().replace("T", " ").slice(0, 19);

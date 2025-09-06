@@ -4,6 +4,7 @@
 
 import { describe, it, expect, beforeEach, jest } from "@jest/globals";
 import type { Database, Statement } from "better-sqlite3";
+
 import {
   QueryMonitor,
   MonitoredStatement,

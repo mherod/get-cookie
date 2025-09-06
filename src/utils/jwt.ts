@@ -104,11 +104,14 @@ function checkExpiration(payload: JwtPayload): ValidationResult {
   }
 
   const now = Math.floor(Date.now() / 1000);
-  return {
+  const result: ValidationResult = {
     isValid: now <= exp,
-    error: now > exp ? "Token has expired" : undefined,
     decodedPayload: payload,
   };
+  if (now > exp) {
+    result.error = "Token has expired";
+  }
+  return result;
 }
 
 /**

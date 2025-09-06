@@ -19,17 +19,32 @@ function parseFuserLine(line: string): FileHandleInfo | null {
     return null;
   }
 
-  const pid = Number.parseInt(parts[1], 10);
+  const pidStr = parts[1];
+  if (pidStr === undefined || pidStr === "") {
+    return null;
+  }
+
+  const pid = Number.parseInt(pidStr, 10);
   if (Number.isNaN(pid)) {
     return null;
   }
 
-  return {
-    user: parts[0],
+  const result: FileHandleInfo = {
     pid: pid,
-    command: parts[2] || "unknown",
-    mode: parts[3] || "unknown",
+    command: parts[2] ?? "unknown",
   };
+
+  const user = parts[0];
+  if (user !== undefined && user !== "") {
+    result.user = user;
+  }
+
+  const mode = parts[3];
+  if (mode !== undefined && mode !== "") {
+    result.mode = mode;
+  }
+
+  return result;
 }
 
 /**
@@ -122,14 +137,33 @@ async function detectWithLsof(filePath: string): Promise<FileHandleInfo[]> {
 
     for (const line of lines) {
       const parts = line.trim().split(/\s+/);
-      if (parts.length >= 4) {
-        handles.push({
-          command: parts[0],
-          pid: Number.parseInt(parts[1], 10),
-          user: parts[2],
-          fd: parts[3],
-          mode: parts[3]?.includes("w") ? "write" : "read",
-        });
+      const command = parts[0];
+      const pidStr = parts[1];
+      const user = parts[2];
+      const fd = parts[3];
+
+      if (
+        command !== undefined &&
+        command !== "" &&
+        pidStr !== undefined &&
+        pidStr !== "" &&
+        parts.length >= 4
+      ) {
+        const pid = Number.parseInt(pidStr, 10);
+        if (!Number.isNaN(pid)) {
+          const handle: FileHandleInfo = {
+            command,
+            pid,
+          };
+          if (user !== undefined && user !== "") {
+            handle.user = user;
+          }
+          if (fd !== undefined && fd !== "") {
+            handle.fd = fd;
+            handle.mode = fd.includes("w") ? "write" : "read";
+          }
+          handles.push(handle);
+        }
       }
     }
 
@@ -312,13 +346,24 @@ async function detectWithHandleExe(
       const match = line.match(
         /^(.+?)\s+pid:\s+(\d+)\s+type:\s+(\w+)\s+.+:\s+(.+)$/i,
       );
-      if (match) {
-        handles.push({
-          command: match[1],
-          pid: Number.parseInt(match[2], 10),
-          fd: match[3],
-          mode: "unknown",
-        });
+      if (
+        match?.[1] !== undefined &&
+        match?.[1] !== "" &&
+        match?.[2] !== undefined &&
+        match?.[2] !== ""
+      ) {
+        const pid = Number.parseInt(match[2], 10);
+        if (!Number.isNaN(pid)) {
+          const handle: FileHandleInfo = {
+            command: match[1],
+            pid,
+          };
+          if (match?.[3] !== undefined && match[3] !== "") {
+            handle.fd = match[3];
+          }
+          handle.mode = "unknown";
+          handles.push(handle);
+        }
       }
     }
 

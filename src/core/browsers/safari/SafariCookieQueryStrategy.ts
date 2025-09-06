@@ -21,7 +21,7 @@ import { decodeBinaryCookies } from "./decodeBinaryCookies";
  * cookie extraction logic.
  */
 export class SafariCookieQueryStrategy extends BaseCookieQueryStrategy {
-  private lockHandler: BrowserLockHandler;
+  private readonly lockHandler: BrowserLockHandler;
 
   /**
    * Creates a new instance of SafariCookieQueryStrategy

@@ -2,6 +2,10 @@
  * Tests for DatabaseConnectionManager
  */
 
+import * as fs from "node:fs";
+import * as os from "node:os";
+import * as path from "node:path";
+
 import {
   describe,
   it,
@@ -11,9 +15,7 @@ import {
   jest,
 } from "@jest/globals";
 import BetterSqlite3, { type Database } from "better-sqlite3";
-import * as fs from "node:fs";
-import * as path from "node:path";
-import * as os from "node:os";
+
 import {
   DatabaseConnectionManager,
   getGlobalConnectionManager,
@@ -124,7 +126,7 @@ describe("DatabaseConnectionManager", () => {
       // Get max connections
       const paths = ["db1.db", "db2.db", "db3.db"];
       const connections = await Promise.all(
-        paths.map((p) => manager.getConnection(p)),
+        paths.map(async (p) => manager.getConnection(p)),
       );
 
       expect(connections).toHaveLength(3);

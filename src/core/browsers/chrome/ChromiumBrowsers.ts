@@ -25,7 +25,8 @@ export const CHROMIUM_BASED_BROWSERS = [
 ] as const;
 
 /**
- *
+ * Type representing all supported Chromium-based browsers.
+ * This includes Chrome, Edge, Brave, Arc, Opera, and other Chromium derivatives.
  */
 export type ChromiumBrowser = (typeof CHROMIUM_BASED_BROWSERS)[number];
 

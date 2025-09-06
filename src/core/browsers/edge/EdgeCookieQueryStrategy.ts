@@ -3,7 +3,6 @@ import { ChromiumCookieQueryStrategy } from "../chromium/ChromiumCookieQueryStra
 /**
  * Strategy for querying cookies from Microsoft Edge browser.
  * Edge is Chromium-based and uses the same cookie storage format as Chrome.
- *
  * @example
  * ```typescript
  * const strategy = new EdgeCookieQueryStrategy();

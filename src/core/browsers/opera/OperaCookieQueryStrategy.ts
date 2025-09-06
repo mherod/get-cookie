@@ -3,7 +3,6 @@ import { ChromiumCookieQueryStrategy } from "../chromium/ChromiumCookieQueryStra
 /**
  * Strategy for querying cookies from Opera browser.
  * Opera is a Chromium-based browser with its own keychain entry.
- *
  * @example
  * ```typescript
  * const strategy = new OperaCookieQueryStrategy();

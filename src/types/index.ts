@@ -3,7 +3,11 @@
  * @module types
  */
 
-// Re-export all schemas and types from schemas.ts
+/**
+ * Core schemas and types for cookie operations.
+ * These types define the structure of cookies, query options, and browser configurations.
+ * @see {@link schemas} for detailed type definitions
+ */
 export {
   // Schemas
   CookieDomainSchema,
@@ -38,7 +42,11 @@ export {
   type SqlCookieQueryOptions,
 } from "./schemas";
 
-// Re-export all error classes and type guards from errors.ts
+/**
+ * Custom error classes and type guards for cookie extraction operations.
+ * These provide specific error handling for browser locks, decryption failures, and parsing errors.
+ * @see {@link errors} for error class implementations
+ */
 export {
   // Error classes
   CookieExtractionError,
@@ -54,7 +62,11 @@ export {
   isBinaryParsingError,
 } from "./errors";
 
-// Re-export Zod utility types
+/**
+ * Zod schema validation utility types.
+ * These types help with runtime validation and type-safe parsing of cookie data.
+ * @see {@link ZodUtils} for validation utilities
+ */
 export type {
   SafeParseSuccess,
   SafeParseError,

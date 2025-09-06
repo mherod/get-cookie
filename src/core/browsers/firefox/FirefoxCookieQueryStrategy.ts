@@ -154,7 +154,7 @@ function findFirefoxCookieFiles(
  * ```
  */
 export class FirefoxCookieQueryStrategy extends BaseCookieQueryStrategy {
-  private lockHandler: BrowserLockHandler;
+  private readonly lockHandler: BrowserLockHandler;
 
   /**
    * Creates a new instance of FirefoxCookieQueryStrategy
@@ -357,6 +357,10 @@ export class FirefoxCookieQueryStrategy extends BaseCookieQueryStrategy {
   /**
    * Execute query using the new SQL utilities
    * @param queryConfig - Query configuration from createCookieQueryConfig
+   * @param queryConfig.file
+   * @param queryConfig.sql
+   * @param queryConfig.params
+   * @param queryConfig.rowTransform
    * @returns Promise resolving to exported cookies
    * @private
    */

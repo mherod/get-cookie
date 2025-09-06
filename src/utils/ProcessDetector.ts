@@ -20,14 +20,20 @@ function parseProcessLine(
     return null;
   }
 
-  const pid = Number.parseInt(parts[1], 10);
+  const pidStr = parts[1];
+  if (pidStr === undefined || pidStr === "") {
+    return null;
+  }
+
+  const pid = Number.parseInt(pidStr, 10);
   if (Number.isNaN(pid)) {
     return null;
   }
 
+  const parsedCommand = parts.slice(10).join(" ");
   return {
     pid,
-    command: parts.slice(10).join(" ") || defaultCommand,
+    command: parsedCommand !== "" ? parsedCommand : defaultCommand,
     details: line.trim(),
   };
 }
@@ -49,14 +55,19 @@ function parseWindowsProcessLine(
     return null;
   }
 
-  const pid = Number.parseInt(parts[1], 10);
+  const pidStr = parts[1];
+  if (pidStr === undefined || pidStr === "") {
+    return null;
+  }
+
+  const pid = Number.parseInt(pidStr, 10);
   if (Number.isNaN(pid)) {
     return null;
   }
 
   return {
     pid,
-    command: parts[0] || defaultCommand,
+    command: parts[0] ?? defaultCommand,
     details: line.trim(),
   };
 }
@@ -99,8 +110,8 @@ async function detectBrowserProcesses(
       };
 
       const processName =
-        windowsProcessMap[browserName.toLowerCase()] ||
-        windowsProcessMap[grepPattern.toLowerCase()] ||
+        windowsProcessMap[browserName.toLowerCase()] ??
+        windowsProcessMap[grepPattern.toLowerCase()] ??
         `${browserName.toLowerCase()}.exe`;
 
       // Use tasklist which is available on all Windows versions

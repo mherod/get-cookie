@@ -3,10 +3,14 @@ import readline from "node:readline";
 import { promisify } from "node:util";
 
 import type { BrowserName } from "../types/schemas";
+
 import { createTaggedLogger } from "./logHelpers";
 import { isMacOS } from "./platformUtils";
 
 // Re-export BrowserName from schemas for backward compatibility
+/**
+ *
+ */
 export type { BrowserName } from "../types/schemas";
 
 const execAsync = promisify(exec);

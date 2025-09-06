@@ -135,6 +135,10 @@ export class CookieQueryBuilder {
   private readonly schema: BrowserSchema;
   private readonly browser: SqlBrowserType;
 
+  /**
+   *
+   * @param browser
+   */
   constructor(browser: SqlBrowserType) {
     this.browser = browser;
     this.schema = BROWSER_SCHEMAS[browser];
@@ -145,6 +149,7 @@ export class CookieQueryBuilder {
 
   /**
    * Build a SELECT query for cookies
+   * @param options
    */
   buildSelectQuery(options: CookieQueryOptions): SqlQueryConfig {
     const { name, domain, exactDomain, limit, includeExpired } = options;
@@ -184,6 +189,7 @@ export class CookieQueryBuilder {
 
   /**
    * Build a query to get database metadata
+   * @param key
    */
   buildMetaQuery(key: string): SqlQueryConfig {
     // Only Chromium-based browsers have meta table
@@ -267,6 +273,10 @@ export class CookieQueryBuilder {
 
   /**
    * Build WHERE clause with proper parameter binding
+   * @param name
+   * @param domain
+   * @param exactDomain
+   * @param includeExpired
    */
   private buildWhereClause(
     name: string,
@@ -338,6 +348,7 @@ export class CookieQueryBuilder {
 
   /**
    * Validate and sanitize query parameters
+   * @param options
    */
   static validateQueryParams(options: CookieQueryOptions): void {
     const { name, domain, limit } = options;
@@ -403,6 +414,7 @@ export class CookieQueryBuilder {
 
 /**
  * Factory function for creating query builders
+ * @param browser
  */
 export function createQueryBuilder(
   browser: SqlBrowserType,
@@ -412,6 +424,7 @@ export function createQueryBuilder(
 
 /**
  * Check if a browser uses SQL for cookie storage
+ * @param browser
  */
 export function isSqlBrowser(browser: string): browser is SqlBrowserType {
   return browser in BROWSER_SCHEMAS;

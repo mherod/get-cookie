@@ -87,10 +87,10 @@ function getCookieSpecs(
   }
 
   const name = normalizeWildcard(
-    (values.name as string) || positionals[0] || "%",
+    (values.name as string) ?? positionals[0] ?? "%",
   );
   const domain = normalizeWildcard(
-    (values.domain as string) || positionals[1] || "%",
+    (values.domain as string) ?? positionals[1] ?? "%",
   );
   return [createCookieSpec(name, domain)];
 }

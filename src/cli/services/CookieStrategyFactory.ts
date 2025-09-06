@@ -35,7 +35,6 @@ export const CookieStrategyFactory = {
     ["opera", OperaCookieQueryStrategy],
     ["opera-gx", OperaGXCookieQueryStrategy],
   ]),
-
   /**
    * Detects the cookie store type from a file path
    * @param storePath - Path to the cookie store file
@@ -47,42 +46,12 @@ export const CookieStrategyFactory = {
     }
 
     // Check for Safari binary cookies format
-    try {
-      const buffer = readFileSync(storePath, { encoding: null });
-      const magic = buffer.subarray(0, 4).toString("ascii");
-      if (magic === "cook") {
-        return "safari";
-      }
-    } catch {
-      // Not a binary file or can't read
+    if (checkSafariMagicBytes(storePath)) {
+      return "safari";
     }
 
     // Check filename patterns
-    const filename = storePath.toLowerCase();
-    if (filename.includes("binarycookie")) {
-      return "safari";
-    }
-    if (filename.includes("firefox") || filename.includes("mozilla")) {
-      return "firefox";
-    }
-    if (filename.includes("chrome") || filename.includes("chromium")) {
-      return "chrome";
-    }
-    if (filename.includes("edge") || filename.includes("microsoft")) {
-      return "edge";
-    }
-    if (filename.includes("arc")) {
-      return "arc";
-    }
-    if (filename.includes("operagx") || filename.includes("opera-gx")) {
-      return "opera-gx";
-    }
-    if (filename.includes("opera")) {
-      return "opera";
-    }
-
-    // Default to trying all strategies
-    return undefined;
+    return detectFromFilename(storePath);
   },
 
   /**
@@ -131,3 +100,45 @@ export const CookieStrategyFactory = {
     ]);
   },
 };
+
+/**
+ * Checks if a file contains Safari binary cookies magic bytes
+ * @param storePath - Path to the cookie store file
+ * @returns True if the file has Safari's binary cookie format signature
+ */
+function checkSafariMagicBytes(storePath: string): boolean {
+  try {
+    const buffer = readFileSync(storePath);
+    // Safari binary cookies start with "cook" magic bytes
+    return (
+      buffer.length >= 4 &&
+      buffer[0] === 0x63 && // 'c'
+      buffer[1] === 0x6f && // 'o'
+      buffer[2] === 0x6f && // 'o'
+      buffer[3] === 0x6b
+    ); // 'k'
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Detects browser type from filename patterns
+ * @param storePath - Path to the cookie store file
+ * @returns The detected browser type or undefined
+ */
+function detectFromFilename(storePath: string): string | undefined {
+  const filename = storePath.toLowerCase();
+
+  if (filename.includes("cookies.sqlite")) {
+    return "firefox";
+  }
+  if (filename.includes("cookies") && filename.endsWith(".db")) {
+    return "chrome";
+  }
+  if (filename.includes("cookies.binarycookies")) {
+    return "safari";
+  }
+
+  return undefined;
+}

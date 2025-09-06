@@ -11,7 +11,8 @@ import { isFirefoxRunning } from "@utils/ProcessDetector";
 import type { ExportedCookie } from "../../../types/schemas";
 import { BaseCookieQueryStrategy } from "../BaseCookieQueryStrategy";
 import { BrowserLockHandler } from "../BrowserLockHandler";
-import { querySqliteThenTransform } from "../QuerySqliteThenTransform";
+import { getGlobalConnectionManager } from "../sql/DatabaseConnectionManager";
+import { getGlobalQueryMonitor } from "../sql/QueryMonitor";
 
 interface FirefoxCookieRow {
   name: string;
@@ -235,10 +236,7 @@ export class FirefoxCookieQueryStrategy extends BaseCookieQueryStrategy {
     );
 
     try {
-      const cookies = await querySqliteThenTransform<
-        FirefoxCookieRow,
-        ExportedCookie
-      >(queryConfig);
+      const cookies = await this.executeQueryWithNewUtilities(queryConfig);
       this.logger.success(
         "Successfully extracted cookies after closing Firefox",
       );
@@ -286,9 +284,7 @@ export class FirefoxCookieQueryStrategy extends BaseCookieQueryStrategy {
     const queryConfig = await this.createCookieQueryConfig(name, domain, file);
 
     try {
-      return await querySqliteThenTransform<FirefoxCookieRow, ExportedCookie>(
-        queryConfig,
-      );
+      return await this.executeQueryWithNewUtilities(queryConfig);
     } catch (error) {
       const retryConfig = await this.handleCookieExtractionError(
         error,
@@ -307,6 +303,44 @@ export class FirefoxCookieQueryStrategy extends BaseCookieQueryStrategy {
 
       return [];
     }
+  }
+
+  /**
+   * Execute query using the new SQL utilities
+   * @param queryConfig - Query configuration from createCookieQueryConfig
+   * @returns Promise resolving to exported cookies
+   * @private
+   */
+  private async executeQueryWithNewUtilities(queryConfig: {
+    file: string;
+    sql: string;
+    params: unknown[];
+    rowTransform: (row: FirefoxCookieRow) => ExportedCookie;
+  }): Promise<ExportedCookie[]> {
+    const connectionManager = getGlobalConnectionManager({
+      retryAttempts: 3,
+      retryDelay: 100,
+      enableMonitoring: true,
+    });
+
+    const monitor = getGlobalQueryMonitor();
+
+    return connectionManager.executeQuery(
+      queryConfig.file,
+      (db) => {
+        // Use the query monitor for tracking
+        const rows = monitor.executeQuery<FirefoxCookieRow>(
+          db,
+          queryConfig.sql,
+          queryConfig.params,
+          queryConfig.file,
+        );
+
+        // Apply transformation
+        return rows.map(queryConfig.rowTransform);
+      },
+      queryConfig.sql, // Pass SQL for monitoring
+    );
   }
 
   /**

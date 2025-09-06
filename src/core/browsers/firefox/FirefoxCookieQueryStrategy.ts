@@ -212,7 +212,7 @@ export class FirefoxCookieQueryStrategy extends BaseCookieQueryStrategy {
     domain: string,
   ): void {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    this.logger.warn(`Error reading Firefox cookie file ${file}`, {
+    this.logger.debug(`Error reading Firefox cookie file ${file}`, {
       error: errorMessage,
       file,
       name,

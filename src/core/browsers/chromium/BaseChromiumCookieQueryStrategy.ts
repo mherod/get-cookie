@@ -110,7 +110,7 @@ export abstract class BaseChromiumCookieQueryStrategy extends BaseCookieQueryStr
 
     const files = this.getCookieFiles(store);
     if (files.length === 0) {
-      this.logger.warn(`No ${this.browserDisplayName} cookie files found`);
+      this.logger.debug(`No ${this.browserDisplayName} cookie files found`);
       return [];
     }
 

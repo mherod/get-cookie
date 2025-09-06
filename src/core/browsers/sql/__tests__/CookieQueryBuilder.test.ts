@@ -58,8 +58,16 @@ describe("CookieQueryBuilder", () => {
         expect(result.sql).toContain("SELECT");
         expect(result.sql).toContain("FROM cookies");
         expect(result.sql).toContain("WHERE name = ?");
-        expect(result.sql).toContain("AND host_key LIKE ?");
-        expect(result.params).toEqual(["session", "%example.com%"]);
+        // Updated to match new optimized domain matching
+        expect(result.sql).toContain(
+          "AND (host_key = ? OR host_key = ? OR host_key LIKE ?)",
+        );
+        expect(result.params).toEqual([
+          "session",
+          "example.com",
+          ".example.com",
+          "%.example.com",
+        ]);
       });
 
       it("should handle wildcard name", () => {
@@ -72,8 +80,15 @@ describe("CookieQueryBuilder", () => {
         const result = builder.buildSelectQuery(options);
 
         expect(result.sql).not.toContain("name = ?");
-        expect(result.sql).toContain("host_key LIKE ?");
-        expect(result.params).toEqual(["%example.com%"]);
+        // Wildcard name still triggers domain matching
+        expect(result.sql).toContain(
+          "(host_key = ? OR host_key = ? OR host_key LIKE ?)",
+        );
+        expect(result.params).toEqual([
+          "example.com",
+          ".example.com",
+          "%.example.com",
+        ]);
       });
 
       it("should handle exact domain matching", () => {
@@ -145,7 +160,8 @@ describe("CookieQueryBuilder", () => {
         const result = builder.buildSelectQuery(options);
 
         expect(result.sql).toContain("FROM moz_cookies");
-        expect(result.sql).toContain("host LIKE ?");
+        // Firefox also uses optimized domain matching pattern
+        expect(result.sql).toContain("(host = ? OR host = ? OR host LIKE ?)");
         expect(result.sql).not.toContain("encrypted_value");
         expect(result.sql).toContain("value AS value");
       });
@@ -354,7 +370,12 @@ describe("CookieQueryBuilder", () => {
       const result = builder.buildSelectQuery(options);
 
       expect(result.sql).toContain("name LIKE ?");
-      expect(result.params).toEqual(["session%", "%example.com%"]);
+      expect(result.params).toEqual([
+        "session%",
+        "example.com",
+        ".example.com",
+        "%.example.com",
+      ]);
     });
 
     it("should handle underscore wildcard in name", () => {
@@ -368,7 +389,12 @@ describe("CookieQueryBuilder", () => {
       const result = builder.buildSelectQuery(options);
 
       expect(result.sql).toContain("name LIKE ?");
-      expect(result.params).toEqual(["session_id", "%example.com%"]);
+      expect(result.params).toEqual([
+        "session_id",
+        "example.com",
+        ".example.com",
+        "%.example.com",
+      ]);
     });
 
     it("should handle includeExpired option", () => {

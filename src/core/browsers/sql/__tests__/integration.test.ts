@@ -120,7 +120,12 @@ describe("SQL Integration Tests", () => {
       expect(query.sql).toContain("SELECT");
       expect(query.sql).toContain("FROM cookies");
       expect(query.sql).toContain("encrypted_value");
-      expect(query.params).toEqual(["session", "%example.com%"]);
+      expect(query.params).toEqual([
+        "session",
+        "example.com",
+        ".example.com",
+        "%.example.com",
+      ]);
     });
 
     it("should generate correct queries for Firefox", () => {
@@ -133,7 +138,14 @@ describe("SQL Integration Tests", () => {
 
       expect(query.sql).toContain("FROM moz_cookies");
       expect(query.sql).toContain("value AS value");
-      expect(query.params).toEqual(["session", "%example.com%"]);
+      // Firefox also includes the expiry timestamp parameter
+      expect(query.params).toEqual([
+        "session",
+        "example.com",
+        ".example.com",
+        "%.example.com",
+        expect.any(Number),
+      ]);
     });
 
     it("should validate browser types", () => {

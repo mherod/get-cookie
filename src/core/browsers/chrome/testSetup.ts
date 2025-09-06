@@ -3,10 +3,10 @@ import { listChromeProfilePaths } from "../listChromeProfiles";
 
 import { ChromeCookieQueryStrategy } from "./ChromeCookieQueryStrategy";
 import { decrypt } from "./decrypt";
-import { getChromePassword } from "./getChromePassword";
+import { getChromiumPassword } from "./getChromiumPassword";
 
 jest.mock("./decrypt");
-jest.mock("./getChromePassword");
+jest.mock("./getChromiumPassword");
 jest.mock("../getEncryptedChromeCookie");
 jest.mock("../listChromeProfiles");
 
@@ -44,7 +44,7 @@ export function setupChromeTest(): ChromeCookieQueryStrategy {
   (listChromeProfilePaths as unknown as jest.Mock).mockReturnValue([
     mockCookieFile,
   ]);
-  (getChromePassword as unknown as jest.Mock).mockResolvedValue(mockPassword);
+  (getChromiumPassword as unknown as jest.Mock).mockResolvedValue(mockPassword);
   (getEncryptedChromeCookie as unknown as jest.Mock).mockResolvedValue([
     mockCookieData,
   ]);
@@ -62,7 +62,8 @@ export const mockListChromeProfilePaths =
 /**
  *
  */
-export const mockGetChromePassword = getChromePassword as unknown as jest.Mock;
+export const mockGetChromiumPassword =
+  getChromiumPassword as unknown as jest.Mock;
 /**
  *
  */

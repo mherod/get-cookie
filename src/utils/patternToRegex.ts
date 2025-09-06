@@ -8,14 +8,16 @@
  * stringToRegex('example.com') // returns /example\.com/
  */
 export function stringToRegex(s: string): RegExp {
+  // First, escape all backslashes
+  const s1: string = s.replace(/\\/g, "\\\\");
   // Replace all occurrences of '.' with a literal '\.'
-  const s1: string = s.replace(/\./g, "\\.");
+  const s2: string = s1.replace(/\./g, "\\.");
   // Replace all occurrences of '%' with '.*' to match any number of any characters
-  const s2: string = s1.replace(/%/g, ".*");
+  const s3: string = s2.replace(/%/g, ".*");
   // Replace all occurrences of '*' with '.*' to match any number of any characters
-  const s3: string = s2.replace(/\*/g, ".*");
+  const s4: string = s3.replace(/\*/g, ".*");
   // Return the new string as a RegExp object
-  return new RegExp(s3);
+  return new RegExp(s4);
 }
 
 /*

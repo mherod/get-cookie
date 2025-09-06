@@ -8,22 +8,17 @@ import { getPlatform } from "../../utils/platformUtils";
  * @param currentPlatform - The platform being tested
  */
 async function testChromePasswordRetrieval(
-  currentPlatform: string,
+  _currentPlatform: string,
 ): Promise<void> {
   // This might fail in CI without Chrome installed, but that's ok
   try {
     const password = await getChromePassword();
     expect(password).toBeDefined();
     expect(password.length).toBeGreaterThan(0);
-    console.log(
-      `Password retrieved on ${currentPlatform}, length: ${password.length}`,
-    );
-  } catch (error) {
-    // Expected in CI environments
-    console.log(
-      `Password retrieval failed on ${currentPlatform} (expected in CI):`,
-      error,
-    );
+    // Security: Not logging password data, only validating it exists
+  } catch (_error) {
+    // Expected in CI environments - password retrieval may fail without Chrome
+    // Not logging error details for security reasons
   }
 }
 

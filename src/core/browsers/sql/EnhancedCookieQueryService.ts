@@ -72,7 +72,7 @@ export class EnhancedCookieQueryService {
   private readonly queryCache: Map<string, CacheEntry<unknown>>;
   private readonly queryBuilder: Map<SqlBrowserType, CookieQueryBuilder>;
   private readonly defaultCacheTTL = 5000; // 5 seconds
-  private cacheCleanupInterval?: NodeJS.Timeout;
+  private lastCacheCleanup: number;
 
   constructor(connectionManager?: DatabaseConnectionManager) {
     this.connectionManager =
@@ -86,9 +86,7 @@ export class EnhancedCookieQueryService {
 
     this.queryCache = new Map();
     this.queryBuilder = new Map();
-
-    // Start cache cleanup
-    this.startCacheCleanup();
+    this.lastCacheCleanup = Date.now();
   }
 
   /**
@@ -377,6 +375,13 @@ export class EnhancedCookieQueryService {
    * Get cached result if available
    */
   private getCachedResult<T>(options: EnhancedQueryOptions): T[] | null {
+    // Clean cache periodically (every 30 seconds)
+    const now = Date.now();
+    if (now - this.lastCacheCleanup > 30000) {
+      this.cleanupCache();
+      this.lastCacheCleanup = now;
+    }
+
     const key = this.getCacheKey(options);
     const entry = this.queryCache.get(key);
 
@@ -409,19 +414,17 @@ export class EnhancedCookieQueryService {
   }
 
   /**
-   * Start cache cleanup timer
+   * Clean up expired cache entries
    */
-  private startCacheCleanup(): void {
-    this.cacheCleanupInterval = setInterval(() => {
-      const now = Date.now();
-      const maxAge = 60000; // 1 minute
+  private cleanupCache(): void {
+    const now = Date.now();
+    const maxAge = 60000; // 1 minute
 
-      for (const [key, entry] of this.queryCache) {
-        if (now - entry.timestamp > maxAge) {
-          this.queryCache.delete(key);
-        }
+    for (const [key, entry] of this.queryCache) {
+      if (now - entry.timestamp > maxAge) {
+        this.queryCache.delete(key);
       }
-    }, 30000); // Clean every 30 seconds
+    }
   }
 
   /**
@@ -446,11 +449,6 @@ export class EnhancedCookieQueryService {
    * Shutdown service
    */
   shutdown(): void {
-    // Clear the cache cleanup interval
-    if (this.cacheCleanupInterval) {
-      clearInterval(this.cacheCleanupInterval);
-      this.cacheCleanupInterval = undefined;
-    }
     this.clearCache();
     this.connectionManager.closeAll();
     logger.info("Service shutdown complete");

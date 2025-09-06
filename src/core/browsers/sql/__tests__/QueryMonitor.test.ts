@@ -63,6 +63,17 @@ describe("QueryMonitor", () => {
     });
   });
 
+  afterEach(() => {
+    // Reset global monitor to ensure clean state
+    resetGlobalQueryMonitor();
+    jest.clearAllMocks();
+  });
+
+  afterAll(() => {
+    // Final cleanup
+    resetGlobalQueryMonitor();
+  });
+
   describe("Query Execution", () => {
     it("should execute query and return results", () => {
       const result = monitor.executeQuery(
@@ -341,13 +352,16 @@ describe("QueryMonitor", () => {
         slowQueryThreshold: 10,
       });
 
-      // Mock a query that takes 20ms
+      // Mock a query that takes 20ms using Date.now mocking
+      const originalDateNow = Date.now;
       mockStmt.all.mockImplementation(() => {
-        const start = Date.now();
-        while (Date.now() - start < 20) {
-          // Simulate query duration
-        }
-        return [];
+        Date.now = jest
+          .fn()
+          .mockReturnValueOnce(1000)
+          .mockReturnValueOnce(1020) as unknown as typeof Date.now;
+        const result: unknown[] = [];
+        Date.now = originalDateNow;
+        return result;
       });
 
       customMonitor.executeQuery(mockDb, "SELECT 1", [], "test.db");

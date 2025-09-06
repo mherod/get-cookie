@@ -318,8 +318,9 @@ export class FirefoxCookieQueryStrategy extends BaseCookieQueryStrategy {
     rowTransform: (row: FirefoxCookieRow) => ExportedCookie;
   }): Promise<ExportedCookie[]> {
     const connectionManager = getGlobalConnectionManager({
-      retryAttempts: 3,
-      retryDelay: 100,
+      retryAttempts: 1, // Fail fast for Firefox - we have lock handling
+      retryDelay: 0, // No delay - let lock handler deal with it
+      queryTimeout: 100, // Very short timeout for Firefox to fail fast on locks
       enableMonitoring: true,
     });
 

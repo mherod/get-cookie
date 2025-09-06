@@ -75,7 +75,7 @@ export class DatabaseConnectionManager extends EventEmitter {
   private readonly connections: Map<string, ConnectionMetadata>;
   private readonly config: Required<PoolConfig>;
   private readonly queryMetrics: QueryMetrics[];
-  private cleanupTimer?: NodeJS.Timeout;
+  private lastCleanupTime: number;
   private totalQueries: number;
   private cacheHits: number;
   private connectionReuses: number;
@@ -88,6 +88,7 @@ export class DatabaseConnectionManager extends EventEmitter {
     this.totalQueries = 0;
     this.cacheHits = 0;
     this.connectionReuses = 0;
+    this.lastCleanupTime = Date.now();
 
     this.config = {
       maxConnections: config.maxConnections ?? 5,
@@ -98,15 +99,19 @@ export class DatabaseConnectionManager extends EventEmitter {
       retryDelay: config.retryDelay ?? 100,
       queryTimeout: config.queryTimeout ?? 3000, // 3 seconds default
     };
-
-    // Start cleanup timer
-    this.startCleanupTimer();
   }
 
   /**
    * Get or create a database connection
    */
   async getConnection(filepath: string): Promise<Database> {
+    // Perform cleanup if needed (every 30 seconds)
+    const now = Date.now();
+    if (now - this.lastCleanupTime > 30000) {
+      this.cleanupIdleConnections();
+      this.lastCleanupTime = now;
+    }
+
     // Check existing connection
     const existing = this.connections.get(filepath);
     if (existing && !existing.inUse) {
@@ -143,8 +148,11 @@ export class DatabaseConnectionManager extends EventEmitter {
         const database = new BetterSqlite3(filepath, {
           readonly: true,
           fileMustExist: true,
-          timeout: this.config.queryTimeout || 3000, // Use query timeout for all operations
         });
+
+        // Set busy timeout for all queries on this connection
+        // This timeout only applies to actual query execution, not connection retries
+        database.pragma(`busy_timeout = ${this.config.queryTimeout}`);
 
         const metadata: ConnectionMetadata = {
           database,
@@ -191,6 +199,7 @@ export class DatabaseConnectionManager extends EventEmitter {
 
   /**
    * Execute a query with the connection manager
+   * The connection already has busy_timeout set, so queries will timeout appropriately
    */
   async executeQuery<T>(
     filepath: string,
@@ -318,11 +327,6 @@ export class DatabaseConnectionManager extends EventEmitter {
 
     this.connections.clear();
 
-    if (this.cleanupTimer) {
-      clearInterval(this.cleanupTimer);
-      this.cleanupTimer = undefined;
-    }
-
     logger.info("Closed all connections", {
       totalQueries: this.totalQueries,
       connectionReuses: this.connectionReuses,
@@ -370,15 +374,6 @@ export class DatabaseConnectionManager extends EventEmitter {
    */
   clearMetrics(): void {
     this.queryMetrics.length = 0;
-  }
-
-  /**
-   * Start cleanup timer for idle connections
-   */
-  private startCleanupTimer(): void {
-    this.cleanupTimer = setInterval(() => {
-      this.cleanupIdleConnections();
-    }, 10000); // Check every 10 seconds
   }
 
   /**
@@ -472,6 +467,11 @@ export class DatabaseConnectionManager extends EventEmitter {
 let globalManager: DatabaseConnectionManager | null = null;
 
 /**
+ * Process exit handler function
+ */
+let exitHandler: (() => void) | null = null;
+
+/**
  * Get or create global connection manager
  */
 export function getGlobalConnectionManager(
@@ -480,12 +480,15 @@ export function getGlobalConnectionManager(
   if (!globalManager) {
     globalManager = new DatabaseConnectionManager(config);
 
-    // Ensure cleanup on process exit
-    process.on("exit", () => {
-      if (globalManager) {
-        globalManager.closeAll();
-      }
-    });
+    // Ensure cleanup on process exit (only add once)
+    if (!exitHandler) {
+      exitHandler = () => {
+        if (globalManager) {
+          globalManager.closeAll();
+        }
+      };
+      process.on("exit", exitHandler);
+    }
   }
 
   return globalManager;
@@ -498,5 +501,11 @@ export function resetGlobalConnectionManager(): void {
   if (globalManager) {
     globalManager.closeAll();
     globalManager = null;
+  }
+
+  // Remove the exit handler to prevent memory leaks in tests
+  if (exitHandler) {
+    process.removeListener("exit", exitHandler);
+    exitHandler = null;
   }
 }

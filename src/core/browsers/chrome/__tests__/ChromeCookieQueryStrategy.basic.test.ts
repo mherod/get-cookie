@@ -1,7 +1,14 @@
-import { getEncryptedChromeCookie } from "../../getEncryptedChromeCookie";
 import { ChromeCookieQueryStrategy } from "../ChromeCookieQueryStrategy";
+import { getGlobalConnectionManager } from "../../sql/DatabaseConnectionManager";
+import { getGlobalQueryMonitor } from "../../sql/QueryMonitor";
+import { CookieQueryBuilder } from "../../sql/CookieQueryBuilder";
 
-jest.mock("../../getEncryptedChromeCookie");
+jest.mock("../../sql/DatabaseConnectionManager");
+jest.mock("../../sql/QueryMonitor");
+jest.mock("../../sql/CookieQueryBuilder");
+jest.mock("../decrypt");
+jest.mock("../getChromiumPassword");
+jest.mock("../../listChromeProfiles");
 
 // Mock the createTaggedLogger function directly
 jest.mock("@utils/logHelpers", () => {
@@ -34,7 +41,34 @@ describe("ChromeCookieQueryStrategy - Basic", () => {
   beforeEach(() => {
     jest.resetAllMocks();
     strategy = new ChromeCookieQueryStrategy();
-    (getEncryptedChromeCookie as jest.Mock).mockResolvedValue([]);
+
+    // Setup SQL utility mocks
+    const mockExecuteQuery = jest.fn().mockImplementation((_file, callback) => {
+      return callback({});
+    });
+
+    const mockConnectionManager = {
+      executeQuery: mockExecuteQuery,
+    };
+
+    const mockMonitor = {
+      executeQuery: jest.fn().mockReturnValue([]),
+    };
+
+    const mockQueryBuilder = {
+      buildSelectQuery: jest.fn().mockReturnValue({
+        sql: "SELECT * FROM cookies",
+        params: {},
+      }),
+    };
+
+    (getGlobalConnectionManager as jest.Mock).mockReturnValue(
+      mockConnectionManager,
+    );
+    (getGlobalQueryMonitor as jest.Mock).mockReturnValue(mockMonitor);
+    (CookieQueryBuilder as unknown as jest.Mock).mockImplementation(
+      () => mockQueryBuilder,
+    );
   });
 
   afterEach(() => {

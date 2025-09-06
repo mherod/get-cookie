@@ -1,5 +1,7 @@
-import { getEncryptedChromeCookie } from "../getEncryptedChromeCookie";
 import { listChromeProfilePaths } from "../listChromeProfiles";
+import { CookieQueryBuilder } from "../sql/CookieQueryBuilder";
+import { getGlobalConnectionManager } from "../sql/DatabaseConnectionManager";
+import { getGlobalQueryMonitor } from "../sql/QueryMonitor";
 
 import { ChromeCookieQueryStrategy } from "./ChromeCookieQueryStrategy";
 import { decrypt } from "./decrypt";
@@ -7,8 +9,10 @@ import { getChromiumPassword } from "./getChromiumPassword";
 
 jest.mock("./decrypt");
 jest.mock("./getChromiumPassword");
-jest.mock("../getEncryptedChromeCookie");
 jest.mock("../listChromeProfiles");
+jest.mock("../sql/DatabaseConnectionManager");
+jest.mock("../sql/QueryMonitor");
+jest.mock("../sql/CookieQueryBuilder");
 
 /**
  * Mock password used for testing
@@ -31,6 +35,16 @@ export const mockCookieData = {
 };
 
 /**
+ * Mock SQL row data that would be returned from the database
+ */
+export const mockSqlRow = {
+  encrypted_value: mockCookieData.value,
+  name: mockCookieData.name,
+  host_key: mockCookieData.domain,
+  expires_utc: mockCookieData.expiry,
+};
+
+/**
  * Sets up a Chrome test environment with mocked dependencies
  * @returns A configured ChromeCookieQueryStrategy instance
  */
@@ -45,9 +59,35 @@ export function setupChromeTest(): ChromeCookieQueryStrategy {
     mockCookieFile,
   ]);
   (getChromiumPassword as unknown as jest.Mock).mockResolvedValue(mockPassword);
-  (getEncryptedChromeCookie as unknown as jest.Mock).mockResolvedValue([
-    mockCookieData,
-  ]);
+
+  // Mock SQL utilities
+  const mockExecuteQuery = jest.fn().mockImplementation((_file, callback) => {
+    return callback({});
+  });
+
+  const mockConnectionManager = {
+    executeQuery: mockExecuteQuery,
+  };
+
+  const mockMonitor = {
+    executeQuery: jest.fn().mockReturnValue([mockSqlRow]),
+  };
+
+  const mockQueryBuilder = {
+    buildSelectQuery: jest.fn().mockReturnValue({
+      sql: "SELECT * FROM cookies",
+      params: {},
+    }),
+  };
+
+  (getGlobalConnectionManager as jest.Mock).mockReturnValue(
+    mockConnectionManager,
+  );
+  (getGlobalQueryMonitor as jest.Mock).mockReturnValue(mockMonitor);
+  (CookieQueryBuilder as unknown as jest.Mock).mockImplementation(
+    () => mockQueryBuilder,
+  );
+
   (decrypt as unknown as jest.Mock).mockResolvedValue("decrypted-value");
 
   return strategy;
@@ -55,21 +95,31 @@ export function setupChromeTest(): ChromeCookieQueryStrategy {
 
 // Export mocked functions for test assertions
 /**
- *
+ * Mock for listChromeProfilePaths function
  */
 export const mockListChromeProfilePaths =
   listChromeProfilePaths as unknown as jest.Mock;
 /**
- *
+ * Mock for getChromiumPassword function
  */
 export const mockGetChromiumPassword =
   getChromiumPassword as unknown as jest.Mock;
 /**
- *
- */
-export const mockGetEncryptedChromeCookie =
-  getEncryptedChromeCookie as unknown as jest.Mock;
-/**
- *
+ * Mock for decrypt function
  */
 export const mockDecrypt = decrypt as unknown as jest.Mock;
+/**
+ * Mock for getGlobalConnectionManager function
+ */
+export const mockGetGlobalConnectionManager =
+  getGlobalConnectionManager as unknown as jest.Mock;
+/**
+ * Mock for getGlobalQueryMonitor function
+ */
+export const mockGetGlobalQueryMonitor =
+  getGlobalQueryMonitor as unknown as jest.Mock;
+/**
+ * Mock for CookieQueryBuilder constructor
+ */
+export const mockCookieQueryBuilder =
+  CookieQueryBuilder as unknown as jest.Mock;

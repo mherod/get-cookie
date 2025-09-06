@@ -7,7 +7,9 @@ import { BrowserLockHandler } from "../BrowserLockHandler";
 import type { ChromiumBrowser } from "../chrome/ChromiumBrowsers";
 import { decrypt } from "../chrome/decrypt";
 import { getChromiumPassword } from "../chrome/getChromiumPassword";
-import { getEncryptedChromeCookie } from "../getEncryptedChromeCookie";
+import { CookieQueryBuilder } from "../sql/CookieQueryBuilder";
+import { getGlobalConnectionManager } from "../sql/DatabaseConnectionManager";
+import { getGlobalQueryMonitor } from "../sql/QueryMonitor";
 
 interface DecryptionContext {
   file: string;
@@ -315,11 +317,39 @@ export abstract class BaseChromiumCookieQueryStrategy extends BaseCookieQueryStr
     password: string | Buffer,
   ): Promise<ExportedCookie[]> {
     try {
-      const encryptedCookies = await getEncryptedChromeCookie({
+      // Use SQL utilities directly instead of getEncryptedChromeCookie
+      const connectionManager = getGlobalConnectionManager();
+      const monitor = getGlobalQueryMonitor();
+      const queryBuilder = new CookieQueryBuilder("chrome");
+
+      const queryConfig = queryBuilder.buildSelectQuery({
         name,
         domain,
-        file,
+        browser: "chrome",
       });
+
+      const encryptedCookies = await connectionManager.executeQuery(
+        file,
+        (db) => {
+          const rows = monitor.executeQuery<{
+            encrypted_value: Buffer;
+            name: string;
+            host_key: string;
+            expires_utc: number;
+          }>(db, queryConfig.sql, queryConfig.params, file);
+
+          // Transform to CookieRow format
+          return rows.map(
+            (row): CookieRow => ({
+              name: row.name,
+              domain: row.host_key,
+              value: row.encrypted_value,
+              expiry: row.expires_utc,
+            }),
+          );
+        },
+        queryConfig.sql,
+      );
 
       const metaVersion = await this.getMetaVersion(file);
       const context: DecryptionContext = {
@@ -359,12 +389,6 @@ export abstract class BaseChromiumCookieQueryStrategy extends BaseCookieQueryStr
    */
   protected async getMetaVersion(file: string): Promise<number> {
     try {
-      // Use the new SQL utilities for database access
-      const { getGlobalConnectionManager } = await import(
-        "../sql/DatabaseConnectionManager"
-      );
-      const { CookieQueryBuilder } = await import("../sql/CookieQueryBuilder");
-
       const connectionManager = getGlobalConnectionManager();
       const queryBuilder = new CookieQueryBuilder("chrome");
       const metaQuery = queryBuilder.buildMetaQuery("version");

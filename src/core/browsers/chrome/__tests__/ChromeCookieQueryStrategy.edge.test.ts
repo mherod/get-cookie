@@ -1,7 +1,7 @@
 import {
   mockCookieData,
   mockDecrypt,
-  mockGetEncryptedChromeCookie,
+  mockGetGlobalQueryMonitor,
   setupChromeTest,
 } from "../testSetup";
 
@@ -13,11 +13,16 @@ describe("ChromeCookieQueryStrategy - Edge Cases", () => {
   });
 
   it("should handle non-buffer cookie values", async () => {
-    const nonBufferCookie = {
-      ...mockCookieData,
-      value: "non-buffer-value",
-    };
-    mockGetEncryptedChromeCookie.mockResolvedValueOnce([nonBufferCookie]);
+    // Override the mock to return non-buffer value
+    const mockMonitor = mockGetGlobalQueryMonitor();
+    mockMonitor.executeQuery.mockReturnValueOnce([
+      {
+        encrypted_value: "non-buffer-value",
+        name: mockCookieData.name,
+        host_key: mockCookieData.domain,
+        expires_utc: mockCookieData.expiry,
+      },
+    ]);
 
     const cookies = await strategy.queryCookies("test-cookie", "example.com");
 

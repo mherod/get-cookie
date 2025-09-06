@@ -1,7 +1,7 @@
 import {
   mockCookieData,
   mockDecrypt,
-  mockGetEncryptedChromeCookie,
+  mockGetGlobalQueryMonitor,
   setupChromeTest,
 } from "../testSetup";
 
@@ -29,9 +29,11 @@ describe("ChromeCookieQueryStrategy - Error Handling", () => {
   });
 
   it("should handle cookie retrieval errors gracefully", async () => {
-    mockGetEncryptedChromeCookie.mockRejectedValueOnce(
-      new Error("Failed to get cookies"),
-    );
+    // Mock the query monitor to throw an error
+    const mockMonitor = mockGetGlobalQueryMonitor();
+    mockMonitor.executeQuery.mockImplementationOnce(() => {
+      throw new Error("Failed to get cookies");
+    });
 
     const cookies = await strategy.queryCookies("test-cookie", "example.com");
 

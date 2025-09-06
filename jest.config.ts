@@ -44,4 +44,5 @@ module.exports = {
   bail: false,
   notify: false,
   notifyMode: "failure-change",
+  testTimeout: 10000, // 10 second timeout per test
 };

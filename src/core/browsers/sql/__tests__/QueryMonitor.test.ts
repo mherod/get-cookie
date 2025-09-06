@@ -128,15 +128,25 @@ describe("QueryMonitor", () => {
     });
 
     it("should track slow queries", () => {
-      // Mock a slow query
-      const originalAll = mockStmt.all;
-      mockStmt.all.mockImplementation((...args) => {
-        const start = Date.now();
-        while (Date.now() - start < 150) {
-          // Simulate slow query
+      // Mock Date.now() to simulate a slow query
+      const originalDateNow = Date.now;
+      let callCount = 0;
+
+      Date.now = jest.fn(() => {
+        callCount++;
+        if (callCount === 1) {
+          return 1000; // Start time in executeQuery
         }
-        return originalAll(...args);
-      });
+        if (callCount === 2) {
+          return 1200; // End time in executeQuery (200ms later)
+        }
+        return 1200;
+      }) as unknown as typeof Date.now;
+
+      mockStmt.all.mockReturnValue([
+        { id: 1, name: "test1" },
+        { id: 2, name: "test2" },
+      ]);
 
       monitor.executeQuery(mockDb, "SELECT * FROM large_table", [], "test.db");
 
@@ -144,6 +154,9 @@ describe("QueryMonitor", () => {
       expect(stats.slowQueries).toBe(1);
       expect(stats.slowQueryRate).toBeCloseTo(1.0);
       expect(stats.averageDuration).toBeGreaterThan(100);
+
+      // Restore Date.now
+      Date.now = originalDateNow;
     });
   });
 
@@ -284,18 +297,23 @@ describe("QueryMonitor", () => {
 
   describe("Statistics", () => {
     it("should calculate average duration", () => {
-      // Mock queries with different durations
+      // Mock Date.now() for multiple queries with different durations
+      const originalDateNow = Date.now;
       const durations = [50, 100, 150];
-      let queryIndex = 0;
+      let callCount = 0;
 
-      mockStmt.all.mockImplementation(() => {
-        const duration = durations[queryIndex++] || 0;
-        const start = Date.now();
-        while (Date.now() - start < duration) {
-          // Simulate query duration
+      Date.now = jest.fn(() => {
+        const call = Math.floor(callCount / 2); // Each query makes 2 calls
+        const isStart = callCount % 2 === 0;
+        callCount++;
+
+        if (isStart) {
+          return 1000; // Start time
         }
-        return [];
-      });
+        return 1000 + (durations[call] || 0); // End time with duration
+      }) as unknown as typeof Date.now;
+
+      mockStmt.all.mockReturnValue([]);
 
       monitor.executeQuery(mockDb, "SELECT 1", [], "test.db");
       monitor.executeQuery(mockDb, "SELECT 2", [], "test.db");
@@ -304,6 +322,9 @@ describe("QueryMonitor", () => {
       const stats = monitor.getStatistics();
       expect(stats.totalQueries).toBe(3);
       expect(stats.averageDuration).toBeGreaterThan(0);
+
+      // Restore Date.now
+      Date.now = originalDateNow;
     });
 
     it("should calculate error rate", () => {
@@ -352,22 +373,27 @@ describe("QueryMonitor", () => {
         slowQueryThreshold: 10,
       });
 
-      // Mock a query that takes 20ms using Date.now mocking
+      // Mock a query that takes 20ms
       const originalDateNow = Date.now;
-      mockStmt.all.mockImplementation(() => {
-        Date.now = jest
-          .fn()
-          .mockReturnValueOnce(1000)
-          .mockReturnValueOnce(1020) as unknown as typeof Date.now;
-        const result: unknown[] = [];
-        Date.now = originalDateNow;
-        return result;
-      });
+      let callCount = 0;
+
+      Date.now = jest.fn(() => {
+        callCount++;
+        if (callCount === 1) {
+          return 1000; // Start time
+        }
+        return 1020; // End time (20ms later, above 10ms threshold)
+      }) as unknown as typeof Date.now;
+
+      mockStmt.all.mockReturnValue([]);
 
       customMonitor.executeQuery(mockDb, "SELECT 1", [], "test.db");
 
       const stats = customMonitor.getStatistics();
       expect(stats.slowQueries).toBe(1);
+
+      // Restore Date.now
+      Date.now = originalDateNow;
     });
 
     it("should use custom max history size", () => {
@@ -423,7 +449,19 @@ describe("QueryMonitor", () => {
 
   describe("Query Execution Details", () => {
     it("should record complete execution details", () => {
-      const startTime = Date.now();
+      // Mock Date.now() to ensure endTime > startTime
+      const originalDateNow = Date.now;
+      let callCount = 0;
+      const baseTime = 1000000;
+
+      Date.now = jest.fn(() => {
+        callCount++;
+        if (callCount === 1) {
+          return baseTime; // Start time
+        }
+        return baseTime + 10; // End time
+      }) as unknown as typeof Date.now;
+
       monitor.executeQuery(
         mockDb,
         "SELECT * FROM users",
@@ -440,9 +478,12 @@ describe("QueryMonitor", () => {
         filepath: "test.db",
         rowCount: 2,
       });
-      expect(execution.startTime).toBeGreaterThanOrEqual(startTime);
-      expect(execution.endTime).toBeGreaterThan(execution.startTime);
-      expect(execution.duration).toBeGreaterThanOrEqual(0);
+      expect(execution.startTime).toBe(baseTime);
+      expect(execution.endTime).toBe(baseTime + 10);
+      expect(execution.duration).toBe(10);
+
+      // Restore Date.now
+      Date.now = originalDateNow;
     });
 
     it("should record error details", () => {

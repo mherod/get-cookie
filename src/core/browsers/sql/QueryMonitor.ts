@@ -170,7 +170,7 @@ export class QueryMonitor {
       if (execution.duration > this.options.slowQueryThreshold) {
         this.slowQueries++;
 
-        logger.warn("Slow query detected", {
+        logger.debug("Slow query detected", {
           sql: execution.sql,
           duration: execution.duration,
           rowCount: execution.rowCount,

@@ -97,7 +97,7 @@ export class BrowserLockHandler {
       if (fileHandles.length > 0) {
         const lockInfo = await getFileLockInfo(file);
 
-        this.logger.warn("Database locked by specific processes", {
+        this.logger.debug("Database locked by specific processes", {
           file,
           lockInfo,
           handleCount: fileHandles.length,
@@ -147,7 +147,7 @@ export class BrowserLockHandler {
         return await this.handleBrowserProcesses(file, processes, autoClose);
       }
 
-      this.logger.warn(
+      this.logger.debug(
         "Database/file locked but no browser processes detected",
         {
           file,
@@ -189,7 +189,7 @@ export class BrowserLockHandler {
       processesWithDetails,
     );
 
-    this.logger.warn(`${this.browserName} process conflict detected`, {
+    this.logger.debug(`${this.browserName} process conflict detected`, {
       file,
       processCount: processes.length,
       advice,
@@ -232,7 +232,7 @@ export class BrowserLockHandler {
     try {
       // Check if browser is supported on this platform
       if (!this.platformControl.isBrowserSupported(this.browserName)) {
-        this.logger.warn(
+        this.logger.debug(
           `${this.browserName} is not available on ${this.platformControl.getPlatformName()}`,
         );
         return;
@@ -245,10 +245,13 @@ export class BrowserLockHandler {
         `${this.browserName} has been relaunched with your tabs restored`,
       );
     } catch (relaunchError) {
-      this.logger.warn(`Could not relaunch ${this.browserName} automatically`, {
-        error: getErrorMessage(relaunchError),
-        platform: this.platformControl.getPlatformName(),
-      });
+      this.logger.debug(
+        `Could not relaunch ${this.browserName} automatically`,
+        {
+          error: getErrorMessage(relaunchError),
+          platform: this.platformControl.getPlatformName(),
+        },
+      );
     }
   }
 }

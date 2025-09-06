@@ -222,9 +222,9 @@ export class DatabaseConnectionManager extends EventEmitter {
       this.totalQueries++;
       this.cacheHits++; // Increment cache hits for successful queries
 
-      // Warn about slow queries
+      // Log slow queries at debug level
       if (duration > 100) {
-        logger.warn("Slow query detected", {
+        logger.debug("Slow query detected", {
           query: queryDescription || "Unknown query",
           duration,
           filepath,

@@ -77,9 +77,9 @@ function processCookies(cookies: BinaryCookieRow[]): void {
   }
 
   logger.info(`Found ${cookies.length} cookies`);
-  cookies.forEach((cookie, index) =>
-    printCookie(cookie, index, cookies.length),
-  );
+  cookies.forEach((cookie, index) => {
+    printCookie(cookie, index, cookies.length);
+  });
 }
 
 function main(): void {

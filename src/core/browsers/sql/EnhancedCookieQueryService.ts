@@ -72,6 +72,7 @@ export class EnhancedCookieQueryService {
   private readonly queryCache: Map<string, CacheEntry<unknown>>;
   private readonly queryBuilder: Map<SqlBrowserType, CookieQueryBuilder>;
   private readonly defaultCacheTTL = 5000; // 5 seconds
+  private cacheCleanupInterval?: NodeJS.Timeout;
 
   constructor(connectionManager?: DatabaseConnectionManager) {
     this.connectionManager =
@@ -411,7 +412,7 @@ export class EnhancedCookieQueryService {
    * Start cache cleanup timer
    */
   private startCacheCleanup(): void {
-    setInterval(() => {
+    this.cacheCleanupInterval = setInterval(() => {
       const now = Date.now();
       const maxAge = 60000; // 1 minute
 
@@ -445,6 +446,11 @@ export class EnhancedCookieQueryService {
    * Shutdown service
    */
   shutdown(): void {
+    // Clear the cache cleanup interval
+    if (this.cacheCleanupInterval) {
+      clearInterval(this.cacheCleanupInterval);
+      this.cacheCleanupInterval = undefined;
+    }
     this.clearCache();
     this.connectionManager.closeAll();
     logger.info("Service shutdown complete");

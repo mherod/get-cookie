@@ -25,6 +25,8 @@ export interface PoolConfig {
   retryAttempts?: number;
   /** Retry delay in milliseconds */
   retryDelay?: number;
+  /** Query execution timeout in milliseconds */
+  queryTimeout?: number;
 }
 
 /**
@@ -94,6 +96,7 @@ export class DatabaseConnectionManager extends EventEmitter {
       enableMonitoring: config.enableMonitoring ?? true,
       retryAttempts: config.retryAttempts ?? 3,
       retryDelay: config.retryDelay ?? 100,
+      queryTimeout: config.queryTimeout ?? 3000, // 3 seconds default
     };
 
     // Start cleanup timer
@@ -140,7 +143,7 @@ export class DatabaseConnectionManager extends EventEmitter {
         const database = new BetterSqlite3(filepath, {
           readonly: true,
           fileMustExist: true,
-          timeout: this.config.connectionTimeout,
+          timeout: this.config.queryTimeout || 3000, // Use query timeout for all operations
         });
 
         const metadata: ConnectionMetadata = {

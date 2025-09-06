@@ -32,6 +32,35 @@ function parseProcessLine(
 }
 
 /**
+ * Parse a process line from Windows tasklist CSV output
+ * @param line - Process line from tasklist /FO CSV
+ * @param defaultCommand - Default command name if parsing fails
+ * @returns ProcessInfo if valid, null otherwise
+ */
+function parseWindowsProcessLine(
+  line: string,
+  defaultCommand: string,
+): ProcessInfo | null {
+  // Windows tasklist CSV format: "Image Name","PID","Session Name","Session#","Mem Usage"
+  // Example: "firefox.exe","1234","Console","1","123,456 K"
+  const parts = line.split(",").map((p) => p.replace(/"/g, "").trim());
+  if (parts.length < 2) {
+    return null;
+  }
+
+  const pid = Number.parseInt(parts[1], 10);
+  if (Number.isNaN(pid)) {
+    return null;
+  }
+
+  return {
+    pid,
+    command: parts[0] || defaultCommand,
+    details: line.trim(),
+  };
+}
+
+/**
  * Information about a detected process
  */
 export interface ProcessInfo {
@@ -54,7 +83,33 @@ async function detectBrowserProcesses(
   grepPattern: string,
 ): Promise<ProcessInfo[]> {
   try {
-    const command = `ps aux | grep -i '${grepPattern}' | grep -v grep`;
+    let command: string;
+    const isWindows = process.platform === "win32";
+
+    if (isWindows) {
+      // On Windows, use tasklist or wmic to find processes
+      // Map common browser names to Windows process names
+      const windowsProcessMap: Record<string, string> = {
+        firefox: "firefox.exe",
+        chrome: "chrome.exe",
+        "google chrome": "chrome.exe",
+        chromium: "chromium.exe",
+        safari: "safari.exe", // Won't exist on Windows but included for consistency
+        edge: "msedge.exe",
+      };
+
+      const processName =
+        windowsProcessMap[browserName.toLowerCase()] ||
+        windowsProcessMap[grepPattern.toLowerCase()] ||
+        `${browserName.toLowerCase()}.exe`;
+
+      // Use tasklist which is available on all Windows versions
+      command = `tasklist /FI "IMAGENAME eq ${processName}" /FO CSV | findstr /i "${processName}"`;
+    } else {
+      // Unix-like systems (macOS, Linux)
+      command = `ps aux | grep -i '${grepPattern}' | grep -v grep`;
+    }
+
     const { stdout } = await execSimple(command);
 
     if (!stdout || stdout.trim() === "") {
@@ -65,7 +120,9 @@ async function detectBrowserProcesses(
     const lines = stdout.split("\n").filter((line) => line.trim() !== "");
 
     for (const line of lines) {
-      const processInfo = parseProcessLine(line, browserName.toLowerCase());
+      const processInfo = isWindows
+        ? parseWindowsProcessLine(line, browserName.toLowerCase())
+        : parseProcessLine(line, browserName.toLowerCase());
       if (processInfo) {
         processes.push(processInfo);
       }
@@ -74,12 +131,14 @@ async function detectBrowserProcesses(
     logger.debug(`${browserName} process detection completed`, {
       processCount: processes.length,
       processes: processes.map((p) => ({ pid: p.pid, command: p.command })),
+      platform: process.platform,
     });
 
     return processes;
   } catch (error) {
-    logger.warn(`Failed to detect ${browserName} processes`, {
+    logger.debug(`Failed to detect ${browserName} processes`, {
       error: getErrorMessage(error),
+      platform: process.platform,
     });
     return [];
   }

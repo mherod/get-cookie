@@ -1,4 +1,5 @@
 import { isChromeRunning } from "@utils/ProcessDetector";
+import { getPlatform, isPlatformSupported } from "@utils/platformUtils";
 
 import type { CookieRow, ExportedCookie } from "../../../types/schemas";
 import { chromeTimestampToDate } from "../../../utils/chromeDates";
@@ -145,11 +146,10 @@ export abstract class BaseChromiumCookieQueryStrategy extends BaseCookieQueryStr
    * @returns True if platform is supported
    */
   protected isPlatformSupported(): boolean {
-    const supportedPlatforms = ["darwin", "win32", "linux"];
-    if (!supportedPlatforms.includes(process.platform)) {
+    if (!isPlatformSupported()) {
       this.logger.warn("Platform not supported", {
-        platform: process.platform,
-        supportedPlatforms,
+        platform: getPlatform(),
+        supportedPlatforms: ["darwin", "win32", "linux"],
       });
       return false;
     }

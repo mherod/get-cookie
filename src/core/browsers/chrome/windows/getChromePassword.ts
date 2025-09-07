@@ -1,6 +1,8 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { isWindows } from "@utils/platformUtils";
+
 import { chromeApplicationSupport } from "../ChromeApplicationSupport";
 
 /**
@@ -30,7 +32,7 @@ function decryptDPAPIKey(encryptedKey: Buffer): Buffer {
   const encryptedData = encryptedKey.subarray(5);
 
   // Try to use native DPAPI if available on Windows
-  if (process.platform === "win32") {
+  if (isWindows()) {
     try {
       // Use eval to prevent bundlers from analyzing the require
       // This ensures the module is loaded at runtime, not bundled

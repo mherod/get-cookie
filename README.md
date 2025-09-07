@@ -1,39 +1,62 @@
 # get-cookie 🍪
 
-Extract browser cookies programmatically. A command-line tool and library that handles Chrome's encryption, Safari's binary formats, and Firefox's data - all through one command. Perfect for testing, automation, and debugging.
+Extract cookies from your browser's local storage and use them programmatically. This tool reads browser databases directly, handles decryption, and outputs cookies you can use in API calls, testing, or automation.
 
-## Quick Start 🚀
+## What it does
+
+**The Problem**: You're logged into a website in your browser, but you need those same cookies for API testing, automation, or debugging. Manually copying cookies from DevTools is tedious and they expire quickly.
+
+**The Solution**: `get-cookie` reads cookies directly from browser databases (Chrome, Firefox, Safari, etc.), handles all the encryption/decryption, and gives you the cookie values to use programmatically.
+
+## Quick Start
 
 ```bash
+# Install globally
 pnpm add -g @mherod/get-cookie
-get-cookie auth example.com     # Get specific cookie
-get-cookie % example.com        # Get all cookies
+
+# Get a specific cookie
+get-cookie sessionid example.com
+
+# Get all cookies for a domain  
+get-cookie % example.com
+
+# Use in curl/API calls
+curl -H "Cookie: auth=$(get-cookie auth api.example.com)" https://api.example.com/user
 ```
 
 ```typescript
+// Node.js/TypeScript usage
 import { getCookie } from "@mherod/get-cookie";
 
 const cookies = await getCookie({
-  name: "auth",
-  domain: "example.com",
+  name: "auth_token",
+  domain: "api.example.com",
+});
+
+// Use in fetch, axios, etc.
+fetch("https://api.example.com/data", {
+  headers: {
+    Cookie: `auth_token=${cookies[0]?.value}`
+  }
 });
 ```
 
-## Perfect For 🎯
+## Common Use Cases
 
-- 🔑 **API Testing**: Grab auth cookies directly from your browser for API calls
-- 🐞 **Debugging**: Inspect cookies across browsers to track down session issues
-- 🤖 **Test Automation**: Use real browser cookies in your integration tests
-- 🔄 **CI/CD**: Automate cookie extraction in your testing pipelines
-- 🧪 **Local Development**: Test your apps with production-like authentication
+- **API Testing**: Extract session cookies to test authenticated endpoints
+- **Browser Automation**: Get real cookies instead of managing login flows  
+- **Debugging**: Compare cookies across browsers to troubleshoot auth issues
+- **CI/CD**: Automate authenticated API tests without storing credentials
+- **Development**: Test with production-like authentication locally
 
-## Why get-cookie? ✨
+## How it works
 
-- 🔐 **Battle-tested Security**: Handles complex browser encryption with ease
-- 🎯 **Universal Browser Support**: Chrome, Edge, Arc, Opera, Opera GX, Firefox, Safari - we've got you covered
-- 🚀 **Developer Experience**: Rich CLI options and type-safe Node.js API
-- ⚡ **Lightning Fast**: Optimised binary parsing and decryption
-- 🛠️ **Production Ready**: Used in critical testing pipelines worldwide
+1. **Locates browser databases** on your system (Chrome uses SQLite, Safari uses binary files)
+2. **Handles encryption** (Chrome's keychain/DPAPI encryption, etc.) 
+3. **Extracts and parses** cookie data
+4. **Returns usable values** you can immediately use in HTTP requests
+
+No browser automation, no complex setup - just direct database access.
 
 ## Installation 📦
 
@@ -58,41 +81,76 @@ nvm use
 
 The project includes an `.nvmrc` file that specifies the required Node.js version, so `nvm use` will automatically switch to the correct version when you're in the project directory.
 
-## Usage Examples 💡
+## More Examples
 
 ### Command Line
 
 ```bash
-get-cookie auth example.com            # Basic extraction
-get-cookie auth example.com --render   # Pretty print
-get-cookie --url https://example.com   # URL-based extraction
+# Basic cookie extraction
+get-cookie sessionid github.com
+
+# Get all cookies for a domain
+get-cookie % api.stripe.com
+
+# Pretty print with metadata
+get-cookie auth example.com --render
+
+# JSON output for scripting
+get-cookie % example.com --output json
+
+# Specific browser/profile
+get-cookie auth example.com --browser chrome --profile "Work"
 ```
 
-### Node.js API
+### API Usage
 
 ```typescript
-import { getCookie } from "@mherod/get-cookie";
+import { getCookie, batchGetCookies } from "@mherod/get-cookie";
 
-// Specific cookie
-const authCookie = await getCookie({
-  name: "auth",
-  domain: "example.com",
+// Single cookie
+const auth = await getCookie({
+  name: "sessionid", 
+  domain: "github.com"
 });
 
-// All cookies
-const cookies = await getCookie({
-  name: "%",
-  domain: "example.com",
+// Multiple cookies efficiently (2-3x faster than individual calls)
+const cookies = await batchGetCookies([
+  { name: "auth", domain: "api.example.com" },
+  { name: "session", domain: "app.example.com" },
+  { name: "csrf", domain: "admin.example.com" }
+]);
+
+// Use in HTTP client
+const response = await fetch("https://api.github.com/user", {
+  headers: {
+    "Cookie": `sessionid=${auth[0]?.value}`
+  }
 });
 ```
 
-## Core Features 🎯
+### Real-world Integration
 
-- 🌐 **Cross-Platform**: Chrome, Edge, Arc, Opera & Opera GX (macOS/Linux/Windows), Firefox (macOS/Linux/Windows), Safari (macOS)
-- 🔒 **Enterprise Security**: Browser-native encryption handling
-- 📝 **TypeScript First**: Complete type safety and IntelliSense
-- 🎨 **Flexible Output**: JSON, rendered, or grouped results
-- 👥 **Multi-Profile**: Full support for browser profiles
+```bash
+# Test API endpoint with browser cookies
+AUTH=$(get-cookie connect.sid api.example.com)
+curl -H "Cookie: connect.sid=$AUTH" https://api.example.com/profile
+
+# Compare session across browsers  
+echo "Chrome:" && get-cookie JSESSIONID app.example.com --browser chrome
+echo "Firefox:" && get-cookie JSESSIONID app.example.com --browser firefox
+
+# Batch export for migration
+get-cookie % example.com --output json > cookies-backup.json
+```
+
+## Features
+
+- **Multiple browsers**: Chrome, Firefox, Safari, Edge, Opera, Arc, Brave - reads from each browser's native storage format
+- **Handles encryption**: Automatically decrypts Chrome's keychain-encrypted cookies (macOS), DPAPI-encrypted cookies (Windows), and keyring encryption (Linux)
+- **Multiple profiles**: Works with all browser profiles (Personal, Work, etc.)
+- **Batch operations**: Get multiple cookies efficiently with built-in SQL optimization (2-3x faster)
+- **Cross-platform**: macOS, Linux, Windows support
+- **Output formats**: Raw values, JSON, pretty-printed tables
 
 ## Browser Support 🌐
 
@@ -123,18 +181,6 @@ Full support for all Firefox variants on Windows:
 ## Documentation 📚
 
 Explore our comprehensive docs at [mherod.github.io/get-cookie](https://mherod.github.io/get-cookie/)
-
-## CI/CD Pipeline 🔄
-
-Our GitHub Actions workflows ensure quality and reliability:
-
-- **🚀 CI Pipeline**: Automated testing across Node.js 20.x & 22.x on macOS
-- **📖 Documentation**: Auto-generated docs with TypeScript APIs
-- **🧪 Comprehensive Testing**: Swift CookieCreator, binary cookies, and validation scripts
-- **📦 Automated Releases**: NPM publishing with GitHub release creation
-- **✅ Quality Gates**: TypeScript checking, ESLint, Prettier, and link validation
-
-Workflows run across macOS, Linux, and Windows to ensure cross-platform compatibility and proper cookie encryption testing.
 
 ## Contributing 🤝
 

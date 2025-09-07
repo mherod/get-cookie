@@ -154,29 +154,15 @@ get-cookie % example.com --output json > cookies-backup.json
 
 ## Browser Support 🌐
 
-### Supported Browsers by Platform
+Supports **11 major browsers** across **macOS, Linux, and Windows**:
 
-| Browser                   | macOS | Linux | Windows |
-|---------------------------|-------|-------|---------|
-| Chrome                    | ✅     | ✅     | ✅       |
-| Edge                      | ✅     | ✅     | ✅       |
-| Arc                       | ✅     | ❌     | ❌       |
-| Opera                     | ✅     | ✅     | ✅       |
-| Opera GX                  | ✅     | ✅     | ✅       |
-| Firefox                   | ✅     | ✅     | ✅       |
-| Firefox Developer Edition | ✅     | ✅     | ✅       |
-| Firefox ESR               | ✅     | ✅     | ✅       |
-| Safari                    | ✅     | ❌     | ❌       |
-| Chromium                  | ✅     | ✅     | ✅       |
-| Brave                     | ✅     | ✅     | ✅       |
+- **Chromium-based**: Chrome, Edge, Arc¹, Opera, Opera GX, Chromium, Brave
+- **Firefox-based**: Firefox, Firefox Developer Edition, Firefox ESR  
+- **Safari**: macOS only
 
-### Windows Firefox Support
+¹ *Arc added Windows support in April 2024*
 
-Full support for all Firefox variants on Windows:
-- **Regular Firefox**: Standard installation in AppData\Roaming
-- **Firefox Developer Edition**: Separate profile support
-- **Firefox ESR**: Extended Support Release detection
-- **Local AppData**: Handles both Roaming and Local installations
+**→ See complete [Browser Support Matrix](https://mherod.github.io/get-cookie/reference/browser-support.html) for detailed platform compatibility**
 
 ## Documentation 📚
 

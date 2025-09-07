@@ -4,19 +4,9 @@ Understanding how get-cookie works with different browsers and platforms.
 
 ## Platform Support Matrix
 
-| Browser  | macOS | Linux | Windows |
-| -------- | ----- | ----- | ------- |
-| Chrome   | ✅    | ✅    | ✅      |
-| Edge     | ✅    | ✅    | ✅      |
-| Arc      | ✅    | ✅    | ✅      |
-| Opera    | ✅    | ✅    | ✅      |
-| Opera GX | ✅    | ✅    | ✅      |
-| Firefox  | ✅    | ✅    | ✅      |
-| Safari   | ✅    | ❌    | ❌      |
+**→ See the complete [Browser Support Matrix](../reference/browser-support.md) for definitive platform compatibility**
 
-✅ Full Support | ❌ Not Supported
-
-All Chromium-based browsers (Chrome, Edge, Arc, Opera, Opera GX) share the same underlying cookie extraction implementation with browser-specific paths and keychain entries.
+All Chromium-based browsers share the same cookie storage format and encryption methods, differing only in storage locations and keychain service names.
 
 ## Chromium-Based Browsers (Cross-Platform)
 
@@ -67,15 +57,12 @@ Chrome and Edge store cookies in SQLite databases:
 ~/Library/Application Support/Arc/User Data/Default/Cookies
 ```
 
-**Linux:**
-```
-~/.config/arc/Default/Cookies
-```
-
-**Windows:**
+**Windows:** *(Added April 2024)*
 ```
 %LOCALAPPDATA%\Arc\User Data\Default\Cookies
 ```
+
+*Note: Arc browser is not available on Linux*
 
 #### Opera
 

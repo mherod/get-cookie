@@ -4,7 +4,7 @@ This guide details the current platform support status and requirements for get-
 
 ## Support Matrix
 
-**→ See the complete [Browser Support Matrix](../reference/browser-support.md) for the definitive browser and platform compatibility table**
+**→ See the complete [Browser Support Matrix](./browser-support.md) for the definitive browser and platform compatibility table**
 
 **Key platforms:**
 - **macOS**: Full support for all 11 browsers including Safari

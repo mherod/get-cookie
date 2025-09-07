@@ -162,7 +162,7 @@ Supports **11 major browsers** across **macOS, Linux, and Windows**:
 
 ¹ *Arc added Windows support in April 2024*
 
-**→ See complete [Browser Support Matrix](https://mherod.github.io/get-cookie/reference/browser-support.html) for detailed platform compatibility**
+**→ See complete [Browser Support Matrix](docs/guide/browser-support.md) for detailed platform compatibility**
 
 ## Documentation 📚
 

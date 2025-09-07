@@ -62,6 +62,10 @@ export default defineConfig({
           items: [
             { text: "🔐 Browser-Specific Details", link: "/guide/browsers" },
             { text: "🖥️ Platform Support", link: "/guide/platform-support" },
+            {
+              text: "🌍 Browser Support Matrix",
+              link: "/guide/browser-support",
+            },
             { text: "🧪 Integration Testing", link: "/guide/testing" },
           ],
         },
@@ -99,15 +103,6 @@ export default defineConfig({
             { text: "⚙️ Core Functions", link: "/reference/modules" },
             { text: "📝 Type Definitions", link: "/reference/types" },
             { text: "🌐 Browser Strategies", link: "/reference/browsers" },
-          ],
-        },
-        {
-          text: "Reference",
-          items: [
-            {
-              text: "🌍 Browser Support Matrix",
-              link: "/reference/browser-support",
-            },
           ],
         },
       ],

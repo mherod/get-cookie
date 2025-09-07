@@ -61,9 +61,9 @@ Full support for all Firefox variants on Windows:
 
 For detailed information about how each browser is supported:
 
-- **Storage locations**: [Browser-Specific Details](../guide/browsers.md)  
-- **Platform requirements**: [Platform Support Guide](../guide/platform-support.md)
-- **Security implementation**: [Security Guide](../guide/security.md)
+- **Storage locations**: [Browser-Specific Details](./browsers.md)  
+- **Platform requirements**: [Platform Support Guide](./platform-support.md)
+- **Security implementation**: [Security Guide](./security.md)
 
 ## Version History
 

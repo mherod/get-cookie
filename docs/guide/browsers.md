@@ -4,7 +4,7 @@ Understanding how get-cookie works with different browsers and platforms.
 
 ## Platform Support Matrix
 
-**→ See the complete [Browser Support Matrix](../reference/browser-support.md) for definitive platform compatibility**
+**→ See the complete [Browser Support Matrix](./browser-support.md) for definitive platform compatibility**
 
 All Chromium-based browsers share the same cookie storage format and encryption methods, differing only in storage locations and keychain service names.
 

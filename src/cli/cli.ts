@@ -2,6 +2,7 @@
 
 // Local imports - core
 import { cookieSpecsFromUrl } from "@core/cookies/cookieSpecsFromUrl";
+import { listChromeProfiles } from "@core/browsers/listChromeProfiles";
 import { parseArgv } from "@utils/argv";
 import logger from "@utils/logger";
 
@@ -34,6 +35,9 @@ function showHelp(): void {
   logger.log(
     "  -f, --force               Force operation despite warnings (e.g., locked databases)",
   );
+  logger.log(
+    "  --list-profiles           List available browser profiles (use with --browser)",
+  );
   logger.log("");
   logger.log("Query options:");
   logger.log(
@@ -45,7 +49,16 @@ function showHelp(): void {
     "  --browser BROWSER         Target specific browser (chrome|edge|arc|opera|opera-gx|firefox|safari)",
   );
   logger.log(
+    "  --profile NAME            Target specific Chrome profile by name (e.g., 'Default', 'Profile 1')",
+  );
+  logger.log(
     "  --store PATH              Path to a specific cookie store file",
+  );
+  logger.log(
+    "  --include-expired         Include expired cookies (filtered by default)",
+  );
+  logger.log(
+    "  --include-all             Include all duplicate cookies (newest only by default)",
   );
   logger.log("");
   logger.log("Output options:");
@@ -69,6 +82,171 @@ function createCookieSpec(name: string, domain: string): CookieSpec {
 function normalizeWildcard(pattern: string): string {
   // Convert * to % for consistent wildcard handling
   return pattern === "*" ? "%" : pattern;
+}
+
+interface ChromeProfileInfo {
+  name: string;
+  user_name?: string;
+  [key: string]: unknown;
+}
+
+function listProfiles(browser?: string): void {
+  if (!browser) {
+    logger.error("Please specify a browser with --browser");
+    logger.log("Example: get-cookie --browser chrome --list-profiles");
+    return;
+  }
+
+  const browserLower = browser.toLowerCase();
+
+  if (
+    browserLower === "chrome" ||
+    browserLower === "edge" ||
+    browserLower === "arc" ||
+    browserLower === "opera" ||
+    browserLower === "opera-gx"
+  ) {
+    try {
+      const profiles = listChromeProfiles();
+
+      if (profiles.length === 0) {
+        logger.log(`No ${browser} profiles found`);
+        return;
+      }
+
+      logger.log(`${browser} profiles:`);
+      logger.log("");
+
+      // Get the profile directory mapping from Chrome's Local State
+      const fs = require("node:fs");
+      const path = require("node:path");
+      const os = require("node:os");
+
+      // Determine the browser data directory based on browser type and platform
+      let dataDir: string;
+      const platform = process.platform;
+
+      if (platform === "darwin") {
+        const homeDir = os.homedir();
+        switch (browserLower) {
+          case "chrome":
+            dataDir = path.join(
+              homeDir,
+              "Library",
+              "Application Support",
+              "Google",
+              "Chrome",
+            );
+            break;
+          case "edge":
+            dataDir = path.join(
+              homeDir,
+              "Library",
+              "Application Support",
+              "Microsoft Edge",
+            );
+            break;
+          case "arc":
+            dataDir = path.join(
+              homeDir,
+              "Library",
+              "Application Support",
+              "Arc",
+            );
+            break;
+          case "opera":
+            dataDir = path.join(
+              homeDir,
+              "Library",
+              "Application Support",
+              "com.operasoftware.Opera",
+            );
+            break;
+          case "opera-gx":
+            dataDir = path.join(
+              homeDir,
+              "Library",
+              "Application Support",
+              "com.operasoftware.OperaGX",
+            );
+            break;
+          default:
+            dataDir = path.join(
+              homeDir,
+              "Library",
+              "Application Support",
+              "Google",
+              "Chrome",
+            );
+        }
+      } else if (platform === "win32") {
+        const appData =
+          process.env.LOCALAPPDATA ||
+          path.join(os.homedir(), "AppData", "Local");
+        switch (browserLower) {
+          case "chrome":
+            dataDir = path.join(appData, "Google", "Chrome", "User Data");
+            break;
+          case "edge":
+            dataDir = path.join(appData, "Microsoft", "Edge", "User Data");
+            break;
+          default:
+            dataDir = path.join(appData, "Google", "Chrome", "User Data");
+        }
+      } else {
+        // Linux
+        const homeDir = os.homedir();
+        switch (browserLower) {
+          case "chrome":
+            dataDir = path.join(homeDir, ".config", "google-chrome");
+            break;
+          default:
+            dataDir = path.join(homeDir, ".config", "google-chrome");
+        }
+      }
+
+      const localStatePath = path.join(dataDir, "Local State");
+
+      if (fs.existsSync(localStatePath)) {
+        const localState = JSON.parse(fs.readFileSync(localStatePath, "utf8"));
+        const profileCache = localState.profile?.info_cache || {};
+
+        for (const [dir, info] of Object.entries(profileCache)) {
+          const profile = info as ChromeProfileInfo;
+          logger.log(`  • ${profile.name}`);
+          logger.log(`    Directory: ${dir}`);
+          if (profile.user_name) {
+            logger.log(`    User: ${profile.user_name}`);
+          }
+          logger.log("");
+        }
+      } else {
+        // Fallback to just listing profile objects
+        profiles.forEach((profile) => {
+          logger.log(`  • ${profile.name}`);
+          if (profile.user_name) {
+            logger.log(`    User: ${profile.user_name}`);
+          }
+          logger.log("");
+        });
+      }
+    } catch (error) {
+      logger.error(
+        `Failed to list ${browser} profiles:`,
+        error instanceof Error ? error.message : "Unknown error",
+      );
+    }
+  } else if (browserLower === "firefox") {
+    logger.log("Firefox profile listing is not yet implemented");
+    logger.log(
+      "Firefox stores profiles in different locations based on the platform",
+    );
+  } else if (browserLower === "safari") {
+    logger.log("Safari does not use named profiles");
+    logger.log("Safari uses the system keychain for the current user");
+  } else {
+    logger.error(`Unknown browser: ${browser}`);
+  }
 }
 
 function getCookieSpecs(
@@ -106,12 +284,18 @@ async function handleCookieQuery(
   }
 
   try {
+    // Default to removing expired cookies unless --include-expired is set
+    const removeExpired = values["include-expired"] !== true;
+    // Default to deduplicating cookies unless --include-all is set
+    const deduplicateCookies = values["include-all"] !== true;
+
     await cliQueryCookies(
       values,
       cookieSpecs,
       undefined,
-      values.removeExpired === true,
+      removeExpired,
       values.store as string | undefined,
+      deduplicateCookies,
     );
   } catch (error) {
     if (error instanceof Error) {
@@ -135,6 +319,13 @@ async function main(): Promise<void> {
 
   if (values.help === true) {
     showHelp();
+    return;
+  }
+
+  if (values["list-profiles"] === true) {
+    const browser =
+      typeof values.browser === "string" ? values.browser : undefined;
+    listProfiles(browser);
     return;
   }
 

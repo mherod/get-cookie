@@ -54,6 +54,9 @@ export function parseArgv(argv: string[]): ParsedArgs {
       "render",
       "render-grouped",
       "force",
+      "include-expired",
+      "include-all",
+      "list-profiles",
     ],
     alias: {
       b: "browser",
@@ -103,6 +106,9 @@ export function parseArgv(argv: string[]): ParsedArgs {
         "-R",
         "--force",
         "-f",
+        "--include-expired",
+        "--include-all",
+        "--list-profiles",
       ];
       const isKnown = knownFlags.some((flag) => arg.startsWith(flag));
       if (!isKnown) {

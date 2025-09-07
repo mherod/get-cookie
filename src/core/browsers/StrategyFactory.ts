@@ -32,7 +32,7 @@ const logger = createTaggedLogger("StrategyFactory");
 /**
  * Strategy constructor type
  */
-type StrategyConstructor = new () => BaseCookieQueryStrategy;
+type StrategyConstructor = new (profile?: string) => BaseCookieQueryStrategy;
 
 /**
  * Registry of browser strategies
@@ -126,8 +126,9 @@ export function createSelectiveCompositeStrategy(
 export function createStrategy(options?: {
   browser?: string;
   storePath?: string;
+  profile?: string;
 }): AnyQueryStrategy {
-  const { browser, storePath } = options || {};
+  const { browser, storePath, profile } = options || {};
 
   // If store path is provided, try to detect the browser type
   if (storePath && !browser) {
@@ -145,6 +146,11 @@ export function createStrategy(options?: {
   if (browser) {
     const normalizedBrowser = browser.toLowerCase();
     if (isValidBrowserType(normalizedBrowser)) {
+      // Special handling for Chrome with profile
+      if (normalizedBrowser === "chrome" && profile) {
+        logger.debug("Creating Chrome strategy with profile", { profile });
+        return new ChromeCookieQueryStrategy(profile);
+      }
       return createBrowserStrategy(normalizedBrowser);
     }
     // Log warning for invalid browser type

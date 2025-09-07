@@ -14,6 +14,8 @@ interface QueryOptions {
   limit?: number;
   /** Whether to remove expired cookies */
   removeExpired: boolean;
+  /** Whether to deduplicate cookies (keep newest) */
+  deduplicateCookies: boolean;
   /** Optional path to a specific binarycookies store file */
   store?: string;
   /** Strategy for querying cookies */
@@ -50,6 +52,35 @@ async function queryAndLimitCookies(
     }
   }
 
+  // Deduplicate cookies if requested (keep newest based on creation time or longest value)
+  if (options.deduplicateCookies && results.length > 0) {
+    const cookieMap = new Map<string, ExportedCookie>();
+
+    for (const cookie of results) {
+      const key = `${cookie.name}:${cookie.domain}`;
+      const existing = cookieMap.get(key);
+
+      if (!existing) {
+        cookieMap.set(key, cookie);
+      } else {
+        // Keep the cookie with the longest value (most likely to be valid)
+        // or if same length, keep the one with latest creation time
+        const shouldReplace =
+          cookie.value.length > existing.value.length ||
+          (cookie.value.length === existing.value.length &&
+            cookie.creation &&
+            existing.creation &&
+            cookie.creation > existing.creation);
+
+        if (shouldReplace) {
+          cookieMap.set(key, cookie);
+        }
+      }
+    }
+
+    results = Array.from(cookieMap.values());
+  }
+
   return results;
 }
 
@@ -75,10 +106,15 @@ function buildQueryOptions(
   args: Record<string, unknown>,
   strategy: CookieQueryStrategy,
   removeExpired: boolean,
+  deduplicateCookies: boolean,
   limit?: number,
   store?: string,
 ): QueryOptions {
-  const queryOptions: QueryOptions = { removeExpired, strategy };
+  const queryOptions: QueryOptions = {
+    removeExpired,
+    deduplicateCookies,
+    strategy,
+  };
   const force = typeof args.force === "boolean" ? args.force : false;
 
   if (limit !== undefined) {
@@ -119,10 +155,16 @@ export async function cliQueryCookies(
   limit?: number,
   removeExpired = false,
   store?: string,
+  deduplicateCookies = true,
 ): Promise<void> {
   try {
     const browser = typeof args.browser === "string" ? args.browser : undefined;
-    const strategy = CookieStrategyFactory.createStrategy(browser, store);
+    const profile = typeof args.profile === "string" ? args.profile : undefined;
+    const strategy = CookieStrategyFactory.createStrategy(
+      browser,
+      store,
+      profile,
+    );
     const queryService = new CookieQueryService(strategy);
     const specs = Array.isArray(cookieSpec) ? cookieSpec : [cookieSpec];
 
@@ -130,6 +172,7 @@ export async function cliQueryCookies(
       args,
       strategy,
       removeExpired,
+      deduplicateCookies,
       limit,
       store,
     );
@@ -141,6 +184,20 @@ export async function cliQueryCookies(
 
     if (results.length === 0) {
       logger.error("No results");
+
+      // Provide helpful feedback for profile-related issues
+      const profile =
+        typeof args.profile === "string" ? args.profile : undefined;
+      const browser =
+        typeof args.browser === "string" ? args.browser : undefined;
+
+      if (profile && browser) {
+        logger.error(`Could not find cookies for profile: ${profile}`);
+        logger.error(
+          `Try 'get-cookie --browser ${browser} --list-profiles' to see available profiles`,
+        );
+      }
+
       return;
     }
 

@@ -34,9 +34,14 @@ export const CookieStrategyFactory = {
    * Creates a strategy for the specified browser
    * @param browser - The browser to create a strategy for
    * @param storePath - Optional path to a cookie store file
+   * @param profile - Optional Chrome profile name
    * @returns A cookie query strategy for the specified browser
    */
-  createStrategy(browser?: string, storePath?: string): CookieQueryStrategy {
+  createStrategy(
+    browser?: string,
+    storePath?: string,
+    profile?: string,
+  ): CookieQueryStrategy {
     // Delegate to the core strategy factory
     // Only pass defined values to avoid exactOptionalPropertyTypes issues
     const options: Parameters<typeof createCoreStrategy>[0] = {};
@@ -45,6 +50,9 @@ export const CookieStrategyFactory = {
     }
     if (storePath !== undefined) {
       options.storePath = storePath;
+    }
+    if (profile !== undefined) {
+      options.profile = profile;
     }
     return createCoreStrategy(options);
   },

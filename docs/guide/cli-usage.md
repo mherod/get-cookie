@@ -117,6 +117,32 @@ get-cookie auth example.com --browser firefox
 get-cookie auth example.com --browser safari
 ```
 
+### Chrome Profile Selection
+
+```bash
+# Target a specific Chrome profile
+get-cookie auth example.com --browser chrome --profile "Profile 1"
+
+# Use the default Chrome profile
+get-cookie auth example.com --browser chrome --profile Default
+
+# List all available Chrome profiles
+get-cookie --browser chrome --list-profiles
+```
+
+### Cookie Management Options
+
+```bash
+# Include expired cookies (filtered by default)
+get-cookie auth example.com --include-expired
+
+# Include all duplicate cookies (deduplicated by default)
+get-cookie auth example.com --include-all
+
+# Combine both options for complete cookie dump
+get-cookie % example.com --include-expired --include-all
+```
+
 ### Force Operations
 
 ```bash
@@ -181,7 +207,9 @@ get-cookie --name "session*" --domain example.com
 | `--help`           | `-h`  | Show help message with build timestamp             | `--help`           |
 | `--verbose`        | `-v`  | Enable verbose output                               | `--verbose`        |
 | `--force`          | `-f`  | Force operation despite warnings (e.g., locked DBs) | `--force`          |
-| `--remove-expired` |       | Remove expired cookies from results                 | `--remove-expired` |
+| `--list-profiles`  |       | List available browser profiles                     | `--list-profiles`  |
+| `--include-expired`|       | Include expired cookies (filtered by default)       | `--include-expired`|
+| `--include-all`    |       | Include all duplicate cookies (deduplicated by default) | `--include-all` |
 
 ### Query Options
 
@@ -191,6 +219,7 @@ get-cookie --name "session*" --domain example.com
 | `--domain`  | `-D`  | Cookie domain pattern                    | `--domain *.example.com` |
 | `--url`     | `-u`  | URL to extract cookie specs from         | `--url https://...`      |
 | `--browser` |       | Target specific browser                  | `--browser chrome`       |
+| `--profile` |       | Target specific Chrome profile           | `--profile "Profile 1"`  |
 | `--store`   |       | Path to specific cookie store file       | `--store /path/to/db`    |
 
 ### Output Options

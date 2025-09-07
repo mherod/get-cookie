@@ -8,6 +8,8 @@ on:
       - "feature/**"
       - "fix/**"
       - "refactor/**"
+      - "feat/**"
+      - "docs/**"
   pull_request:
     branches:
       - main
@@ -18,10 +20,47 @@ env:
   HOMEBREW_NO_AUTO_UPDATE: 1
 
 jobs:
-  # Quick validation that runs on all platforms
+  # Detect what files changed to optimize CI
+  changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      docs-only: ${{ steps.filter.outputs.docs-only }}
+      has-code: ${{ steps.filter.outputs.has-code }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Detect file changes
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            has-code:
+              - 'src/**'
+              - 'scripts/**'
+              - 'package.json'
+              - 'pnpm-lock.yaml'
+              - 'tsconfig*.json'
+              - 'jest.config.js'
+              - 'biome.json'
+              - '.github/workflows/**'
+            docs-only:
+              - 'docs/**'
+              - '**/*.md'
+              - 'scripts/check-vitepress-links.sh'
+              - '!src/**'
+              - '!package.json'
+              - '!pnpm-lock.yaml'
+              - '!tsconfig*.json'
+              - '!jest.config.js'
+              - '!biome.json'
+
+  # Quick validation that runs on all platforms - runs lighter for docs-only
   validate:
     name: Validate (${{ matrix.os }}, Node ${{ matrix.node }})
     runs-on: ${{ matrix.os }}
+    needs: changes
     strategy:
       fail-fast: false
       matrix:
@@ -38,6 +77,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Report optimization
+        if: needs.changes.outputs.docs-only == 'true'
+        run: |
+          echo "📚 Documentation-only changes detected - running lightweight validation"
+          echo "Skipping: tests, type-check, heavy builds"
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
@@ -52,26 +97,56 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # Type check - skip for docs-only
       - name: Type check
+        if: needs.changes.outputs.has-code == 'true'
         run: pnpm run type-check
 
+      - name: Type check (skipped for docs)
+        if: needs.changes.outputs.docs-only == 'true'
+        run: echo "✅ Skipping type check for documentation-only changes"
+
+      # Lint - always run but lighter for docs
       - name: Lint
+        if: needs.changes.outputs.has-code == 'true'
         run: pnpm run lint
         continue-on-error: ${{ matrix.os == 'windows-latest' }}
 
+      - name: Lint docs only
+        if: needs.changes.outputs.docs-only == 'true'
+        run: |
+          echo "✅ Running format check for documentation files"
+          pnpm run format:check || true
+
+      # Format check
       - name: Format check
         run: pnpm run format:check
         continue-on-error: ${{ matrix.os == 'windows-latest' }}
 
+      # Tests - skip for docs-only
       - name: Run tests
+        if: needs.changes.outputs.has-code == 'true'
         run: pnpm test
 
+      - name: Run tests (skipped for docs)
+        if: needs.changes.outputs.docs-only == 'true'
+        run: echo "✅ Skipping tests for documentation-only changes"
+
+      # Build - skip heavy build for docs-only
       - name: Build
+        if: needs.changes.outputs.has-code == 'true'
         run: pnpm run build
+
+      - name: Build (lightweight for docs)
+        if: needs.changes.outputs.docs-only == 'true'
+        run: |
+          echo "✅ Skipping full build for documentation-only changes"
+          # Just ensure the package.json is valid
+          node -e "require('./package.json')"
 
       - name: Upload coverage
         uses: actions/upload-artifact@v4
-        if: matrix.os == 'ubuntu-latest' && matrix.node == '20.x'
+        if: matrix.os == 'ubuntu-latest' && matrix.node == '20.x' && needs.changes.outputs.has-code == 'true'
         with:
           name: coverage-reports
           path: coverage/
@@ -81,7 +156,7 @@ jobs:
   advanced-tests:
     name: Advanced Tests (Node ${{ matrix.node }})
     runs-on: macos-latest
-    needs: validate
+    needs: [changes, validate]
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     strategy:
       fail-fast: false
@@ -92,32 +167,48 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # Quick pass for docs-only changes
+      - name: Skip advanced tests for docs
+        if: needs.changes.outputs.docs-only == 'true'
+        run: |
+          echo "📚 Documentation-only changes - skipping advanced tests"
+          echo "✅ Marking as passed"
+          exit 0
+
+      # Run actual tests only for code changes
       - name: Setup pnpm
+        if: needs.changes.outputs.has-code == 'true'
         uses: pnpm/action-setup@v4
         with:
           version: 9.15.2
 
       - name: Setup Node.js ${{ matrix.node }}
+        if: needs.changes.outputs.has-code == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
           cache: "pnpm"
 
       - name: Install dependencies
+        if: needs.changes.outputs.has-code == 'true'
         run: pnpm install --frozen-lockfile
 
       - name: Build first
+        if: needs.changes.outputs.has-code == 'true'
         run: pnpm run build
 
       - name: Run binary cookies test
+        if: needs.changes.outputs.has-code == 'true'
         run: pnpm exec tsx scripts/test-binarycookies.ts
         continue-on-error: true
 
       - name: Run decoder test
+        if: needs.changes.outputs.has-code == 'true'
         run: pnpm exec tsx scripts/test-decoder.ts
         continue-on-error: true
 
       - name: Validate cookie structure
+        if: needs.changes.outputs.has-code == 'true'
         run: pnpm exec tsx scripts/validate-cookie-structure.ts
         continue-on-error: true
 
@@ -125,7 +216,7 @@ jobs:
   integration-tests:
     name: Integration Tests (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
-    needs: validate
+    needs: [changes, validate]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     strategy:
       fail-fast: false
@@ -137,32 +228,45 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # Quick pass for docs-only changes
+      - name: Skip integration tests for docs
+        if: needs.changes.outputs.docs-only == 'true'
+        run: |
+          echo "📚 Documentation-only changes - skipping integration tests"
+          echo "✅ Marking as passed"
+          exit 0
+
+      # Run actual tests only for code changes
       - name: Setup pnpm
+        if: needs.changes.outputs.has-code == 'true'
         uses: pnpm/action-setup@v4
         with:
           version: 9.15.2
 
       - name: Setup Node.js ${{ matrix.node }}
+        if: needs.changes.outputs.has-code == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
           cache: "pnpm"
 
       - name: Install dependencies
+        if: needs.changes.outputs.has-code == 'true'
         run: pnpm install --frozen-lockfile
 
       - name: Build
+        if: needs.changes.outputs.has-code == 'true'
         run: pnpm run build
 
       - name: Install Chrome (Windows)
-        if: runner.os == 'Windows'
+        if: runner.os == 'Windows' && needs.changes.outputs.has-code == 'true'
         run: |
           choco install chromium -y
           Start-Sleep -Seconds 10
         shell: pwsh
 
       - name: Generate test cookies (Windows)
-        if: runner.os == 'Windows'
+        if: runner.os == 'Windows' && needs.changes.outputs.has-code == 'true'
         run: |
           $chromeDir = "$env:LOCALAPPDATA\Google\Chrome\User Data\Default"
           New-Item -ItemType Directory -Force -Path $chromeDir
@@ -176,16 +280,17 @@ jobs:
         continue-on-error: true
 
       - name: Test CLI (All platforms)
+        if: needs.changes.outputs.has-code == 'true'
         run: |
           node dist/cli.cjs --help
           node dist/cli.cjs --browser chrome "*" github.com || true
         shell: bash
 
-  # Documentation build - only when needed
+  # Documentation build - always thorough
   docs:
     name: Build Documentation
     runs-on: ubuntu-latest
-    needs: validate
+    needs: [changes, validate]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -216,6 +321,15 @@ jobs:
           name: documentation
           path: docs/.vitepress/dist/
           retention-days: 7
+
+      - name: Report optimization
+        if: needs.changes.outputs.docs-only == 'true'
+        run: |
+          echo "### 🚀 CI Optimization Applied!"
+          echo "Documentation-only changes detected. Heavy tests and builds were skipped."
+          echo ""
+          echo "**Time saved:** ~10-15 minutes"
+          echo "**Resources saved:** 6 parallel test runners"
 
   # Final status check for branch protection
   status-check:

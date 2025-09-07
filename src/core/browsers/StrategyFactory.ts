@@ -141,13 +141,13 @@ export function createStrategy(options?: {
     }
   }
 
-  // If browser is specified and valid, create specific strategy
-  if (browser && isValidBrowserType(browser)) {
-    return createBrowserStrategy(browser);
-  }
-
-  // If browser is specified but invalid, log warning
+  // If browser is specified, normalize to lowercase and check if valid
   if (browser) {
+    const normalizedBrowser = browser.toLowerCase();
+    if (isValidBrowserType(normalizedBrowser)) {
+      return createBrowserStrategy(normalizedBrowser);
+    }
+    // Log warning for invalid browser type
     logger.warn("Invalid browser type specified", { browser });
   }
 

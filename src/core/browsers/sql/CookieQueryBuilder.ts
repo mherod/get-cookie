@@ -188,6 +188,72 @@ export class CookieQueryBuilder {
   }
 
   /**
+   * Build a batch SELECT query for multiple cookie specs
+   * Combines multiple cookie specs into a single query with OR conditions
+   * @param specs - Array of cookie query options
+   */
+  buildBatchSelectQuery(specs: CookieQueryOptions[]): SqlQueryConfig {
+    if (specs.length === 0) {
+      throw new Error("At least one spec is required for batch query");
+    }
+
+    const schema = this.schema;
+    const selectColumns = this.buildSelectColumns();
+
+    // Build combined WHERE clause
+    const specConditions: string[] = [];
+    const allParams: unknown[] = [];
+
+    for (const spec of specs) {
+      const { whereClause, params } = this.buildWhereClause(
+        spec.name,
+        spec.domain,
+        spec.exactDomain,
+        spec.includeExpired,
+      );
+
+      if (whereClause) {
+        // Wrap each spec's conditions in parentheses
+        specConditions.push(`(${whereClause})`);
+        allParams.push(...params);
+      }
+    }
+
+    // Combine all specs with OR
+    const combinedWhere = specConditions.join(" OR ");
+
+    // Build complete SQL
+    let sql = `SELECT ${selectColumns} FROM ${schema.tableName}`;
+    if (combinedWhere) {
+      sql += ` WHERE ${combinedWhere}`;
+    }
+
+    // Add ORDER BY for consistent results
+    sql += ` ORDER BY ${schema.expiryColumn} DESC`;
+
+    // Find the minimum limit across all specs (if any have limits)
+    const minLimit = specs.reduce(
+      (min, spec) => {
+        if (spec.limit && spec.limit > 0) {
+          return min ? Math.min(min, spec.limit) : spec.limit;
+        }
+        return min;
+      },
+      undefined as number | undefined,
+    );
+
+    if (minLimit && minLimit > 0) {
+      sql += ` LIMIT ${minLimit * specs.length}`; // Multiply by specs count to ensure we get enough results
+    }
+
+    return {
+      sql,
+      params: allParams,
+      description: `Batch query ${this.browser} cookies for ${specs.length} specs`,
+    };
+  }
+
+  /**
    * Build a query to get database metadata
    * @param key
    */

@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 // Local imports - core
-import { cookieSpecsFromUrl } from "@core/cookies/cookieSpecsFromUrl";
 import { listChromeProfiles } from "@core/browsers/listChromeProfiles";
+import { cookieSpecsFromUrl } from "@core/cookies/cookieSpecsFromUrl";
 import { parseArgv } from "@utils/argv";
 import logger from "@utils/logger";
 

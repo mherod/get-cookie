@@ -104,7 +104,10 @@ export default defineConfig({
         {
           text: "Reference",
           items: [
-            { text: "🌍 Browser Support Matrix", link: "/reference/browser-support" },
+            {
+              text: "🌍 Browser Support Matrix",
+              link: "/reference/browser-support",
+            },
           ],
         },
       ],

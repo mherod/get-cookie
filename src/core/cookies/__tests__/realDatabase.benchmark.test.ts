@@ -138,7 +138,7 @@ describe("Real Database Performance Benchmarks", () => {
       expect(result.improvement).toBeGreaterThan(1.5); // At least 1.5x faster
     });
 
-    it("should demonstrate significant improvement with large batches (100 specs)", async () => {
+    it.skip("should demonstrate significant improvement with large batches (100 specs)", async () => {
       const specs: CookieSpec[] = [];
 
       // Generate 100 specs

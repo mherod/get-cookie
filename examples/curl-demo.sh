@@ -6,12 +6,12 @@ echo "======================================"
 
 # First, let's verify we have cookies
 echo -e "\n1️⃣ Checking available cookies..."
-COOKIE_COUNT=$(node dist/cli.cjs % github.com --output json 2>/dev/null | jq 'length')
+COOKIE_COUNT=$(get-cookie % github.com --output json 2>/dev/null | jq 'length')
 echo "   Found $COOKIE_COUNT GitHub cookies"
 
 # Extract a specific cookie value
 echo -e "\n2️⃣ Extracting user_session cookie..."
-USER_SESSION=$(node dist/cli.cjs user_session github.com --output json 2>/dev/null | jq -r '.[0].value' 2>/dev/null)
+USER_SESSION=$(get-cookie user_session github.com --output json 2>/dev/null | jq -r '.[0].value' 2>/dev/null)
 
 if [ -n "$USER_SESSION" ] && [ "$USER_SESSION" != "null" ]; then
     echo "   ✅ Got user_session cookie"
@@ -50,7 +50,7 @@ COOKIES=""
 
 # Extract multiple cookies and combine them
 for cookie_name in "user_session" "dotcom_user" "__Host-user_session_same_site"; do
-    COOKIE_VALUE=$(node dist/cli.cjs "$cookie_name" github.com --output json 2>/dev/null | jq -r '.[0].value' 2>/dev/null)
+    COOKIE_VALUE=$(get-cookie "$cookie_name" github.com --output json 2>/dev/null | jq -r '.[0].value' 2>/dev/null)
     if [ -n "$COOKIE_VALUE" ] && [ "$COOKIE_VALUE" != "null" ]; then
         [ -n "$COOKIES" ] && COOKIES="$COOKIES; "
         COOKIES="$COOKIES$cookie_name=$COOKIE_VALUE"
@@ -88,15 +88,15 @@ fi
 echo -e "\n📝 Useful one-liners:"
 echo "────────────────────"
 echo "# Get cookie value only:"
-echo "node dist/cli.cjs user_session github.com --output json | jq -r '.[0].value'"
+echo "get-cookie user_session github.com --output json | jq -r '.[0].value'"
 echo ""
 echo "# Direct pipe to curl:"
-echo "curl -H \"Cookie: user_session=\$(node dist/cli.cjs user_session github.com --output json | jq -r '.[0].value')\" https://api.github.com/user"
+echo "curl -H \"Cookie: user_session=\$(get-cookie user_session github.com --output json | jq -r '.[0].value')\" https://api.github.com/user"
 echo ""
 echo "# Save all cookies to file:"
-echo "node dist/cli.cjs % github.com --output json > github-cookies.json"
+echo "get-cookie % github.com --output json > github-cookies.json"
 echo ""
 echo "# Use with HTTPie instead of curl:"
-echo "http https://api.github.com/user \"Cookie:user_session=\$(node dist/cli.cjs user_session github.com --output json | jq -r '.[0].value')\""
+echo "http https://api.github.com/user \"Cookie:user_session=\$(get-cookie user_session github.com --output json | jq -r '.[0].value')\""
 
 echo -e "\n✅ Demo complete!"

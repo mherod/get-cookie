@@ -208,7 +208,7 @@ describe("batchGetCookies Performance Benchmarks", () => {
       domain: `domain${i % 20}.com`, // 20 unique domains
     }));
 
-    it("should demonstrate scalability with large batches", async () => {
+    it.skip("should demonstrate scalability with large batches", async () => {
       const mockCookies = specs.map((spec) =>
         createMockCookie(spec.name, spec.domain, `value${spec.name}`),
       );

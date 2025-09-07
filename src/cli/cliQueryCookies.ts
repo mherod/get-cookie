@@ -1,6 +1,11 @@
 import type { CookieSpec, ExportedCookie } from "../types/schemas";
 import { getErrorMessage } from "../utils/errorUtils";
 import { logger } from "../utils/logHelpers";
+import {
+  detectJwtCookies,
+  filterJwtCookies,
+  type JwtDetectionOptions,
+} from "../core/cookies/JwtCookieDetector";
 
 import { OutputHandlerFactory } from "./handlers/OutputHandlerFactory";
 import { CookieQueryService } from "./services/CookieQueryService";
@@ -175,11 +180,30 @@ export async function cliQueryCookies(
       limit,
       store,
     );
-    const results = await queryAndLimitCookies(
-      queryService,
-      specs,
-      queryOptions,
-    );
+    let results = await queryAndLimitCookies(queryService, specs, queryOptions);
+
+    // Handle JWT detection if requested
+    if (args["detect-jwt"] === true || args["jwt-only"] === true) {
+      const jwtOptions: JwtDetectionOptions = {
+        decodeClaims: true,
+        checkExpiration: true,
+        verbose: args.verbose === true,
+      };
+
+      // Add JWT secret validation if provided
+      if (typeof args["jwt-secret"] === "string") {
+        jwtOptions.validateSignature = true;
+        jwtOptions.secretKey = args["jwt-secret"];
+      }
+
+      if (args["jwt-only"] === true) {
+        // Filter to only show JWT cookies
+        results = filterJwtCookies(results, jwtOptions);
+      } else {
+        // Enhance cookies with JWT metadata
+        results = detectJwtCookies(results, jwtOptions);
+      }
+    }
 
     if (results.length === 0) {
       logger.error("No results");
@@ -195,6 +219,11 @@ export async function cliQueryCookies(
         logger.error(
           `Try 'get-cookie --browser ${browser} --list-profiles' to see available profiles`,
         );
+      }
+
+      // Add feedback for JWT-only mode
+      if (args["jwt-only"] === true) {
+        logger.error("No cookies containing valid JWT tokens were found");
       }
 
       return;

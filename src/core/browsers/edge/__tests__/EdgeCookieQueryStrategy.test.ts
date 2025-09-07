@@ -1,6 +1,8 @@
 import { homedir } from "node:os";
 import { join } from "node:path";
 
+import { getPlatform } from "@utils/platformUtils";
+
 import { EdgeCookieQueryStrategy } from "../EdgeCookieQueryStrategy";
 
 describe("EdgeCookieQueryStrategy", () => {
@@ -31,7 +33,7 @@ describe("EdgeCookieQueryStrategy", () => {
 
       // Test that the strategy correctly inherits Chromium path resolution
       // The actual path will depend on the current platform
-      const platform = process.platform as keyof typeof expectedPaths;
+      const platform = getPlatform() as keyof typeof expectedPaths;
       if (platform in expectedPaths) {
         // This tests that the strategy is properly configured to use Edge paths
         expect(strategy).toBeDefined();

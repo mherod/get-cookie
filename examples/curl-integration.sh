@@ -17,8 +17,8 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Path to get-cookie CLI (adjust if using global installation)
-GET_COOKIE="node $(pwd)/dist/cli.cjs"
+# Use the globally installed get-cookie binary
+GET_COOKIE="get-cookie"
 
 echo -e "${BLUE}🍪 get-cookie + curl Integration Examples${NC}"
 echo "================================================"
@@ -264,13 +264,13 @@ echo "
 5. ${YELLOW}Rate Limiting:${NC} Respect API rate limits when using automation
 
 ${GREEN}Example one-liner to test authentication:${NC}
-${BLUE}\$GET_COOKIE user_session github.com | xargs -I {} curl -s -H \"Cookie: user_session={}\" https://api.github.com/user | jq .login${NC}
+${BLUE}get-cookie user_session github.com | xargs -I {} curl -s -H \"Cookie: user_session={}\" https://api.github.com/user | jq .login${NC}
 
 ${GREEN}Example to save cookies to a file:${NC}
-${BLUE}\$GET_COOKIE % domain.com --output json > cookies.json${NC}
+${BLUE}get-cookie % domain.com --output json > cookies.json${NC}
 
 ${GREEN}Example to use with wget instead of curl:${NC}
-${BLUE}wget --header=\"Cookie: \$(\$GET_COOKIE session domain.com)\" https://domain.com/protected${NC}
+${BLUE}wget --header=\"Cookie: \$(get-cookie session domain.com)\" https://domain.com/protected${NC}
 "
 
 echo -e "${GREEN}✅ Examples completed!${NC}"

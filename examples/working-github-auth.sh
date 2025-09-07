@@ -12,7 +12,7 @@ echo "Method 1: Smart cookie filtering"
 echo "────────────────────────────────"
 
 # Get cookies and filter out invalid ones (too short)
-COOKIES=$(node dist/cli.cjs --url https://github.com/settings/profile --output json 2>/dev/null | \
+COOKIES=$(get-cookie --url https://github.com/settings/profile --output json 2>/dev/null | \
     jq -r '.[] | select(.name == "user_session" and (.value | length) > 10) | "\(.name)=\(.value)"' | \
     head -1)
 
@@ -48,7 +48,7 @@ get_valid_cookie() {
     local domain=$2
     local min_length=${3:-10}  # Minimum valid length
     
-    node dist/cli.cjs "$cookie_name" "$domain" --output json 2>/dev/null | \
+    get-cookie "$cookie_name" "$domain" --output json 2>/dev/null | \
         jq -r --arg min "$min_length" \
         '.[] | select(.value | length > ($min | tonumber)) | .value' | \
         head -1

@@ -65,12 +65,9 @@ async function queryAndLimitCookies(
       } else {
         // Keep the cookie with the longest value (most likely to be valid)
         // or if same length, keep the one with latest creation time
-        const shouldReplace =
-          cookie.value.length > existing.value.length ||
-          (cookie.value.length === existing.value.length &&
-            cookie.creation &&
-            existing.creation &&
-            cookie.creation > existing.creation);
+        // Replace with longer value, or if same length, keep the newer one
+        // Since we don't have creation time, we'll just prefer longer values
+        const shouldReplace = cookie.value.length > existing.value.length;
 
         if (shouldReplace) {
           cookieMap.set(key, cookie);

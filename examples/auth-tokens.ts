@@ -12,7 +12,7 @@ interface AuthToken {
   tokenName: string;
   value: string;
   browser: string;
-  expiry: Date | string | null;
+  expiry: Date | string | number | null;
 }
 
 async function extractAuthTokens() {
@@ -52,11 +52,13 @@ async function extractAuthTokens() {
               site: pattern.site,
               tokenName: cookieName,
               value: `${cookie.value.substring(0, 20)}...`, // Truncate for security
-              browser: cookie.meta.browser || "Unknown",
-              expiry: cookie.expiry,
+              browser: cookie.meta?.browser || "Unknown",
+              expiry: cookie.expiry || null,
             });
 
-            console.log(`  ✓ Found ${cookieName} in ${cookie.meta.browser}`);
+            console.log(
+              `  ✓ Found ${cookieName} in ${cookie.meta?.browser || "Unknown"}`,
+            );
           });
         }
       } catch (_error) {
@@ -80,7 +82,7 @@ async function extractAuthTokens() {
         if (!acc[token.site]) {
           acc[token.site] = [];
         }
-        acc[token.site].push(token);
+        acc[token.site]?.push(token);
         return acc;
       },
       {} as Record<string, AuthToken[]>,
@@ -124,7 +126,7 @@ async function extractAuthTokens() {
       "const response = await fetch('https://api.github.com/user', {",
     );
     console.log("  headers: {");
-    console.log("    'Cookie': `user_session=\\${token}`,");
+    console.log("    'Cookie': `user_session=\\$\\{token\\}`,");
     console.log("    'User-Agent': 'Your-App-Name'");
     console.log("  }");
     console.log("});");

@@ -70,6 +70,10 @@ jobs:
     name: Release to npm
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
+    # Required for trusted publishing with OIDC
+    permissions:
+      contents: write
+      id-token: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -100,10 +104,9 @@ jobs:
           pnpm link --global
           get-cookie --help
 
-      - name: Publish to npm
-        run: pnpm publish --access public --no-git-checks
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Publish to npm using trusted publisher
+        run: npm publish --access public --provenance
+        # No NODE_AUTH_TOKEN needed! Using GitHub OIDC trusted publisher
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1

@@ -115,55 +115,18 @@ export async function batchGetCookies(
       error: getErrorMessage(error),
     });
 
-    // Process specs in chunks based on concurrency limit
-    results = [];
-    const errors: Array<{ spec: CookieSpec; error: Error }> = [];
-
-    for (let i = 0; i < specs.length; i += concurrency) {
-      const chunk = specs.slice(i, i + concurrency);
-      const chunkPromises = chunk.map(async (spec) => {
-        try {
-          const cookies = await getCookie(spec);
-          return { spec, cookies, error: undefined };
-        } catch (error) {
-          const err = ensureError(error, "Failed to fetch cookies");
-          if (!continueOnError) {
-            throw err;
-          }
-          logger.warn("Failed to fetch cookies for spec", {
-            spec,
-            error: getErrorMessage(err),
-          });
-          return { spec, cookies: [], error: err };
-        }
-      });
-
-      const chunkResults = await Promise.all(chunkPromises);
-
-      for (const result of chunkResults) {
-        if (result.error) {
-          errors.push({ spec: result.spec, error: result.error });
-        } else {
-          results.push(...result.cookies);
-        }
-      }
-    }
-
-    // Log any errors that occurred
-    if (errors.length > 0) {
-      logger.warn(`${errors.length} specs failed during batch retrieval`, {
-        failedSpecs: errors.map((e) => e.spec),
-      });
-    }
+    results = await fallbackToIndividualQueries(
+      specs,
+      concurrency,
+      continueOnError,
+    );
   }
 
   // Deduplicate if requested
   if (deduplicate && results.length > 0) {
-    const deduplicatedCookies = deduplicateCookies(results);
-    logger.debug(
-      `Deduplicated ${results.length} cookies to ${deduplicatedCookies.length}`,
-    );
-    return deduplicatedCookies;
+    const deduped = deduplicateCookies(results);
+    logger.debug(`Deduplicated ${results.length} to ${deduped.length}`);
+    return deduped;
   }
 
   return results;
@@ -194,6 +157,60 @@ export async function batchGetCookies(
  * });
  * ```
  */
+/**
+ * Process cookies and group them by spec
+ * @param specs - Cookie specifications
+ * @param allCookies - All retrieved cookies
+ * @returns Array of batch results
+ */
+function groupCookiesBySpec(
+  specs: CookieSpec[],
+  allCookies: ExportedCookie[],
+): BatchCookieResult[] {
+  return specs.map((spec) => {
+    const specCookies = allCookies.filter(
+      (cookie) => cookie.name === spec.name && cookie.domain === spec.domain,
+    );
+    return { spec, cookies: specCookies };
+  });
+}
+
+/**
+ * Process a chunk of specs for detailed results
+ * @param chunk - Chunk of specs to process
+ * @param continueOnError - Whether to continue on errors
+ * @returns Array of batch cookie results
+ */
+async function processChunkWithResults(
+  chunk: CookieSpec[],
+  continueOnError: boolean,
+): Promise<BatchCookieResult[]> {
+  const chunkPromises = chunk.map(async (spec): Promise<BatchCookieResult> => {
+    try {
+      const cookies = await getCookie(spec);
+      return { spec, cookies };
+    } catch (error) {
+      const err = ensureError(error, "Failed to fetch cookies");
+      if (!continueOnError) {
+        throw err;
+      }
+      logger.warn("Failed to fetch cookies for spec", {
+        spec,
+        error: getErrorMessage(err),
+      });
+      return { spec, cookies: [], error: err };
+    }
+  });
+
+  return Promise.all(chunkPromises);
+}
+
+/**
+ * Retrieves multiple cookie specifications with detailed results for each spec
+ * @param specs - Array of cookie specifications to retrieve
+ * @param options - Options for batch retrieval
+ * @returns Array of batch results with cookies and potential errors
+ */
 export async function batchGetCookiesWithResults(
   specs: CookieSpec[],
   options: Omit<BatchGetCookiesOptions, "deduplicate"> = {},
@@ -208,16 +225,7 @@ export async function batchGetCookiesWithResults(
   // Try using optimized batch query first
   try {
     const allCookies = await batchQueryCookies(specs, continueOnError);
-
-    // Group cookies by spec
-    const results: BatchCookieResult[] = specs.map((spec) => {
-      const specCookies = allCookies.filter(
-        (cookie) => cookie.name === spec.name && cookie.domain === spec.domain,
-      );
-      return { spec, cookies: specCookies };
-    });
-
-    return results;
+    return groupCookiesBySpec(specs, allCookies);
   } catch (error) {
     logger.warn("Batch query failed, falling back to individual queries", {
       error: getErrorMessage(error),
@@ -228,31 +236,93 @@ export async function batchGetCookiesWithResults(
 
     for (let i = 0; i < specs.length; i += concurrency) {
       const chunk = specs.slice(i, i + concurrency);
-      const chunkPromises = chunk.map(
-        async (spec): Promise<BatchCookieResult> => {
-          try {
-            const cookies = await getCookie(spec);
-            return { spec, cookies };
-          } catch (error) {
-            const err = ensureError(error, "Failed to fetch cookies");
-            if (!continueOnError) {
-              throw err;
-            }
-            logger.warn("Failed to fetch cookies for spec", {
-              spec,
-              error: getErrorMessage(err),
-            });
-            return { spec, cookies: [], error: err };
-          }
-        },
+      const chunkResults = await processChunkWithResults(
+        chunk,
+        continueOnError,
       );
-
-      const chunkResults = await Promise.all(chunkPromises);
       results.push(...chunkResults);
     }
 
     return results;
   }
+}
+
+/**
+ * Process a single chunk of cookie specs
+ * @param chunk - Array of cookie specs to process
+ * @param continueOnError - Whether to continue on errors
+ * @returns Object containing results and errors
+ */
+async function processChunk(
+  chunk: CookieSpec[],
+  continueOnError: boolean,
+): Promise<{
+  cookies: ExportedCookie[];
+  errors: Array<{ spec: CookieSpec; error: Error }>;
+}> {
+  const cookies: ExportedCookie[] = [];
+  const errors: Array<{ spec: CookieSpec; error: Error }> = [];
+
+  const chunkPromises = chunk.map(async (spec) => {
+    try {
+      const specCookies = await getCookie(spec);
+      return { spec, cookies: specCookies, error: undefined };
+    } catch (error) {
+      const err = ensureError(error, "Failed to fetch cookies");
+      if (!continueOnError) {
+        throw err;
+      }
+      logger.warn("Failed to fetch cookies for spec", {
+        spec,
+        error: getErrorMessage(err),
+      });
+      return { spec, cookies: [], error: err };
+    }
+  });
+
+  const chunkResults = await Promise.all(chunkPromises);
+
+  for (const result of chunkResults) {
+    if (result.error) {
+      errors.push({ spec: result.spec, error: result.error });
+    } else {
+      cookies.push(...result.cookies);
+    }
+  }
+
+  return { cookies, errors };
+}
+
+/**
+ * Fallback to individual queries when batch query fails
+ * @param specs - Array of cookie specifications
+ * @param concurrency - Maximum concurrent requests
+ * @param continueOnError - Whether to continue on errors
+ * @returns Array of exported cookies
+ */
+async function fallbackToIndividualQueries(
+  specs: CookieSpec[],
+  concurrency: number,
+  continueOnError: boolean,
+): Promise<ExportedCookie[]> {
+  const results: ExportedCookie[] = [];
+  const allErrors: Array<{ spec: CookieSpec; error: Error }> = [];
+
+  for (let i = 0; i < specs.length; i += concurrency) {
+    const chunk = specs.slice(i, i + concurrency);
+    const { cookies, errors } = await processChunk(chunk, continueOnError);
+    results.push(...cookies);
+    allErrors.push(...errors);
+  }
+
+  // Log any errors that occurred
+  if (allErrors.length > 0) {
+    logger.warn(`${allErrors.length} specs failed during batch retrieval`, {
+      failedSpecs: allErrors.map((e) => e.spec),
+    });
+  }
+
+  return results;
 }
 
 /**
@@ -269,7 +339,11 @@ function deduplicateCookies(cookies: ExportedCookie[]): ExportedCookie[] {
     const existing = cookieMap.get(key);
 
     // Keep the cookie with the longest value (most likely to be valid)
-    if (!existing || cookie.value.length > existing.value.length) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+    const existingLength: number = existing?.value.length ?? 0;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+    const currentLength: number = cookie.value.length;
+    if (!existing || currentLength > existingLength) {
       cookieMap.set(key, cookie);
     }
   }
@@ -278,6 +352,6 @@ function deduplicateCookies(cookies: ExportedCookie[]): ExportedCookie[] {
 }
 
 /**
- *
+ * Default export of the batchGetCookies function
  */
 export default batchGetCookies;

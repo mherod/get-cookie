@@ -44,7 +44,16 @@ interface ParsedArgs {
  */
 export function parseArgv(argv: string[]): ParsedArgs {
   const parsed = minimist(argv, {
-    string: ["browser", "profile", "url", "domain", "name", "output", "store"],
+    string: [
+      "browser",
+      "profile",
+      "url",
+      "domain",
+      "name",
+      "output",
+      "store",
+      "jwt-secret",
+    ],
     boolean: [
       "help",
       "version",
@@ -57,6 +66,8 @@ export function parseArgv(argv: string[]): ParsedArgs {
       "include-expired",
       "include-all",
       "list-profiles",
+      "detect-jwt",
+      "jwt-only",
     ],
     alias: {
       b: "browser",
@@ -71,6 +82,7 @@ export function parseArgv(argv: string[]): ParsedArgs {
       G: "dump-grouped",
       r: "render",
       R: "render-grouped",
+      j: "detect-jwt",
     },
     unknown: (arg: string) => {
       // Allow positional arguments (don't start with -)
@@ -109,6 +121,10 @@ export function parseArgv(argv: string[]): ParsedArgs {
         "--include-expired",
         "--include-all",
         "--list-profiles",
+        "--detect-jwt",
+        "-j",
+        "--jwt-only",
+        "--jwt-secret",
       ];
       const isKnown = knownFlags.some((flag) => arg.startsWith(flag));
       if (!isKnown) {

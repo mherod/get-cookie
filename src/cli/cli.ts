@@ -61,6 +61,17 @@ function showHelp(): void {
     "  --include-all             Include all duplicate cookies (newest only by default)",
   );
   logger.log("");
+  logger.log("JWT detection options:");
+  logger.log(
+    "  -j, --detect-jwt          Detect and decode JWT tokens in cookies",
+  );
+  logger.log(
+    "  --jwt-only                Only show cookies containing valid JWTs",
+  );
+  logger.log(
+    "  --jwt-secret KEY          Validate JWT signatures with provided secret",
+  );
+  logger.log("");
   logger.log("Output options:");
   logger.log("  --output FORMAT           Output format (json)");
   logger.log("  -d, --dump                Dump all cookie details");

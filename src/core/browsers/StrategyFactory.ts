@@ -121,6 +121,7 @@ export function createSelectiveCompositeStrategy(
  * @param options - Options for strategy creation
  * @param options.browser - Optional browser type
  * @param options.storePath - Optional path to a cookie store file
+ * @param options.profile
  * @returns A cookie query strategy
  */
 export function createStrategy(options?: {

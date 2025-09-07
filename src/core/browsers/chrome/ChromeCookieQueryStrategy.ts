@@ -1,6 +1,7 @@
+import { dirname } from "node:path";
+
 import { BaseChromiumCookieQueryStrategy } from "../chromium/BaseChromiumCookieQueryStrategy";
 import { listChromeProfilePaths } from "../listChromeProfiles";
-import { dirname } from "node:path";
 
 /**
  * Interface representing Chrome profile information from Local State
@@ -21,7 +22,7 @@ interface ChromeProfileInfo {
  * ```
  */
 export class ChromeCookieQueryStrategy extends BaseChromiumCookieQueryStrategy {
-  private profileName?: string;
+  private readonly profileName?: string;
 
   /**
    * Creates a new instance of ChromeCookieQueryStrategy

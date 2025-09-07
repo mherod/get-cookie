@@ -1,7 +1,11 @@
-import { isChromeRunning } from "@utils/ProcessDetector";
 import { getPlatform, isPlatformSupported } from "@utils/platformUtils";
+import { isChromeRunning } from "@utils/ProcessDetector";
 
-import type { CookieRow, ExportedCookie } from "../../../types/schemas";
+import type {
+  CookieRow,
+  CookieSpec,
+  ExportedCookie,
+} from "../../../types/schemas";
 import { chromeTimestampToDate } from "../../../utils/chromeDates";
 import { BaseCookieQueryStrategy } from "../BaseCookieQueryStrategy";
 import { BrowserLockHandler } from "../BrowserLockHandler";
@@ -76,6 +80,125 @@ export abstract class BaseChromiumCookieQueryStrategy extends BaseCookieQueryStr
     this.browserDisplayName = browserName;
     this.browserType = browserType;
     this.lockHandler = new BrowserLockHandler(this.logger, "Chrome");
+  }
+
+  /**
+   * Batch query cookies for multiple specs
+   * Optimized to execute combined SQL queries per database file
+   * @param specs - Array of cookie specifications
+   * @returns Array of exported cookies
+   */
+  async batchQueryCookies(specs: CookieSpec[]): Promise<ExportedCookie[]> {
+    if (!this.isPlatformSupported()) {
+      return [];
+    }
+
+    const files = this.getCookieFiles();
+    if (files.length === 0) {
+      this.logger.debug(`No ${this.browserDisplayName} cookie files found`);
+      return [];
+    }
+
+    try {
+      const password = await getChromiumPassword(this.browserType);
+      const results: ExportedCookie[] = [];
+
+      for (const file of files) {
+        const fileResults = await this.processBatchFile(file, specs, password);
+        results.push(...fileResults);
+      }
+
+      return results;
+    } catch (error) {
+      this.logger.error(
+        `Failed to get ${this.browserDisplayName} password for batch query`,
+        {
+          error: this.getErrorMessage(error),
+        },
+      );
+      return [];
+    }
+  }
+
+  /**
+   * Process a batch of specs for a single cookie file
+   * @param file - Cookie file path
+   * @param specs - Array of cookie specifications
+   * @param password - Decryption password
+   * @returns Array of exported cookies
+   */
+  protected async processBatchFile(
+    file: string,
+    specs: CookieSpec[],
+    password: string | Buffer,
+  ): Promise<ExportedCookie[]> {
+    try {
+      const connectionManager = getGlobalConnectionManager();
+      const monitor = getGlobalQueryMonitor();
+      const queryBuilder = new CookieQueryBuilder("chrome");
+
+      // Convert CookieSpec to CookieQueryOptions
+      const queryOptions = specs.map((spec) => ({
+        name: spec.name,
+        domain: spec.domain,
+        browser: "chrome" as const,
+      }));
+
+      const queryConfig = queryBuilder.buildBatchSelectQuery(queryOptions);
+
+      const encryptedCookies = await connectionManager.executeQuery(
+        file,
+        (db) => {
+          const rows = monitor.executeQuery<{
+            encrypted_value: Buffer;
+            name: string;
+            domain: string;
+            expiry: number;
+          }>(db, queryConfig.sql, queryConfig.params, file);
+
+          return rows.map(
+            (row): CookieRow => ({
+              name: row.name,
+              domain: row.domain,
+              value: row.encrypted_value,
+              expiry: row.expiry,
+            }),
+          );
+        },
+        queryConfig.description || queryConfig.sql,
+      );
+
+      const metaVersion = await this.getMetaVersion(file);
+      const context: DecryptionContext = {
+        file,
+        password,
+        browser: this.browserDisplayName,
+        metaVersion,
+      };
+
+      const results = await Promise.allSettled(
+        encryptedCookies.map(async (cookie) =>
+          this.processCookie(cookie, context),
+        ),
+      );
+
+      return results
+        .filter(
+          (result): result is PromiseFulfilledResult<ExportedCookie> =>
+            result.status === "fulfilled",
+        )
+        .map((result) => result.value);
+    } catch (error) {
+      this.logger.warn(
+        `Error batch processing ${this.browserDisplayName} cookie file ${file}`,
+        {
+          error: this.getErrorMessage(error),
+          file,
+          specsCount: specs.length,
+        },
+      );
+      return [];
+    }
   }
 
   /**
@@ -418,7 +541,7 @@ export abstract class BaseChromiumCookieQueryStrategy extends BaseCookieQueryStr
    * @param context - Decryption context
    * @returns Exported cookie
    */
-  private async processCookie(
+  protected async processCookie(
     cookie: CookieRow,
     context: DecryptionContext,
   ): Promise<ExportedCookie> {

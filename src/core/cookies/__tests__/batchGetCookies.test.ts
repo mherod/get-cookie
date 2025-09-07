@@ -3,10 +3,12 @@ import {
   batchGetCookies,
   batchGetCookiesWithResults,
 } from "../batchGetCookies";
+import { batchQueryCookies } from "../batchQueryCookies";
 import { getCookie } from "../getCookie";
 
-// Mock getCookie
+// Mock getCookie and batchQueryCookies
 jest.mock("../getCookie");
+jest.mock("../batchQueryCookies");
 
 // Helper to create mock cookies with minimal required fields
 const mockCookie = (partial: Partial<ExportedCookie>): ExportedCookie[] => {
@@ -15,6 +17,9 @@ const mockCookie = (partial: Partial<ExportedCookie>): ExportedCookie[] => {
 
 describe("batchGetCookies", () => {
   const mockGetCookie = getCookie as jest.MockedFunction<typeof getCookie>;
+  const mockBatchQueryCookies = batchQueryCookies as jest.MockedFunction<
+    typeof batchQueryCookies
+  >;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -28,31 +33,28 @@ describe("batchGetCookies", () => {
         { name: "token", domain: "app.example.com" },
       ];
 
-      mockGetCookie
-        .mockResolvedValueOnce(
-          mockCookie({ name: "auth", domain: "example.com", value: "auth123" }),
-        )
-        .mockResolvedValueOnce(
-          mockCookie({
-            name: "session",
-            domain: "api.example.com",
-            value: "session456",
-          }),
-        )
-        .mockResolvedValueOnce(
-          mockCookie({
-            name: "token",
-            domain: "app.example.com",
-            value: "token789",
-          }),
-        );
+      mockBatchQueryCookies.mockResolvedValueOnce([
+        {
+          name: "auth",
+          domain: "example.com",
+          value: "auth123",
+        } as ExportedCookie,
+        {
+          name: "session",
+          domain: "api.example.com",
+          value: "session456",
+        } as ExportedCookie,
+        {
+          name: "token",
+          domain: "app.example.com",
+          value: "token789",
+        } as ExportedCookie,
+      ]);
 
       const result = await batchGetCookies(specs);
 
-      expect(mockGetCookie).toHaveBeenCalledTimes(3);
-      expect(mockGetCookie).toHaveBeenCalledWith(specs[0]);
-      expect(mockGetCookie).toHaveBeenCalledWith(specs[1]);
-      expect(mockGetCookie).toHaveBeenCalledWith(specs[2]);
+      expect(mockBatchQueryCookies).toHaveBeenCalledTimes(1);
+      expect(mockBatchQueryCookies).toHaveBeenCalledWith(specs, true);
       expect(result).toHaveLength(3);
       expect(result[0]).toMatchObject({ name: "auth", value: "auth123" });
     });
@@ -66,14 +68,18 @@ describe("batchGetCookies", () => {
     it("should handle single spec", async () => {
       const spec: CookieSpec = { name: "test", domain: "example.com" };
 
-      mockGetCookie.mockResolvedValueOnce(
-        mockCookie({ name: "test", domain: "example.com", value: "test123" }),
-      );
+      mockBatchQueryCookies.mockResolvedValueOnce([
+        {
+          name: "test",
+          domain: "example.com",
+          value: "test123",
+        } as ExportedCookie,
+      ]);
 
       const result = await batchGetCookies([spec]);
 
-      expect(mockGetCookie).toHaveBeenCalledTimes(1);
-      expect(mockGetCookie).toHaveBeenCalledWith(spec);
+      expect(mockBatchQueryCookies).toHaveBeenCalledTimes(1);
+      expect(mockBatchQueryCookies).toHaveBeenCalledWith([spec], true);
       expect(result).toHaveLength(1);
       expect(result[0]).toMatchObject({ name: "test", value: "test123" });
     });
@@ -86,17 +92,18 @@ describe("batchGetCookies", () => {
         { name: "auth", domain: "example.com" }, // Duplicate spec
       ];
 
-      mockGetCookie
-        .mockResolvedValueOnce(
-          mockCookie({ name: "auth", domain: "example.com", value: "short" }),
-        )
-        .mockResolvedValueOnce(
-          mockCookie({
-            name: "auth",
-            domain: "example.com",
-            value: "longervalue",
-          }),
-        );
+      mockBatchQueryCookies.mockResolvedValueOnce([
+        {
+          name: "auth",
+          domain: "example.com",
+          value: "short",
+        } as ExportedCookie,
+        {
+          name: "auth",
+          domain: "example.com",
+          value: "longervalue",
+        } as ExportedCookie,
+      ]);
 
       const result = await batchGetCookies(specs);
 
@@ -110,13 +117,18 @@ describe("batchGetCookies", () => {
         { name: "auth", domain: "example.com" },
       ];
 
-      mockGetCookie
-        .mockResolvedValueOnce(
-          mockCookie({ name: "auth", domain: "example.com", value: "value1" }),
-        )
-        .mockResolvedValueOnce(
-          mockCookie({ name: "auth", domain: "example.com", value: "value2" }),
-        );
+      mockBatchQueryCookies.mockResolvedValueOnce([
+        {
+          name: "auth",
+          domain: "example.com",
+          value: "value1",
+        } as ExportedCookie,
+        {
+          name: "auth",
+          domain: "example.com",
+          value: "value2",
+        } as ExportedCookie,
+      ]);
 
       const result = await batchGetCookies(specs, { deduplicate: false });
 
@@ -130,24 +142,23 @@ describe("batchGetCookies", () => {
         { name: "auth", domain: "api.example.com" },
       ];
 
-      mockGetCookie
-        .mockResolvedValueOnce(
-          mockCookie({ name: "auth", domain: "example.com", value: "auth1" }),
-        )
-        .mockResolvedValueOnce(
-          mockCookie({
-            name: "session",
-            domain: "example.com",
-            value: "session1",
-          }),
-        )
-        .mockResolvedValueOnce(
-          mockCookie({
-            name: "auth",
-            domain: "api.example.com",
-            value: "auth2",
-          }),
-        );
+      mockBatchQueryCookies.mockResolvedValueOnce([
+        {
+          name: "auth",
+          domain: "example.com",
+          value: "auth1",
+        } as ExportedCookie,
+        {
+          name: "session",
+          domain: "example.com",
+          value: "session1",
+        } as ExportedCookie,
+        {
+          name: "auth",
+          domain: "api.example.com",
+          value: "auth2",
+        } as ExportedCookie,
+      ]);
 
       const result = await batchGetCookies(specs);
 
@@ -155,12 +166,17 @@ describe("batchGetCookies", () => {
     });
   });
 
-  describe("concurrency control", () => {
-    it("should respect concurrency limit", async () => {
+  describe("concurrency control (fallback mode)", () => {
+    it("should respect concurrency limit when falling back", async () => {
       const specs: CookieSpec[] = Array.from({ length: 10 }, (_, i) => ({
         name: `cookie${i}`,
         domain: "example.com",
       }));
+
+      // Make batch query fail to trigger fallback
+      mockBatchQueryCookies.mockRejectedValueOnce(
+        new Error("Batch query failed"),
+      );
 
       let concurrentCalls = 0;
       let maxConcurrentCalls = 0;
@@ -182,12 +198,16 @@ describe("batchGetCookies", () => {
       expect(mockGetCookie).toHaveBeenCalledTimes(10);
     });
 
-    it("should process all specs even with concurrency limit", async () => {
+    it("should process all specs even with concurrency limit when falling back", async () => {
       const specs: CookieSpec[] = Array.from({ length: 7 }, (_, i) => ({
         name: `cookie${i}`,
         domain: "example.com",
       }));
 
+      // Make batch query fail to trigger fallback
+      mockBatchQueryCookies.mockRejectedValueOnce(
+        new Error("Batch query failed"),
+      );
       mockGetCookie.mockResolvedValue([]);
 
       await batchGetCookies(specs, { concurrency: 3 });
@@ -200,12 +220,17 @@ describe("batchGetCookies", () => {
   });
 
   describe("error handling", () => {
-    it("should continue on error by default", async () => {
+    it("should continue on error by default when falling back", async () => {
       const specs: CookieSpec[] = [
         { name: "cookie1", domain: "example.com" },
         { name: "cookie2", domain: "example.com" },
         { name: "cookie3", domain: "example.com" },
       ];
+
+      // Make batch query fail to trigger fallback
+      mockBatchQueryCookies.mockRejectedValueOnce(
+        new Error("Batch query failed"),
+      );
 
       mockGetCookie
         .mockRejectedValueOnce(new Error("Error 1"))
@@ -232,19 +257,21 @@ describe("batchGetCookies", () => {
       ];
 
       const error = new Error("Test error");
-      mockGetCookie.mockRejectedValueOnce(error);
+      mockBatchQueryCookies.mockRejectedValueOnce(error);
 
+      // When batch query fails with continueOnError: false, it should throw
       await expect(
         batchGetCookies(specs, { continueOnError: false }),
       ).rejects.toThrow("Test error");
-
-      // May be called multiple times due to concurrent processing
-      expect(mockGetCookie).toHaveBeenCalled();
     });
 
     it("should handle non-Error objects in catch", async () => {
       const specs: CookieSpec[] = [{ name: "cookie1", domain: "example.com" }];
 
+      // Make batch query fail to trigger fallback
+      mockBatchQueryCookies.mockRejectedValueOnce(
+        new Error("Batch query failed"),
+      );
       mockGetCookie.mockRejectedValueOnce("String error");
 
       const result = await batchGetCookies(specs);
@@ -256,6 +283,9 @@ describe("batchGetCookies", () => {
 
 describe("batchGetCookiesWithResults", () => {
   const mockGetCookie = getCookie as jest.MockedFunction<typeof getCookie>;
+  const mockBatchQueryCookies = batchQueryCookies as jest.MockedFunction<
+    typeof batchQueryCookies
+  >;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -267,13 +297,18 @@ describe("batchGetCookiesWithResults", () => {
       { name: "cookie2", domain: "example.com" },
     ];
 
-    mockGetCookie
-      .mockResolvedValueOnce(
-        mockCookie({ name: "cookie1", domain: "example.com", value: "value1" }),
-      )
-      .mockResolvedValueOnce(
-        mockCookie({ name: "cookie2", domain: "example.com", value: "value2" }),
-      );
+    mockBatchQueryCookies.mockResolvedValueOnce([
+      {
+        name: "cookie1",
+        domain: "example.com",
+        value: "value1",
+      } as ExportedCookie,
+      {
+        name: "cookie2",
+        domain: "example.com",
+        value: "value2",
+      } as ExportedCookie,
+    ]);
 
     const results = await batchGetCookiesWithResults(specs);
 
@@ -297,6 +332,11 @@ describe("batchGetCookiesWithResults", () => {
       { name: "cookie1", domain: "example.com" },
       { name: "cookie2", domain: "example.com" },
     ];
+
+    // Make batch query fail to trigger fallback
+    mockBatchQueryCookies.mockRejectedValueOnce(
+      new Error("Batch query failed"),
+    );
 
     const error = new Error("Test error");
 
@@ -325,6 +365,11 @@ describe("batchGetCookiesWithResults", () => {
   it("should throw on error when continueOnError is false", async () => {
     const specs: CookieSpec[] = [{ name: "cookie1", domain: "example.com" }];
 
+    // Make batch query fail to trigger fallback
+    mockBatchQueryCookies.mockRejectedValueOnce(
+      new Error("Batch query failed"),
+    );
+
     const error = new Error("Test error");
     mockGetCookie.mockRejectedValueOnce(error);
 
@@ -344,6 +389,11 @@ describe("batchGetCookiesWithResults", () => {
       name: `cookie${i}`,
       domain: "example.com",
     }));
+
+    // Make batch query fail to trigger fallback
+    mockBatchQueryCookies.mockRejectedValueOnce(
+      new Error("Batch query failed"),
+    );
 
     let concurrentCalls = 0;
     let maxConcurrentCalls = 0;

@@ -95,6 +95,7 @@ async function queryAndLimitCookies(
  * @param args - Command line arguments containing optional force flag
  * @param strategy - The browser-specific cookie query strategy to use
  * @param removeExpired - Whether to filter out expired cookies from results
+ * @param deduplicateCookies
  * @param limit - Optional maximum number of cookies to return
  * @param store - Optional path to a specific cookie store file (e.g., Safari binarycookies)
  * @returns Configured QueryOptions object for cookie querying
@@ -136,6 +137,7 @@ function buildQueryOptions(
  * @param limit - Optional maximum number of cookies to return
  * @param removeExpired - Whether to exclude expired cookies from results (default: false)
  * @param store - Optional path to a specific cookie store file for direct access
+ * @param deduplicateCookies
  * @returns Promise that resolves when query and output are complete
  * @example
  * ```typescript

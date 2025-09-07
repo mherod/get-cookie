@@ -25,12 +25,14 @@ async function demonstrateFeatures() {
         `Found ${githubSession.length} GitHub user_session cookie(s):`,
       );
       githubSession.forEach((cookie, i) => {
-        console.log(`  ${i + 1}. Browser: ${cookie.meta.browser}`);
         console.log(
-          `     Profile: ${cookie.meta.file?.split("/").slice(-2, -1)[0] || "Default"}`,
+          `  ${i + 1}. Browser: ${cookie.meta?.browser || "Unknown"}`,
+        );
+        console.log(
+          `     Profile: ${cookie.meta?.file?.split("/").slice(-2, -1)[0] || "Default"}`,
         );
         console.log(`     Expires: ${cookie.expiry}`);
-        console.log(`     Decrypted: ${cookie.meta.decrypted}`);
+        console.log(`     Decrypted: ${cookie.meta?.decrypted || "N/A"}`);
       });
     } else {
       console.log("No GitHub user_session cookies found");
@@ -75,10 +77,7 @@ async function demonstrateFeatures() {
   for (const browser of browsers) {
     try {
       const strategy = CookieStrategyFactory.createStrategy(browser);
-      const cookies = await strategy.queryCookies({
-        name: "%",
-        domain: "github.com",
-      });
+      const cookies = await strategy.queryCookies("%", "github.com");
 
       if (cookies.length > 0) {
         console.log(
@@ -99,15 +98,12 @@ async function demonstrateFeatures() {
   console.log("-".repeat(40));
   try {
     const compositeStrategy = CookieStrategyFactory.createStrategy();
-    const allCookies = await compositeStrategy.queryCookies({
-      name: "%",
-      domain: "github.com",
-    });
+    const allCookies = await compositeStrategy.queryCookies("%", "github.com");
 
     // Group by browser
     const browserGroups = allCookies.reduce(
       (acc, cookie) => {
-        const browser = cookie.meta.browser || "Unknown";
+        const browser = cookie.meta?.browser || "Unknown";
         if (!acc[browser]) {
           acc[browser] = [];
         }

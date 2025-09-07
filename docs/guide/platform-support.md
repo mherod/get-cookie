@@ -4,14 +4,12 @@ This guide details the current platform support status and requirements for get-
 
 ## Support Matrix
 
-| Browser | macOS | Linux | Windows |
-| ------- | ----- | ----- | ------- |
-| Chrome  | ✅    | ✅    | ✅      |
-| Edge    | ✅    | ✅    | ✅      |
-| Firefox | ✅    | ⚠️    | ❌      |
-| Safari  | ✅    | ❌    | ❌      |
+**→ See the complete [Browser Support Matrix](../reference/browser-support.md) for the definitive browser and platform compatibility table**
 
-✅ Full Support | ⚠️ Experimental | ❌ Not Supported
+**Key platforms:**
+- **macOS**: Full support for all 11 browsers including Safari
+- **Linux**: Full support for 10 Chromium and Firefox variants  
+- **Windows**: Full support for 10 browsers (Arc support added April 2024)
 
 ## Platform Details
 
@@ -83,7 +81,7 @@ Full Chrome and Edge support with experimental Firefox support.
 
 ### Windows
 
-Chrome and Edge support available with Firefox support planned.
+Full support for Chrome, Edge, and all Firefox variants.
 
 #### Supported Browsers
 
@@ -93,19 +91,19 @@ Chrome and Edge support available with Firefox support planned.
   - v11+ cookies: AES-128-CBC with PBKDF2 key derivation
   - Windows DPAPI integration for encryption keys
   - Local State file parsing for master key
-- **Firefox**: Not currently supported
+- **Firefox**: Full support for all Firefox variants
 - **Safari**: Not available on platform
 
 #### Requirements
 
-- **Chrome**: Google Chrome installation, Windows DPAPI access
-- Appropriate file permissions
-- Access to `%LOCALAPPDATA%\Google\Chrome\User Data`
+- **Chrome/Edge**: Windows DPAPI access for encrypted cookies
+- **Firefox**: Read access to AppData Firefox profile directories
+- Appropriate file permissions for browser data folders
 
 #### Known Limitations
 
-- **Chrome**: Requires DPAPI access, may need elevated permissions
-- **Firefox**: Not yet implemented
+- **Chrome/Edge**: Requires DPAPI access, may need elevated permissions
+- **Firefox**: Database locking issues possible during browser usage
 - Some Windows configurations may require additional setup
 
 ## Browser-Specific Notes
@@ -130,15 +128,12 @@ Chrome and Edge support available with Firefox support planned.
 
 ### Firefox
 
-- **macOS**: Full support
+- **macOS**: Full support with multi-profile detection
+- **Linux**: Full support with profile management
+- **Windows**: Full support for all Firefox variants (regular, Developer Edition, ESR)
   - Multiple profile support
   - SQLite database access
   - No encryption handling needed
-- **Linux**: Experimental support
-  - Basic cookie access
-  - Profile management
-  - Limited feature set
-- **Windows**: Not supported
 
 ### Safari
 
@@ -204,26 +199,22 @@ which secret-tool
 
 ### Windows
 
-- **Chrome**: Chrome not installed, DPAPI access denied, Local State file inaccessible
-- **Firefox**: Not yet supported
-- Permission issues with browser directories
+- **Chrome/Edge**: DPAPI access denied, Local State file inaccessible
+- **Firefox**: Profile directory inaccessible, database locked
+- Permission issues with browser data directories
 
 ## Future Support Plans
 
-1. **Windows Expansion**
+1. **Browser Expansion**
+   - Additional Chromium-based browser variants
+   - Enhanced Arc browser support across platforms
 
-   - Firefox implementation planned
-   - Chrome optimization and testing
-   - Better DPAPI integration
-
-2. **Linux Improvements**
-
-   - Firefox stability improvements
-   - Chrome keyring optimization
-   - Better profile management
+2. **Platform Optimizations**
+   - Linux keyring integration improvements
+   - Windows DPAPI optimization
+   - macOS keychain access enhancements
 
 3. **Cross-Platform Enhancements**
-   - Unified profile handling
-   - Consistent error reporting
-   - Platform-specific optimisations
-   - Enhanced encryption support
+   - Unified profile handling across browsers
+   - Consistent error reporting and diagnostics
+   - Enhanced encryption support for future browser versions

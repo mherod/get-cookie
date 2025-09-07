@@ -29,6 +29,16 @@ export { SafariCookieQueryStrategy } from "./core/browsers/safari/SafariCookieQu
 export { getCookie } from "./core/cookies/getCookie";
 
 /**
+ * Batch cookie retrieval functions for efficient parallel fetching
+ */
+export {
+  batchGetCookies,
+  batchGetCookiesWithResults,
+  type BatchGetCookiesOptions,
+  type BatchCookieResult,
+} from "./core/cookies/batchGetCookies";
+
+/**
  * Type definitions for cookie-related interfaces and configurations
  */
 export type {

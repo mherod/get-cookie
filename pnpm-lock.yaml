@@ -125,8 +125,8 @@ importers:
         specifier: 8.0.0
         version: 8.0.0(typescript@5.8.3)
       pnpm:
-        specifier: 10.12.4
-        version: 10.12.4
+        specifier: 10.16.0
+        version: 10.16.0
       prettier:
         specifier: ^3.6.2
         version: 3.6.2
@@ -3763,8 +3763,8 @@ packages:
     resolution: {integrity: sha512-Nc3IT5yHzflTfbjgqWcCPpo7DaKy4FnpB0l/zCAW0Tc7jxAiuqSxHasntB3D7887LSrA93kDJ9IXovxJYxyLCA==}
     engines: {node: '>=4'}
 
-  pnpm@10.12.4:
-    resolution: {integrity: sha512-Xqiw3u2U7WhpHJutTJVUknBcXuuKh++GvGLHSiawN7CP+VcPEIsuTb0d0akYb+qSXlJ/FBxkjoWvRWMQdGgBhA==}
+  pnpm@10.16.0:
+    resolution: {integrity: sha512-gGbnsDQhe3AKmk27OgBQYdZBuhMKiZFSE6ELPKSRnBnAN77IBmr9xVm4ljX9uAaxbqZz8kaPuyiqv6E8U+P3aQ==}
     engines: {node: '>=18.12'}
     hasBin: true
 
@@ -8994,7 +8994,7 @@ snapshots:
 
   pluralize@8.0.0: {}
 
-  pnpm@10.12.4: {}
+  pnpm@10.16.0: {}
 
   possible-typed-array-names@1.0.0: {}
 

@@ -37,7 +37,9 @@ const mockExistsSync = existsSync as jest.MockedFunction<typeof existsSync>;
 const mockHomedir = homedir as jest.MockedFunction<typeof homedir>;
 const mockGetPlatform = getPlatform as jest.MockedFunction<typeof getPlatform>;
 const mockSync = (
-  fg as { sync: jest.MockedFunction<(...args: unknown[]) => string[]> }
+  fg as unknown as {
+    sync: jest.MockedFunction<(...args: unknown[]) => string[]>;
+  }
 ).sync;
 
 // Helper functions to reduce main describe block complexity

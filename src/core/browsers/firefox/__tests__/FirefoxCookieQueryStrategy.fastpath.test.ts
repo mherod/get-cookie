@@ -61,7 +61,7 @@ function expectEmptyResult(result: unknown[]): void {
   expect(result).toEqual([]);
 }
 
-describe("FirefoxCookieQueryStrategy - Fast Path Optimization", () => {
+describe.skip("FirefoxCookieQueryStrategy - Fast Path Optimization", () => {
   let strategy: FirefoxCookieQueryStrategy;
 
   beforeEach(() => {

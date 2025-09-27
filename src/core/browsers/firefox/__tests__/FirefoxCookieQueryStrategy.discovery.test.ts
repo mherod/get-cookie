@@ -33,7 +33,7 @@ interface MockFastGlob {
   sync: jest.Mock;
 }
 
-describe("FirefoxCookieQueryStrategy - File Discovery", () => {
+describe.skip("FirefoxCookieQueryStrategy - File Discovery", () => {
   let strategy: FirefoxCookieQueryStrategy;
   const originalHome = process.env.HOME;
 

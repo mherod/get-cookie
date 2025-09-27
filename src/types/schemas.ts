@@ -208,8 +208,7 @@ export const CookieMetaSchema = z
     httpOnly: z.boolean().optional(),
     path: CookiePathSchema.optional(),
   })
-  .catchall(z.unknown())
-  .strict();
+  .catchall(z.unknown());
 
 /**
  * Type definition for cookie metadata
@@ -345,27 +344,27 @@ export const BrowserNameSchema = z.enum([
 export type BrowserName = z.infer<typeof BrowserNameSchema>;
 
 /**
+ * Type definition for cookie query strategy
+ */
+export type CookieQueryStrategy = {
+  browserName: BrowserName;
+  queryCookies: (
+    domain: string,
+    name: string,
+    path?: string,
+    secure?: boolean,
+  ) => Promise<ExportedCookie[]>;
+};
+
+/**
  * Schema for cookie query strategy
  */
 export const CookieQueryStrategySchema = z
   .object({
     browserName: BrowserNameSchema,
-    queryCookies: z
-      .function()
-      .args(
-        z.string(),
-        z.string(),
-        z.string().optional(),
-        z.boolean().optional(),
-      )
-      .returns(z.promise(z.array(ExportedCookieSchema))),
+    queryCookies: z.function(),
   })
   .strict();
-
-/**
- * Type definition for cookie query strategy
- */
-export type CookieQueryStrategy = z.infer<typeof CookieQueryStrategySchema>;
 
 /**
  * Type representing either a single cookie specification or an array of specifications.

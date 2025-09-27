@@ -11,7 +11,11 @@ import { FirefoxCookieQueryStrategy } from "../FirefoxCookieQueryStrategy";
 // Mock dependencies
 jest.mock("node:fs");
 jest.mock("node:os");
-jest.mock("fast-glob");
+jest.mock("fast-glob", () => ({
+  __esModule: true,
+  default: jest.fn(),
+  sync: jest.fn(),
+}));
 jest.mock("@utils/platformUtils", () => ({
   getPlatform: jest.fn().mockReturnValue("darwin"),
   isMacOS: jest.fn().mockReturnValue(true),
@@ -31,13 +35,15 @@ jest.mock("../../platform/PlatformBrowserControl", () => ({
 
 const mockExistsSync = existsSync as jest.MockedFunction<typeof existsSync>;
 const mockHomedir = homedir as jest.MockedFunction<typeof homedir>;
-const mockFg = fg as jest.Mocked<typeof fg>;
 const mockGetPlatform = getPlatform as jest.MockedFunction<typeof getPlatform>;
+const mockSync = (
+  fg as { sync: jest.MockedFunction<(...args: unknown[]) => string[]> }
+).sync;
 
 // Helper functions to reduce main describe block complexity
 function setupMocksForNoFirefox(): void {
   mockExistsSync.mockReturnValue(false);
-  mockFg.sync.mockReturnValue([]);
+  mockSync.mockReturnValue([]);
 }
 
 function setupMocksForInstalledFirefox(platform: string): void {
@@ -46,7 +52,7 @@ function setupMocksForInstalledFirefox(platform: string): void {
 }
 
 function expectNoGlobCalls(): void {
-  expect(mockFg.sync).not.toHaveBeenCalled();
+  expect(mockSync).not.toHaveBeenCalled();
 }
 
 function expectEmptyResult(result: unknown[]): void {
@@ -91,14 +97,14 @@ describe("FirefoxCookieQueryStrategy - Fast Path Optimization", () => {
 
   it("should perform glob operations when Firefox profile directory exists", async () => {
     setupMocksForInstalledFirefox("darwin");
-    mockFg.sync.mockReturnValue([
+    mockSync.mockReturnValue([
       join(
         "/Users/test",
         "Library/Application Support/Firefox/Profiles/abc123/cookies.sqlite",
       ),
     ]);
     await strategy.queryCookies("test", "example.com");
-    expect(mockFg.sync).toHaveBeenCalledWith(
+    expect(mockSync).toHaveBeenCalledWith(
       join(
         "/Users/test",
         "Library/Application Support/Firefox/Profiles/*/cookies.sqlite",
@@ -108,7 +114,7 @@ describe("FirefoxCookieQueryStrategy - Fast Path Optimization", () => {
 
   it("should find multiple Firefox profiles", async () => {
     setupMocksForInstalledFirefox("darwin");
-    mockFg.sync.mockReturnValue([
+    mockSync.mockReturnValue([
       join(
         "/Users/test",
         "Library/Application Support/Firefox/Profiles/profile1/cookies.sqlite",
@@ -119,7 +125,7 @@ describe("FirefoxCookieQueryStrategy - Fast Path Optimization", () => {
       ),
     ]);
     await strategy.queryCookies("test", "example.com");
-    expect(mockFg.sync).toHaveBeenCalled();
+    expect(mockSync).toHaveBeenCalled();
   });
 
   it("should return empty array for unsupported platforms", async () => {

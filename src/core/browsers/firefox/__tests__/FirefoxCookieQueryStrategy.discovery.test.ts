@@ -2,6 +2,8 @@ import { FirefoxCookieQueryStrategy } from "../FirefoxCookieQueryStrategy";
 
 // Mock fast-glob
 jest.mock("fast-glob", () => ({
+  __esModule: true,
+  default: jest.fn(),
   sync: jest.fn(),
 }));
 

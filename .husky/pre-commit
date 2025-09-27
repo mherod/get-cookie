@@ -1,5 +1,4 @@
 #!/bin/sh
-. "$(dirname "$0")/_/husky.sh"
 
 # Load nvm and use the project's Node.js version
 export NVM_DIR="$HOME/.nvm"

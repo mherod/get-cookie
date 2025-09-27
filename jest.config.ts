@@ -1,4 +1,4 @@
-module.exports = {
+export default {
   rootDir: "src",
   moduleFileExtensions: ["js", "ts", "json"],
   moduleNameMapper: {

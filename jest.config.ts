@@ -1,4 +1,4 @@
-module.exports = {
+export default {
   rootDir: "src",
   moduleFileExtensions: ["js", "ts", "json"],
   moduleNameMapper: {
@@ -13,7 +13,7 @@ module.exports = {
   testMatch: ["**/__tests__/**/*.[jt]s?(x)", "**/?(*.)+(spec|test).[jt]s?(x)"],
   testPathIgnorePatterns: ["/node_modules/", "/fixtures/", ".*setup\\.[jt]s$"],
   transform: {
-    "^.+\\.ts$": "ts-jest",
+    "^.+\\.ts$": ["ts-jest", { useESM: true }],
   },
   setupFiles: ["<rootDir>/../jest.setup.js"],
   collectCoverage: true,
@@ -45,4 +45,5 @@ module.exports = {
   notify: false,
   notifyMode: "failure-change",
   testTimeout: 10000, // 10 second timeout per test
+  extensionsToTreatAsEsm: [".ts"],
 };

@@ -74,7 +74,7 @@ async function testWindowsDPAPI(): Promise<void> {
 
   try {
     // This will fail without Chrome installed, but tests the flow
-    const password = getChromePassword();
+    const password = await getChromePassword();
     // Use the password to avoid unused variable warnings
     expect(password).toBeDefined();
   } catch (error) {

@@ -33,6 +33,13 @@ jobs:
         with:
           fetch-depth: 1
 
+      - name: Dependabot Rebase Comment (if merge conflict)
+        if: |
+          startsWith(github.event.pull_request.head.ref, 'dependabot/') &&
+          github.event.pull_request.mergeable == false &&
+          github.event.pull_request.mergeable_state == 'dirty'
+        run: |
+          gh pr comment ${{ github.event.pull_request.number }} --body "@dependabot rebase" || true
       - name: Run Claude Code Review
         id: claude-review
         uses: anthropics/claude-code-action@v1
@@ -61,6 +68,9 @@ jobs:
 
             Use `gh pr comment` with your Bash tool to leave your review as a comment on the PR.
 
+            If this is a Dependabot PR and it is conflicting with main, use:
+            `gh pr comment ${{ github.event.pull_request.number }} --body "@dependabot rebase"`
+            to request a rebase from dependabot.
           # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
           # or https://docs.claude.com/en/docs/claude-code/cli-reference for available options
           claude_args: '--allowed-tools "Bash(gh issue view:*),Bash(gh search:*),Bash(gh issue list:*),Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr list:*)"'

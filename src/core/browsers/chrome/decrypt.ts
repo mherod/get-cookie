@@ -185,7 +185,7 @@ export async function decrypt(
         decipher.setAutoPadding(false);
 
         // Decrypt the value
-        let decrypted = decipher.update(value);
+        let decrypted: Buffer = decipher.update(value);
         try {
           decipher.final();
         } catch (e) {

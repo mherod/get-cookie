@@ -289,6 +289,8 @@ jobs:
   # Documentation build - always thorough
   docs:
     name: Build Documentation
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     needs: [changes, validate]
     steps:

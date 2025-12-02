@@ -333,6 +333,8 @@ jobs:
 
   # Final status check for branch protection
   status-check:
+    permissions:
+      contents: read
     name: CI Status
     runs-on: ubuntu-latest
     needs: [validate, docs]

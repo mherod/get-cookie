@@ -14,7 +14,7 @@ jobs:
   claude-review:
     # Skip Dependabot PRs - secrets are not accessible to Dependabot workflows
     if: github.actor != 'dependabot[bot]'
-    # Optional: Filter by PR author
+    # Optional: Filter to specific PR authors
     # if: |
     #   github.event.pull_request.user.login == 'external-contributor' ||
     #   github.event.pull_request.user.login == 'new-developer' ||
@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      pull-requests: read
+      pull-requests: write
       issues: read
       id-token: write
 
@@ -33,13 +33,6 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Dependabot Rebase Comment (if merge conflict)
-        if: |
-          startsWith(github.event.pull_request.head.ref, 'dependabot/') &&
-          github.event.pull_request.mergeable == false &&
-          github.event.pull_request.mergeable_state == 'dirty'
-        run: |
-          gh pr comment ${{ github.event.pull_request.number }} --body "@dependabot rebase" || true
       - name: Run Claude Code Review
         id: claude-review
         uses: anthropics/claude-code-action@v1
@@ -49,28 +42,135 @@ jobs:
             REPO: ${{ github.repository }}
             PR NUMBER: ${{ github.event.pull_request.number }}
 
-            Please review this pull request and provide feedback on:
-            - Code quality and best practices
-            - Potential bugs or issues
-            - Performance considerations
-            - Security concerns
-            - Test coverage
+            ## 📋 REVIEW WORKFLOW
 
-            Use the repository's CLAUDE.md for guidance on style and conventions. Be constructive and helpful in your feedback.
+            ### Step 1: Gather Context
+            ```
+            gh pr view ${{ github.event.pull_request.number }}
+            gh pr view ${{ github.event.pull_request.number }} --comments
+            gh pr diff ${{ github.event.pull_request.number }}
+            ```
+            Also read CLAUDE.md for repository conventions and style guidance.
 
-            Before commenting, use `gh pr view --comments` to read all existing pull request comments to avoid repeating comments that have already been raised.
+            ### Step 2: Check for Existing Comments (⚠️ CRITICAL)
 
-            Note: If you notice that issues previously raised in comments have since been addressed in the pull request, consider updating or resolving your previous comments accordingly.
+            Before creating ANY new comment, check if you have previously commented on this PR.
 
-            Use `gh pr diff` to view the diff of the PR.
+            **If you have an existing comment:**
+            1. Compare the current PR state against issues raised in your previous comment
+            2. UPDATE your existing comment using `gh pr comment --edit-last` - do NOT create a new comment
+               - All issues resolved → Update to acknowledge fixes, or delete with `gh pr comment --delete-last --yes`
+               - Some issues remain → Update with current status, noting what's fixed vs still needs work
+               - New issues found → Update to include new feedback alongside remaining original issues
+            3. For checklist-style comments:
+               - Mark items as complete `- [x]` when addressed
+               - Keep items unchecked `- [ ]` if still needs work
+               - Add new items for newly discovered issues
+            4. Only create a NEW comment if you have never commented on this PR before
 
-            Use `gh pr view` to view the PR.
+            This prevents comment spam and maintains a clean, trackable review history.
 
-            Use `gh pr comment` with your Bash tool to leave your review as a comment on the PR.
+            ---
 
-            If this is a Dependabot PR and it is conflicting with main, use:
-            `gh pr comment ${{ github.event.pull_request.number }} --body "@dependabot rebase"`
-            to request a rebase from dependabot.
+            ## 🔍 REVIEW CRITERIA
+
+            Evaluate the PR against these areas:
+
+            | Area | What to Look For |
+            |------|------------------|
+            | **Correctness** | Logic errors, edge cases, off-by-one errors, null/undefined handling |
+            | **Security** | Injection vulnerabilities, credential exposure, unsafe data handling |
+            | **Performance** | N+1 queries, unnecessary re-renders, memory leaks, inefficient algorithms |
+            | **Maintainability** | Code clarity, appropriate abstractions, DRY violations, naming |
+            | **Testing** | Adequate coverage, meaningful assertions, edge case testing |
+            | **TypeScript** | Type safety, avoiding `any`, proper generics usage |
+            | **Error Handling** | Graceful degradation, informative error messages, proper try/catch |
+
+            ---
+
+            ## 📝 COMMENT FORMATTING
+
+            Structure your feedback clearly:
+
+            **For issues found, use severity indicators:**
+            - 🔴 **Critical** - Must fix before merge (bugs, security issues, data loss risks)
+            - 🟡 **Warning** - Should fix, but not blocking (performance, maintainability concerns)
+            - 🔵 **Suggestion** - Nice to have improvements (style, minor optimizations)
+            - 💭 **Question** - Seeking clarification on intent or approach
+
+            **Always be specific:**
+            - Reference file names and line numbers when possible
+            - Explain WHY something is an issue, not just WHAT
+            - Provide concrete suggestions or code examples when helpful
+            - Link to relevant documentation if applicable
+
+            **Be constructive:**
+            - Acknowledge good practices and clever solutions with a 👍
+            - Frame feedback as suggestions, not demands
+            - If the PR is well-done, say so! A simple "LGTM" with brief praise is valuable
+
+            ---
+
+            ## 🤖 DEPENDABOT PRs
+
+            For Dependabot PRs (branch starts with `dependabot/`):
+            - Focus on: breaking changes, changelog review, compatibility concerns
+            - If PR has merge conflicts, comment: `@dependabot rebase`
+            - If update looks safe with no breaking changes, approve promptly
+            - Check if major version bumps require code changes
+
+            ---
+
+            ## ✅ PR REVIEW ACTIONS
+
+            After analyzing the PR, take ONE of these actions:
+
+            **Hold off on formal review if:**
+            - You've left comments with outstanding issues needing response
+            - You need clarification before making a judgment
+            - Critical problems exist that need discussion first
+
+            **Approve (`gh pr review --approve -b "..."`) if:**
+            - PR is ready to merge as-is
+            - Only minor suggestions that don't block merging
+            - All previous concerns have been addressed
+
+            **Request changes (`gh pr review --request-changes -b "..."`) if:**
+            - Critical bugs or security issues exist
+            - Changes would break functionality
+            - Use sparingly - prefer comments for most feedback
+
+            ---
+
+            ## 📊 COMMENT TEMPLATE
+
+            Use this structure for comprehensive reviews:
+
+            ```markdown
+            ## PR Review: [Brief Summary]
+
+            ### Overview
+            [1-2 sentence summary of what this PR does and overall impression]
+
+            ### Findings
+
+            #### 🔴 Critical
+            - [ ] Issue description with file:line reference
+
+            #### 🟡 Warnings
+            - [ ] Issue description with file:line reference
+
+            #### 🔵 Suggestions
+            - [ ] Suggestion description
+
+            ### 👍 What's Good
+            - Positive observation
+
+            ### Summary
+            [Overall assessment and next steps]
+            ```
+
+            For simple/clean PRs, a brief comment is fine - don't over-engineer the review format.
           # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
           # or https://docs.claude.com/en/docs/claude-code/cli-reference for available options
-          claude_args: '--allowed-tools "Bash(gh issue view:*),Bash(gh search:*),Bash(gh issue list:*),Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr list:*)"'
+          claude_args: '--allowed-tools "Bash(gh issue view:*),Bash(gh search:*),Bash(gh issue list:*),Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr list:*),Bash(gh pr review:*)"'

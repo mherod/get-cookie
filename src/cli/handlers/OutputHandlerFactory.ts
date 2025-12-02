@@ -109,9 +109,7 @@ export class OutputHandlerFactory {
   public getHandler(args: ParsedArgs): OutputHandler {
     this.validateOutputFormat(args);
 
-    return (
-      this.handlers.find((handler) => handler.canHandle(args)) ??
-      new DefaultOutputHandler()
-    );
+    const handler = this.handlers.find((h) => h.canHandle(args));
+    return handler ?? new DefaultOutputHandler();
   }
 }

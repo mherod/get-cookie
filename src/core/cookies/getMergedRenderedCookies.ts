@@ -4,6 +4,7 @@ import type {
   RenderOptions,
 } from "../../types/schemas";
 import { ExportedCookieSchema } from "../../types/schemas";
+import { getErrorMessage } from "../../utils/errorUtils";
 import logger from "../../utils/logger";
 
 import { getCookie } from "./getCookie";
@@ -53,7 +54,7 @@ export async function getMergedRenderedCookies(
   } catch (error: unknown) {
     logger.warn(
       "Error getting merged rendered cookies:",
-      error instanceof Error ? error.message : String(error),
+      getErrorMessage(error),
     );
     return "";
   }

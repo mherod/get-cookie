@@ -1,4 +1,5 @@
 import type { CookieSpec, ExportedCookie } from "../../types/schemas";
+import { getErrorMessage } from "../../utils/errorUtils";
 import logger from "../../utils/logger";
 import { FirefoxCookieQueryStrategy } from "../browsers/firefox/FirefoxCookieQueryStrategy";
 
@@ -35,10 +36,7 @@ export async function getFirefoxCookie(
     );
     return cookies;
   } catch (error: unknown) {
-    logger.warn(
-      "Error querying Firefox cookies:",
-      error instanceof Error ? error.message : String(error),
-    );
+    logger.warn("Error querying Firefox cookies:", getErrorMessage(error));
     return [];
   }
 }

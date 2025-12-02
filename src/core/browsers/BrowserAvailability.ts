@@ -4,7 +4,7 @@
  */
 
 import { execSync } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, readdirSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
@@ -70,31 +70,31 @@ const BROWSER_PATHS = {
   },
   win32: {
     chrome: [
-      join(process.env.LOCALAPPDATA || "", "Google", "Chrome"),
-      join(process.env.PROGRAMFILES || "", "Google", "Chrome"),
-      join(process.env["PROGRAMFILES(X86)"] || "", "Google", "Chrome"),
+      join(process.env.LOCALAPPDATA ?? "", "Google", "Chrome"),
+      join(process.env.PROGRAMFILES ?? "", "Google", "Chrome"),
+      join(process.env["PROGRAMFILES(X86)"] ?? "", "Google", "Chrome"),
     ],
     firefox: [
-      join(process.env.APPDATA || "", "Mozilla", "Firefox"),
-      join(process.env.PROGRAMFILES || "", "Mozilla Firefox"),
-      join(process.env["PROGRAMFILES(X86)"] || "", "Mozilla Firefox"),
+      join(process.env.APPDATA ?? "", "Mozilla", "Firefox"),
+      join(process.env.PROGRAMFILES ?? "", "Mozilla Firefox"),
+      join(process.env["PROGRAMFILES(X86)"] ?? "", "Mozilla Firefox"),
     ],
     safari: [], // Safari not available on Windows
     edge: [
-      join(process.env.LOCALAPPDATA || "", "Microsoft", "Edge"),
-      join(process.env.PROGRAMFILES || "", "Microsoft", "Edge"),
-      join(process.env["PROGRAMFILES(X86)"] || "", "Microsoft", "Edge"),
+      join(process.env.LOCALAPPDATA ?? "", "Microsoft", "Edge"),
+      join(process.env.PROGRAMFILES ?? "", "Microsoft", "Edge"),
+      join(process.env["PROGRAMFILES(X86)"] ?? "", "Microsoft", "Edge"),
     ],
     arc: [], // Arc not available on Windows yet
     opera: [
-      join(process.env.APPDATA || "", "Opera Software", "Opera Stable"),
-      join(process.env.PROGRAMFILES || "", "Opera"),
-      join(process.env["PROGRAMFILES(X86)"] || "", "Opera"),
+      join(process.env.APPDATA ?? "", "Opera Software", "Opera Stable"),
+      join(process.env.PROGRAMFILES ?? "", "Opera"),
+      join(process.env["PROGRAMFILES(X86)"] ?? "", "Opera"),
     ],
     "opera-gx": [
-      join(process.env.APPDATA || "", "Opera Software", "Opera GX Stable"),
-      join(process.env.PROGRAMFILES || "", "Opera GX"),
-      join(process.env["PROGRAMFILES(X86)"] || "", "Opera GX"),
+      join(process.env.APPDATA ?? "", "Opera Software", "Opera GX Stable"),
+      join(process.env.PROGRAMFILES ?? "", "Opera GX"),
+      join(process.env["PROGRAMFILES(X86)"] ?? "", "Opera GX"),
     ],
   },
   linux: {
@@ -128,11 +128,22 @@ const BROWSER_PATHS = {
  * @returns True if the browser is installed
  */
 function checkBrowserInstalled(browser: BrowserType): boolean {
-  const platform = getPlatform() as keyof typeof BROWSER_PATHS;
-  const paths = BROWSER_PATHS[platform]?.[browser] || [];
+  const platform = getPlatform();
+
+  // Defensive check: handle unexpected platform values gracefully
+  // Check if platform exists in BROWSER_PATHS before accessing
+  if (!(platform in BROWSER_PATHS)) {
+    return false;
+  }
+
+  const platformKey = platform as keyof typeof BROWSER_PATHS;
+  const platformPaths = BROWSER_PATHS[platformKey];
+
+  // Defensive check: handle missing browser entries gracefully
+  const paths = browser in platformPaths ? platformPaths[browser] : [];
 
   for (const path of paths) {
-    if (path && existsSync(path)) {
+    if (existsSync(path)) {
       logger.debug("Found browser installation", { browser, path });
       return true;
     }
@@ -181,7 +192,7 @@ function getBrowserVersion(browser: BrowserType): string | undefined {
       return undefined;
     }
 
-    if (command) {
+    if (command !== undefined) {
       const version = execSync(command, { encoding: "utf8" }).trim();
       logger.debug("Got browser version", { browser, version });
       return version;
@@ -194,67 +205,116 @@ function getBrowserVersion(browser: BrowserType): string | undefined {
 }
 
 /**
+ * Find Chrome/Edge profiles in a base path
+ * @param basePath - Base directory path for browser profiles
+ * @returns Array of profile paths found
+ */
+function findChromiumProfiles(basePath: string): string[] {
+  const profiles: string[] = [];
+
+  if (!existsSync(basePath)) {
+    return profiles;
+  }
+
+  // Look for Default profile
+  const defaultProfile = join(basePath, "Default");
+  if (existsSync(defaultProfile)) {
+    profiles.push(defaultProfile);
+  }
+
+  // Look for numbered profiles (Profile 1, Profile 2, etc.)
+  for (let i = 1; i <= 10; i++) {
+    const profilePath = join(basePath, `Profile ${i}`);
+    if (existsSync(profilePath)) {
+      profiles.push(profilePath);
+    }
+  }
+
+  return profiles;
+}
+
+/**
+ * Find Firefox profiles in a base path
+ * @param basePath - Base directory path for Firefox profiles
+ * @returns Array of profile paths found
+ */
+function findFirefoxProfilesInPath(basePath: string): string[] {
+  const profiles: string[] = [];
+
+  if (!existsSync(basePath)) {
+    return profiles;
+  }
+
+  const profileDirs: string[] = readdirSync(basePath);
+  for (const dir of profileDirs) {
+    // Firefox profiles usually have .default or .default-release suffix
+    if (dir.includes("default")) {
+      const profilePath = join(basePath, dir);
+      profiles.push(profilePath);
+    }
+  }
+
+  return profiles;
+}
+
+/**
+ * Get base path for Chromium-based browsers (Chrome/Edge)
+ * @param browser - Browser type (chrome or edge)
+ * @returns Base path for browser profiles
+ */
+function getChromiumBasePath(browser: "chrome" | "edge"): string {
+  const home = homedir();
+  if (isMacOS()) {
+    return join(
+      home,
+      "Library",
+      "Application Support",
+      browser === "chrome" ? "Google/Chrome" : "Microsoft Edge",
+    );
+  }
+  if (isWindows()) {
+    return join(
+      process.env.LOCALAPPDATA ?? "",
+      browser === "chrome" ? "Google/Chrome" : "Microsoft/Edge",
+    );
+  }
+  return join(
+    home,
+    ".config",
+    browser === "chrome" ? "google-chrome" : "microsoft-edge",
+  );
+}
+
+/**
+ * Get base path for Firefox browser
+ * @returns Base path for Firefox profiles
+ */
+function getFirefoxBasePath(): string {
+  const home = homedir();
+  if (isMacOS()) {
+    return join(home, "Library", "Application Support", "Firefox", "Profiles");
+  }
+  if (isWindows()) {
+    return join(process.env.APPDATA ?? "", "Mozilla", "Firefox", "Profiles");
+  }
+  return join(home, ".mozilla", "firefox");
+}
+
+/**
  * Finds profile directories for a browser
  * @param browser - The browser type
  * @returns Array of profile paths
  */
 function findBrowserProfiles(browser: BrowserType): string[] {
   const profiles: string[] = [];
-  const home = homedir();
 
   try {
     if (browser === "chrome" || browser === "edge") {
-      const basePath = isMacOS()
-        ? join(
-            home,
-            "Library",
-            "Application Support",
-            browser === "chrome" ? "Google/Chrome" : "Microsoft Edge",
-          )
-        : isWindows()
-          ? join(
-              process.env.LOCALAPPDATA || "",
-              browser === "chrome" ? "Google/Chrome" : "Microsoft/Edge",
-            )
-          : join(
-              home,
-              ".config",
-              browser === "chrome" ? "google-chrome" : "microsoft-edge",
-            );
-
-      if (existsSync(basePath)) {
-        // Look for Default profile
-        const defaultProfile = join(basePath, "Default");
-        if (existsSync(defaultProfile)) {
-          profiles.push(defaultProfile);
-        }
-
-        // Look for numbered profiles (Profile 1, Profile 2, etc.)
-        for (let i = 1; i <= 10; i++) {
-          const profilePath = join(basePath, `Profile ${i}`);
-          if (existsSync(profilePath)) {
-            profiles.push(profilePath);
-          }
-        }
-      }
+      const basePath = getChromiumBasePath(browser);
+      profiles.push(...findChromiumProfiles(basePath));
     } else if (browser === "firefox") {
-      const basePath = isMacOS()
-        ? join(home, "Library", "Application Support", "Firefox", "Profiles")
-        : isWindows()
-          ? join(process.env.APPDATA || "", "Mozilla", "Firefox", "Profiles")
-          : join(home, ".mozilla", "firefox");
-
-      if (existsSync(basePath)) {
-        const { readdirSync } = require("node:fs");
-        const profileDirs = readdirSync(basePath);
-        for (const dir of profileDirs) {
-          const profilePath = join(basePath, dir);
-          // Firefox profiles usually have .default or .default-release suffix
-          if (dir.includes("default")) {
-            profiles.push(profilePath);
-          }
-        }
-      }
+      const basePath = getFirefoxBasePath();
+      profiles.push(...findFirefoxProfilesInPath(basePath));
     }
   } catch (error) {
     logger.debug("Failed to find browser profiles", { browser, error });
@@ -265,9 +325,14 @@ function findBrowserProfiles(browser: BrowserType): string[] {
 
 /**
  * Detects all available browsers on the current system
+ *
+ * Note: This function is intentionally synchronous. All file system operations
+ * (existsSync, readdirSync) are synchronous, and all callers use this function
+ * synchronously. No async/await patterns are used anywhere in the codebase.
+ *
  * @returns Array of available browser information
  */
-export async function detectAvailableBrowsers(): Promise<AvailableBrowser[]> {
+export function detectAvailableBrowsers(): AvailableBrowser[] {
   const browsers: BrowserType[] = [
     "chrome",
     "firefox",
@@ -292,14 +357,14 @@ export async function detectAvailableBrowsers(): Promise<AvailableBrowser[]> {
       };
 
       const version = getBrowserVersion(browser);
-      if (version) {
+      if (version !== undefined) {
         info.version = version;
       }
 
       logger.info("Found available browser", {
         browser: info.name,
         version: info.version,
-        profiles: info.profilePaths?.length || 0,
+        profiles: info.profilePaths?.length ?? 0,
       });
 
       available.push(info);
@@ -338,9 +403,7 @@ function getBrowserDisplayName(browser: BrowserType): string {
  * @param browser - The browser type to check
  * @returns True if the browser is available
  */
-export async function isBrowserAvailable(
-  browser: BrowserType,
-): Promise<boolean> {
+export function isBrowserAvailable(browser: BrowserType): boolean {
   return checkBrowserInstalled(browser);
 }
 
@@ -349,9 +412,9 @@ export async function isBrowserAvailable(
  * @param browser - The browser type
  * @returns Browser information or undefined if not available
  */
-export async function getBrowserInfo(
+export function getBrowserInfo(
   browser: BrowserType,
-): Promise<AvailableBrowser | undefined> {
+): AvailableBrowser | undefined {
   const installed = checkBrowserInstalled(browser);
 
   if (!installed) {
@@ -366,7 +429,7 @@ export async function getBrowserInfo(
   };
 
   const version = getBrowserVersion(browser);
-  if (version) {
+  if (version !== undefined) {
     result.version = version;
   }
 
@@ -377,8 +440,8 @@ export async function getBrowserInfo(
  * Gets only the installed browsers
  * @returns Array of installed browsers
  */
-export async function getInstalledBrowsers(): Promise<AvailableBrowser[]> {
-  const all = await detectAvailableBrowsers();
+export function getInstalledBrowsers(): AvailableBrowser[] {
+  const all = detectAvailableBrowsers();
   return all.filter((b) => b.installed);
 }
 
@@ -386,8 +449,8 @@ export async function getInstalledBrowsers(): Promise<AvailableBrowser[]> {
  * Suggests the best browser to use based on availability
  * @returns The recommended browser type or undefined
  */
-export async function suggestBrowser(): Promise<BrowserType | undefined> {
-  const installed = await getInstalledBrowsers();
+export function suggestBrowser(): BrowserType | undefined {
+  const installed = getInstalledBrowsers();
 
   if (installed.length === 0) {
     logger.warn("No browsers found on system");

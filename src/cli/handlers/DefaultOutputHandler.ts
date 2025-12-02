@@ -50,9 +50,20 @@ export class DefaultOutputHandler implements OutputHandler {
    * ```
    */
   public handle(results: ExportedCookie[]): void {
-    const uniqueValues = new Set(
-      results.map((result) => result.value as string),
-    );
+    if (results.length === 0) {
+      logger.debug("No cookies found to output");
+      return;
+    }
+
+    const uniqueValues = new Set<string>();
+    for (const result of results) {
+      // CookieValueSchema uses z.any(), so we use type assertion with runtime validation
+      const value = result.value as string;
+      if (typeof value === "string" && value.length > 0) {
+        uniqueValues.add(value);
+      }
+    }
+
     for (const value of uniqueValues) {
       logger.log(value);
     }

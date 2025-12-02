@@ -106,46 +106,17 @@ export class EnhancedCookieQueryService {
     const startTime = Date.now();
 
     try {
-      // Validate input
       this.validateOptions(options);
 
       // Check cache if enabled
-      if (options.enableCache && !options.force) {
-        const cached = this.getCachedResult<ExportedCookie>(options);
-        if (cached) {
-          logger.debug("Cache hit", {
-            browser: options.browser,
-            name: options.name,
-            domain: options.domain,
-          });
-
-          const result: QueryResult<ExportedCookie> = {
-            data: cached,
-            cached: true,
-          };
-
-          if (options.includeMetrics) {
-            result.metrics = {
-              query: this.getCacheKey(options),
-              duration: Date.now() - startTime,
-              rowCount: cached.length,
-              filepath: options.filepath || "cache",
-              timestamp: Date.now(),
-              success: true,
-            };
-          }
-
-          return result;
-        }
+      const cachedResult = this.tryGetCachedResult(options, startTime);
+      if (cachedResult) {
+        return cachedResult;
       }
 
-      // Get or create query builder
+      // Build query and get filepaths
       const builder = this.getQueryBuilder(options.browser);
-
-      // Build SQL query
       const queryConfig = builder.buildSelectQuery(options);
-
-      // Get filepath(s) to query
       const filepaths = await this.getFilepaths(options);
 
       if (filepaths.length === 0) {
@@ -153,85 +124,189 @@ export class EnhancedCookieQueryService {
         return { data: [], cached: false };
       }
 
-      // Execute queries
-      const results: ExportedCookie[] = [];
-      const metrics: QueryMetrics[] = [];
-
-      for (const filepath of filepaths) {
-        const fileResults = await this.queryFile(
-          filepath,
-          queryConfig,
-          options,
-          builder,
-        );
-
-        results.push(...fileResults.data);
-
-        if (fileResults.metrics) {
-          metrics.push(fileResults.metrics);
-        }
-      }
+      // Execute queries across all files
+      const results = await this.executeQueriesAcrossFiles(
+        filepaths,
+        queryConfig,
+        options,
+        builder,
+      );
 
       // Cache results if enabled
       if (options.enableCache) {
         this.cacheResult(options, results);
       }
 
-      // Aggregate metrics
+      // Build and return result
       const totalDuration = Date.now() - startTime;
-
-      logger.info("Query completed", {
-        browser: options.browser,
-        filesQueried: filepaths.length,
-        resultsFound: results.length,
-        duration: totalDuration,
-      });
-
-      const result: QueryResult<ExportedCookie> = {
-        data: results,
-        cached: false,
-      };
-
-      if (options.includeMetrics) {
-        result.metrics = {
-          query: queryConfig.description || queryConfig.sql,
-          duration: totalDuration,
-          rowCount: results.length,
-          filepath: filepaths.join(", "),
-          timestamp: Date.now(),
-          success: true,
-        };
-      }
-
-      return result;
+      return this.buildQueryResult(
+        results,
+        queryConfig,
+        filepaths,
+        totalDuration,
+        options,
+      );
     } catch (error) {
       const duration = Date.now() - startTime;
-
-      logError("Cookie query failed", error, {
-        browser: options.browser,
-        name: options.name,
-        domain: options.domain,
-        duration,
-      });
-
-      if (options.includeMetrics) {
-        return {
-          data: [],
-          metrics: {
-            query: "Failed query",
-            duration,
-            rowCount: 0,
-            filepath: options.filepath || "unknown",
-            timestamp: Date.now(),
-            success: false,
-            error: (error as Error).message,
-          },
-          cached: false,
-        };
-      }
-
-      throw error;
+      return this.handleQueryError(error, options, duration);
     }
+  }
+
+  /**
+   * Try to get cached result if available
+   * @param options - Query options
+   * @param startTime - Query start time for metrics
+   * @returns Cached result or null if not cached
+   */
+  private tryGetCachedResult(
+    options: EnhancedQueryOptions,
+    startTime: number,
+  ): QueryResult<ExportedCookie> | null {
+    if (!options.enableCache || options.force) {
+      return null;
+    }
+
+    const cached = this.getCachedResult<ExportedCookie>(options);
+    if (!cached) {
+      return null;
+    }
+
+    logger.debug("Cache hit", {
+      browser: options.browser,
+      name: options.name,
+      domain: options.domain,
+    });
+
+    const result: QueryResult<ExportedCookie> = {
+      data: cached,
+      cached: true,
+    };
+
+    if (options.includeMetrics) {
+      result.metrics = {
+        query: this.getCacheKey(options),
+        duration: Date.now() - startTime,
+        rowCount: cached.length,
+        filepath: options.filepath ?? "cache",
+        timestamp: Date.now(),
+        success: true,
+      };
+    }
+
+    return result;
+  }
+
+  /**
+   * Execute queries across multiple files
+   * @param filepaths - Array of file paths to query
+   * @param queryConfig - Query configuration
+   * @param queryConfig.sql
+   * @param queryConfig.params
+   * @param options - Query options
+   * @param builder - Query builder instance
+   * @returns Array of exported cookies from all files
+   */
+  private async executeQueriesAcrossFiles(
+    filepaths: string[],
+    queryConfig: { sql: string; params: unknown[] },
+    options: EnhancedQueryOptions,
+    builder: CookieQueryBuilder,
+  ): Promise<ExportedCookie[]> {
+    const results: ExportedCookie[] = [];
+
+    for (const filepath of filepaths) {
+      const fileResults = await this.queryFile(
+        filepath,
+        queryConfig,
+        options,
+        builder,
+      );
+      results.push(...fileResults.data);
+    }
+
+    return results;
+  }
+
+  /**
+   * Build query result with optional metrics
+   * @param results - Query results
+   * @param queryConfig - Query configuration
+   * @param queryConfig.sql
+   * @param queryConfig.description
+   * @param filepaths - Array of file paths queried
+   * @param duration - Query duration in milliseconds
+   * @param options - Query options
+   * @returns Query result with data and optional metrics
+   */
+  private buildQueryResult(
+    results: ExportedCookie[],
+    queryConfig: { sql: string; description?: string },
+    filepaths: string[],
+    duration: number,
+    options: EnhancedQueryOptions,
+  ): QueryResult<ExportedCookie> {
+    logger.info("Query completed", {
+      browser: options.browser,
+      filesQueried: filepaths.length,
+      resultsFound: results.length,
+      duration,
+    });
+
+    const result: QueryResult<ExportedCookie> = {
+      data: results,
+      cached: false,
+    };
+
+    if (options.includeMetrics) {
+      result.metrics = {
+        query: queryConfig.description ?? queryConfig.sql,
+        duration,
+        rowCount: results.length,
+        filepath: filepaths.join(", "),
+        timestamp: Date.now(),
+        success: true,
+      };
+    }
+
+    return result;
+  }
+
+  /**
+   * Handle query error and return error result or rethrow
+   * @param error - The error that occurred
+   * @param options - Query options
+   * @param duration - Query duration before error
+   * @returns Error result if metrics enabled, otherwise rethrows
+   */
+  private handleQueryError(
+    error: unknown,
+    options: EnhancedQueryOptions,
+    duration: number,
+  ): QueryResult<ExportedCookie> {
+    logError("Cookie query failed", error, {
+      browser: options.browser,
+      name: options.name,
+      domain: options.domain,
+      duration,
+    });
+
+    if (options.includeMetrics) {
+      return {
+        data: [],
+        metrics: {
+          query: "Failed query",
+          duration,
+          rowCount: 0,
+          filepath: options.filepath ?? "unknown",
+          timestamp: Date.now(),
+          success: false,
+          error: error instanceof Error ? error.message : String(error),
+        },
+        cached: false,
+      };
+    }
+
+    throw error;
   }
 
   /**
@@ -283,16 +358,17 @@ export class EnhancedCookieQueryService {
 
   /**
    * Transform database row to ExportedCookie
-   * @param row
-   * @param row.name
-   * @param row.domain
-   * @param row.value
-   * @param row.encrypted_value
-   * @param row.expiry
-   * @param row.path
-   * @param row.is_secure
-   * @param row.is_httponly
-   * @param options
+   * @param row - Database row with cookie data
+   * @param row.name - Cookie name
+   * @param row.domain - Cookie domain
+   * @param row.value - Cookie value
+   * @param row.encrypted_value - Encrypted cookie value if available
+   * @param row.expiry - Cookie expiry timestamp
+   * @param row.path - Cookie path
+   * @param row.is_secure - Whether cookie is secure (1 or 0)
+   * @param row.is_httponly - Whether cookie is httpOnly (1 or 0)
+   * @param options - Transformation options
+   * @returns Transformed ExportedCookie object
    */
   private transformRow(
     row: {

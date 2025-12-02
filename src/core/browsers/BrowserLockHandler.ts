@@ -3,7 +3,11 @@ import {
   closeBrowserGracefully,
   waitForBrowserToClose,
 } from "@utils/BrowserControl";
-import { getDatabaseErrorType, getErrorMessage } from "@utils/errorUtils";
+import {
+  getDatabaseErrorType,
+  getErrorMessage,
+  isError,
+} from "@utils/errorUtils";
 import { detectFileHandles, getFileLockInfo } from "@utils/FileHandleDetector";
 import type { createTaggedLogger } from "@utils/logHelpers";
 import { getBrowserConflictAdvice } from "@utils/ProcessDetector";
@@ -60,7 +64,7 @@ export class BrowserLockHandler {
     processes: Array<{ pid: number; command: string }>,
     autoClose = false,
   ): Promise<BrowserLockResult> {
-    if (!(error instanceof Error)) {
+    if (!isError(error)) {
       return { resolved: false, shouldRelaunch: false };
     }
 

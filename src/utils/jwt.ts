@@ -1,6 +1,7 @@
 import jsonwebtoken from "jsonwebtoken";
 
 import { parseArgv } from "./argv";
+import { getErrorMessage } from "./errorUtils";
 import logger from "./logger";
 
 /**
@@ -222,9 +223,7 @@ export function validateToken(
     return decodeAndValidatePayload(token);
   } catch (error: unknown) {
     const errorMessage =
-      error instanceof Error
-        ? error.message
-        : "Unknown error during JWT validation";
+      getErrorMessage(error) || "Unknown error during JWT validation";
     logger.debug(`JWT validation error: ${errorMessage}`);
     return {
       isValid: false,

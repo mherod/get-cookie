@@ -66,6 +66,11 @@ export class JsonOutputHandler implements OutputHandler {
    * ```
    */
   public handle(results: ExportedCookie[]): void {
+    if (results.length === 0) {
+      logger.log("[]");
+      return;
+    }
+
     logger.log(JSON.stringify(results, null, 2));
   }
 }

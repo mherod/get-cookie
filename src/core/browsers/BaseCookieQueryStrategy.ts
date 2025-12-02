@@ -1,3 +1,4 @@
+import { getErrorDetails } from "@utils/errorUtils";
 import { createTaggedLogger } from "@utils/logHelpers";
 
 import type {
@@ -63,27 +64,16 @@ export abstract class BaseCookieQueryStrategy implements CookieQueryStrategy {
       this.logger.info("Querying cookies", { name, domain, store, force });
       return await this.executeQuery(name, domain, store, force);
     } catch (error) {
-      if (error instanceof Error) {
-        this.logger.error("Failed to query cookies", {
-          error: error.message,
-          browser: this.browserName,
-          strategy: this.constructor.name,
-          name,
-          domain,
-          store,
-          force,
-        });
-      } else {
-        this.logger.error("Failed to query cookies", {
-          error: String(error),
-          browser: this.browserName,
-          strategy: this.constructor.name,
-          name,
-          domain,
-          store,
-          force,
-        });
-      }
+      const errorDetails = getErrorDetails(error);
+      this.logger.error("Failed to query cookies", {
+        ...errorDetails,
+        browser: this.browserName,
+        strategy: this.constructor.name,
+        name,
+        domain,
+        store,
+        force,
+      });
       return [];
     }
   }

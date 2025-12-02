@@ -56,7 +56,7 @@ export class QueryMonitor {
    * @param options.trackHistory - Whether to maintain query history (default: true)
    * @param options.maxHistorySize - Maximum number of queries to keep in history (default: 1000)
    */
-  constructor(options: MonitoringOptions = {}) {
+  public constructor(options: MonitoringOptions = {}) {
     this.options = {
       slowQueryThreshold: options.slowQueryThreshold ?? 100,
       verbose: options.verbose ?? false,
@@ -73,12 +73,14 @@ export class QueryMonitor {
 
   /**
    * Execute a query with monitoring
-   * @param db
-   * @param sql
-   * @param params
-   * @param filepath
+   * @param db - Database connection to execute the query on
+   * @param sql - SQL query string to execute
+   * @param params - Query parameters to bind to the SQL statement
+   * @param filepath - Optional file path for tracking purposes
+   * @returns Array of query results of type T
+   * @throws {Error} if query execution fails
    */
-  executeQuery<T>(
+  public executeQuery<T>(
     db: Database,
     sql: string,
     params: unknown[] = [],
@@ -120,12 +122,14 @@ export class QueryMonitor {
 
   /**
    * Execute a single row query with monitoring
-   * @param db
-   * @param sql
-   * @param params
-   * @param filepath
+   * @param db - Database connection to execute the query on
+   * @param sql - SQL query string to execute
+   * @param params - Query parameters to bind to the SQL statement
+   * @param filepath - Optional file path for tracking purposes
+   * @returns Single query result of type T, or undefined if no results
+   * @throws {Error} if query execution fails
    */
-  executeGet<T>(
+  public executeGet<T>(
     db: Database,
     sql: string,
     params: unknown[] = [],
@@ -148,7 +152,7 @@ export class QueryMonitor {
       // Record success metrics
       execution.endTime = Date.now();
       execution.duration = execution.endTime - execution.startTime;
-      execution.rowCount = result ? 1 : 0;
+      execution.rowCount = result !== undefined ? 1 : 0;
 
       this.recordExecution(execution);
 
@@ -167,11 +171,12 @@ export class QueryMonitor {
 
   /**
    * Create a monitored statement wrapper
-   * @param db
-   * @param sql
-   * @param filepath
+   * @param db - Database connection to prepare the statement on
+   * @param sql - SQL query string to prepare
+   * @param filepath - Optional file path for tracking purposes
+   * @returns MonitoredStatement instance that wraps the prepared statement
    */
-  prepareStatement<T>(
+  public prepareStatement<T>(
     db: Database,
     sql: string,
     filepath?: string,
@@ -182,7 +187,7 @@ export class QueryMonitor {
 
   /**
    * Record query execution
-   * @param execution
+   * @param execution - Query execution metrics to record
    */
   private recordExecution(execution: QueryExecution): void {
     // Update statistics
@@ -238,8 +243,17 @@ export class QueryMonitor {
 
   /**
    * Get monitoring statistics
+   * @returns Object containing query statistics and metrics
    */
-  getStatistics() {
+  public getStatistics(): {
+    totalQueries: number;
+    averageDuration: number;
+    slowQueries: number;
+    slowQueryRate: number;
+    errors: number;
+    errorRate: number;
+    historySize: number;
+  } {
     return {
       totalQueries: this.totalQueries,
       averageDuration:
@@ -255,10 +269,11 @@ export class QueryMonitor {
 
   /**
    * Get query history
-   * @param limit
+   * @param limit - Optional maximum number of recent queries to return
+   * @returns Array of query execution records
    */
-  getHistory(limit?: number): QueryExecution[] {
-    if (limit) {
+  public getHistory(limit?: number): QueryExecution[] {
+    if (limit !== undefined && limit > 0) {
       return this.queryHistory.slice(-limit);
     }
     return [...this.queryHistory];
@@ -267,14 +282,14 @@ export class QueryMonitor {
   /**
    * Clear history
    */
-  clearHistory(): void {
+  public clearHistory(): void {
     this.queryHistory.length = 0;
   }
 
   /**
    * Reset all statistics
    */
-  reset(): void {
+  public reset(): void {
     this.clearHistory();
     this.totalQueries = 0;
     this.totalDuration = 0;
@@ -295,7 +310,7 @@ export class MonitoredStatement<T> {
    * @param monitor - The QueryMonitor instance that will track metrics
    * @param filepath - Optional database file path for additional context in logs
    */
-  constructor(
+  public constructor(
     private readonly statement: Statement,
     private readonly sql: string,
     private readonly monitor: QueryMonitor,
@@ -304,9 +319,10 @@ export class MonitoredStatement<T> {
 
   /**
    * Execute all with monitoring
-   * @param {...any} params
+   * @param params - Query parameters to bind to the SQL statement
+   * @returns Array of query results of type T
    */
-  all(...params: unknown[]): T[] {
+  public all(...params: unknown[]): T[] {
     return this.monitor.executeQuery<T>(
       { prepare: () => this.statement } as unknown as Database,
       this.sql,
@@ -317,9 +333,10 @@ export class MonitoredStatement<T> {
 
   /**
    * Execute get with monitoring
-   * @param {...any} params
+   * @param params - Query parameters to bind to the SQL statement
+   * @returns Single query result of type T, or undefined if no results
    */
-  get(...params: unknown[]): T | undefined {
+  public get(...params: unknown[]): T | undefined {
     return this.monitor.executeGet<T>(
       { prepare: () => this.statement } as unknown as Database,
       this.sql,
@@ -330,8 +347,9 @@ export class MonitoredStatement<T> {
 
   /**
    * Get underlying statement
+   * @returns The underlying SQLite statement object
    */
-  getStatement(): Statement {
+  public getStatement(): Statement {
     return this.statement;
   }
 }
@@ -343,14 +361,13 @@ let globalMonitor: QueryMonitor | null = null;
 
 /**
  * Get or create global query monitor
- * @param options
+ * @param options - Optional monitoring configuration options
+ * @returns The global QueryMonitor instance
  */
 export function getGlobalQueryMonitor(
   options?: MonitoringOptions,
 ): QueryMonitor {
-  if (!globalMonitor) {
-    globalMonitor = new QueryMonitor(options);
-  }
+  globalMonitor ??= new QueryMonitor(options);
   return globalMonitor;
 }
 

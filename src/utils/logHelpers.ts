@@ -1,5 +1,6 @@
 import type { ConsolaInstance } from "consola";
 
+import { getErrorMessage } from "./errorUtils";
 import logger from "./logger";
 
 /**
@@ -51,7 +52,7 @@ export function logError(
   error: unknown,
   context?: OperationContext,
 ): void {
-  const errorMessage = error instanceof Error ? error.message : String(error);
+  const errorMessage = getErrorMessage(error);
   logger.error(message, { ...context, error: errorMessage });
 }
 

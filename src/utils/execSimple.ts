@@ -3,6 +3,7 @@ import { type ExecOptions, exec } from "node:child_process";
 import { promisify } from "node:util";
 
 // Internal imports
+import { getErrorMessage, isError } from "./errorUtils";
 import { logError } from "./logHelpers";
 
 const execPromise = promisify(exec);
@@ -66,9 +67,9 @@ export async function execSimple(
   } catch (error) {
     logError("Command execution failed", error, { command });
     throw new CommandExecutionError(
-      error instanceof Error ? error.message : String(error),
+      getErrorMessage(error),
       command,
-      error instanceof Error ? error : undefined,
+      isError(error) ? error : undefined,
     );
   }
 }

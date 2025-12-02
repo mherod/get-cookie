@@ -49,21 +49,19 @@ const STRATEGY_REGISTRY: Record<BrowserType, StrategyConstructor> = {
 
 /**
  * Creates a strategy for the specified browser
- * @param browser - The browser to create a strategy for
+ *
+ * Note: This is an internal function with strict typing. It expects a validated
+ * BrowserType and does not perform validation or fallback. For public API usage
+ * with validation and graceful fallback, use createStrategy() instead.
+ *
+ * @param browser - The browser to create a strategy for (must be a valid BrowserType)
  * @returns A cookie query strategy for the specified browser
+ * @throws {Error} if browser is not in STRATEGY_REGISTRY (should not happen with valid BrowserType)
  */
 export function createBrowserStrategy(
   browser: BrowserType,
 ): BaseCookieQueryStrategy {
   const Strategy = STRATEGY_REGISTRY[browser];
-  if (!Strategy) {
-    logger.warn("Unknown browser type, falling back to default", {
-      browser,
-    });
-    // Return Chrome as a default single-browser strategy instead of composite
-    return new ChromeCookieQueryStrategy();
-  }
-
   logger.debug("Creating browser strategy", { browser });
   return new Strategy();
 }
@@ -99,14 +97,10 @@ export function createSelectiveCompositeStrategy(
 ): CompositeCookieQueryStrategy {
   logger.debug("Creating selective composite strategy", { browsers });
 
-  const strategies = browsers
-    .map((browser) => {
-      const Strategy = STRATEGY_REGISTRY[browser];
-      return Strategy ? new Strategy() : null;
-    })
-    .filter(
-      (strategy): strategy is BaseCookieQueryStrategy => strategy !== null,
-    );
+  const strategies = browsers.map((browser) => {
+    const Strategy = STRATEGY_REGISTRY[browser];
+    return new Strategy();
+  });
 
   if (strategies.length === 0) {
     logger.warn("No valid strategies found, using full composite");
@@ -117,11 +111,26 @@ export function createSelectiveCompositeStrategy(
 }
 
 /**
+ * Creates a Chrome strategy with profile if specified
+ * @param profile - Optional browser profile name
+ * @returns Chrome cookie query strategy
+ */
+function createChromeStrategyWithProfile(
+  profile: string | undefined,
+): BaseCookieQueryStrategy {
+  if (profile !== undefined) {
+    logger.debug("Creating Chrome strategy with profile", { profile });
+    return new ChromeCookieQueryStrategy(profile);
+  }
+  return new ChromeCookieQueryStrategy();
+}
+
+/**
  * Creates a strategy based on browser type or store path
  * @param options - Options for strategy creation
  * @param options.browser - Optional browser type
  * @param options.storePath - Optional path to a cookie store file
- * @param options.profile
+ * @param options.profile - Optional browser profile name
  * @returns A cookie query strategy
  */
 export function createStrategy(options?: {
@@ -129,12 +138,12 @@ export function createStrategy(options?: {
   storePath?: string;
   profile?: string;
 }): AnyQueryStrategy {
-  const { browser, storePath, profile } = options || {};
+  const { browser, storePath, profile } = options ?? {};
 
   // If store path is provided, try to detect the browser type
-  if (storePath && !browser) {
+  if (storePath !== undefined && browser === undefined) {
     const detectedBrowser = detectBrowserFromStore(storePath);
-    if (detectedBrowser) {
+    if (detectedBrowser !== undefined) {
       logger.info("Auto-detected browser from store path", {
         browser: detectedBrowser,
         storePath,
@@ -144,21 +153,24 @@ export function createStrategy(options?: {
   }
 
   // If browser is specified, normalize to lowercase and check if valid
-  if (browser) {
+  if (browser !== undefined) {
     const normalizedBrowser = browser.toLowerCase();
     if (isValidBrowserType(normalizedBrowser)) {
       // Special handling for Chrome with profile
-      if (normalizedBrowser === "chrome" && profile) {
-        logger.debug("Creating Chrome strategy with profile", { profile });
-        return new ChromeCookieQueryStrategy(profile);
+      if (normalizedBrowser === "chrome") {
+        return createChromeStrategyWithProfile(profile);
       }
       return createBrowserStrategy(normalizedBrowser);
     }
-    // Log warning for invalid browser type
+    // Invalid browser type: log warning and fall back to composite strategy
+    // This provides graceful degradation when users pass invalid browser strings
+    // (e.g., from config files) instead of throwing an error
     logger.warn("Invalid browser type specified", { browser });
   }
 
-  // Default to composite strategy
+  // Default to composite strategy (queries all browsers)
+  // This provides a sensible fallback when no browser is specified or
+  // when an invalid browser type is provided
   logger.debug("Creating composite strategy as default");
   return createCompositeStrategy();
 }

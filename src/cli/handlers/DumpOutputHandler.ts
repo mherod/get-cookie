@@ -56,6 +56,10 @@ export class DumpOutputHandler implements OutputHandler {
    * ```
    */
   public handle(results: ExportedCookie[]): void {
+    if (results.length === 0) {
+      return;
+    }
+
     logger.log(results);
   }
 }

@@ -69,25 +69,23 @@ describe("isValidJwt - Format Validation", () => {
     "abc.def.ghi",
   ];
 
-  it.each(invalidFormatTokens)(
-    "should reject token with invalid format: %s",
-    (token) => {
-      const result = validateToken(token);
-      expect(result.isValid).toBe(false);
-      expect(result.error).toBe(
-        "Invalid JWT format - must be three dot-separated base64url-encoded strings",
-      );
-    },
-  );
+  it.each(
+    invalidFormatTokens,
+  )("should reject token with invalid format: %s", (token) => {
+    const result = validateToken(token);
+    expect(result.isValid).toBe(false);
+    expect(result.error).toBe(
+      "Invalid JWT format - must be three dot-separated base64url-encoded strings",
+    );
+  });
 
-  it.each(nonBase64Tokens)(
-    "should reject non-base64url encoded token: %s",
-    (token) => {
-      const result = validateToken(token);
-      expect(result.isValid).toBe(false);
-      expect(result.error).toBe("Failed to decode token");
-    },
-  );
+  it.each(
+    nonBase64Tokens,
+  )("should reject non-base64url encoded token: %s", (token) => {
+    const result = validateToken(token);
+    expect(result.isValid).toBe(false);
+    expect(result.error).toBe("Failed to decode token");
+  });
 });
 
 describe("isValidJwt - Expiration Validation", () => {

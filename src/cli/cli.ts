@@ -4,6 +4,7 @@
 import { listChromeProfiles } from "@core/browsers/listChromeProfiles";
 import { cookieSpecsFromUrl } from "@core/cookies/cookieSpecsFromUrl";
 import { parseArgv } from "@utils/argv";
+import { getErrorMessage } from "@utils/errorUtils";
 import logger from "@utils/logger";
 
 import type { CookieSpec } from "../types/schemas";
@@ -244,7 +245,7 @@ function listProfiles(browser?: string): void {
     } catch (error) {
       logger.error(
         `Failed to list ${browser} profiles:`,
-        error instanceof Error ? error.message : "Unknown error",
+        getErrorMessage(error),
       );
     }
   } else if (browserLower === "firefox") {
@@ -309,11 +310,7 @@ async function handleCookieQuery(
       deduplicateCookies,
     );
   } catch (error) {
-    if (error instanceof Error) {
-      logger.error("Error querying cookies:", error.message);
-    } else {
-      logger.error("An unknown error occurred while querying cookies");
-    }
+    logger.error("Error querying cookies:", getErrorMessage(error));
   }
 }
 
@@ -344,10 +341,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((error) => {
-  if (error instanceof Error) {
-    logger.error("Fatal error:", error.message);
-  } else {
-    logger.error("An unknown fatal error occurred");
-  }
+  logger.error("Fatal error:", getErrorMessage(error));
   process.exit(1);
 });

@@ -1,3 +1,4 @@
+import { getErrorDetails } from "@utils/errorUtils";
 import { flatMapAsync } from "@utils/flatMapAsync";
 import { createTaggedLogger } from "@utils/logHelpers";
 
@@ -57,14 +58,10 @@ export class CompositeCookieQueryStrategy implements CookieQueryStrategy {
     error: unknown,
     strategy: CookieQueryStrategy,
   ): void {
-    if (error instanceof Error) {
-      this.logger.error("Strategy failed", { error, strategy });
-    } else {
-      this.logger.error("Strategy failed with unknown error", {
-        error: String(error),
-        strategy,
-      });
-    }
+    this.logger.error("Strategy failed", {
+      ...getErrorDetails(error),
+      strategy,
+    });
   }
 
   /**
@@ -125,13 +122,9 @@ export class CompositeCookieQueryStrategy implements CookieQueryStrategy {
        * Handle top-level errors that may occur during strategy processing
        * This ensures the function always returns an array, even in catastrophic failure
        */
-      if (error instanceof Error) {
-        this.logger.error("Failed to query cookies", { error });
-      } else {
-        this.logger.error("Failed to query cookies with unknown error", {
-          error: String(error),
-        });
-      }
+      this.logger.error("Failed to query cookies", {
+        ...getErrorDetails(error),
+      });
       return [];
     }
   }

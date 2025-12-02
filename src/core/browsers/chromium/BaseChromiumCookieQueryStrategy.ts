@@ -1,3 +1,4 @@
+import { getErrorMessage } from "@utils/errorUtils";
 import { getPlatform, isPlatformSupported } from "@utils/platformUtils";
 import { isChromeRunning } from "@utils/ProcessDetector";
 
@@ -291,11 +292,12 @@ export abstract class BaseChromiumCookieQueryStrategy extends BaseCookieQueryStr
 
   /**
    * Convert error to string message
+   * Uses error utilities for safe error extraction.
    * @param error - The error to convert
    * @returns Error message string
    */
   protected getErrorMessage(error: unknown): string {
-    return error instanceof Error ? error.message : String(error);
+    return getErrorMessage(error);
   }
 
   /**

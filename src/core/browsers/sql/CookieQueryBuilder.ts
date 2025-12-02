@@ -136,22 +136,25 @@ export class CookieQueryBuilder {
   private readonly browser: SqlBrowserType;
 
   /**
-   *
-   * @param browser
+   * Creates a new CookieQueryBuilder instance for the specified browser
+   * @param browser - The SQL browser type to build queries for
+   * @throws {Error} if browser type is not supported
    */
-  constructor(browser: SqlBrowserType) {
+  public constructor(browser: SqlBrowserType) {
     this.browser = browser;
-    this.schema = BROWSER_SCHEMAS[browser];
-    if (!this.schema) {
+    // Explicit key check for runtime safety (even though TypeScript guarantees completeness)
+    if (!(browser in BROWSER_SCHEMAS)) {
       throw new Error(`Unsupported browser type: ${browser}`);
     }
+    this.schema = BROWSER_SCHEMAS[browser];
   }
 
   /**
    * Build a SELECT query for cookies
-   * @param options
+   * @param options - Cookie query options including name, domain, and filters
+   * @returns SQL query configuration object
    */
-  buildSelectQuery(options: CookieQueryOptions): SqlQueryConfig {
+  public buildSelectQuery(options: CookieQueryOptions): SqlQueryConfig {
     const { name, domain, exactDomain, limit, includeExpired } = options;
     const schema = this.schema;
 
@@ -176,7 +179,7 @@ export class CookieQueryBuilder {
     sql += ` ORDER BY ${schema.expiryColumn} DESC`;
 
     // Add LIMIT if specified
-    if (limit && limit > 0) {
+    if (limit !== undefined && limit > 0) {
       sql += ` LIMIT ${limit}`;
     }
 
@@ -191,8 +194,10 @@ export class CookieQueryBuilder {
    * Build a batch SELECT query for multiple cookie specs
    * Combines multiple cookie specs into a single query with OR conditions
    * @param specs - Array of cookie query options
+   * @returns SQL query configuration object
+   * @throws {Error} if specs array is empty
    */
-  buildBatchSelectQuery(specs: CookieQueryOptions[]): SqlQueryConfig {
+  public buildBatchSelectQuery(specs: CookieQueryOptions[]): SqlQueryConfig {
     if (specs.length === 0) {
       throw new Error("At least one spec is required for batch query");
     }
@@ -234,15 +239,15 @@ export class CookieQueryBuilder {
     // Find the minimum limit across all specs (if any have limits)
     const minLimit = specs.reduce(
       (min, spec) => {
-        if (spec.limit && spec.limit > 0) {
-          return min ? Math.min(min, spec.limit) : spec.limit;
+        if (spec.limit !== undefined && spec.limit > 0) {
+          return min !== undefined ? Math.min(min, spec.limit) : spec.limit;
         }
         return min;
       },
       undefined as number | undefined,
     );
 
-    if (minLimit && minLimit > 0) {
+    if (minLimit !== undefined && minLimit > 0) {
       sql += ` LIMIT ${minLimit * specs.length}`; // Multiply by specs count to ensure we get enough results
     }
 
@@ -255,9 +260,11 @@ export class CookieQueryBuilder {
 
   /**
    * Build a query to get database metadata
-   * @param key
+   * @param key - Metadata key to query
+   * @returns SQL query configuration for fetching metadata
+   * @throws {Error} if browser is Firefox (does not have meta table)
    */
-  buildMetaQuery(key: string): SqlQueryConfig {
+  public buildMetaQuery(key: string): SqlQueryConfig {
     // Only Chromium-based browsers have meta table
     if (this.browser === "firefox") {
       throw new Error("Firefox does not have a meta table");
@@ -272,8 +279,9 @@ export class CookieQueryBuilder {
 
   /**
    * Build a query to check if table exists
+   * @returns SQL query configuration for checking table existence
    */
-  buildTableExistsQuery(): SqlQueryConfig {
+  public buildTableExistsQuery(): SqlQueryConfig {
     return {
       sql: "SELECT name FROM sqlite_master WHERE type='table' AND name=?",
       params: [this.schema.tableName],
@@ -283,6 +291,7 @@ export class CookieQueryBuilder {
 
   /**
    * Build SELECT columns based on browser
+   * @returns Comma-separated list of SELECT columns with aliases
    */
   private buildSelectColumns(): string {
     const schema = this.schema;
@@ -293,20 +302,23 @@ export class CookieQueryBuilder {
     ];
 
     // Add encrypted_value for Chromium-based browsers
-    if (schema.encryptedValueColumn && this.browser !== "firefox") {
+    if (
+      schema.encryptedValueColumn !== undefined &&
+      this.browser !== "firefox"
+    ) {
       columns.push(schema.encryptedValueColumn);
     } else {
       columns.push(schema.valueColumn);
     }
 
     // Add additional columns if available
-    if (schema.pathColumn) {
+    if (schema.pathColumn !== undefined) {
       columns.push(schema.pathColumn);
     }
-    if (schema.secureColumn) {
+    if (schema.secureColumn !== undefined) {
       columns.push(schema.secureColumn);
     }
-    if (schema.httpOnlyColumn) {
+    if (schema.httpOnlyColumn !== undefined) {
       columns.push(schema.httpOnlyColumn);
     }
 
@@ -338,11 +350,50 @@ export class CookieQueryBuilder {
   }
 
   /**
+   * Add domain condition to WHERE clause
+   * @param conditions - Array of condition strings
+   * @param params - Array of parameter values
+   * @param domainColumn - Column name for domain
+   * @param domain - Domain value to match
+   * @param exactDomain - Whether to use exact matching
+   */
+  private addDomainCondition(
+    conditions: string[],
+    params: unknown[],
+    domainColumn: string,
+    domain: string,
+    exactDomain?: boolean,
+  ): void {
+    if (exactDomain === true) {
+      conditions.push(`${domainColumn} = ?`);
+      params.push(domain);
+      return;
+    }
+
+    // Optimize domain matching:
+    // 1. For domains starting with ".", use suffix match (more efficient)
+    // 2. For regular domains, try to match the domain and subdomains
+    if (domain.startsWith(".")) {
+      // Match exact suffix (e.g., ".github.com")
+      conditions.push(`${domainColumn} LIKE ?`);
+      params.push(`%${domain}`);
+    } else {
+      // Match domain and all subdomains efficiently
+      // This matches "github.com", ".github.com", "api.github.com", etc.
+      conditions.push(
+        `(${domainColumn} = ? OR ${domainColumn} = ? OR ${domainColumn} LIKE ?)`,
+      );
+      params.push(domain, `.${domain}`, `%.${domain}`);
+    }
+  }
+
+  /**
    * Build WHERE clause with proper parameter binding
-   * @param name
-   * @param domain
-   * @param exactDomain
-   * @param includeExpired
+   * @param name - Cookie name pattern or exact name
+   * @param domain - Domain name for filtering
+   * @param exactDomain - Whether to use exact domain matching
+   * @param includeExpired - Whether to include expired cookies
+   * @returns Object containing WHERE clause SQL and parameter values
    */
   private buildWhereClause(
     name: string,
@@ -368,31 +419,18 @@ export class CookieQueryBuilder {
     }
 
     // Handle domain condition
-    if (domain) {
-      if (exactDomain) {
-        conditions.push(`${schema.domainColumn} = ?`);
-        params.push(domain);
-      } else {
-        // Optimize domain matching:
-        // 1. For domains starting with ".", use suffix match (more efficient)
-        // 2. For regular domains, try to match the domain and subdomains
-        if (domain.startsWith(".")) {
-          // Match exact suffix (e.g., ".github.com")
-          conditions.push(`${schema.domainColumn} LIKE ?`);
-          params.push(`%${domain}`);
-        } else {
-          // Match domain and all subdomains efficiently
-          // This matches "github.com", ".github.com", "api.github.com", etc.
-          conditions.push(
-            `(${schema.domainColumn} = ? OR ${schema.domainColumn} = ? OR ${schema.domainColumn} LIKE ?)`,
-          );
-          params.push(domain, `.${domain}`, `%.${domain}`);
-        }
-      }
+    if (domain !== "") {
+      this.addDomainCondition(
+        conditions,
+        params,
+        schema.domainColumn,
+        domain,
+        exactDomain,
+      );
     }
 
     // Handle expiry condition
-    if (!includeExpired) {
+    if (includeExpired !== true) {
       // Firefox uses seconds, Chrome uses microseconds since 1601
       if (this.browser === "firefox") {
         // Pre-calculate the timestamp to avoid function call per row
@@ -414,9 +452,10 @@ export class CookieQueryBuilder {
 
   /**
    * Validate and sanitize query parameters
-   * @param options
+   * @param options - Cookie query options to validate
+   * @throws {Error} if validation fails
    */
-  static validateQueryParams(options: CookieQueryOptions): void {
+  public static validateQueryParams(options: CookieQueryOptions): void {
     const { name, domain, limit } = options;
 
     // Validate name
@@ -441,7 +480,7 @@ export class CookieQueryBuilder {
       "--",
       ";",
     ];
-    const checkString = (str: string, field: string) => {
+    const checkString = (str: string, field: string): void => {
       const upperStr = str.toUpperCase();
       for (const keyword of sqlKeywords) {
         if (upperStr.includes(keyword)) {
@@ -465,22 +504,25 @@ export class CookieQueryBuilder {
 
   /**
    * Get browser type for a query builder
+   * @returns The SQL browser type
    */
-  getBrowserType(): SqlBrowserType {
+  public getBrowserType(): SqlBrowserType {
     return this.browser;
   }
 
   /**
    * Get schema information
+   * @returns A read-only copy of the browser schema
    */
-  getSchema(): Readonly<BrowserSchema> {
+  public getSchema(): Readonly<BrowserSchema> {
     return Object.freeze({ ...this.schema });
   }
 }
 
 /**
  * Factory function for creating query builders
- * @param browser
+ * @param browser - The SQL browser type to create a builder for
+ * @returns A new CookieQueryBuilder instance
  */
 export function createQueryBuilder(
   browser: SqlBrowserType,
@@ -490,7 +532,8 @@ export function createQueryBuilder(
 
 /**
  * Check if a browser uses SQL for cookie storage
- * @param browser
+ * @param browser - Browser name to check
+ * @returns True if the browser uses SQL for cookie storage
  */
 export function isSqlBrowser(browser: string): browser is SqlBrowserType {
   return browser in BROWSER_SCHEMAS;

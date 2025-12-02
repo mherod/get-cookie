@@ -77,7 +77,7 @@ export abstract class BasePlatformBrowserControl
   }
 
   public getBrowserExecutables(browserName: BrowserName): string[] {
-    return this.browserExecutables[browserName] || [];
+    return this.browserExecutables[browserName] ?? [];
   }
 
   /**
@@ -205,7 +205,7 @@ export class MacOSBrowserControl extends BasePlatformBrowserControl {
     };
 
     const appName = appNames[browserName];
-    if (!appName) {
+    if (appName === undefined || appName === "") {
       throw new Error(`${browserName} not supported on macOS`);
     }
 

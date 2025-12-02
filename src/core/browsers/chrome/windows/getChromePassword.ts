@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { getErrorMessage } from "@utils/errorUtils";
 import { isWindows } from "@utils/platformUtils";
 
 import { chromeApplicationSupport } from "../ChromeApplicationSupport";
@@ -90,7 +91,7 @@ export async function getChromePassword(): Promise<string> {
     return masterKey.toString("latin1");
   } catch (error) {
     throw new Error(
-      `Failed to retrieve Chrome password on Windows: ${error instanceof Error ? error.message : String(error)}`,
+      `Failed to retrieve Chrome password on Windows: ${getErrorMessage(error)}`,
     );
   }
 }

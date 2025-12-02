@@ -77,6 +77,11 @@ export class GroupedDumpOutputHandler implements OutputHandler {
    * ```
    */
   public handle(results: ExportedCookie[]): void {
+    if (results.length === 0) {
+      logger.log("{}");
+      return;
+    }
+
     const groupedByFile = groupBy(results, (r) => r.meta?.file ?? "unknown");
     logger.log(JSON.stringify(groupedByFile, null, 2));
   }

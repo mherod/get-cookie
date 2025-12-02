@@ -1,4 +1,5 @@
 import type { CookieSpec, ExportedCookie } from "../../types/schemas";
+import { getErrorMessage } from "../../utils/errorUtils";
 import logger from "../../utils/logger";
 
 import { queryCookies } from "./queryCookies";
@@ -36,10 +37,7 @@ export async function getCookie(
     logger.debug("Cookies retrieved:", cookies);
     return cookies;
   } catch (error: unknown) {
-    logger.warn(
-      "Error querying cookies:",
-      error instanceof Error ? error.message : String(error),
-    );
+    logger.warn("Error querying cookies:", getErrorMessage(error));
     return [];
   }
 }

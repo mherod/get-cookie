@@ -7,6 +7,7 @@ import { EventEmitter } from "node:events";
 
 import BetterSqlite3, { type Database } from "better-sqlite3";
 
+import { getErrorMessage } from "@utils/errorUtils";
 import { createTaggedLogger, logError } from "@utils/logHelpers";
 
 const logger = createTaggedLogger("DatabaseConnectionManager");
@@ -145,7 +146,8 @@ export class DatabaseConnectionManager extends EventEmitter {
 
   /**
    * Create a new database connection
-   * @param filepath
+   * @param filepath - Path to the database file
+   * @returns Promise that resolves to a Database connection instance
    */
   private async createConnection(filepath: string): Promise<Database> {
     const startTime = Date.now();
@@ -236,7 +238,7 @@ export class DatabaseConnectionManager extends EventEmitter {
       // Log slow queries at debug level
       if (duration > 100) {
         logger.debug("Slow query detected", {
-          query: queryDescription || "Unknown query",
+          query: queryDescription ?? "Unknown query",
           duration,
           filepath,
         });
@@ -245,7 +247,7 @@ export class DatabaseConnectionManager extends EventEmitter {
       // Record metrics
       if (this.config.enableMonitoring) {
         const metrics: QueryMetrics = {
-          query: queryDescription || "Unknown query",
+          query: queryDescription ?? "Unknown query",
           duration,
           rowCount: Array.isArray(result) ? result.length : 1,
           filepath,
@@ -266,7 +268,7 @@ export class DatabaseConnectionManager extends EventEmitter {
       // Record error metrics
       if (this.config.enableMonitoring) {
         const metrics: QueryMetrics = {
-          query: queryDescription || "Unknown query",
+          query: queryDescription ?? "Unknown query",
           duration,
           rowCount: 0,
           filepath,
@@ -348,8 +350,9 @@ export class DatabaseConnectionManager extends EventEmitter {
 
   /**
    * Get pool statistics
+   * @returns Pool statistics including connection counts and query metrics
    */
-  getStatistics(): PoolStatistics {
+  public getStatistics(): PoolStatistics {
     let totalQueryTime = 0;
     let totalQueryCount = 0;
     let activeConnections = 0;
@@ -429,7 +432,7 @@ export class DatabaseConnectionManager extends EventEmitter {
       }
     }
 
-    if (lruPath) {
+    if (lruPath !== null) {
       this.closeConnection(lruPath);
       logger.debug("Evicted LRU connection", { filepath: lruPath });
     } else {
@@ -458,15 +461,12 @@ export class DatabaseConnectionManager extends EventEmitter {
    * @param error
    */
   private isDatabaseLocked(error: unknown): boolean {
-    if (error instanceof Error) {
-      const message = error.message.toLowerCase();
-      return (
-        message.includes("database is locked") ||
-        message.includes("database locked") ||
-        message.includes("sqlite_busy")
-      );
-    }
-    return false;
+    const message = getErrorMessage(error).toLowerCase();
+    return (
+      message.includes("database is locked") ||
+      message.includes("database locked") ||
+      message.includes("sqlite_busy")
+    );
   }
 
   /**
@@ -490,7 +490,8 @@ let exitHandler: (() => void) | null = null;
 
 /**
  * Get or create global connection manager
- * @param config
+ * @param config - Optional pool configuration for the connection manager
+ * @returns The global DatabaseConnectionManager instance
  */
 export function getGlobalConnectionManager(
   config?: PoolConfig,

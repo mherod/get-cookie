@@ -7,8 +7,18 @@ export NVM_DIR="$HOME/.nvm"
 # Use the version specified in .nvmrc or fallback to default nvm version
 if [ -f .nvmrc ]; then
   nvm use
+  NVM_NODE_VERSION=$(cat .nvmrc | tr -d '\n')
 else
   nvm use default
+  NVM_NODE_VERSION=$(nvm alias default | awk '{print $NF}')
+fi
+
+# Explicitly set PATH to prioritize nvm's Node version
+if [ -n "$NVM_NODE_VERSION" ]; then
+  NVM_NODE_PATH=$(nvm which "$NVM_NODE_VERSION" 2>/dev/null)
+  if [ -n "$NVM_NODE_PATH" ]; then
+    export PATH="$(dirname "$NVM_NODE_PATH"):$PATH"
+  fi
 fi
 
 # Try pnpm first, fallback to npx if pnpm not found

@@ -4,6 +4,7 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 
 import type { BinaryCookieRow } from "../../../types/schemas";
+import { getErrorMessage } from "../../../utils/errorUtils";
 import { createTaggedLogger, logWarn } from "../../../utils/logHelpers";
 
 import { BinaryCodablePage } from "./BinaryCodablePage";
@@ -75,10 +76,8 @@ export class BinaryCodableCookies {
           cookies.push(...pageCookies);
         }
       } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : String(error);
         logWarn("BinaryCookies", "Error converting page cookies", {
-          error: errorMessage,
+          error: getErrorMessage(error),
         });
       }
     }
@@ -132,9 +131,9 @@ export class BinaryCodableCookies {
           this.pages.push(page);
           currentOffset += pageSize;
         } catch (error) {
-          const errorMessage =
-            error instanceof Error ? error.message : String(error);
-          logger.warn("Error decoding page:", { error: errorMessage });
+          logger.warn("Error decoding page:", {
+            error: getErrorMessage(error),
+          });
           currentOffset += pageSize; // Skip the problematic page
         }
       }
@@ -158,10 +157,8 @@ export class BinaryCodableCookies {
       // Note: You'll need to implement or use a plist parser library here
       this.metadata = {}; // Placeholder for plist data
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
       logWarn("BinaryCookies", "Error decoding binary cookies file", {
-        error: errorMessage,
+        error: getErrorMessage(error),
       });
       throw error;
     }

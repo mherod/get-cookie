@@ -4,6 +4,7 @@ import { join } from "node:path";
 
 import fg from "fast-glob";
 
+import { getErrorMessage } from "@utils/errorUtils";
 import type { createTaggedLogger } from "@utils/logHelpers";
 import { getPlatform } from "@utils/platformUtils";
 import { isFirefoxRunning } from "@utils/ProcessDetector";
@@ -260,9 +261,8 @@ export class FirefoxCookieQueryStrategy extends BaseCookieQueryStrategy {
     name: string,
     domain: string,
   ): void {
-    const errorMessage = error instanceof Error ? error.message : String(error);
     this.logger.debug(`Error reading Firefox cookie file ${file}`, {
-      error: errorMessage,
+      error: getErrorMessage(error),
       file,
       name,
       domain,

@@ -1,6 +1,7 @@
 import type { Buffer } from "node:buffer";
 
 import type { BinaryCookieRow } from "../../../types/schemas";
+import { getErrorMessage } from "../../../utils/errorUtils";
 import { createTaggedLogger, logWarn } from "../../../utils/logHelpers";
 
 import { BinaryCodableCookie } from "./BinaryCodableCookie";
@@ -43,10 +44,8 @@ export class BinaryCodablePage {
           cookies.push(cookieRow);
         }
       } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : String(error);
         logWarn("BinaryCookies", "Error converting cookie", {
-          error: errorMessage,
+          error: getErrorMessage(error),
         });
       }
     }
@@ -120,7 +119,7 @@ export class BinaryCodablePage {
         this.cookies.push(cookie);
       } catch (error) {
         logger.warn("Invalid cookie data", {
-          error: error instanceof Error ? error.message : String(error),
+          error: getErrorMessage(error),
         });
       }
     }

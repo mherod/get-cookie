@@ -33,8 +33,19 @@ jobs:
         with:
           fetch-depth: 1
 
+      - name: Check for Claude Code OAuth token
+        id: check-token
+        run: |
+          if [ -z "${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}" ]; then
+            echo "token_available=false" >> $GITHUB_OUTPUT
+            echo "⚠️ CLAUDE_CODE_OAUTH_TOKEN secret not configured. Skipping Claude Code Review."
+          else
+            echo "token_available=true" >> $GITHUB_OUTPUT
+          fi
+
       - name: Run Claude Code Review
         id: claude-review
+        if: steps.check-token.outputs.token_available == 'true'
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}

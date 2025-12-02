@@ -142,8 +142,9 @@ export class CookieQueryBuilder {
    */
   public constructor(browser: SqlBrowserType) {
     this.browser = browser;
-    // Explicit key check for runtime safety (even though TypeScript guarantees completeness)
-    if (!(browser in BROWSER_SCHEMAS)) {
+    // Defense-in-depth: validates at runtime in case of type assertions or
+    // external callers bypassing TypeScript's compile-time checks
+    if (!isSqlBrowser(browser)) {
       throw new Error(`Unsupported browser type: ${browser}`);
     }
     this.schema = BROWSER_SCHEMAS[browser];

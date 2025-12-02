@@ -49,8 +49,14 @@ const STRATEGY_REGISTRY: Record<BrowserType, StrategyConstructor> = {
 
 /**
  * Creates a strategy for the specified browser
- * @param browser - The browser to create a strategy for
+ *
+ * Note: This is an internal function with strict typing. It expects a validated
+ * BrowserType and does not perform validation or fallback. For public API usage
+ * with validation and graceful fallback, use createStrategy() instead.
+ *
+ * @param browser - The browser to create a strategy for (must be a valid BrowserType)
  * @returns A cookie query strategy for the specified browser
+ * @throws {Error} if browser is not in STRATEGY_REGISTRY (should not happen with valid BrowserType)
  */
 export function createBrowserStrategy(
   browser: BrowserType,
@@ -156,11 +162,15 @@ export function createStrategy(options?: {
       }
       return createBrowserStrategy(normalizedBrowser);
     }
-    // Log warning for invalid browser type
+    // Invalid browser type: log warning and fall back to composite strategy
+    // This provides graceful degradation when users pass invalid browser strings
+    // (e.g., from config files) instead of throwing an error
     logger.warn("Invalid browser type specified", { browser });
   }
 
-  // Default to composite strategy
+  // Default to composite strategy (queries all browsers)
+  // This provides a sensible fallback when no browser is specified or
+  // when an invalid browser type is provided
   logger.debug("Creating composite strategy as default");
   return createCompositeStrategy();
 }

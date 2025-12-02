@@ -325,6 +325,11 @@ function findBrowserProfiles(browser: BrowserType): string[] {
 
 /**
  * Detects all available browsers on the current system
+ *
+ * Note: This function is intentionally synchronous. All file system operations
+ * (existsSync, readdirSync) are synchronous, and all callers use this function
+ * synchronously. No async/await patterns are used anywhere in the codebase.
+ *
  * @returns Array of available browser information
  */
 export function detectAvailableBrowsers(): AvailableBrowser[] {

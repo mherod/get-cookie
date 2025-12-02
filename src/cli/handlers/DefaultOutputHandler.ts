@@ -51,6 +51,7 @@ export class DefaultOutputHandler implements OutputHandler {
    */
   public handle(results: ExportedCookie[]): void {
     if (results.length === 0) {
+      logger.debug("No cookies found to output");
       return;
     }
 

@@ -1,3 +1,18 @@
+# Load nvm if available
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+
+# Use Node version from .nvmrc if it exists
+[ -f .nvmrc ] && nvm use
+
+# Ensure nvm's Node takes precedence in PATH
+if [ -n "$NVM_DIR" ] && [ -d "$NVM_DIR/versions/node" ]; then
+  NODE_VERSION=$(nvm version)
+  if [ -n "$NODE_VERSION" ] && [ "$NODE_VERSION" != "system" ]; then
+    export PATH="$NVM_DIR/versions/node/$NODE_VERSION/bin:$PATH"
+  fi
+fi
+
 # Try pnpm first, fallback to npx if pnpm not found
 if command -v pnpm >/dev/null 2>&1; then
   pnpm run validate

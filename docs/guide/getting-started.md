@@ -57,7 +57,9 @@ async function example() {
 
 ## Next Steps
 
-- Check out the [API Reference](/reference/api) for detailed documentation
-- Learn about [browser-specific features](/guide/browsers)
-- Explore the [architecture overview](/guide/architecture)
-- See [CLI usage examples](/guide/cli-usage)
+- **[Examples & Tutorials](/guide/examples)** - Complete working examples and tutorials
+- [CLI Usage Guide](/guide/cli-usage) - Learn command-line usage
+- [Use Cases](/guide/use-cases) - Real-world application patterns
+- [API Reference](/reference/index) - Programmatic usage documentation
+- [Browser Support](/guide/browsers) - Browser-specific features
+- [Architecture Overview](/guide/architecture) - How it works under the hood

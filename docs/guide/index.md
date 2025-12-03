@@ -32,4 +32,4 @@ description: A powerful Node.js module for querying browser cookies
 - Multi-profile cookie management
 - CI/CD pipeline integration
 
-See our comprehensive [Use Cases Guide](./use-cases.md) for detailed examples and best practices.
+See our comprehensive [Examples & Tutorials Guide](./examples.md) for complete working examples, and the [Use Cases Guide](./use-cases.md) for detailed patterns and best practices.

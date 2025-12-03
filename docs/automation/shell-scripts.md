@@ -1,6 +1,6 @@
 # Shell Script Automation 📜
 
-Learn how to automate tasks with get-cookie using shell scripts.
+Learn how to automate tasks with get-cookie using shell scripts. For complete working examples, see the [Examples Guide](../guide/examples.md) and the `examples/` directory in the repository.
 
 ## Basic Scripts
 
@@ -310,3 +310,14 @@ debug "Cookie result: ${cookie:0:10}..."
    export COOKIE_HASH=$(echo "$cookie" | sha256sum)
    # Use COOKIE_HASH for tracking, not the actual cookie
    ```
+
+## Example Scripts
+
+For comprehensive shell script examples, see:
+
+- **[Quick Start Examples](../guide/examples.md#quick-start-examples)** - Essential patterns and reusable functions
+- **[curl Integration Examples](../guide/examples.md#curl-integration-examples)** - Complete curl integration guide
+- **[GitHub Authentication Examples](../guide/examples.md#github-authentication-examples)** - GitHub-specific patterns
+- **[CLI Features Examples](../guide/examples.md#cli-features-examples)** - All CLI feature demonstrations
+
+All example scripts are available in the `examples/` directory of the repository.

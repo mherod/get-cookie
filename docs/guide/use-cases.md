@@ -1,6 +1,6 @@
 # Real-World Use Cases 🚀
 
-This guide demonstrates practical applications of get-cookie for various scenarios, based on our comprehensive example collection.
+This guide demonstrates practical applications of get-cookie for various scenarios. For complete working examples, see the [Examples Guide](./examples.md) and the `examples/` directory in the repository.
 
 ## Authentication & Session Management
 
@@ -180,7 +180,7 @@ Extract and validate security tokens:
 #!/bin/bash
 # Extract JWT tokens
 get-cookie % example.com --output json | \
-  jq -r '.[] | select(.value | test("^eyJ[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+$")) | 
+  jq -r '.[] | select(.value | test("^eyJ[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+$")) |
   "\(.name): \(.value | split(".") | .[1] | @base64d | fromjson)"'
 
 # Find OAuth tokens
@@ -214,13 +214,13 @@ FAILED=0
 for browser in "${BROWSERS[@]}"; do
   echo "Testing $browser..."
   AUTH=$(get-cookie auth example.com --browser "$browser" 2>/dev/null)
-  
+
   if [ -n "$AUTH" ]; then
     # Test the auth cookie
     RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
                -H "Cookie: auth=$AUTH" \
                https://api.example.com/verify)
-    
+
     if [ "$RESPONSE" = "200" ]; then
       echo "✓ $browser: Authentication valid"
     else
@@ -247,7 +247,7 @@ async function monitorCookies() {
   // Use batch operation to monitor multiple domains efficiently
   const domains = ["example.com", "api.example.com", "auth.example.com"];
   const cookieSpecs = domains.map(domain => ({ name: "%", domain }));
-  
+
   const cookies = await batchGetCookies(cookieSpecs, {
     deduplicate: false // Include all cookies for comprehensive monitoring
   });
@@ -281,7 +281,7 @@ async function monitorCookies() {
   });
 
   console.log("Cookie Health Report:", report);
-  
+
   // Alert if issues found
   if (report.expiringSoon > 0) {
     console.warn(`⚠️ ${report.expiringSoon} cookies expiring within 7 days`);
@@ -303,7 +303,7 @@ Export cookies from one browser to import into another:
 # Export from Chrome
 get-cookie % example.com --browser chrome --output json > chrome-cookies.json
 
-# Export from Firefox  
+# Export from Firefox
 get-cookie % example.com --browser firefox --output json > firefox-cookies.json
 
 # Compare cookies between browsers
@@ -360,7 +360,7 @@ import { getCookie } from "@mherod/get-cookie";
 
 async function inspectCookie(name: string, domain: string) {
   const cookies = await getCookie({ name, domain });
-  
+
   if (cookies.length === 0) {
     console.log("Cookie not found");
     return;
@@ -376,7 +376,7 @@ async function inspectCookie(name: string, domain: string) {
     console.log(`Secure: ${cookie.meta?.secure || false}`);
     console.log(`HttpOnly: ${cookie.meta?.httpOnly || false}`);
     console.log(`Path: ${cookie.meta?.path || "/"}`);
-    
+
     if (cookie.expiry === "Infinity") {
       console.log("Expiry: Session cookie");
     } else if (cookie.expiry) {
@@ -384,7 +384,7 @@ async function inspectCookie(name: string, domain: string) {
       const days = Math.ceil((exp.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
       console.log(`Expiry: ${exp.toISOString()} (${days} days)`);
     }
-    
+
     // Check if it's a JWT
     if (cookie.value.match(/^eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/)) {
       console.log("Type: JWT Token");
@@ -420,7 +420,7 @@ echo "Press Ctrl+C to stop"
 
 while true; do
   CURRENT_HASH=$(get-cookie % "$DOMAIN" --output json | sha256sum | cut -d' ' -f1)
-  
+
   if [ "$CURRENT_HASH" != "$LAST_HASH" ]; then
     if [ -n "$LAST_HASH" ]; then
       echo "[$(date '+%H:%M:%S')] Cookies changed!"
@@ -428,7 +428,7 @@ while true; do
     fi
     LAST_HASH="$CURRENT_HASH"
   fi
-  
+
   sleep $INTERVAL
 done
 ```
@@ -445,28 +445,28 @@ Always implement proper error handling:
 get_auth_cookie() {
   local domain="$1"
   local cookie=""
-  
+
   # Try Chrome first
   cookie=$(get-cookie auth "$domain" --browser chrome 2>/dev/null)
   if [ -n "$cookie" ]; then
     echo "$cookie"
     return 0
   fi
-  
+
   # Fall back to Firefox
   cookie=$(get-cookie auth "$domain" --browser firefox 2>/dev/null)
   if [ -n "$cookie" ]; then
     echo "$cookie"
     return 0
   fi
-  
+
   # Try all browsers
   cookie=$(get-cookie auth "$domain" 2>/dev/null)
   if [ -n "$cookie" ]; then
     echo "$cookie"
     return 0
   fi
-  
+
   return 1
 }
 
@@ -597,6 +597,7 @@ fi
 
 ## See Also
 
+- [Examples & Tutorials](./examples.md) - Complete working examples and tutorials
 - [CLI Usage Guide](./cli-usage.md) - Complete CLI reference
 - [API Documentation](../reference/index.md) - Programmatic usage
 - [Security Guide](./security.md) - Security best practices

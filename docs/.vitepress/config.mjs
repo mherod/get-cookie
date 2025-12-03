@@ -50,6 +50,7 @@ export default defineConfig({
         {
           text: "Essential Guides",
           items: [
+            { text: "📚 Examples & Tutorials", link: "/guide/examples" },
             { text: "🛡️ Security & Privacy", link: "/guide/security" },
             { text: "🔍 Troubleshooting", link: "/guide/troubleshooting" },
             { text: "💻 CLI Usage", link: "/guide/cli-usage" },

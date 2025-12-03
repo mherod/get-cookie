@@ -275,6 +275,16 @@ if [ -n "$AUTH_COOKIE" ]; then
 fi
 ```
 
+## Complete Examples
+
+For comprehensive examples covering all CLI features and use cases, see:
+
+- **[Examples & Tutorials Guide](./examples.md)** - Complete working examples
+- **Quick Start:** `examples/quick-start.sh` - Essential patterns
+- **curl Integration:** `examples/curl-integration.sh` - Comprehensive curl guide
+- **GitHub Auth:** `examples/github-auth.sh` - GitHub authentication patterns
+- **CLI Features:** `examples/features-demo.sh` - All feature demonstrations
+
 ## Error Handling
 
 The CLI uses exit codes to indicate status:

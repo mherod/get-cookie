@@ -102,12 +102,14 @@ const cookies = await getCookie({
 
 ## Next Steps
 
+- [📚 View Complete Examples →](/guide/examples) - Comprehensive working examples
 - [Start with Shell Scripts →](/automation/shell-scripts)
 - [Read Browser Automation Guide →](/automation/browser-automation)
 - [Check the API Reference →](/reference/)
 
 ## Need Help?
 
+- [📚 Examples & Tutorials →](/guide/examples) - Complete working examples
 - [Check the Troubleshooting Guide →](/guide/troubleshooting)
 - [Review Security Best Practices →](/guide/security)
 - [Read API Documentation →](/reference/)

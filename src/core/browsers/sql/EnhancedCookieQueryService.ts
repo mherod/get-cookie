@@ -3,8 +3,7 @@
  * Combines query building, connection management, and validation in a unified interface
  */
 
-import type { Database } from "better-sqlite3";
-
+import type { SqliteDatabase } from "./adapters/DatabaseAdapter";
 import { createTaggedLogger, logError } from "@utils/logHelpers";
 
 import type { ExportedCookie } from "../../../types/schemas";
@@ -326,7 +325,7 @@ export class EnhancedCookieQueryService {
   ): Promise<QueryResult<ExportedCookie>> {
     return this.connectionManager.executeQuery(
       filepath,
-      (db: Database) => {
+      (db: SqliteDatabase) => {
         const stmt = db.prepare(queryConfig.sql);
         const rows = stmt.all(...queryConfig.params) as Array<{
           name: string;

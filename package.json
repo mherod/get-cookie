@@ -1,6 +1,6 @@
 {
   "name": "@mherod/get-cookie",
-  "version": "4.4.1",
+  "version": "4.4.2",
   "description": "Node.js module for querying cookies from Chrome, Firefox, and Safari browsers",
   "packageManager": "pnpm@9.15.2",
   "type": "module",
@@ -72,8 +72,8 @@
     "destr": "^2.0.5",
     "dotenv": "17.2.3",
     "fast-glob": "^3.3.3",
-    "jsonwebtoken": "^9.0.2",
-    "lodash-es": "^4.17.21",
+    "jsonwebtoken": "^9.0.3",
+    "lodash-es": "^4.17.23",
     "minimist": "^1.2.8",
     "tsconfig-paths": "^4.2.0",
     "zod": "^4.1.11"

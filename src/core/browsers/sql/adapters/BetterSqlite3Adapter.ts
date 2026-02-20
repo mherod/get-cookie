@@ -54,8 +54,8 @@ export class BetterSqlite3Adapter implements SqliteDatabase {
     return new BetterSqlite3Statement(stmt);
   }
 
-  pragma(pragma: string): void {
-    this.db.pragma(pragma);
+  pragma(pragma: string): unknown {
+    return this.db.pragma(pragma);
   }
 
   close(): void {

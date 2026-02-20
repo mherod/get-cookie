@@ -42,7 +42,7 @@ export interface SqliteDatabase {
    * Execute a PRAGMA statement
    * @param pragma - PRAGMA string (e.g., "busy_timeout = 3000")
    */
-  pragma(pragma: string): void;
+  pragma(pragma: string): unknown;
 
   /**
    * Close the database connection

@@ -63,6 +63,15 @@ export class BunSqliteAdapter implements SqliteDatabase {
   readonly?: boolean;
 
   constructor(filepath: string, options: SqliteOptions = {}) {
+    // Guard: this adapter must only run inside Bun.
+    // When the bundle is loaded in Node.js the class body is evaluated but
+    // require("bun:sqlite") would throw ERR_UNSUPPORTED_ESM_URL_SCHEME.
+    if (typeof (globalThis as Record<string, unknown>).Bun === "undefined") {
+      throw new Error(
+        "BunSqliteAdapter can only be used in a Bun runtime environment",
+      );
+    }
+
     // Dynamically require Bun's sqlite module
     // eslint-disable-next-line global-require
     const { Database } = require("bun:sqlite") as {

@@ -29,6 +29,7 @@ export default defineConfig({
   bundle: true,
   tsconfig: "./tsconfig.cli.json",
   noExternal: ["lodash-es"],
+  external: ["bun:sqlite"],
   treeshake: true,
   splitting: false,
   skipNodeModulesBundle: true,

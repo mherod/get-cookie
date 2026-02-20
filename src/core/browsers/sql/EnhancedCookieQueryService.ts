@@ -271,17 +271,19 @@ export class EnhancedCookieQueryService {
   }
 
   /**
-   * Handle query error and return error result or rethrow
+   * Handle query error and always return an error result
    * @param error - The error that occurred
    * @param options - Query options
    * @param duration - Query duration before error
-   * @returns Error result if metrics enabled, otherwise rethrows
+   * @returns Error result with empty data and optional metrics
    */
   private handleQueryError(
     error: unknown,
     options: EnhancedQueryOptions,
     duration: number,
   ): QueryResult<ExportedCookie> {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+
     logError("Cookie query failed", error, {
       browser: options.browser,
       name: options.name,
@@ -289,9 +291,9 @@ export class EnhancedCookieQueryService {
       duration,
     });
 
-    if (options.includeMetrics) {
-      return {
-        data: [],
+    return {
+      data: [],
+      ...(options.includeMetrics && {
         metrics: {
           query: "Failed query",
           duration,
@@ -299,13 +301,11 @@ export class EnhancedCookieQueryService {
           filepath: options.filepath ?? "unknown",
           timestamp: Date.now(),
           success: false,
-          error: error instanceof Error ? error.message : String(error),
+          error: errorMsg,
         },
-        cached: false,
-      };
-    }
-
-    throw error;
+      }),
+      cached: false,
+    };
   }
 
   /**

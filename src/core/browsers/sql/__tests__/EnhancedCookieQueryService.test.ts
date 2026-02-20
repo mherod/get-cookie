@@ -63,36 +63,43 @@ describe("EnhancedCookieQueryService", () => {
   });
 
   describe("queryCookies without filepath", () => {
-    it("throws a descriptive error when no filepath is provided", async () => {
+    it("returns empty data when no filepath is provided", async () => {
       const options: EnhancedQueryOptions = {
         browser: "firefox",
         name: "%",
         domain: "%",
       };
 
-      await expect(service.queryCookies(options)).rejects.toThrow(
-        /Auto-discovery.*not yet implemented/,
-      );
+      const result = await service.queryCookies(options);
+      expect(result.data).toEqual([]);
+      expect(result.cached).toBe(false);
     });
 
-    it("throws for chrome when no filepath is provided", async () => {
+    it("returns empty data for chrome when no filepath is provided", async () => {
       const options: EnhancedQueryOptions = {
         browser: "chrome",
         name: "session",
         domain: "example.com",
       };
 
-      await expect(service.queryCookies(options)).rejects.toThrow(/"chrome"/);
+      const result = await service.queryCookies(options);
+      expect(result.data).toEqual([]);
     });
 
-    it("error message includes instructions to provide filepath", async () => {
+    it("includes error info in metrics when includeMetrics is true and no filepath", async () => {
       const options: EnhancedQueryOptions = {
         browser: "edge",
         name: "%",
         domain: "%",
+        includeMetrics: true,
       };
 
-      await expect(service.queryCookies(options)).rejects.toThrow(/filepath/);
+      const result = await service.queryCookies(options);
+      expect(result.data).toEqual([]);
+      expect(result.metrics?.success).toBe(false);
+      expect(result.metrics?.error).toMatch(
+        /Auto-discovery.*not yet implemented/,
+      );
     });
   });
 

@@ -103,3 +103,54 @@ The CLI uses a factory pattern for different output formats:
 - Zod schemas for runtime validation
 - Platform-aware process detection and browser conflict resolution
 - Debug-level logging for clean stderr output in normal operation
+
+## Release & Publishing
+
+### Branch protection — `main` is fully protected
+
+DO NOT run `git push origin main` directly. Branch protection requires all changes to
+arrive via a PR with passing CI checks. Always push to a feature branch and open a PR:
+
+```bash
+git checkout -b chore/release-<version>
+git push -u origin chore/release-<version>
+gh pr create --title "chore: release <version>" ...
+```
+
+### Version bumping — avoid `pnpm version` / `npm version` in nvm environments
+
+`pnpm version patch` delegates to npm internally. When `npm_config_prefix` is set by
+nvm, npm conflicts with the husky pre-commit hook (exit code 11) and the command fails
+after already staging the `package.json` change.
+
+DO instead:
+1. Edit the `version` field in `package.json` manually.
+2. Commit: `git commit -m "<version>"`
+3. Tag: `git tag v<version>`
+4. Push the tag separately **after** the release PR merges: `git push origin v<version>`
+
+DO NOT attempt `npm version patch` or `pnpm version patch` in this repo.
+
+### Publishing to npm
+
+Use `pnpm publish --access public`. If 2FA is enabled, retrieve the OTP first:
+
+```bash
+op item get npmjs.com --otp
+pnpm publish --access public --otp=<code>
+```
+
+The `Release to npm` CI check uses GitHub Actions OIDC trusted publishing and may fail
+with an expired token even when the package published successfully. This is a
+pre-existing infrastructure issue — the functional checks (`Validate`, `CodeQL JS`,
+`claude-review`) are the authoritative signal for whether the release is healthy.
+
+### CI checks — what to watch vs. what to ignore
+
+- **Required / authoritative**: Validate (all matrix entries), CI Status, Advanced Tests,
+  Build Documentation, CodeQL JS, `claude-review`
+- **Known slow**: `Analyze (swift)` — the Swift CodeQL job consistently takes 2–5 minutes.
+  DO NOT watch it with `gh run watch`. Poll with `gh run list --branch main` or wait for
+  the background task notification.
+- **Pre-existing infrastructure noise**: `Release to npm` OIDC failures when publishing
+  was already completed manually.

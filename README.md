@@ -66,20 +66,22 @@ npm install @mherod/get-cookie # or npm
 yarn add @mherod/get-cookie    # or yarn
 ```
 
-### Node.js Version Requirements 🔧
+### Runtime Requirements 🔧
 
-This project requires Node.js v20.0.0 or v22.0.0. We recommend using [nvm](https://github.com/nvm-sh/nvm) to manage your Node.js versions.
+Requires **Node.js v20, v22, v24, or v25**, or **Bun**. We recommend using [nvm](https://github.com/nvm-sh/nvm) to manage your Node.js versions.
 
 ```bash
 # Install the correct Node.js version using nvm
-nvm install 22.0.0
-nvm use 22.0.0
+nvm install 22
+nvm use 22
 
 # Or simply run this in the project directory (we've included an .nvmrc file)
 nvm use
 ```
 
 The project includes an `.nvmrc` file that specifies the required Node.js version, so `nvm use` will automatically switch to the correct version when you're in the project directory.
+
+Bun is also supported natively — `bun:sqlite` is used automatically when running under Bun, with no additional configuration required.
 
 ## More Examples
 
@@ -150,6 +152,7 @@ get-cookie % example.com --output json > cookies-backup.json
 - **Multiple profiles**: Works with all browser profiles (Personal, Work, etc.)
 - **Batch operations**: Get multiple cookies efficiently with built-in SQL optimization (2-3x faster)
 - **Cross-platform**: macOS, Linux, Windows support
+- **Bun support**: Works natively in Bun environments using `bun:sqlite`, with automatic runtime detection
 - **Output formats**: Raw values, JSON, pretty-printed tables
 
 ## Browser Support 🌐

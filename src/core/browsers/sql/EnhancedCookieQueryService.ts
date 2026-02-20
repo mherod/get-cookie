@@ -433,12 +433,10 @@ export class EnhancedCookieQueryService {
   private async discoverBrowserFiles(
     browser: SqlBrowserType,
   ): Promise<string[]> {
-    // This would be refactored from existing browser strategies
-    // For now, returning empty array as placeholder
-    logger.debug("Discovering files for browser", { browser });
-
-    // TODO: Integrate with existing file discovery logic
-    return [];
+    throw new Error(
+      `Auto-discovery of cookie files for "${browser}" is not yet implemented. ` +
+        `Provide an explicit "filepath" in EnhancedQueryOptions to query a specific database file.`,
+    );
   }
 
   /**

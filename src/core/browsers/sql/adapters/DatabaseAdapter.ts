@@ -102,10 +102,16 @@ export function createSqliteDatabase(
   const runtime = detectRuntime();
 
   if (runtime === "bun") {
-    // Dynamically import BunSqliteAdapter only when needed
-    // This allows Node.js to continue working without Bun installed
-    const BunSqliteAdapter = require("./BunSqliteAdapter").BunSqliteAdapter;
-    return new BunSqliteAdapter(filepath, options);
+    // Dynamically import BunSqliteAdapter only when needed.
+    // Wrapped in try/catch: if bun:sqlite is unavailable (e.g. the bundle is
+    // evaluated in Node.js where the bun: URL scheme is rejected), fall through
+    // to better-sqlite3 rather than throwing ERR_UNSUPPORTED_ESM_URL_SCHEME.
+    try {
+      const BunSqliteAdapter = require("./BunSqliteAdapter").BunSqliteAdapter;
+      return new BunSqliteAdapter(filepath, options);
+    } catch {
+      // Fall through to better-sqlite3 below
+    }
   }
 
   // Default to Node.js with better-sqlite3

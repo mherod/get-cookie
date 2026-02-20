@@ -3,8 +3,10 @@
  * Provides clean, type-safe monitoring without monkey-patching
  */
 
-import type { Database, Statement } from "better-sqlite3";
-
+import type {
+  SqliteDatabase,
+  SqliteStatement,
+} from "./adapters/DatabaseAdapter";
 import { createTaggedLogger } from "@utils/logHelpers";
 
 const logger = createTaggedLogger("QueryMonitor");
@@ -81,7 +83,7 @@ export class QueryMonitor {
    * @throws {Error} if query execution fails
    */
   public executeQuery<T>(
-    db: Database,
+    db: SqliteDatabase,
     sql: string,
     params: unknown[] = [],
     filepath?: string,
@@ -130,7 +132,7 @@ export class QueryMonitor {
    * @throws {Error} if query execution fails
    */
   public executeGet<T>(
-    db: Database,
+    db: SqliteDatabase,
     sql: string,
     params: unknown[] = [],
     filepath?: string,
@@ -177,7 +179,7 @@ export class QueryMonitor {
    * @returns MonitoredStatement instance that wraps the prepared statement
    */
   public prepareStatement<T>(
-    db: Database,
+    db: SqliteDatabase,
     sql: string,
     filepath?: string,
   ): MonitoredStatement<T> {
@@ -311,7 +313,7 @@ export class MonitoredStatement<T> {
    * @param filepath - Optional database file path for additional context in logs
    */
   public constructor(
-    private readonly statement: Statement,
+    private readonly statement: SqliteStatement,
     private readonly sql: string,
     private readonly monitor: QueryMonitor,
     private readonly filepath?: string,
@@ -324,7 +326,7 @@ export class MonitoredStatement<T> {
    */
   public all(...params: unknown[]): T[] {
     return this.monitor.executeQuery<T>(
-      { prepare: () => this.statement } as unknown as Database,
+      { prepare: () => this.statement } as unknown as SqliteDatabase,
       this.sql,
       params,
       this.filepath,
@@ -338,7 +340,7 @@ export class MonitoredStatement<T> {
    */
   public get(...params: unknown[]): T | undefined {
     return this.monitor.executeGet<T>(
-      { prepare: () => this.statement } as unknown as Database,
+      { prepare: () => this.statement } as unknown as SqliteDatabase,
       this.sql,
       params,
       this.filepath,
@@ -349,7 +351,7 @@ export class MonitoredStatement<T> {
    * Get underlying statement
    * @returns The underlying SQLite statement object
    */
-  public getStatement(): Statement {
+  public getStatement(): SqliteStatement {
     return this.statement;
   }
 }

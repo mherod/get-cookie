@@ -14,7 +14,6 @@ import {
   afterEach,
   jest,
 } from "@jest/globals";
-import BetterSqlite3, { type Database } from "better-sqlite3";
 
 import {
   DatabaseConnectionManager,
@@ -22,13 +21,14 @@ import {
   resetGlobalConnectionManager,
   type PoolConfig,
 } from "../DatabaseConnectionManager";
+import type { SqliteDatabase } from "../adapters/DatabaseAdapter";
 
-// Mock better-sqlite3
-jest.mock("better-sqlite3");
+// Mock the adapter factory
+jest.mock("../adapters/DatabaseAdapter");
 
 describe("DatabaseConnectionManager", () => {
   let manager: DatabaseConnectionManager;
-  let mockDb: jest.Mocked<Database>;
+  let mockDb: jest.Mocked<SqliteDatabase>;
   let mockStmt: {
     all: jest.Mock;
     get: jest.Mock;
@@ -36,6 +36,7 @@ describe("DatabaseConnectionManager", () => {
   };
   let tempDir: string;
   let testDbPath: string;
+  let createSqliteDatabase: jest.Mock;
 
   beforeEach(() => {
     // Create a temporary directory for test databases
@@ -52,25 +53,14 @@ describe("DatabaseConnectionManager", () => {
     mockDb = {
       prepare: jest.fn().mockReturnValue(mockStmt),
       close: jest.fn(),
-      exec: jest.fn(),
       pragma: jest.fn(),
-      backup: jest.fn(),
-      serialize: jest.fn(),
-      function: jest.fn(),
-      aggregate: jest.fn(),
-      loadExtension: jest.fn(),
-      table: jest.fn(),
-      transaction: jest.fn(),
       readonly: true,
-      name: testDbPath,
-      open: true,
-      inTransaction: false,
-      memory: false,
-    } as unknown as jest.Mocked<Database>;
+    } as unknown as jest.Mocked<SqliteDatabase>;
 
-    (
-      BetterSqlite3 as unknown as jest.MockedFunction<typeof BetterSqlite3>
-    ).mockReturnValue(mockDb);
+    // Mock the createSqliteDatabase function
+    const adapterModule = require("../adapters/DatabaseAdapter");
+    createSqliteDatabase = adapterModule.createSqliteDatabase as jest.Mock;
+    createSqliteDatabase.mockReturnValue(mockDb);
 
     // Create manager with test config
     manager = new DatabaseConnectionManager({
@@ -106,10 +96,9 @@ describe("DatabaseConnectionManager", () => {
       const connection = await manager.getConnection(testDbPath);
 
       expect(connection).toBe(mockDb);
-      expect(BetterSqlite3).toHaveBeenCalledWith(testDbPath, {
+      expect(createSqliteDatabase).toHaveBeenCalledWith(testDbPath, {
         readonly: true,
         fileMustExist: true,
-        // No timeout set here anymore - it's applied per query
       });
     });
 
@@ -119,7 +108,7 @@ describe("DatabaseConnectionManager", () => {
       const conn2 = await manager.getConnection(testDbPath);
 
       expect(conn1).toBe(conn2);
-      expect(BetterSqlite3).toHaveBeenCalledTimes(1);
+      expect(createSqliteDatabase).toHaveBeenCalledTimes(1);
     });
 
     it("should respect max connections limit", async () => {
@@ -130,43 +119,39 @@ describe("DatabaseConnectionManager", () => {
       );
 
       expect(connections).toHaveLength(3);
-      expect(BetterSqlite3).toHaveBeenCalledTimes(3);
+      expect(createSqliteDatabase).toHaveBeenCalledTimes(3);
 
       // Getting another should evict LRU
       await manager.getConnection("db4.db");
-      expect(BetterSqlite3).toHaveBeenCalledTimes(4);
+      expect(createSqliteDatabase).toHaveBeenCalledTimes(4);
     });
 
     it("should handle connection errors with retry", async () => {
       let attempt = 0;
-      (
-        BetterSqlite3 as unknown as jest.MockedFunction<typeof BetterSqlite3>
-      ).mockImplementation((() => {
+      createSqliteDatabase.mockImplementation((() => {
         attempt++;
         if (attempt === 1) {
           throw new Error("database is locked");
         }
         return mockDb;
-      }) as unknown as typeof BetterSqlite3);
+      }) as jest.Mock);
 
       const connection = await manager.getConnection(testDbPath);
 
       expect(connection).toBe(mockDb);
-      expect(BetterSqlite3).toHaveBeenCalledTimes(2);
+      expect(createSqliteDatabase).toHaveBeenCalledTimes(2);
     });
 
     it("should fail after max retry attempts", async () => {
-      (
-        BetterSqlite3 as unknown as jest.MockedFunction<typeof BetterSqlite3>
-      ).mockImplementation((() => {
+      createSqliteDatabase.mockImplementation((() => {
         throw new Error("database is locked");
-      }) as unknown as typeof BetterSqlite3);
+      }) as unknown as jest.Mock);
 
       await expect(manager.getConnection(testDbPath)).rejects.toThrow(
         "database is locked",
       );
 
-      expect(BetterSqlite3).toHaveBeenCalledTimes(2); // 2 retry attempts
+      expect(createSqliteDatabase).toHaveBeenCalledTimes(2); // 2 retry attempts
     });
 
     it("should close connections", () => {
@@ -247,7 +232,7 @@ describe("DatabaseConnectionManager", () => {
       // Connection should be released and reusable
       const conn = await manager.getConnection(testDbPath);
       expect(conn).toBe(mockDb);
-      expect(BetterSqlite3).toHaveBeenCalledTimes(1); // Same connection reused
+      expect(createSqliteDatabase).toHaveBeenCalledTimes(1); // Same connection reused
     });
   });
 
@@ -377,17 +362,15 @@ describe("DatabaseConnectionManager", () => {
 
   describe("Error Handling", () => {
     it("should handle non-lock database errors", async () => {
-      (
-        BetterSqlite3 as unknown as jest.MockedFunction<typeof BetterSqlite3>
-      ).mockImplementation((() => {
+      createSqliteDatabase.mockImplementation((() => {
         throw new Error("File not found");
-      }) as unknown as typeof BetterSqlite3);
+      }) as unknown as jest.Mock);
 
       await expect(manager.getConnection(testDbPath)).rejects.toThrow(
         "File not found",
       );
 
-      expect(BetterSqlite3).toHaveBeenCalledTimes(1); // No retry for non-lock errors
+      expect(createSqliteDatabase).toHaveBeenCalledTimes(1); // No retry for non-lock errors
     });
 
     it("should handle query function errors", async () => {

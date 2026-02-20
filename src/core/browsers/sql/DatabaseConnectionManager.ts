@@ -5,8 +5,10 @@
 
 import { EventEmitter } from "node:events";
 
-import BetterSqlite3, { type Database } from "better-sqlite3";
-
+import {
+  createSqliteDatabase,
+  type SqliteDatabase,
+} from "./adapters/DatabaseAdapter";
 import { getErrorMessage } from "@utils/errorUtils";
 import { createTaggedLogger, logError } from "@utils/logHelpers";
 
@@ -36,7 +38,7 @@ export interface PoolConfig {
  * Database connection metadata
  */
 interface ConnectionMetadata {
-  database: Database;
+  database: SqliteDatabase;
   filepath: string;
   inUse: boolean;
   lastAccessed: number;
@@ -112,7 +114,7 @@ export class DatabaseConnectionManager extends EventEmitter {
    * Get or create a database connection
    * @param filepath
    */
-  async getConnection(filepath: string): Promise<Database> {
+  async getConnection(filepath: string): Promise<SqliteDatabase> {
     // Perform cleanup if needed (every 30 seconds)
     const now = Date.now();
     if (now - this.lastCleanupTime > 30000) {
@@ -147,15 +149,15 @@ export class DatabaseConnectionManager extends EventEmitter {
   /**
    * Create a new database connection
    * @param filepath - Path to the database file
-   * @returns Promise that resolves to a Database connection instance
+   * @returns Promise that resolves to a SqliteDatabase connection instance
    */
-  private async createConnection(filepath: string): Promise<Database> {
+  private async createConnection(filepath: string): Promise<SqliteDatabase> {
     const startTime = Date.now();
     let lastError: Error | undefined;
 
     for (let attempt = 0; attempt < this.config.retryAttempts; attempt++) {
       try {
-        const database = new BetterSqlite3(filepath, {
+        const database = createSqliteDatabase(filepath, {
           readonly: true,
           fileMustExist: true,
         });
@@ -216,7 +218,7 @@ export class DatabaseConnectionManager extends EventEmitter {
    */
   async executeQuery<T>(
     filepath: string,
-    queryFn: (db: Database) => T,
+    queryFn: (db: SqliteDatabase) => T,
     queryDescription?: string,
   ): Promise<T> {
     const startTime = Date.now();

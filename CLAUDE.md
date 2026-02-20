@@ -85,6 +85,11 @@ The project uses TypeScript path mapping:
 - Mock implementations in `__mocks__` directories
 - Single worker mode (`maxWorkers: 1`) for SQLite database safety
 - Comprehensive test coverage with browser-specific fixtures
+- Mock the SQLite adapter factory, not better-sqlite3 directly: `jest.mock("../adapters/DatabaseAdapter")` then `(adapterModule.createSqliteDatabase as jest.Mock).mockReturnValue(mockDb)`
+
+**Fixing throw-to-return bugs:** When a method is changed from throwing to returning an error result, update all `.rejects.toThrow()` test assertions to `.resolves` assertions checking `result.data === []`. The old assertions validate the broken behaviour and will fail once the fix lands.
+
+**Biome line-length formatting:** `.toMatch(/pattern/)` calls with long regex literals get reformatted to multi-line by Biome. Always run `pnpm run lint` before committing test files to catch this.
 
 ### Output Handling
 
@@ -103,6 +108,16 @@ The CLI uses a factory pattern for different output formats:
 - Zod schemas for runtime validation
 - Platform-aware process detection and browser conflict resolution
 - Debug-level logging for clean stderr output in normal operation
+
+**`exactOptionalPropertyTypes` is enabled.** `property?: T` means the key may be absent but NOT set to `undefined`. DON'T use a ternary with `undefined` as the falsy branch — TypeScript will reject it. DO use conditional spread to omit the key entirely:
+
+```typescript
+// WRONG — sets metrics to undefined, rejected by exactOptionalPropertyTypes
+return { data: [], metrics: condition ? { ... } : undefined };
+
+// CORRECT — omits the metrics key entirely when condition is false
+return { data: [], ...(condition && { metrics: { ... } }) };
+```
 
 ## Release & Publishing
 
@@ -144,6 +159,17 @@ The `Release to npm` CI check uses GitHub Actions OIDC trusted publishing and ma
 with an expired token even when the package published successfully. This is a
 pre-existing infrastructure issue — the functional checks (`Validate`, `CodeQL JS`,
 `claude-review`) are the authoritative signal for whether the release is healthy.
+
+### Global linking — pnpm link --global
+
+Run `pnpm run build` before `pnpm link --global`. If you see:
+
+```
+WARN  Installing a dependency from a non-existent directory: /path/to/missing
+```
+
+a stale global link exists. Remove it with `pnpm remove --global <package-name>`. Check
+`$(pnpm root -g)/../package.json` to identify which entries are stale.
 
 ### CI checks — what to watch vs. what to ignore
 

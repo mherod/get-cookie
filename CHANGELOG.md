@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [4.4.3] - 2026-02-24
+
 ### Refactoring
 
 - Replaced three platform×browser `switch` blocks in `listProfiles()` with a

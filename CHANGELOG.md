@@ -12,6 +12,15 @@ All notable changes to this project will be documented in this file.
   `BROWSER_PATHS` in one place (#430)
 - Converted inline `require("node:fs/path/os")` calls in `cli.ts` to ESM
   `import` statements
+- `createCompositeStrategy()` now derives the strategy list from
+  `STRATEGY_REGISTRY` via `Object.values()`, eliminating the hardcoded
+  seven-item list; adding a new browser to the registry automatically
+  includes it in the composite (#431)
+- `BaseChromiumCookieQueryStrategy` no longer hardcodes `"chrome"` as the
+  SQL browser type; a private `sqlBrowserType` getter returns the concrete
+  `browserType` when it is a valid `SqlBrowserType`, falling back to
+  `"chrome"` only for Chromium variants not yet in `SqlBrowserType`
+  (e.g. opera-gx, vivaldi, whale) (#432)
 
 ### Bug Fixes
 

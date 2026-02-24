@@ -30,7 +30,7 @@ export interface AvailableBrowser {
 /**
  * Platform-specific browser paths
  */
-const BROWSER_PATHS = {
+export const BROWSER_PATHS = {
   darwin: {
     chrome: [
       "/Applications/Google Chrome.app",

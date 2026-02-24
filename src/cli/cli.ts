@@ -1,5 +1,9 @@
 #!/usr/bin/env node
 
+import { existsSync, readFileSync } from "node:fs";
+import { homedir } from "node:os";
+import { join } from "node:path";
+
 // Local imports - core
 import { listChromeProfiles } from "@core/browsers/listChromeProfiles";
 import { cookieSpecsFromUrl } from "@core/cookies/cookieSpecsFromUrl";
@@ -102,6 +106,74 @@ interface ChromeProfileInfo {
   [key: string]: unknown;
 }
 
+/**
+ * User data directories for Chromium-based browsers per platform.
+ * Kept separate from BROWSER_PATHS (which lists all detection paths including
+ * app bundles and binaries) so that profile listing always uses the correct
+ * data directory regardless of how BROWSER_PATHS entries are ordered.
+ */
+const CHROMIUM_DATA_DIRS: Partial<
+  Record<string, Partial<Record<string, string>>>
+> = {
+  darwin: {
+    chrome: join(
+      homedir(),
+      "Library",
+      "Application Support",
+      "Google",
+      "Chrome",
+    ),
+    edge: join(homedir(), "Library", "Application Support", "Microsoft Edge"),
+    arc: join(homedir(), "Library", "Application Support", "Arc"),
+    opera: join(
+      homedir(),
+      "Library",
+      "Application Support",
+      "com.operasoftware.Opera",
+    ),
+    "opera-gx": join(
+      homedir(),
+      "Library",
+      "Application Support",
+      "com.operasoftware.OperaGX",
+    ),
+  },
+  win32: {
+    // Chrome and Edge store profiles under …\User Data on Windows
+    chrome: join(
+      process.env.LOCALAPPDATA ?? "",
+      "Google",
+      "Chrome",
+      "User Data",
+    ),
+    edge: join(
+      process.env.LOCALAPPDATA ?? "",
+      "Microsoft",
+      "Edge",
+      "User Data",
+    ),
+    opera: join(process.env.APPDATA ?? "", "Opera Software", "Opera Stable"),
+    "opera-gx": join(
+      process.env.APPDATA ?? "",
+      "Opera Software",
+      "Opera GX Stable",
+    ),
+  },
+  linux: {
+    chrome: join(homedir(), ".config", "google-chrome"),
+    edge: join(homedir(), ".config", "microsoft-edge"),
+    opera: join(homedir(), ".config", "opera"),
+    "opera-gx": join(homedir(), ".config", "opera-gx"),
+  },
+};
+
+/**
+ * Resolves the user data directory for a Chromium-based browser on the current platform.
+ */
+function getChromiumDataDir(browserLower: string): string | undefined {
+  return CHROMIUM_DATA_DIRS[process.platform]?.[browserLower];
+}
+
 function listProfiles(browser?: string): void {
   if (!browser) {
     logger.error("Please specify a browser with --browser");
@@ -129,99 +201,18 @@ function listProfiles(browser?: string): void {
       logger.log(`${browser} profiles:`);
       logger.log("");
 
-      // Get the profile directory mapping from Chrome's Local State
-      const fs = require("node:fs");
-      const path = require("node:path");
-      const os = require("node:os");
+      const dataDir = getChromiumDataDir(browserLower);
 
-      // Determine the browser data directory based on browser type and platform
-      let dataDir: string;
-      const platform = process.platform;
-
-      if (platform === "darwin") {
-        const homeDir = os.homedir();
-        switch (browserLower) {
-          case "chrome":
-            dataDir = path.join(
-              homeDir,
-              "Library",
-              "Application Support",
-              "Google",
-              "Chrome",
-            );
-            break;
-          case "edge":
-            dataDir = path.join(
-              homeDir,
-              "Library",
-              "Application Support",
-              "Microsoft Edge",
-            );
-            break;
-          case "arc":
-            dataDir = path.join(
-              homeDir,
-              "Library",
-              "Application Support",
-              "Arc",
-            );
-            break;
-          case "opera":
-            dataDir = path.join(
-              homeDir,
-              "Library",
-              "Application Support",
-              "com.operasoftware.Opera",
-            );
-            break;
-          case "opera-gx":
-            dataDir = path.join(
-              homeDir,
-              "Library",
-              "Application Support",
-              "com.operasoftware.OperaGX",
-            );
-            break;
-          default:
-            dataDir = path.join(
-              homeDir,
-              "Library",
-              "Application Support",
-              "Google",
-              "Chrome",
-            );
-        }
-      } else if (platform === "win32") {
-        const appData =
-          process.env.LOCALAPPDATA ||
-          path.join(os.homedir(), "AppData", "Local");
-        switch (browserLower) {
-          case "chrome":
-            dataDir = path.join(appData, "Google", "Chrome", "User Data");
-            break;
-          case "edge":
-            dataDir = path.join(appData, "Microsoft", "Edge", "User Data");
-            break;
-          default:
-            dataDir = path.join(appData, "Google", "Chrome", "User Data");
-        }
-      } else {
-        // Linux
-        const homeDir = os.homedir();
-        switch (browserLower) {
-          case "chrome":
-            dataDir = path.join(homeDir, ".config", "google-chrome");
-            break;
-          default:
-            dataDir = path.join(homeDir, ".config", "google-chrome");
-        }
+      if (!dataDir) {
+        logger.error(`Unsupported browser for profile listing: ${browser}`);
+        return;
       }
 
-      const localStatePath = path.join(dataDir, "Local State");
+      const localStatePath = join(dataDir, "Local State");
 
-      if (fs.existsSync(localStatePath)) {
-        const localState = JSON.parse(fs.readFileSync(localStatePath, "utf8"));
-        const profileCache = localState.profile?.info_cache || {};
+      if (existsSync(localStatePath)) {
+        const localState = JSON.parse(readFileSync(localStatePath, "utf8"));
+        const profileCache = localState.profile?.info_cache ?? {};
 
         for (const [dir, info] of Object.entries(profileCache)) {
           const profile = info as ChromeProfileInfo;

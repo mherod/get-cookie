@@ -1,7 +1,11 @@
 #!/usr/bin/env node
 
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+
 // Local imports - core
 import { listChromeProfiles } from "@core/browsers/listChromeProfiles";
+import { BROWSER_PATHS } from "@core/browsers/BrowserAvailability";
 import { cookieSpecsFromUrl } from "@core/cookies/cookieSpecsFromUrl";
 import { parseArgv } from "@utils/argv";
 import { getErrorMessage } from "@utils/errorUtils";
@@ -102,6 +106,21 @@ interface ChromeProfileInfo {
   [key: string]: unknown;
 }
 
+/**
+ * Resolves the user data directory for a Chromium-based browser on the current platform.
+ * Uses BROWSER_PATHS as the single source of truth — the last entry in each browser's
+ * path array is the data directory (earlier entries are app bundle locations).
+ */
+function getChromiumDataDir(browserLower: string): string | undefined {
+  const platform = process.platform as keyof typeof BROWSER_PATHS;
+  const platformPaths = BROWSER_PATHS[platform];
+  if (!platformPaths) {
+    return undefined;
+  }
+  const paths = platformPaths[browserLower as keyof typeof platformPaths] ?? [];
+  return paths.length > 0 ? paths[paths.length - 1] : undefined;
+}
+
 function listProfiles(browser?: string): void {
   if (!browser) {
     logger.error("Please specify a browser with --browser");
@@ -129,99 +148,18 @@ function listProfiles(browser?: string): void {
       logger.log(`${browser} profiles:`);
       logger.log("");
 
-      // Get the profile directory mapping from Chrome's Local State
-      const fs = require("node:fs");
-      const path = require("node:path");
-      const os = require("node:os");
+      const dataDir = getChromiumDataDir(browserLower);
 
-      // Determine the browser data directory based on browser type and platform
-      let dataDir: string;
-      const platform = process.platform;
-
-      if (platform === "darwin") {
-        const homeDir = os.homedir();
-        switch (browserLower) {
-          case "chrome":
-            dataDir = path.join(
-              homeDir,
-              "Library",
-              "Application Support",
-              "Google",
-              "Chrome",
-            );
-            break;
-          case "edge":
-            dataDir = path.join(
-              homeDir,
-              "Library",
-              "Application Support",
-              "Microsoft Edge",
-            );
-            break;
-          case "arc":
-            dataDir = path.join(
-              homeDir,
-              "Library",
-              "Application Support",
-              "Arc",
-            );
-            break;
-          case "opera":
-            dataDir = path.join(
-              homeDir,
-              "Library",
-              "Application Support",
-              "com.operasoftware.Opera",
-            );
-            break;
-          case "opera-gx":
-            dataDir = path.join(
-              homeDir,
-              "Library",
-              "Application Support",
-              "com.operasoftware.OperaGX",
-            );
-            break;
-          default:
-            dataDir = path.join(
-              homeDir,
-              "Library",
-              "Application Support",
-              "Google",
-              "Chrome",
-            );
-        }
-      } else if (platform === "win32") {
-        const appData =
-          process.env.LOCALAPPDATA ||
-          path.join(os.homedir(), "AppData", "Local");
-        switch (browserLower) {
-          case "chrome":
-            dataDir = path.join(appData, "Google", "Chrome", "User Data");
-            break;
-          case "edge":
-            dataDir = path.join(appData, "Microsoft", "Edge", "User Data");
-            break;
-          default:
-            dataDir = path.join(appData, "Google", "Chrome", "User Data");
-        }
-      } else {
-        // Linux
-        const homeDir = os.homedir();
-        switch (browserLower) {
-          case "chrome":
-            dataDir = path.join(homeDir, ".config", "google-chrome");
-            break;
-          default:
-            dataDir = path.join(homeDir, ".config", "google-chrome");
-        }
+      if (!dataDir) {
+        logger.error(`Unsupported platform for ${browser} profile listing`);
+        return;
       }
 
-      const localStatePath = path.join(dataDir, "Local State");
+      const localStatePath = join(dataDir, "Local State");
 
-      if (fs.existsSync(localStatePath)) {
-        const localState = JSON.parse(fs.readFileSync(localStatePath, "utf8"));
-        const profileCache = localState.profile?.info_cache || {};
+      if (existsSync(localStatePath)) {
+        const localState = JSON.parse(readFileSync(localStatePath, "utf8"));
+        const profileCache = localState.profile?.info_cache ?? {};
 
         for (const [dir, info] of Object.entries(profileCache)) {
           const profile = info as ChromeProfileInfo;

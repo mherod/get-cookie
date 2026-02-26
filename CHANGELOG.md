@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+- Internal improvements and maintenance.
+
 ## [4.4.3] - 2026-02-24
 
 ### Refactoring

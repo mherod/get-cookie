@@ -123,6 +123,67 @@ export const BROWSER_PATHS = {
 };
 
 /**
+ * User data directories for Chromium-based browsers per platform.
+ * Kept separate from BROWSER_PATHS (which lists all detection paths including
+ * app bundles and binaries) so that profile listing always uses the correct
+ * data directory regardless of how BROWSER_PATHS entries are ordered.
+ */
+export const CHROMIUM_DATA_DIRS: Partial<
+  Record<string, Partial<Record<string, string>>>
+> = {
+  darwin: {
+    chrome: join(
+      homedir(),
+      "Library",
+      "Application Support",
+      "Google",
+      "Chrome",
+    ),
+    edge: join(homedir(), "Library", "Application Support", "Microsoft Edge"),
+    arc: join(homedir(), "Library", "Application Support", "Arc"),
+    opera: join(
+      homedir(),
+      "Library",
+      "Application Support",
+      "com.operasoftware.Opera",
+    ),
+    "opera-gx": join(
+      homedir(),
+      "Library",
+      "Application Support",
+      "com.operasoftware.OperaGX",
+    ),
+  },
+  win32: {
+    // Chrome and Edge store profiles under …\User Data on Windows
+    chrome: join(
+      process.env.LOCALAPPDATA ?? "",
+      "Google",
+      "Chrome",
+      "User Data",
+    ),
+    edge: join(
+      process.env.LOCALAPPDATA ?? "",
+      "Microsoft",
+      "Edge",
+      "User Data",
+    ),
+    opera: join(process.env.APPDATA ?? "", "Opera Software", "Opera Stable"),
+    "opera-gx": join(
+      process.env.APPDATA ?? "",
+      "Opera Software",
+      "Opera GX Stable",
+    ),
+  },
+  linux: {
+    chrome: join(homedir(), ".config", "google-chrome"),
+    edge: join(homedir(), ".config", "microsoft-edge"),
+    opera: join(homedir(), ".config", "opera"),
+    "opera-gx": join(homedir(), ".config", "opera-gx"),
+  },
+};
+
+/**
  * Checks if a browser is installed by looking for its paths
  * @param browser - The browser type to check
  * @returns True if the browser is installed

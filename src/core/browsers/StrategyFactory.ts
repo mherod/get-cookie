@@ -72,18 +72,9 @@ export function createBrowserStrategy(
  */
 export function createCompositeStrategy(): CompositeCookieQueryStrategy {
   logger.debug("Creating composite strategy with all browsers");
-  // Use the existing CompositeCookieQueryStrategy which already knows
-  // how to combine all browser strategies
-  const strategies = [
-    new ChromeCookieQueryStrategy(),
-    new EdgeCookieQueryStrategy(),
-    new ArcCookieQueryStrategy(),
-    new OperaCookieQueryStrategy(),
-    new OperaGXCookieQueryStrategy(),
-    new FirefoxCookieQueryStrategy(),
-    new SafariCookieQueryStrategy(),
-  ];
-
+  const strategies = Object.values(STRATEGY_REGISTRY).map(
+    (Strategy) => new Strategy(),
+  );
   return new CompositeCookieQueryStrategy(strategies);
 }
 

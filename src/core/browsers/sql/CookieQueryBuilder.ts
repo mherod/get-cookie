@@ -6,7 +6,11 @@
 import type { SqlCookieQueryOptions } from "../../../types/schemas";
 
 /**
- * Browser types that use SQL databases for cookie storage
+ * Browser types that use SQL databases for cookie storage.
+ *
+ * Note: "brave" and "chromium" have schema definitions but no corresponding
+ * query strategies yet — they are defined speculatively for future support.
+ * Tracked in: https://github.com/mherod/get-cookie/issues/442
  */
 export type SqlBrowserType =
   | "chrome"
@@ -14,6 +18,7 @@ export type SqlBrowserType =
   | "edge"
   | "firefox"
   | "opera"
+  | "opera-gx"
   | "brave"
   | "arc";
 
@@ -84,6 +89,17 @@ const BROWSER_SCHEMAS: Record<SqlBrowserType, BrowserSchema> = {
     httpOnlyColumn: "is_httponly",
   },
   opera: {
+    tableName: "cookies",
+    nameColumn: "name",
+    valueColumn: "value",
+    domainColumn: "host_key",
+    expiryColumn: "expires_utc",
+    encryptedValueColumn: "encrypted_value",
+    pathColumn: "path",
+    secureColumn: "is_secure",
+    httpOnlyColumn: "is_httponly",
+  },
+  "opera-gx": {
     tableName: "cookies",
     nameColumn: "name",
     valueColumn: "value",

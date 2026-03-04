@@ -13,7 +13,7 @@ import { BrowserLockHandler } from "../BrowserLockHandler";
 import type { ChromiumBrowser } from "../chrome/ChromiumBrowsers";
 import { decrypt } from "../chrome/decrypt";
 import { getChromiumPassword } from "../chrome/getChromiumPassword";
-import { CookieQueryBuilder } from "../sql/CookieQueryBuilder";
+import { CookieQueryBuilder, isSqlBrowser } from "../sql/CookieQueryBuilder";
 import { getGlobalConnectionManager } from "../sql/DatabaseConnectionManager";
 import { getGlobalQueryMonitor } from "../sql/QueryMonitor";
 
@@ -84,6 +84,17 @@ export abstract class BaseChromiumCookieQueryStrategy extends BaseCookieQueryStr
   }
 
   /**
+   * Returns the SQL browser type for this strategy.
+   * Falls back to "chrome" for Chromium variants not yet in SqlBrowserType
+   * (e.g. vivaldi, whale), which all share Chrome's cookie schema.
+   */
+  private get sqlBrowserType() {
+    return isSqlBrowser(this.browserType)
+      ? this.browserType
+      : ("chrome" as const);
+  }
+
+  /**
    * Batch query cookies for multiple specs
    * Optimized to execute combined SQL queries per database file
    * @param specs - Array of cookie specifications
@@ -136,13 +147,13 @@ export abstract class BaseChromiumCookieQueryStrategy extends BaseCookieQueryStr
     try {
       const connectionManager = getGlobalConnectionManager();
       const monitor = getGlobalQueryMonitor();
-      const queryBuilder = new CookieQueryBuilder("chrome");
+      const queryBuilder = new CookieQueryBuilder(this.sqlBrowserType);
 
       // Convert CookieSpec to CookieQueryOptions
       const queryOptions = specs.map((spec) => ({
         name: spec.name,
         domain: spec.domain,
-        browser: "chrome" as const,
+        browser: this.sqlBrowserType,
       }));
 
       const queryConfig = queryBuilder.buildBatchSelectQuery(queryOptions);
@@ -445,12 +456,12 @@ export abstract class BaseChromiumCookieQueryStrategy extends BaseCookieQueryStr
       // Use SQL utilities directly instead of getEncryptedChromeCookie
       const connectionManager = getGlobalConnectionManager();
       const monitor = getGlobalQueryMonitor();
-      const queryBuilder = new CookieQueryBuilder("chrome");
+      const queryBuilder = new CookieQueryBuilder(this.sqlBrowserType);
 
       const queryConfig = queryBuilder.buildSelectQuery({
         name,
         domain,
-        browser: "chrome",
+        browser: this.sqlBrowserType,
       });
 
       const encryptedCookies = await connectionManager.executeQuery(
@@ -516,7 +527,7 @@ export abstract class BaseChromiumCookieQueryStrategy extends BaseCookieQueryStr
   protected async getMetaVersion(file: string): Promise<number> {
     try {
       const connectionManager = getGlobalConnectionManager();
-      const queryBuilder = new CookieQueryBuilder("chrome");
+      const queryBuilder = new CookieQueryBuilder(this.sqlBrowserType);
       const metaQuery = queryBuilder.buildMetaQuery("version");
 
       const metaResult = await connectionManager.executeQuery(

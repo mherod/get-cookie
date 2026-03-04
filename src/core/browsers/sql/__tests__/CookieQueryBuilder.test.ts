@@ -20,6 +20,7 @@ describe("CookieQueryBuilder", () => {
         "firefox",
         "edge",
         "opera",
+        "opera-gx",
         "brave",
         "arc",
         "chromium",
@@ -334,6 +335,7 @@ describe("CookieQueryBuilder", () => {
       expect(isSqlBrowser("firefox")).toBe(true);
       expect(isSqlBrowser("edge")).toBe(true);
       expect(isSqlBrowser("opera")).toBe(true);
+      expect(isSqlBrowser("opera-gx")).toBe(true);
       expect(isSqlBrowser("brave")).toBe(true);
       expect(isSqlBrowser("arc")).toBe(true);
       expect(isSqlBrowser("chromium")).toBe(true);

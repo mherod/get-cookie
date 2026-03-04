@@ -180,3 +180,14 @@ a stale global link exists. Remove it with `pnpm remove --global <package-name>`
   the background task notification.
 - **Pre-existing infrastructure noise**: `Release to npm` OIDC failures when publishing
   was already completed manually.
+
+### Session start — prior incomplete tasks
+
+**DO** recreate prior-session incomplete tasks with `TaskCreate` at the start of each new
+session and mark the current one `in_progress` before the first `Bash`/`Edit`/`Write`
+call. The `UserPromptSubmit` hook reports prior incomplete tasks in the system reminder;
+the `pretooluse-require-tasks.ts` hook only scans the *current* session's transcript, so
+prior-session tasks are invisible to it and will trigger a block on the first Bash call.
+
+**DON'T** assume prior-session tasks are done just because the working tree is clean.
+Recreate and mark them completed (or in_progress) explicitly before any tool calls.

@@ -419,6 +419,7 @@ export const SqlBrowserTypeSchema = z.enum([
   "edge",
   "firefox",
   "opera",
+  "opera-gx",
   "brave",
   "arc",
 ]);

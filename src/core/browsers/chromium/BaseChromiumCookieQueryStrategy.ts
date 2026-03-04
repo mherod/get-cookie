@@ -86,7 +86,7 @@ export abstract class BaseChromiumCookieQueryStrategy extends BaseCookieQueryStr
   /**
    * Returns the SQL browser type for this strategy.
    * Falls back to "chrome" for Chromium variants not yet in SqlBrowserType
-   * (e.g. opera-gx, vivaldi, whale), which all share Chrome's cookie schema.
+   * (e.g. vivaldi, whale), which all share Chrome's cookie schema.
    */
   private get sqlBrowserType() {
     return isSqlBrowser(this.browserType)

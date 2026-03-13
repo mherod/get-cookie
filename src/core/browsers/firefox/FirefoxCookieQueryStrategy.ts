@@ -1,6 +1,6 @@
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 
 import fg from "fast-glob";
 
@@ -23,12 +23,14 @@ interface FirefoxCookieRow {
 }
 
 /**
- * Find all Firefox cookie database files
+ * Find all Firefox cookie database files, optionally filtered by profile name.
  * @param logger - Logger instance for logging messages
+ * @param profileName - Optional profile display name to filter by
  * @returns An array of file paths to Firefox cookie databases
  */
 function findFirefoxCookieFiles(
   logger: ReturnType<typeof createTaggedLogger>,
+  profileName?: string,
 ): string[] {
   const home = homedir();
   if (!home) {
@@ -137,7 +139,157 @@ function findFirefoxCookieFiles(
   }
 
   logger.debug("Found Firefox cookie files", { files });
+
+  if (profileName !== undefined && files.length > 0) {
+    return filterByFirefoxProfile(
+      files,
+      profileName,
+      existingProfileDirs,
+      logger,
+    );
+  }
+
   return files;
+}
+
+/**
+ * Parsed Firefox profile entry from profiles.ini
+ */
+interface FirefoxProfileEntry {
+  name: string;
+  path: string;
+  isRelative: boolean;
+}
+
+/**
+ * Parse Firefox profiles.ini to extract profile name-to-path mappings.
+ * Firefox profiles.ini uses INI format with [ProfileN] sections containing
+ * Name, Path, and IsRelative fields.
+ * @param iniPath - Absolute path to the profiles.ini file
+ * @returns Array of parsed profile entries
+ */
+function parseFirefoxProfilesIni(iniPath: string): FirefoxProfileEntry[] {
+  try {
+    const content = readFileSync(iniPath, "utf8");
+    const lines = content.split(/\r?\n/);
+    const profiles: FirefoxProfileEntry[] = [];
+
+    let currentName: string | undefined;
+    let currentPath: string | undefined;
+    let currentIsRelative = true;
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+
+      // New section — flush the previous profile if complete
+      if (trimmed.startsWith("[")) {
+        if (currentName !== undefined && currentPath !== undefined) {
+          profiles.push({
+            name: currentName,
+            path: currentPath,
+            isRelative: currentIsRelative,
+          });
+        }
+        currentName = undefined;
+        currentPath = undefined;
+        currentIsRelative = true;
+        continue;
+      }
+
+      const eqIndex = trimmed.indexOf("=");
+      if (eqIndex === -1) {
+        continue;
+      }
+
+      const key = trimmed.slice(0, eqIndex).trim();
+      const value = trimmed.slice(eqIndex + 1).trim();
+
+      if (key === "Name") {
+        currentName = value;
+      } else if (key === "Path") {
+        currentPath = value;
+      } else if (key === "IsRelative") {
+        currentIsRelative = value === "1";
+      }
+    }
+
+    // Flush last section
+    if (currentName !== undefined && currentPath !== undefined) {
+      profiles.push({
+        name: currentName,
+        path: currentPath,
+        isRelative: currentIsRelative,
+      });
+    }
+
+    return profiles;
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Filter Firefox cookie files to only those belonging to the named profile.
+ * Reads profiles.ini from each Firefox data directory to resolve profile
+ * display names to filesystem paths, then filters the cookie file list.
+ * @param files - Array of discovered cookie file paths
+ * @param profileName - The profile display name to match (case-insensitive)
+ * @param profileDirs - Firefox data directories that may contain profiles.ini
+ * @param logger - Logger instance
+ * @returns Filtered array of cookie file paths
+ */
+function filterByFirefoxProfile(
+  files: string[],
+  profileName: string,
+  profileDirs: string[],
+  logger: ReturnType<typeof createTaggedLogger>,
+): string[] {
+  // Collect all profile directory names that match the requested profile name
+  const matchingDirNames = new Set<string>();
+
+  for (const dataDir of profileDirs) {
+    const iniPath = join(dataDir, "profiles.ini");
+    if (!existsSync(iniPath)) {
+      continue;
+    }
+
+    const profiles = parseFirefoxProfilesIni(iniPath);
+
+    for (const profile of profiles) {
+      if (profile.name.toLowerCase() === profileName.toLowerCase()) {
+        // Resolve the profile path to get the directory name
+        const resolvedPath = profile.isRelative
+          ? join(dataDir, profile.path)
+          : profile.path;
+        matchingDirNames.add(basename(resolvedPath));
+      }
+    }
+  }
+
+  if (matchingDirNames.size === 0) {
+    logger.debug("Firefox profile not found in profiles.ini", {
+      requestedProfile: profileName,
+      checked: profileDirs,
+    });
+    return [];
+  }
+
+  const filtered = files.filter((file) => {
+    // Cookie files are at <profileDir>/cookies.sqlite
+    // The parent directory name is the profile directory
+    const profileDirName = basename(join(file, ".."));
+    return matchingDirNames.has(profileDirName);
+  });
+
+  if (filtered.length === 0) {
+    logger.warn(`No cookie files found for Firefox profile: ${profileName}`);
+  } else {
+    logger.debug(
+      `Found ${filtered.length} cookie file(s) for Firefox profile: ${profileName}`,
+    );
+  }
+
+  return filtered;
 }
 
 /**
@@ -156,13 +308,18 @@ function findFirefoxCookieFiles(
  */
 export class FirefoxCookieQueryStrategy extends BaseCookieQueryStrategy {
   private readonly lockHandler: BrowserLockHandler;
+  private readonly profileName?: string;
 
   /**
    * Creates a new instance of FirefoxCookieQueryStrategy
+   * @param profileName - Optional specific profile name to target (matches Name in profiles.ini)
    */
-  public constructor() {
+  public constructor(profileName?: string) {
     super("FirefoxCookieQueryStrategy", "Firefox");
     this.lockHandler = new BrowserLockHandler(this.logger, "Firefox");
+    if (profileName !== undefined) {
+      this.profileName = profileName;
+    }
   }
 
   /**
@@ -412,7 +569,8 @@ export class FirefoxCookieQueryStrategy extends BaseCookieQueryStrategy {
     store?: string,
     force?: boolean,
   ): Promise<ExportedCookie[]> {
-    const files = store ?? findFirefoxCookieFiles(this.logger);
+    const files =
+      store ?? findFirefoxCookieFiles(this.logger, this.profileName);
     const fileList = Array.isArray(files) ? files : [files];
 
     // Fast path: If no Firefox cookie files found (Firefox not installed),

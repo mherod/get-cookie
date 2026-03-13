@@ -8,7 +8,13 @@ jest.mock("../../sql/QueryMonitor");
 jest.mock("../../sql/CookieQueryBuilder");
 jest.mock("../decrypt");
 jest.mock("../getChromiumPassword");
-jest.mock("../../listChromeProfiles");
+jest.mock("fast-glob", () => ({
+  sync: jest.fn().mockReturnValue([]),
+}));
+jest.mock("../ChromiumBrowsers", () => ({
+  getChromiumBrowserPath: jest.fn().mockReturnValue("/mock/chrome/path"),
+  CHROMIUM_BASED_BROWSERS: ["chrome"],
+}));
 
 // Mock the createTaggedLogger function directly
 jest.mock("@utils/logHelpers", () => {

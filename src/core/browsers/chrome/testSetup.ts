@@ -1,4 +1,4 @@
-import { listChromeProfilePaths } from "../listChromeProfiles";
+import fg from "fast-glob";
 import { CookieQueryBuilder } from "../sql/CookieQueryBuilder";
 import { getGlobalConnectionManager } from "../sql/DatabaseConnectionManager";
 import { getGlobalQueryMonitor } from "../sql/QueryMonitor";
@@ -9,7 +9,13 @@ import { getChromiumPassword } from "./getChromiumPassword";
 
 jest.mock("./decrypt");
 jest.mock("./getChromiumPassword");
-jest.mock("../listChromeProfiles");
+jest.mock("fast-glob", () => ({
+  sync: jest.fn().mockReturnValue([]),
+}));
+jest.mock("./ChromiumBrowsers", () => ({
+  getChromiumBrowserPath: jest.fn().mockReturnValue("/mock/chrome/path"),
+  CHROMIUM_BASED_BROWSERS: ["chrome"],
+}));
 jest.mock("../sql/DatabaseConnectionManager");
 jest.mock("../sql/QueryMonitor");
 jest.mock("../sql/CookieQueryBuilder");
@@ -54,10 +60,8 @@ export function setupChromeTest(): ChromeCookieQueryStrategy {
     value: "darwin",
   });
 
-  // Setup default mock values without resetting
-  (listChromeProfilePaths as unknown as jest.Mock).mockReturnValue([
-    mockCookieFile,
-  ]);
+  // Setup default mock values
+  (fg.sync as jest.Mock).mockReturnValue([mockCookieFile]);
   (getChromiumPassword as unknown as jest.Mock).mockResolvedValue(mockPassword);
 
   // Mock SQL utilities
@@ -95,10 +99,9 @@ export function setupChromeTest(): ChromeCookieQueryStrategy {
 
 // Export mocked functions for test assertions
 /**
- * Mock for listChromeProfilePaths function
+ * Mock for fast-glob sync function (replaces listChromeProfilePaths)
  */
-export const mockListChromeProfilePaths =
-  listChromeProfilePaths as unknown as jest.Mock;
+export const mockFgSync = fg.sync as jest.Mock;
 /**
  * Mock for getChromiumPassword function
  */

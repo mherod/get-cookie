@@ -22,6 +22,7 @@ import { decodeBinaryCookies } from "./decodeBinaryCookies";
  */
 export class SafariCookieQueryStrategy extends BaseCookieQueryStrategy {
   private readonly lockHandler: BrowserLockHandler;
+  private readonly profileName?: string;
 
   /**
    * Creates a new instance of SafariCookieQueryStrategy
@@ -31,9 +32,7 @@ export class SafariCookieQueryStrategy extends BaseCookieQueryStrategy {
     super("SafariCookieQueryStrategy", "Safari");
     this.lockHandler = new BrowserLockHandler(this.logger, "Safari");
     if (profileName !== undefined) {
-      this.logger.warn(
-        `Safari does not support profile filtering (--profile "${profileName}" will be ignored)`,
-      );
+      this.profileName = profileName;
     }
   }
 
@@ -497,6 +496,13 @@ export class SafariCookieQueryStrategy extends BaseCookieQueryStrategy {
     store?: string,
     force?: boolean,
   ): Promise<ExportedCookie[]> {
+    // Warn at query time so the message appears alongside empty results
+    if (this.profileName !== undefined) {
+      this.logger.warn(
+        `Safari does not support profile filtering. --profile "${this.profileName}" will be ignored; all Safari cookies will be returned.`,
+      );
+    }
+
     // Fast path: Safari only exists on macOS
     if (!isMacOS()) {
       this.logger.debug("Safari strategy skipped on non-macOS platform");

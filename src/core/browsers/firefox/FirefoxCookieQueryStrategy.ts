@@ -269,10 +269,25 @@ function filterByFirefoxProfile(
   }
 
   if (matchingDirNames.size === 0) {
-    logger.debug("Firefox profile not found in profiles.ini", {
-      requestedProfile: profileName,
-      checked: profileDirs,
-    });
+    // Collect all known profile names for an actionable suggestion
+    const knownNames = new Set<string>();
+    for (const dataDir of profileDirs) {
+      const iniPath = join(dataDir, "profiles.ini");
+      if (!existsSync(iniPath)) {
+        continue;
+      }
+      for (const p of parseFirefoxProfilesIni(iniPath)) {
+        knownNames.add(p.name);
+      }
+    }
+
+    const available =
+      knownNames.size > 0
+        ? ` Available profiles: ${[...knownNames].join(", ")}`
+        : "";
+    logger.warn(
+      `No Firefox profile matching "${profileName}" found.${available}`,
+    );
     return [];
   }
 

@@ -153,6 +153,13 @@ export const CHROMIUM_DATA_DIRS: Partial<
       "Application Support",
       "com.operasoftware.OperaGX",
     ),
+    brave: join(
+      homedir(),
+      "Library",
+      "Application Support",
+      "BraveSoftware",
+      "Brave-Browser",
+    ),
   },
   win32: {
     // Chrome and Edge store profiles under …\User Data on Windows
@@ -174,12 +181,25 @@ export const CHROMIUM_DATA_DIRS: Partial<
       "Opera Software",
       "Opera GX Stable",
     ),
+    arc: join(
+      process.env.LOCALAPPDATA ?? "",
+      "Packages",
+      "TheBrowserCompany.Arc_ttt1ap7aabd4t",
+      "LocalCache",
+    ),
+    brave: join(
+      process.env.LOCALAPPDATA ?? "",
+      "BraveSoftware",
+      "Brave-Browser",
+      "User Data",
+    ),
   },
   linux: {
     chrome: join(homedir(), ".config", "google-chrome"),
     edge: join(homedir(), ".config", "microsoft-edge"),
     opera: join(homedir(), ".config", "opera"),
     "opera-gx": join(homedir(), ".config", "opera-gx"),
+    brave: join(homedir(), ".config", "BraveSoftware", "Brave-Browser"),
   },
 };
 

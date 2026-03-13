@@ -213,7 +213,59 @@ describe("EnhancedCookieQueryService", () => {
       );
     });
 
-    it("returns empty array for unsupported browser with no data dir", async () => {
+    it("discovers Brave cookie files from Default profile", async () => {
+      mockExistsSync.mockImplementation((...args: unknown[]) => {
+        const p = String(args[0]).replace(/\\/g, "/");
+        if (p.endsWith("/Default/Cookies")) {
+          return true;
+        }
+        if (
+          p.includes("Brave") &&
+          !p.includes("Default") &&
+          !p.includes("Profile")
+        ) {
+          return true;
+        }
+        return false;
+      });
+
+      const options: EnhancedQueryOptions = {
+        browser: "brave",
+        name: "%",
+        domain: "%",
+      };
+
+      await service.queryCookies(options);
+      expect(mockDb.prepare).toHaveBeenCalled();
+    });
+
+    it("discovers Arc cookie files from Default profile", async () => {
+      mockExistsSync.mockImplementation((...args: unknown[]) => {
+        const p = String(args[0]).replace(/\\/g, "/");
+        if (p.endsWith("/Default/Cookies")) {
+          return true;
+        }
+        if (
+          p.includes("Arc") &&
+          !p.includes("Default") &&
+          !p.includes("Profile")
+        ) {
+          return true;
+        }
+        return false;
+      });
+
+      const options: EnhancedQueryOptions = {
+        browser: "arc",
+        name: "%",
+        domain: "%",
+      };
+
+      await service.queryCookies(options);
+      expect(mockDb.prepare).toHaveBeenCalled();
+    });
+
+    it("returns empty array when Brave data dir does not exist", async () => {
       const options: EnhancedQueryOptions = {
         browser: "brave",
         name: "%",

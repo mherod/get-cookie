@@ -426,8 +426,6 @@ export class EnhancedCookieQueryService {
       return [options.filepath];
     }
 
-    // Import browser-specific file discovery logic
-    // This would be refactored from existing code
     return this.discoverBrowserFiles(options.browser);
   }
 

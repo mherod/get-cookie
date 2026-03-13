@@ -155,7 +155,7 @@ function findFirefoxCookieFiles(
 /**
  * Parsed Firefox profile entry from profiles.ini
  */
-interface FirefoxProfileEntry {
+export interface FirefoxProfileEntry {
   name: string;
   path: string;
   isRelative: boolean;
@@ -168,7 +168,9 @@ interface FirefoxProfileEntry {
  * @param iniPath - Absolute path to the profiles.ini file
  * @returns Array of parsed profile entries
  */
-function parseFirefoxProfilesIni(iniPath: string): FirefoxProfileEntry[] {
+export function parseFirefoxProfilesIni(
+  iniPath: string,
+): FirefoxProfileEntry[] {
   try {
     const content = readFileSync(iniPath, "utf8");
     const lines = content.split(/\r?\n/);

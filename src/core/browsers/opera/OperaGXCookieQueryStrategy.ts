@@ -3,6 +3,7 @@ import { ChromiumCookieQueryStrategy } from "../chromium/ChromiumCookieQueryStra
 /**
  * Strategy for querying cookies from Opera GX browser.
  * Opera GX is the gaming-focused variant of Opera, sharing the same keychain entry.
+ * Supports optional profile-name filtering via the profileName constructor parameter.
  * @example
  * ```typescript
  * const strategy = new OperaGXCookieQueryStrategy();
@@ -12,8 +13,9 @@ import { ChromiumCookieQueryStrategy } from "../chromium/ChromiumCookieQueryStra
 export class OperaGXCookieQueryStrategy extends ChromiumCookieQueryStrategy {
   /**
    * Creates a new instance of OperaGXCookieQueryStrategy
+   * @param profileName - Optional specific profile name to target
    */
-  public constructor() {
-    super("opera-gx");
+  public constructor(profileName?: string) {
+    super("opera-gx", profileName);
   }
 }

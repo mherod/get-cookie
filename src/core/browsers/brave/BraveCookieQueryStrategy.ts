@@ -3,6 +3,7 @@ import { ChromiumCookieQueryStrategy } from "../chromium/ChromiumCookieQueryStra
 /**
  * Strategy for querying cookies from Brave browser.
  * Brave is a Chromium-based browser with standard cookie storage.
+ * Supports optional profile-name filtering via the profileName constructor parameter.
  * @example
  * ```typescript
  * const strategy = new BraveCookieQueryStrategy();
@@ -12,8 +13,9 @@ import { ChromiumCookieQueryStrategy } from "../chromium/ChromiumCookieQueryStra
 export class BraveCookieQueryStrategy extends ChromiumCookieQueryStrategy {
   /**
    * Creates a new instance of BraveCookieQueryStrategy
+   * @param profileName - Optional specific profile name to target
    */
-  public constructor() {
-    super("brave");
+  public constructor(profileName?: string) {
+    super("brave", profileName);
   }
 }

@@ -3,6 +3,7 @@ import { ChromiumCookieQueryStrategy } from "../chromium/ChromiumCookieQueryStra
 /**
  * Strategy for querying cookies from Microsoft Edge browser.
  * Edge is Chromium-based and uses the same cookie storage format as Chrome.
+ * Supports optional profile-name filtering via the profileName constructor parameter.
  * @example
  * ```typescript
  * const strategy = new EdgeCookieQueryStrategy();
@@ -12,8 +13,9 @@ import { ChromiumCookieQueryStrategy } from "../chromium/ChromiumCookieQueryStra
 export class EdgeCookieQueryStrategy extends ChromiumCookieQueryStrategy {
   /**
    * Creates a new instance of EdgeCookieQueryStrategy
+   * @param profileName - Optional specific profile name to target
    */
-  public constructor() {
-    super("edge");
+  public constructor(profileName?: string) {
+    super("edge", profileName);
   }
 }

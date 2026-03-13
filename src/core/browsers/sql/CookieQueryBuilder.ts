@@ -8,9 +8,7 @@ import type { SqlCookieQueryOptions } from "../../../types/schemas";
 /**
  * Browser types that use SQL databases for cookie storage.
  *
- * Note: "brave" and "chromium" have schema definitions but no corresponding
- * query strategies yet — they are defined speculatively for future support.
- * Tracked in: https://github.com/mherod/get-cookie/issues/442
+ * Note: "chromium" is defined speculatively for future generic Chromium support.
  */
 export type SqlBrowserType =
   | "chrome"

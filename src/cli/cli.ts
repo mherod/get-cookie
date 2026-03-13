@@ -126,6 +126,7 @@ function listProfiles(browser?: string): void {
     browserLower === "chrome" ||
     browserLower === "edge" ||
     browserLower === "arc" ||
+    browserLower === "brave" ||
     browserLower === "opera" ||
     browserLower === "opera-gx"
   ) {

@@ -3,23 +3,12 @@
  * Provides a centralized, type-safe way to build SQL queries for different browsers
  */
 
-import type { SqlCookieQueryOptions } from "../../../types/schemas";
+import type {
+  SqlBrowserType,
+  SqlCookieQueryOptions,
+} from "../../../types/schemas";
 
-/**
- * Browser types that use SQL databases for cookie storage.
- *
- * Note: "chromium" is defined speculatively for future generic Chromium support.
- */
-export type SqlBrowserType =
-  | "chrome"
-  | "chromium"
-  | "edge"
-  | "firefox"
-  | "opera"
-  | "opera-gx"
-  | "brave"
-  | "arc"
-  | "vivaldi";
+export type { SqlBrowserType };
 
 /**
  * SQL query configuration

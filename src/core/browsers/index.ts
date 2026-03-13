@@ -1,13 +1,14 @@
 // Core browser strategies
 export * from "./CompositeCookieQueryStrategy";
-export * from "./arc/ArcCookieQueryStrategy";
+export * from "./arc";
+export * from "./brave";
 export * from "./chrome";
-export * from "./edge/EdgeCookieQueryStrategy";
+export * from "./edge";
 export * from "./firefox";
-export * from "./opera/OperaCookieQueryStrategy";
-export * from "./opera/OperaGXCookieQueryStrategy";
+export * from "./opera";
 export * from "./safari";
 export * from "./safari/decodeBinaryCookies";
+export * from "./vivaldi";
 
 // Browser detection and availability
 export * from "./BrowserDetector";

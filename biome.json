@@ -15,7 +15,8 @@
       "!**/coverage/**",
       "!**/docs/.vitepress/cache/**",
       "!**/*.log",
-      "!**/.parcel-cache/**"
+      "!**/.parcel-cache/**",
+      "!**/.swiz/**"
     ]
   },
   "formatter": {

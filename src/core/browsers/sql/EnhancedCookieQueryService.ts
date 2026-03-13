@@ -3,8 +3,13 @@
  * Combines query building, connection management, and validation in a unified interface
  */
 
+import { existsSync, readdirSync } from "node:fs";
+import { join } from "node:path";
+import { homedir } from "node:os";
 import type { SqliteDatabase } from "./adapters/DatabaseAdapter";
 import { createTaggedLogger, logError } from "@utils/logHelpers";
+import { getPlatform } from "@utils/platformUtils";
+import { CHROMIUM_DATA_DIRS } from "../BrowserAvailability";
 
 import type { ExportedCookie } from "../../../types/schemas";
 import { chromeTimestampToDate } from "../../../utils/chromeDates";
@@ -428,15 +433,112 @@ export class EnhancedCookieQueryService {
 
   /**
    * Discover browser-specific cookie files
-   * @param browser
+   * @param browser - The SQL browser type to discover files for
+   * @returns Array of discovered cookie file paths that exist on disk
    */
   private async discoverBrowserFiles(
     browser: SqlBrowserType,
   ): Promise<string[]> {
-    throw new Error(
-      `Auto-discovery of cookie files for "${browser}" is not yet implemented. ` +
-        `Provide an explicit "filepath" in EnhancedQueryOptions to query a specific database file.`,
-    );
+    if (browser === "firefox") {
+      return this.discoverFirefoxCookieFiles();
+    }
+    return this.discoverChromiumCookieFiles(browser);
+  }
+
+  /**
+   * Discover Chromium-based browser cookie files across all profiles
+   * @param browser - The Chromium-based browser type
+   * @returns Array of cookie file paths that exist on disk
+   */
+  private discoverChromiumCookieFiles(browser: SqlBrowserType): string[] {
+    const platform = getPlatform();
+    const dataDir = CHROMIUM_DATA_DIRS[platform]?.[browser];
+
+    if (!dataDir || !existsSync(dataDir)) {
+      logger.debug("No data directory found", { browser, platform });
+      return [];
+    }
+
+    const cookieFiles: string[] = [];
+
+    // Check Default profile
+    const defaultCookies = join(dataDir, "Default", "Cookies");
+    if (existsSync(defaultCookies)) {
+      cookieFiles.push(defaultCookies);
+    }
+
+    // Check numbered profiles (Profile 1 through Profile 10)
+    for (let i = 1; i <= 10; i++) {
+      const profileCookies = join(dataDir, `Profile ${i}`, "Cookies");
+      if (existsSync(profileCookies)) {
+        cookieFiles.push(profileCookies);
+      }
+    }
+
+    logger.debug("Discovered Chromium cookie files", {
+      browser,
+      count: cookieFiles.length,
+    });
+
+    return cookieFiles;
+  }
+
+  /**
+   * Discover Firefox cookie files across all profiles
+   * @returns Array of cookie file paths that exist on disk
+   */
+  private discoverFirefoxCookieFiles(): string[] {
+    const home = homedir();
+    const platform = getPlatform();
+
+    let profilesDir: string;
+    if (platform === "darwin") {
+      profilesDir = join(
+        home,
+        "Library",
+        "Application Support",
+        "Firefox",
+        "Profiles",
+      );
+    } else if (platform === "win32") {
+      profilesDir = join(
+        process.env.APPDATA ?? "",
+        "Mozilla",
+        "Firefox",
+        "Profiles",
+      );
+    } else {
+      profilesDir = join(home, ".mozilla", "firefox");
+    }
+
+    if (!existsSync(profilesDir)) {
+      logger.debug("Firefox profiles directory not found", { profilesDir });
+      return [];
+    }
+
+    const cookieFiles: string[] = [];
+
+    try {
+      const entries = readdirSync(profilesDir);
+      for (const entry of entries) {
+        if (entry.includes("default")) {
+          const cookiesPath = join(profilesDir, entry, "cookies.sqlite");
+          if (existsSync(cookiesPath)) {
+            cookieFiles.push(cookiesPath);
+          }
+        }
+      }
+    } catch {
+      logger.debug("Failed to read Firefox profiles directory", {
+        profilesDir,
+      });
+    }
+
+    logger.debug("Discovered Firefox cookie files", {
+      count: cookieFiles.length,
+    });
+
+    return cookieFiles;
   }
 
   /**

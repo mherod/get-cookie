@@ -5,7 +5,6 @@ import { join } from "node:path";
 
 // Local imports - core
 import { CHROMIUM_DATA_DIRS } from "@core/browsers/BrowserAvailability";
-import { listChromeProfiles } from "@core/browsers/listChromeProfiles";
 import { cookieSpecsFromUrl } from "@core/cookies/cookieSpecsFromUrl";
 import { parseArgv } from "@utils/argv";
 import { getErrorMessage } from "@utils/errorUtils";
@@ -125,9 +124,18 @@ function listProfiles(browser?: string): void {
 
   if (dataDir) {
     try {
-      const profiles = listChromeProfiles();
+      const localStatePath = join(dataDir, "Local State");
 
-      if (profiles.length === 0) {
+      if (!existsSync(localStatePath)) {
+        logger.log(`No ${browser} profiles found`);
+        return;
+      }
+
+      const localState = JSON.parse(readFileSync(localStatePath, "utf8"));
+      const profileCache = localState.profile?.info_cache ?? {};
+      const entries = Object.entries(profileCache);
+
+      if (entries.length === 0) {
         logger.log(`No ${browser} profiles found`);
         return;
       }
@@ -135,30 +143,14 @@ function listProfiles(browser?: string): void {
       logger.log(`${browser} profiles:`);
       logger.log("");
 
-      const localStatePath = join(dataDir, "Local State");
-
-      if (existsSync(localStatePath)) {
-        const localState = JSON.parse(readFileSync(localStatePath, "utf8"));
-        const profileCache = localState.profile?.info_cache ?? {};
-
-        for (const [dir, info] of Object.entries(profileCache)) {
-          const profile = info as ChromeProfileInfo;
-          logger.log(`  • ${profile.name}`);
-          logger.log(`    Directory: ${dir}`);
-          if (profile.user_name) {
-            logger.log(`    User: ${profile.user_name}`);
-          }
-          logger.log("");
+      for (const [dir, info] of entries) {
+        const profile = info as ChromeProfileInfo;
+        logger.log(`  • ${profile.name}`);
+        logger.log(`    Directory: ${dir}`);
+        if (profile.user_name) {
+          logger.log(`    User: ${profile.user_name}`);
         }
-      } else {
-        // Fallback to just listing profile objects
-        profiles.forEach((profile) => {
-          logger.log(`  • ${profile.name}`);
-          if (profile.user_name) {
-            logger.log(`    User: ${profile.user_name}`);
-          }
-          logger.log("");
-        });
+        logger.log("");
       }
     } catch (error) {
       logger.error(

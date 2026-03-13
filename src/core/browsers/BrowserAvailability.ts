@@ -219,6 +219,28 @@ export const CHROMIUM_DATA_DIRS: Partial<
 };
 
 /**
+ * Firefox data directories per platform.
+ * Firefox uses profiles.ini rather than Local State for profile metadata.
+ * Each entry is an array because Firefox variants (regular, Developer Edition, ESR)
+ * may coexist on the same machine.
+ */
+export const FIREFOX_DATA_DIRS: Partial<Record<string, string[]>> = {
+  darwin: [join(homedir(), "Library", "Application Support", "Firefox")],
+  win32: [
+    join(homedir(), "AppData", "Roaming", "Mozilla", "Firefox"),
+    join(
+      homedir(),
+      "AppData",
+      "Roaming",
+      "Mozilla",
+      "Firefox Developer Edition",
+    ),
+    join(homedir(), "AppData", "Roaming", "Mozilla", "Firefox ESR"),
+  ],
+  linux: [join(homedir(), ".mozilla", "firefox")],
+};
+
+/**
  * Checks if a browser is installed by looking for its paths
  * @param browser - The browser type to check
  * @returns True if the browser is installed

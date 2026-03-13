@@ -4,7 +4,11 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 // Local imports - core
-import { CHROMIUM_DATA_DIRS } from "@core/browsers/BrowserAvailability";
+import {
+  CHROMIUM_DATA_DIRS,
+  FIREFOX_DATA_DIRS,
+} from "@core/browsers/BrowserAvailability";
+import { parseFirefoxProfilesIni } from "@core/browsers/firefox/FirefoxCookieQueryStrategy";
 import { cookieSpecsFromUrl } from "@core/cookies/cookieSpecsFromUrl";
 import { parseArgv } from "@utils/argv";
 import { getErrorMessage } from "@utils/errorUtils";
@@ -40,7 +44,7 @@ function showHelp(): void {
     "  -f, --force               Force operation despite warnings (e.g., locked databases)",
   );
   logger.log(
-    "  --list-profiles           List available browser profiles (use with --browser)",
+    "  --list-profiles           List available browser profiles (optionally filter with --browser)",
   );
   logger.log("");
   logger.log("Query options:");
@@ -53,7 +57,7 @@ function showHelp(): void {
     "  --browser BROWSER         Target specific browser (chrome|edge|arc|opera|opera-gx|firefox|safari)",
   );
   logger.log(
-    "  --profile NAME            Target specific Chrome profile by name (e.g., 'Default', 'Profile 1')",
+    "  --profile NAME            Target specific browser profile by name (e.g., 'Default', 'Profile 1')",
   );
   logger.log(
     "  --store PATH              Path to a specific cookie store file",
@@ -112,63 +116,99 @@ function getChromiumDataDir(browserLower: string): string | undefined {
   return CHROMIUM_DATA_DIRS[process.platform]?.[browserLower];
 }
 
+function listChromiumProfiles(browser: string, dataDir: string): void {
+  try {
+    const localStatePath = join(dataDir, "Local State");
+
+    if (!existsSync(localStatePath)) {
+      return;
+    }
+
+    const localState = JSON.parse(readFileSync(localStatePath, "utf8"));
+    const profileCache = localState.profile?.info_cache ?? {};
+    const entries = Object.entries(profileCache);
+
+    if (entries.length === 0) {
+      return;
+    }
+
+    logger.log(`${browser} profiles:`);
+
+    for (const [dir, info] of entries) {
+      const profile = info as ChromeProfileInfo;
+      const userSuffix = profile.user_name ? ` (${profile.user_name})` : "";
+      logger.log(`  • ${profile.name}${userSuffix}  [${dir}]`);
+    }
+    logger.log("");
+  } catch (error) {
+    logger.error(`Failed to list ${browser} profiles:`, getErrorMessage(error));
+  }
+}
+
+function listFirefoxProfiles(): void {
+  const dirs = FIREFOX_DATA_DIRS[process.platform] ?? [];
+  let found = false;
+
+  for (const dataDir of dirs) {
+    const iniPath = join(dataDir, "profiles.ini");
+    if (!existsSync(iniPath)) {
+      continue;
+    }
+
+    const profiles = parseFirefoxProfilesIni(iniPath);
+    if (profiles.length === 0) {
+      continue;
+    }
+
+    if (!found) {
+      logger.log("Firefox profiles:");
+      found = true;
+    }
+
+    for (const profile of profiles) {
+      const resolvedPath = profile.isRelative
+        ? join(dataDir, profile.path)
+        : profile.path;
+      logger.log(`  • ${profile.name}  [${resolvedPath}]`);
+    }
+  }
+
+  if (found) {
+    logger.log("");
+  }
+}
+
 function listProfiles(browser?: string): void {
-  if (!browser) {
-    logger.error("Please specify a browser with --browser");
-    logger.log("Example: get-cookie --browser chrome --list-profiles");
+  if (browser) {
+    const browserLower = browser.toLowerCase();
+
+    if (browserLower === "safari") {
+      logger.log("Safari does not use named profiles");
+      return;
+    }
+
+    if (browserLower === "firefox") {
+      listFirefoxProfiles();
+      return;
+    }
+
+    const dataDir = getChromiumDataDir(browserLower);
+    if (dataDir) {
+      listChromiumProfiles(browser, dataDir);
+    } else {
+      logger.error(`Unknown browser: ${browser}`);
+    }
     return;
   }
 
-  const browserLower = browser.toLowerCase();
-  const dataDir = getChromiumDataDir(browserLower);
-
-  if (dataDir) {
-    try {
-      const localStatePath = join(dataDir, "Local State");
-
-      if (!existsSync(localStatePath)) {
-        logger.log(`No ${browser} profiles found`);
-        return;
-      }
-
-      const localState = JSON.parse(readFileSync(localStatePath, "utf8"));
-      const profileCache = localState.profile?.info_cache ?? {};
-      const entries = Object.entries(profileCache);
-
-      if (entries.length === 0) {
-        logger.log(`No ${browser} profiles found`);
-        return;
-      }
-
-      logger.log(`${browser} profiles:`);
-      logger.log("");
-
-      for (const [dir, info] of entries) {
-        const profile = info as ChromeProfileInfo;
-        logger.log(`  • ${profile.name}`);
-        logger.log(`    Directory: ${dir}`);
-        if (profile.user_name) {
-          logger.log(`    User: ${profile.user_name}`);
-        }
-        logger.log("");
-      }
-    } catch (error) {
-      logger.error(
-        `Failed to list ${browser} profiles:`,
-        getErrorMessage(error),
-      );
+  // No --browser specified: list profiles for all browsers
+  const platformDirs = CHROMIUM_DATA_DIRS[process.platform] ?? {};
+  for (const [name, dataDir] of Object.entries(platformDirs)) {
+    if (dataDir && existsSync(join(dataDir, "Local State"))) {
+      listChromiumProfiles(name, dataDir);
     }
-  } else if (browserLower === "firefox") {
-    logger.log("Firefox profile listing is not yet implemented");
-    logger.log(
-      "Firefox stores profiles in different locations based on the platform",
-    );
-  } else if (browserLower === "safari") {
-    logger.log("Safari does not use named profiles");
-    logger.log("Safari uses the system keychain for the current user");
-  } else {
-    logger.error(`Unknown browser: ${browser}`);
   }
+  listFirefoxProfiles();
 }
 
 function getCookieSpecs(

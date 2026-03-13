@@ -72,6 +72,11 @@ export const BROWSER_PATHS = {
       `${homedir()}/Applications/Brave Browser.app`,
       `${homedir()}/Library/Application Support/BraveSoftware/Brave-Browser`,
     ],
+    vivaldi: [
+      "/Applications/Vivaldi.app",
+      `${homedir()}/Applications/Vivaldi.app`,
+      `${homedir()}/Library/Application Support/Vivaldi`,
+    ],
   },
   win32: {
     chrome: [
@@ -105,6 +110,10 @@ export const BROWSER_PATHS = {
       join(process.env.LOCALAPPDATA ?? "", "BraveSoftware", "Brave-Browser"),
       join(process.env.PROGRAMFILES ?? "", "BraveSoftware", "Brave-Browser"),
     ],
+    vivaldi: [
+      join(process.env.LOCALAPPDATA ?? "", "Vivaldi", "Application"),
+      join(process.env.PROGRAMFILES ?? "", "Vivaldi", "Application"),
+    ],
   },
   linux: {
     chrome: [
@@ -134,6 +143,12 @@ export const BROWSER_PATHS = {
     ],
     opera: [`${homedir()}/.config/opera`, "/usr/bin/opera", "/usr/lib/opera"],
     "opera-gx": [`${homedir()}/.config/opera-gx`, "/usr/bin/opera-gx"],
+    vivaldi: [
+      `${homedir()}/.config/vivaldi`,
+      "/usr/bin/vivaldi",
+      "/usr/bin/vivaldi-stable",
+      "/opt/vivaldi",
+    ],
   },
 };
 
@@ -175,6 +190,7 @@ export const CHROMIUM_DATA_DIRS: Partial<
       "BraveSoftware",
       "Brave-Browser",
     ),
+    vivaldi: join(homedir(), "Library", "Application Support", "Vivaldi"),
   },
   win32: {
     // Chrome and Edge store profiles under …\User Data on Windows
@@ -208,6 +224,7 @@ export const CHROMIUM_DATA_DIRS: Partial<
       "Brave-Browser",
       "User Data",
     ),
+    vivaldi: join(process.env.LOCALAPPDATA ?? "", "Vivaldi", "User Data"),
   },
   linux: {
     chrome: join(homedir(), ".config", "google-chrome"),
@@ -215,6 +232,7 @@ export const CHROMIUM_DATA_DIRS: Partial<
     opera: join(homedir(), ".config", "opera"),
     "opera-gx": join(homedir(), ".config", "opera-gx"),
     brave: join(homedir(), ".config", "BraveSoftware", "Brave-Browser"),
+    vivaldi: join(homedir(), ".config", "vivaldi"),
   },
 };
 
@@ -295,6 +313,8 @@ function getBrowserVersion(browser: BrowserType): string | undefined {
           "/Applications/Opera.app/Contents/MacOS/Opera --version 2>/dev/null",
         "opera-gx":
           "/Applications/Opera\\ GX.app/Contents/MacOS/Opera\\ GX --version 2>/dev/null",
+        vivaldi:
+          "/Applications/Vivaldi.app/Contents/MacOS/Vivaldi --version 2>/dev/null",
       };
       command = versionCommands[browser];
     } else if (isLinux()) {
@@ -307,6 +327,8 @@ function getBrowserVersion(browser: BrowserType): string | undefined {
           "brave-browser --version 2>/dev/null || brave-browser-stable --version 2>/dev/null",
         opera: "opera --version 2>/dev/null",
         "opera-gx": "opera-gx --version 2>/dev/null",
+        vivaldi:
+          "vivaldi --version 2>/dev/null || vivaldi-stable --version 2>/dev/null",
       };
       command = versionCommands[browser];
     } else if (isWindows()) {
@@ -471,6 +493,7 @@ export function detectAvailableBrowsers(): AvailableBrowser[] {
     "brave",
     "opera",
     "opera-gx",
+    "vivaldi",
   ];
 
   const available: AvailableBrowser[] = [];
@@ -525,6 +548,7 @@ function getBrowserDisplayName(browser: BrowserType): string {
     brave: "Brave",
     opera: "Opera",
     "opera-gx": "Opera GX",
+    vivaldi: "Vivaldi",
   };
   return names[browser];
 }
@@ -596,6 +620,7 @@ export function suggestBrowser(): BrowserType | undefined {
     "firefox",
     "safari",
     "arc",
+    "vivaldi",
     "opera",
     "opera-gx",
   ];

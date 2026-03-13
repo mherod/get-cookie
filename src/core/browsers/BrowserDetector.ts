@@ -20,7 +20,8 @@ export type BrowserType =
   | "arc"
   | "brave"
   | "opera"
-  | "opera-gx";
+  | "opera-gx"
+  | "vivaldi";
 
 /**
  * Magic bytes for Safari binary cookies format
@@ -149,6 +150,7 @@ export function isValidBrowserType(browser: string): browser is BrowserType {
     "brave",
     "opera",
     "opera-gx",
+    "vivaldi",
   ];
   return validTypes.includes(browser as BrowserType);
 }
@@ -168,6 +170,7 @@ export function getBrowserDisplayName(browser: BrowserType): string {
     brave: "Brave",
     opera: "Opera",
     "opera-gx": "Opera GX",
+    vivaldi: "Vivaldi",
   };
   return displayNames[browser];
 }

@@ -1,6 +1,6 @@
 import { jest } from "@jest/globals";
 
-import { listChromeProfilePaths } from "../../listChromeProfiles";
+import fg from "fast-glob";
 import { CookieQueryBuilder } from "../../sql/CookieQueryBuilder";
 import { getGlobalConnectionManager } from "../../sql/DatabaseConnectionManager";
 import { getGlobalQueryMonitor } from "../../sql/QueryMonitor";
@@ -10,12 +10,18 @@ import { getChromiumPassword } from "../getChromiumPassword";
 
 jest.mock("../decrypt");
 jest.mock("../getChromiumPassword");
-jest.mock("../../listChromeProfiles");
+jest.mock("fast-glob", () => ({
+  sync: jest.fn().mockReturnValue([]),
+}));
+jest.mock("../ChromiumBrowsers", () => ({
+  getChromiumBrowserPath: jest.fn().mockReturnValue("/mock/chrome/path"),
+  CHROMIUM_BASED_BROWSERS: ["chrome"],
+}));
 jest.mock("../../sql/DatabaseConnectionManager");
 jest.mock("../../sql/QueryMonitor");
 jest.mock("../../sql/CookieQueryBuilder");
 
-const mockListChromeProfilePaths = jest.mocked(listChromeProfilePaths);
+const mockFgSync = jest.mocked(fg.sync);
 const mockGetChromiumPassword = jest.mocked(getChromiumPassword);
 const mockDecrypt = jest.mocked(decrypt);
 const mockGetGlobalConnectionManager = jest.mocked(getGlobalConnectionManager);
@@ -32,7 +38,7 @@ describe("ChromeCookieQueryStrategy - Success", () => {
     const mockPassword = "mock-password";
     const mockDecryptedValue = "decrypted-value";
 
-    mockListChromeProfilePaths.mockReturnValue(["/path/to/profile"]);
+    mockFgSync.mockReturnValue(["/path/to/profile"]);
     mockGetChromiumPassword.mockResolvedValue(mockPassword);
 
     // Setup SQL utility mocks
@@ -83,7 +89,7 @@ describe("ChromeCookieQueryStrategy - Success", () => {
       domain: "example.com",
     });
 
-    expect(mockListChromeProfilePaths).toHaveBeenCalled();
+    expect(mockFgSync).toHaveBeenCalled();
     expect(mockGetChromiumPassword).toHaveBeenCalled();
     expect(mockGetGlobalConnectionManager).toHaveBeenCalled();
     expect(mockGetGlobalQueryMonitor).toHaveBeenCalled();

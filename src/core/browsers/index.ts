@@ -15,5 +15,4 @@ export * from "./BrowserAvailability";
 export * from "./StrategyFactory";
 
 // Utilities
-export * from "./listChromeProfiles";
 export * from "./sql"; // Export SQL utilities

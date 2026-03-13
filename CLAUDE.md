@@ -175,9 +175,6 @@ a stale global link exists. Remove it with `pnpm remove --global <package-name>`
 
 - **Required / authoritative**: Validate (all matrix entries), CI Status, Advanced Tests,
   Build Documentation, CodeQL JS, `claude-review`
-- **Known slow**: `Analyze (swift)` — the Swift CodeQL job consistently takes 2–5 minutes.
-  DO NOT watch it with `gh run watch`. Poll with `gh run list --branch main` or wait for
-  the background task notification.
 - **Pre-existing infrastructure noise**: `Release to npm` OIDC failures when publishing
   was already completed manually.
 

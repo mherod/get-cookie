@@ -30,6 +30,14 @@ jest.mock("node:fs", () => ({
   readdirSync: jest.fn().mockReturnValue([]),
 }));
 
+// Mock getPlatform to return "darwin" so path lookups are deterministic across CI
+jest.mock("@utils/platformUtils", () => {
+  const actual = jest.requireActual<typeof import("@utils/platformUtils")>(
+    "@utils/platformUtils",
+  );
+  return { ...actual, getPlatform: jest.fn().mockReturnValue("darwin") };
+});
+
 describe("EnhancedCookieQueryService", () => {
   let service: EnhancedCookieQueryService;
   let mockDb: jest.Mocked<SqliteDatabase>;

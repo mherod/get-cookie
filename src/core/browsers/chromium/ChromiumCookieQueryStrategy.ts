@@ -159,13 +159,16 @@ export class ChromiumCookieQueryStrategy extends BaseChromiumCookieQueryStrategy
         return filtered;
       }
 
-      this.logger.debug(`Profile not found in ${this.browser} Local State`, {
-        requestedProfile: this.profileName,
-        availableProfiles: Object.entries(profileCache).map(([dir, info]) => ({
-          directory: dir,
-          name: (info as ChromiumProfileInfo).name,
-        })),
-      });
+      const availableNames = Object.entries(profileCache)
+        .map(([, info]) => (info as ChromiumProfileInfo).name)
+        .filter(Boolean);
+      const available =
+        availableNames.length > 0
+          ? ` Available profiles: ${availableNames.join(", ")}`
+          : "";
+      this.logger.warn(
+        `No ${this.browser} profile matching "${this.profileName}" found.${available}`,
+      );
 
       // Return empty array to avoid querying wrong profile
       return [];

@@ -26,7 +26,7 @@ Use Jest patterns for running specific tests:
 
 - `pnpm test -- --testNamePattern="specific test name"`
 - `pnpm test -- src/path/to/test.test.ts`
-- `pnpm test -- --testPathPattern="CookieStrategyFactory"`
+- `pnpm test -- src/core/browsers/firefox/` (run by directory path — preferred)
 
 ### Documentation
 
@@ -41,7 +41,7 @@ Use Jest patterns for running specific tests:
 The codebase follows a **Strategy Pattern** for browser-specific cookie extraction:
 
 - **BaseCookieQueryStrategy**: Abstract base class providing standardized error handling and logging
-- **Browser-specific strategies**: ChromeCookieQueryStrategy, FirefoxCookieQueryStrategy, SafariCookieQueryStrategy
+- **Browser-specific strategies**: ChromiumCookieQueryStrategy (base for Chrome, Edge, Brave, Arc, Opera, OperaGX), FirefoxCookieQueryStrategy, SafariCookieQueryStrategy
 - **CompositeCookieQueryStrategy**: Combines multiple strategies for querying across all browsers
 - **CookieStrategyFactory**: Factory for creating browser-specific or composite strategies
 
@@ -64,10 +64,11 @@ Modern SQL utilities for efficient database operations:
 
 ### Browser-Specific Handling
 
-- **Chrome/Chromium-based**: Handles keychain password decryption (macOS), DPAPI (Windows), keyring (Linux)
-- **Safari**: Parses binary cookie files with custom decoder (macOS only)
-- **Firefox**: SQLite database queries with multi-variant support (regular, Developer Edition, ESR)
+- **Chrome/Chromium-based**: Handles keychain password decryption (macOS), DPAPI (Windows), keyring (Linux). All Chromium browsers (Chrome, Edge, Brave, Arc, Opera, OperaGX) extend `ChromiumCookieQueryStrategy` and share profile filtering via `Local State` → `info_cache`
+- **Safari**: Parses binary cookie files with custom decoder (macOS only). Does not support profile filtering — warns at query time when `--profile` is supplied
+- **Firefox**: SQLite database queries with multi-variant support (regular, Developer Edition, ESR). Profile filtering via `profiles.ini` parsing (`parseFirefoxProfilesIni()` exported for CLI reuse)
 - **Cross-platform**: Full Windows, macOS, and Linux support for Chrome and Firefox
+- **Profile discovery**: `CHROMIUM_DATA_DIRS` and `FIREFOX_DATA_DIRS` in `BrowserAvailability.ts` provide platform-specific paths. CLI `--list-profiles` enumerates all installed browser profiles
 
 ### Path Aliases
 

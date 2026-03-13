@@ -157,7 +157,7 @@ describe("EnhancedCookieQueryService", () => {
   describe("discoverBrowserFiles via queryCookies", () => {
     it("discovers Chromium cookie files from Default profile", async () => {
       mockExistsSync.mockImplementation((...args: unknown[]) => {
-        const p = String(args[0]);
+        const p = String(args[0]).replace(/\\/g, "/");
         if (p.endsWith("/Default/Cookies")) {
           return true;
         }
@@ -185,7 +185,7 @@ describe("EnhancedCookieQueryService", () => {
 
     it("discovers Firefox cookie files from profile directories", async () => {
       mockExistsSync.mockImplementation((...args: unknown[]) => {
-        const p = String(args[0]);
+        const p = String(args[0]).replace(/\\/g, "/");
         if (p.includes("Firefox") || p.includes("firefox")) {
           return true;
         }
@@ -239,7 +239,7 @@ describe("EnhancedCookieQueryService", () => {
 
     it("returns empty array when Chromium data dir exists but no profiles found", async () => {
       mockExistsSync.mockImplementation((...args: unknown[]) => {
-        const p = String(args[0]);
+        const p = String(args[0]).replace(/\\/g, "/");
         // Data dir exists but no profile Cookies files
         if (
           p.includes("Chrome") &&

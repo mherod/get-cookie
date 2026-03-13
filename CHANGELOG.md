@@ -9,6 +9,9 @@ All notable changes to this project will be documented in this file.
 - `discoverBrowserFiles()` auto-discovers cookie file paths for Chromium
   and Firefox browsers, removing the requirement to pass an explicit
   `filepath` to `EnhancedCookieQueryService.queryCookies()` (#440, PR #452)
+- Added Brave and Arc browser data directory paths to
+  `CHROMIUM_DATA_DIRS`, enabling auto-discovery of their cookie files
+  via `discoverBrowserFiles()` (PR #455)
 
 ### Refactoring
 

@@ -10,6 +10,7 @@ import { FirefoxCookieQueryStrategy } from "../firefox/FirefoxCookieQueryStrateg
 import { OperaCookieQueryStrategy } from "../opera/OperaCookieQueryStrategy";
 import { OperaGXCookieQueryStrategy } from "../opera/OperaGXCookieQueryStrategy";
 import { SafariCookieQueryStrategy } from "../safari/SafariCookieQueryStrategy";
+import { VivaldiCookieQueryStrategy } from "../vivaldi/VivaldiCookieQueryStrategy";
 import {
   createBrowserStrategy,
   createCompositeStrategy,
@@ -67,6 +68,12 @@ describe("createBrowserStrategy", () => {
     expect(strategy).toBeInstanceOf(OperaGXCookieQueryStrategy);
     expect(strategy).toBeInstanceOf(BaseCookieQueryStrategy);
   });
+
+  it("returns a Vivaldi strategy for 'vivaldi'", () => {
+    const strategy = createBrowserStrategy("vivaldi");
+    expect(strategy).toBeInstanceOf(VivaldiCookieQueryStrategy);
+    expect(strategy).toBeInstanceOf(BaseCookieQueryStrategy);
+  });
 });
 
 describe("createCompositeStrategy", () => {
@@ -81,8 +88,8 @@ describe("createCompositeStrategy", () => {
   it("covers the same number of browsers as the strategy registry", () => {
     const registrySize = getAvailableBrowsers().length;
     // createCompositeStrategy hardcodes strategies — this must stay in sync.
-    // Currently: chrome, edge, arc, opera, opera-gx, firefox, safari = 7.
-    expect(registrySize).toBe(8);
+    // Currently: chrome, edge, arc, opera, opera-gx, brave, firefox, safari, vivaldi = 9.
+    expect(registrySize).toBe(9);
   });
 });
 
@@ -146,10 +153,11 @@ describe("getAvailableBrowsers", () => {
     expect(browsers).toContain("brave");
     expect(browsers).toContain("opera");
     expect(browsers).toContain("opera-gx");
+    expect(browsers).toContain("vivaldi");
   });
 
-  it("returns exactly 8 browsers matching the current registry", () => {
-    expect(getAvailableBrowsers()).toHaveLength(8);
+  it("returns exactly 9 browsers matching the current registry", () => {
+    expect(getAvailableBrowsers()).toHaveLength(9);
   });
 });
 
@@ -184,6 +192,10 @@ describe("isBrowserSupported", () => {
 
   it("returns true for 'opera-gx'", () => {
     expect(isBrowserSupported("opera-gx")).toBe(true);
+  });
+
+  it("returns true for 'vivaldi'", () => {
+    expect(isBrowserSupported("vivaldi")).toBe(true);
   });
 
   it("returns false for 'netscape'", () => {

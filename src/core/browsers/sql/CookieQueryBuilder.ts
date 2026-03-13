@@ -18,7 +18,8 @@ export type SqlBrowserType =
   | "opera"
   | "opera-gx"
   | "brave"
-  | "arc";
+  | "arc"
+  | "vivaldi";
 
 /**
  * SQL query configuration
@@ -120,6 +121,17 @@ const BROWSER_SCHEMAS: Record<SqlBrowserType, BrowserSchema> = {
     httpOnlyColumn: "is_httponly",
   },
   arc: {
+    tableName: "cookies",
+    nameColumn: "name",
+    valueColumn: "value",
+    domainColumn: "host_key",
+    expiryColumn: "expires_utc",
+    encryptedValueColumn: "encrypted_value",
+    pathColumn: "path",
+    secureColumn: "is_secure",
+    httpOnlyColumn: "is_httponly",
+  },
+  vivaldi: {
     tableName: "cookies",
     nameColumn: "name",
     valueColumn: "value",

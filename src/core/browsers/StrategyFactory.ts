@@ -20,6 +20,7 @@ import { FirefoxCookieQueryStrategy } from "./firefox/FirefoxCookieQueryStrategy
 import { OperaCookieQueryStrategy } from "./opera/OperaCookieQueryStrategy";
 import { OperaGXCookieQueryStrategy } from "./opera/OperaGXCookieQueryStrategy";
 import { SafariCookieQueryStrategy } from "./safari/SafariCookieQueryStrategy";
+import { VivaldiCookieQueryStrategy } from "./vivaldi/VivaldiCookieQueryStrategy";
 
 /**
  * A strategy that can query cookies - either a single browser or composite
@@ -47,6 +48,7 @@ const STRATEGY_REGISTRY: Record<BrowserType, StrategyConstructor> = {
   brave: BraveCookieQueryStrategy,
   opera: OperaCookieQueryStrategy,
   "opera-gx": OperaGXCookieQueryStrategy,
+  vivaldi: VivaldiCookieQueryStrategy,
 };
 
 /**

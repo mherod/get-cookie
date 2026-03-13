@@ -7,6 +7,7 @@ import { createTaggedLogger } from "@utils/logHelpers";
 
 import { ArcCookieQueryStrategy } from "./arc/ArcCookieQueryStrategy";
 import type { BaseCookieQueryStrategy } from "./BaseCookieQueryStrategy";
+import { BraveCookieQueryStrategy } from "./brave/BraveCookieQueryStrategy";
 import {
   type BrowserType,
   detectBrowserFromStore,
@@ -43,6 +44,7 @@ const STRATEGY_REGISTRY: Record<BrowserType, StrategyConstructor> = {
   chrome: ChromeCookieQueryStrategy,
   edge: EdgeCookieQueryStrategy,
   arc: ArcCookieQueryStrategy,
+  brave: BraveCookieQueryStrategy,
   opera: OperaCookieQueryStrategy,
   "opera-gx": OperaGXCookieQueryStrategy,
 };

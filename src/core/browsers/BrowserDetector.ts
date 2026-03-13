@@ -18,6 +18,7 @@ export type BrowserType =
   | "safari"
   | "edge"
   | "arc"
+  | "brave"
   | "opera"
   | "opera-gx";
 
@@ -145,6 +146,7 @@ export function isValidBrowserType(browser: string): browser is BrowserType {
     "safari",
     "edge",
     "arc",
+    "brave",
     "opera",
     "opera-gx",
   ];
@@ -163,6 +165,7 @@ export function getBrowserDisplayName(browser: BrowserType): string {
     safari: "Safari",
     edge: "Microsoft Edge",
     arc: "Arc",
+    brave: "Brave",
     opera: "Opera",
     "opera-gx": "Opera GX",
   };

@@ -2,6 +2,7 @@ import { describe, it, expect } from "@jest/globals";
 
 import { BaseCookieQueryStrategy } from "../BaseCookieQueryStrategy";
 import { ArcCookieQueryStrategy } from "../arc/ArcCookieQueryStrategy";
+import { BraveCookieQueryStrategy } from "../brave/BraveCookieQueryStrategy";
 import { ChromeCookieQueryStrategy } from "../chrome/ChromeCookieQueryStrategy";
 import { CompositeCookieQueryStrategy } from "../CompositeCookieQueryStrategy";
 import { EdgeCookieQueryStrategy } from "../edge/EdgeCookieQueryStrategy";
@@ -49,6 +50,12 @@ describe("createBrowserStrategy", () => {
     expect(strategy).toBeInstanceOf(BaseCookieQueryStrategy);
   });
 
+  it("returns a Brave strategy for 'brave'", () => {
+    const strategy = createBrowserStrategy("brave");
+    expect(strategy).toBeInstanceOf(BraveCookieQueryStrategy);
+    expect(strategy).toBeInstanceOf(BaseCookieQueryStrategy);
+  });
+
   it("returns an Opera strategy for 'opera'", () => {
     const strategy = createBrowserStrategy("opera");
     expect(strategy).toBeInstanceOf(OperaCookieQueryStrategy);
@@ -75,7 +82,7 @@ describe("createCompositeStrategy", () => {
     const registrySize = getAvailableBrowsers().length;
     // createCompositeStrategy hardcodes strategies — this must stay in sync.
     // Currently: chrome, edge, arc, opera, opera-gx, firefox, safari = 7.
-    expect(registrySize).toBe(7);
+    expect(registrySize).toBe(8);
   });
 });
 
@@ -136,12 +143,13 @@ describe("getAvailableBrowsers", () => {
     expect(browsers).toContain("safari");
     expect(browsers).toContain("edge");
     expect(browsers).toContain("arc");
+    expect(browsers).toContain("brave");
     expect(browsers).toContain("opera");
     expect(browsers).toContain("opera-gx");
   });
 
-  it("returns exactly 7 browsers matching the current registry", () => {
-    expect(getAvailableBrowsers()).toHaveLength(7);
+  it("returns exactly 8 browsers matching the current registry", () => {
+    expect(getAvailableBrowsers()).toHaveLength(8);
   });
 });
 
@@ -164,6 +172,10 @@ describe("isBrowserSupported", () => {
 
   it("returns true for 'arc'", () => {
     expect(isBrowserSupported("arc")).toBe(true);
+  });
+
+  it("returns true for 'brave'", () => {
+    expect(isBrowserSupported("brave")).toBe(true);
   });
 
   it("returns true for 'opera'", () => {

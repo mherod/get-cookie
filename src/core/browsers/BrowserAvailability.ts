@@ -67,6 +67,11 @@ export const BROWSER_PATHS = {
       `${homedir()}/Applications/Opera GX.app`,
       `${homedir()}/Library/Application Support/com.operasoftware.OperaGX`,
     ],
+    brave: [
+      "/Applications/Brave Browser.app",
+      `${homedir()}/Applications/Brave Browser.app`,
+      `${homedir()}/Library/Application Support/BraveSoftware/Brave-Browser`,
+    ],
   },
   win32: {
     chrome: [
@@ -96,6 +101,10 @@ export const BROWSER_PATHS = {
       join(process.env.PROGRAMFILES ?? "", "Opera GX"),
       join(process.env["PROGRAMFILES(X86)"] ?? "", "Opera GX"),
     ],
+    brave: [
+      join(process.env.LOCALAPPDATA ?? "", "BraveSoftware", "Brave-Browser"),
+      join(process.env.PROGRAMFILES ?? "", "BraveSoftware", "Brave-Browser"),
+    ],
   },
   linux: {
     chrome: [
@@ -117,6 +126,12 @@ export const BROWSER_PATHS = {
       "/opt/microsoft/msedge",
     ],
     arc: [], // Arc not available on Linux
+    brave: [
+      `${homedir()}/.config/BraveSoftware/Brave-Browser`,
+      "/usr/bin/brave-browser",
+      "/usr/bin/brave-browser-stable",
+      "/opt/brave.com/brave",
+    ],
     opera: [`${homedir()}/.config/opera`, "/usr/bin/opera", "/usr/lib/opera"],
     "opera-gx": [`${homedir()}/.config/opera-gx`, "/usr/bin/opera-gx"],
   },
@@ -153,6 +168,13 @@ export const CHROMIUM_DATA_DIRS: Partial<
       "Application Support",
       "com.operasoftware.OperaGX",
     ),
+    brave: join(
+      homedir(),
+      "Library",
+      "Application Support",
+      "BraveSoftware",
+      "Brave-Browser",
+    ),
   },
   win32: {
     // Chrome and Edge store profiles under …\User Data on Windows
@@ -174,12 +196,25 @@ export const CHROMIUM_DATA_DIRS: Partial<
       "Opera Software",
       "Opera GX Stable",
     ),
+    arc: join(
+      process.env.LOCALAPPDATA ?? "",
+      "Packages",
+      "TheBrowserCompany.Arc_ttt1ap7aabd4t",
+      "LocalCache",
+    ),
+    brave: join(
+      process.env.LOCALAPPDATA ?? "",
+      "BraveSoftware",
+      "Brave-Browser",
+      "User Data",
+    ),
   },
   linux: {
     chrome: join(homedir(), ".config", "google-chrome"),
     edge: join(homedir(), ".config", "microsoft-edge"),
     opera: join(homedir(), ".config", "opera"),
     "opera-gx": join(homedir(), ".config", "opera-gx"),
+    brave: join(homedir(), ".config", "BraveSoftware", "Brave-Browser"),
   },
 };
 
@@ -232,6 +267,8 @@ function getBrowserVersion(browser: BrowserType): string | undefined {
           "defaults read /Applications/Safari.app/Contents/Info.plist CFBundleShortVersionString 2>/dev/null",
         edge: "/Applications/Microsoft\\ Edge.app/Contents/MacOS/Microsoft\\ Edge --version 2>/dev/null",
         arc: "defaults read /Applications/Arc.app/Contents/Info.plist CFBundleShortVersionString 2>/dev/null",
+        brave:
+          "/Applications/Brave\\ Browser.app/Contents/MacOS/Brave\\ Browser --version 2>/dev/null",
         opera:
           "/Applications/Opera.app/Contents/MacOS/Opera --version 2>/dev/null",
         "opera-gx":
@@ -244,6 +281,8 @@ function getBrowserVersion(browser: BrowserType): string | undefined {
           "google-chrome --version 2>/dev/null || google-chrome-stable --version 2>/dev/null",
         firefox: "firefox --version 2>/dev/null",
         edge: "microsoft-edge --version 2>/dev/null",
+        brave:
+          "brave-browser --version 2>/dev/null || brave-browser-stable --version 2>/dev/null",
         opera: "opera --version 2>/dev/null",
         "opera-gx": "opera-gx --version 2>/dev/null",
       };
@@ -323,27 +362,34 @@ function findFirefoxProfilesInPath(basePath: string): string[] {
  * @param browser - Browser type (chrome or edge)
  * @returns Base path for browser profiles
  */
-function getChromiumBasePath(browser: "chrome" | "edge"): string {
+function getChromiumBasePath(browser: "chrome" | "edge" | "brave"): string {
   const home = homedir();
+
+  const dirMap = {
+    darwin: {
+      chrome: "Google/Chrome",
+      edge: "Microsoft Edge",
+      brave: "BraveSoftware/Brave-Browser",
+    },
+    win32: {
+      chrome: "Google/Chrome",
+      edge: "Microsoft/Edge",
+      brave: "BraveSoftware/Brave-Browser",
+    },
+    linux: {
+      chrome: "google-chrome",
+      edge: "microsoft-edge",
+      brave: "BraveSoftware/Brave-Browser",
+    },
+  } as const;
+
   if (isMacOS()) {
-    return join(
-      home,
-      "Library",
-      "Application Support",
-      browser === "chrome" ? "Google/Chrome" : "Microsoft Edge",
-    );
+    return join(home, "Library", "Application Support", dirMap.darwin[browser]);
   }
   if (isWindows()) {
-    return join(
-      process.env.LOCALAPPDATA ?? "",
-      browser === "chrome" ? "Google/Chrome" : "Microsoft/Edge",
-    );
+    return join(process.env.LOCALAPPDATA ?? "", dirMap.win32[browser]);
   }
-  return join(
-    home,
-    ".config",
-    browser === "chrome" ? "google-chrome" : "microsoft-edge",
-  );
+  return join(home, ".config", dirMap.linux[browser]);
 }
 
 /**
@@ -370,7 +416,7 @@ function findBrowserProfiles(browser: BrowserType): string[] {
   const profiles: string[] = [];
 
   try {
-    if (browser === "chrome" || browser === "edge") {
+    if (browser === "chrome" || browser === "edge" || browser === "brave") {
       const basePath = getChromiumBasePath(browser);
       profiles.push(...findChromiumProfiles(basePath));
     } else if (browser === "firefox") {
@@ -400,6 +446,7 @@ export function detectAvailableBrowsers(): AvailableBrowser[] {
     "safari",
     "edge",
     "arc",
+    "brave",
     "opera",
     "opera-gx",
   ];
@@ -453,6 +500,7 @@ function getBrowserDisplayName(browser: BrowserType): string {
     safari: "Safari",
     edge: "Microsoft Edge",
     arc: "Arc",
+    brave: "Brave",
     opera: "Opera",
     "opera-gx": "Opera GX",
   };
@@ -522,6 +570,7 @@ export function suggestBrowser(): BrowserType | undefined {
   const preferenceOrder: BrowserType[] = [
     "chrome",
     "edge",
+    "brave",
     "firefox",
     "safari",
     "arc",

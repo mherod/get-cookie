@@ -121,15 +121,9 @@ function listProfiles(browser?: string): void {
   }
 
   const browserLower = browser.toLowerCase();
+  const dataDir = getChromiumDataDir(browserLower);
 
-  if (
-    browserLower === "chrome" ||
-    browserLower === "edge" ||
-    browserLower === "arc" ||
-    browserLower === "brave" ||
-    browserLower === "opera" ||
-    browserLower === "opera-gx"
-  ) {
+  if (dataDir) {
     try {
       const profiles = listChromeProfiles();
 
@@ -140,13 +134,6 @@ function listProfiles(browser?: string): void {
 
       logger.log(`${browser} profiles:`);
       logger.log("");
-
-      const dataDir = getChromiumDataDir(browserLower);
-
-      if (!dataDir) {
-        logger.error(`Unsupported browser for profile listing: ${browser}`);
-        return;
-      }
 
       const localStatePath = join(dataDir, "Local State");
 

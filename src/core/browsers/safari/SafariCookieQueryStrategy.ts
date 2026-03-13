@@ -25,10 +25,16 @@ export class SafariCookieQueryStrategy extends BaseCookieQueryStrategy {
 
   /**
    * Creates a new instance of SafariCookieQueryStrategy
+   * @param profileName - Ignored; Safari does not support profile filtering
    */
-  public constructor() {
+  public constructor(profileName?: string) {
     super("SafariCookieQueryStrategy", "Safari");
     this.lockHandler = new BrowserLockHandler(this.logger, "Safari");
+    if (profileName !== undefined) {
+      this.logger.warn(
+        `Safari does not support profile filtering (--profile "${profileName}" will be ignored)`,
+      );
+    }
   }
 
   /**

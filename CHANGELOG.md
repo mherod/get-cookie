@@ -4,7 +4,23 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-- Internal improvements and maintenance.
+### New Features
+
+- `discoverBrowserFiles()` auto-discovers cookie file paths for Chromium
+  and Firefox browsers, removing the requirement to pass an explicit
+  `filepath` to `EnhancedCookieQueryService.queryCookies()` (#440, PR #452)
+
+### Refactoring
+
+- Added `opera-gx` to `SqlBrowserType` union and `BROWSER_SCHEMAS` map,
+  enabling Opera GX cookie queries through the SQL infrastructure (#445)
+- `createCompositeStrategy()` derives the strategy list from
+  `STRATEGY_REGISTRY` instead of a hardcoded array (#437)
+- Added unit tests for `StrategyFactory` functions (#450)
+
+### Chores
+
+- Excluded `.swiz/` cache directory from Biome formatting checks (#451)
 
 ## [4.4.3] - 2026-02-24
 

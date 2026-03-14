@@ -1,7 +1,6 @@
 import type { CookieSpec, ExportedCookie } from "../../types/schemas";
-import { getErrorMessage } from "../../utils/errorUtils";
-import logger from "../../utils/logger";
-import { FirefoxCookieQueryStrategy } from "../browsers/firefox/FirefoxCookieQueryStrategy";
+
+import { getBrowserCookie } from "./getBrowserCookie";
 
 /**
  * Retrieves cookies from Firefox browser storage that match the specified criteria.
@@ -25,20 +24,10 @@ import { FirefoxCookieQueryStrategy } from "../browsers/firefox/FirefoxCookieQue
  * });
  * ```
  */
-export async function getFirefoxCookie(
+export function getFirefoxCookie(
   cookieSpec: CookieSpec,
 ): Promise<ExportedCookie[]> {
-  try {
-    const strategy = new FirefoxCookieQueryStrategy();
-    const cookies = await strategy.queryCookies(
-      cookieSpec.name,
-      cookieSpec.domain,
-    );
-    return cookies;
-  } catch (error: unknown) {
-    logger.warn("Error querying Firefox cookies:", getErrorMessage(error));
-    return [];
-  }
+  return getBrowserCookie("firefox", cookieSpec);
 }
 
 /**

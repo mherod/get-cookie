@@ -97,7 +97,7 @@ export function setRuntimeOverride(runtime: Runtime | undefined): void {
  * @returns The explicit override if set, otherwise the detected runtime ("bun" or "node")
  */
 function detectRuntime(): Runtime {
-  if (runtimeOverride) {
+  if (runtimeOverride !== undefined) {
     return runtimeOverride;
   }
   // Check if running in Bun: look for globalThis.Bun

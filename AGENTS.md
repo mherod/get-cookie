@@ -159,7 +159,7 @@ pnpm publish --access public --otp=<code>
 The `Release to npm` CI check uses GitHub Actions OIDC trusted publishing and may fail
 with an expired token even when the package published successfully. This is a
 pre-existing infrastructure issue — the functional checks (`Validate`, `CodeQL JS`,
-`Codex-review`) are the authoritative signal for whether the release is healthy.
+`claude-review`) are the authoritative signal for whether the release is healthy.
 
 ### Global linking — pnpm link --global
 
@@ -175,7 +175,7 @@ a stale global link exists. Remove it with `pnpm remove --global <package-name>`
 ### CI checks — what to watch vs. what to ignore
 
 - **Required / authoritative**: Validate (all matrix entries), CI Status, Advanced Tests,
-  Build Documentation, CodeQL JS, `Codex-review`
+  Build Documentation, CodeQL JS, `claude-review`
 - **Pre-existing infrastructure noise**: `Release to npm` OIDC failures when publishing
   was already completed manually.
 

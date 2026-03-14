@@ -1,5 +1,5 @@
 import { ChromeCookieQueryStrategy } from "../../core/browsers/chrome/ChromeCookieQueryStrategy";
-import { getChromePassword } from "../../core/browsers/chrome/getChromePassword";
+import { getChromiumPassword } from "../../core/browsers/chrome/getChromiumPassword";
 import { ChromiumCookieQueryStrategy } from "../../core/browsers/chromium/ChromiumCookieQueryStrategy";
 import { getPlatform } from "../../utils/platformUtils";
 
@@ -9,7 +9,7 @@ import { getPlatform } from "../../utils/platformUtils";
 async function testChromePasswordRetrieval(): Promise<void> {
   // This might fail in CI without Chrome installed, but that's ok
   try {
-    const password = await getChromePassword();
+    const password = await getChromiumPassword();
     expect(password).toBeDefined();
     expect(password.length).toBeGreaterThan(0);
     // Security: Not logging password data, only validating it exists

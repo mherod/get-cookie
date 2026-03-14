@@ -25,8 +25,12 @@ curl -H "Cookie: auth=$(get-cookie auth api.example.com)" https://api.example.co
 ```
 
 ```typescript
-// Node.js/TypeScript usage
+// Auto-detecting (works in both Node.js and Bun)
 import { getCookie } from "@mherod/get-cookie";
+
+// Or use a runtime-specific entrypoint for deterministic behavior:
+// import { getCookie } from "@mherod/get-cookie/node";
+// import { getCookie } from "@mherod/get-cookie/bun";
 
 const cookies = await getCookie({
   name: "auth_token",
@@ -81,7 +85,18 @@ nvm use
 
 The project includes an `.nvmrc` file that specifies the required Node.js version, so `nvm use` will automatically switch to the correct version when you're in the project directory.
 
-Bun is also supported natively — `bun:sqlite` is used automatically when running under Bun, with no additional configuration required.
+Bun is also supported natively — `bun:sqlite` is used automatically when running under Bun. You can also use explicit runtime entrypoints for deterministic behavior:
+
+```typescript
+// Auto-detect runtime (default — works everywhere)
+import { getCookie } from "@mherod/get-cookie";
+
+// Force Node.js (always uses better-sqlite3)
+import { getCookie } from "@mherod/get-cookie/node";
+
+// Force Bun (always uses bun:sqlite)
+import { getCookie } from "@mherod/get-cookie/bun";
+```
 
 ## More Examples
 
@@ -107,6 +122,9 @@ get-cookie auth example.com --browser chrome --profile "Work"
 ### API Usage
 
 ```typescript
+// Use the root import (auto-detects runtime) or a specific entrypoint:
+// import { getCookie, batchGetCookies } from "@mherod/get-cookie/node";
+// import { getCookie, batchGetCookies } from "@mherod/get-cookie/bun";
 import { getCookie, batchGetCookies } from "@mherod/get-cookie";
 
 // Single cookie
@@ -152,7 +170,7 @@ get-cookie % example.com --output json > cookies-backup.json
 - **Multiple profiles**: Works with all browser profiles (Personal, Work, etc.)
 - **Batch operations**: Get multiple cookies efficiently with built-in SQL optimization (2-3x faster)
 - **Cross-platform**: macOS, Linux, Windows support
-- **Bun support**: Works natively in Bun environments using `bun:sqlite`, with automatic runtime detection
+- **Bun support**: Works natively in Bun environments using `bun:sqlite`, with automatic runtime detection and explicit `@mherod/get-cookie/bun` entrypoint
 - **Output formats**: Raw values, JSON, pretty-printed tables
 
 ## Browser Support 🌐

@@ -1,6 +1,6 @@
 import type { CookieSpec, ExportedCookie } from "../../types/schemas";
-import logger from "../../utils/logger";
-import { ChromeCookieQueryStrategy } from "../browsers/chrome/ChromeCookieQueryStrategy";
+
+import { getBrowserCookie } from "./getBrowserCookie";
 
 /**
  * Retrieves cookies from Chrome browser storage that match the specified criteria.
@@ -24,20 +24,10 @@ import { ChromeCookieQueryStrategy } from "../browsers/chrome/ChromeCookieQueryS
  * });
  * ```
  */
-export async function getChromeCookie(
+export function getChromeCookie(
   cookieSpec: CookieSpec,
 ): Promise<ExportedCookie[]> {
-  try {
-    const strategy = new ChromeCookieQueryStrategy();
-    const cookies = await strategy.queryCookies(
-      cookieSpec.name,
-      cookieSpec.domain,
-    );
-    return cookies;
-  } catch (error: unknown) {
-    logger.warn("Error querying Chrome cookies:", error);
-    return [];
-  }
+  return getBrowserCookie("chrome", cookieSpec);
 }
 
 /**

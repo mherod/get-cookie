@@ -76,10 +76,30 @@ export interface SqliteOptions {
 export type Runtime = "node" | "bun";
 
 /**
+ * Explicit runtime override, set by entrypoint modules (e.g. `@mherod/get-cookie/node`)
+ * to skip auto-detection and force a specific SQLite adapter.
+ */
+let runtimeOverride: Runtime | undefined;
+
+/**
+ * Force a specific runtime for SQLite adapter selection.
+ * Called by the `@mherod/get-cookie/node` and `@mherod/get-cookie/bun` entrypoints
+ * so consumers get deterministic adapter resolution without relying on auto-detection.
+ *
+ * @param runtime - The runtime to force ("node" or "bun"), or undefined to clear
+ */
+export function setRuntimeOverride(runtime: Runtime | undefined): void {
+  runtimeOverride = runtime;
+}
+
+/**
  * Detect the current runtime environment
- * @returns The detected runtime ("bun" or "node")
+ * @returns The explicit override if set, otherwise the detected runtime ("bun" or "node")
  */
 function detectRuntime(): Runtime {
+  if (runtimeOverride) {
+    return runtimeOverride;
+  }
   // Check if running in Bun: look for globalThis.Bun
   if (typeof (globalThis as Record<string, unknown>).Bun !== "undefined") {
     return "bun";

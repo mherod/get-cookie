@@ -12,9 +12,24 @@
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
+      "bun": {
+        "types": "./dist/bun.d.ts",
+        "import": "./dist/bun.js",
+        "require": "./dist/bun.cjs"
+      },
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
+    },
+    "./node": {
+      "types": "./dist/node.d.ts",
+      "import": "./dist/node.js",
+      "require": "./dist/node.cjs"
+    },
+    "./bun": {
+      "types": "./dist/bun.d.ts",
+      "import": "./dist/bun.js",
+      "require": "./dist/bun.cjs"
     },
     "./cli": {
       "types": "./dist/cli.d.cts",

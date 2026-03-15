@@ -156,15 +156,22 @@ export async function batchQueryCookies(
   const allResults: ExportedCookie[] = [];
   const allErrors: Error[] = [];
 
-  // Query each strategy with all specs
-  for (const strategy of strategies) {
-    const { cookies, errors } = await queryStrategy(
-      strategy,
-      validSpecs,
-      continueOnError,
-    );
-    allResults.push(...cookies);
-    allErrors.push(...errors);
+  // Query all strategies in parallel — each targets independent browser databases
+  const strategyResults = await Promise.allSettled(
+    strategies.map((strategy) =>
+      queryStrategy(strategy, validSpecs, continueOnError),
+    ),
+  );
+
+  for (const result of strategyResults) {
+    if (result.status === "fulfilled") {
+      allResults.push(...result.value.cookies);
+      allErrors.push(...result.value.errors);
+    } else if (continueOnError) {
+      allErrors.push(ensureError(result.reason, "Strategy query failed"));
+    } else {
+      throw result.reason;
+    }
   }
 
   if (allErrors.length > 0) {

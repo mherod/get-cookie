@@ -11,6 +11,7 @@ import { join } from "node:path";
 import { createTaggedLogger } from "@utils/logHelpers";
 import { getPlatform, isLinux, isMacOS, isWindows } from "@utils/platformUtils";
 
+import { getBrowserDisplayName } from "./BrowserDetector";
 import type { BrowserType } from "./BrowserDetector";
 
 const logger = createTaggedLogger("BrowserAvailability");
@@ -531,26 +532,6 @@ export function detectAvailableBrowsers(): AvailableBrowser[] {
   }
 
   return available;
-}
-
-/**
- * Gets display name for a browser type
- * @param browser - The browser type
- * @returns Human-readable browser name
- */
-function getBrowserDisplayName(browser: BrowserType): string {
-  const names: Record<BrowserType, string> = {
-    chrome: "Google Chrome",
-    firefox: "Mozilla Firefox",
-    safari: "Safari",
-    edge: "Microsoft Edge",
-    arc: "Arc",
-    brave: "Brave",
-    opera: "Opera",
-    "opera-gx": "Opera GX",
-    vivaldi: "Vivaldi",
-  };
-  return names[browser];
 }
 
 /**

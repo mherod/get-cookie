@@ -125,12 +125,14 @@ return { data: [], ...(condition && { metrics: { ... } }) };
 ### Branch protection — `main` is fully protected
 
 DO NOT run `git push origin main` directly. Branch protection requires all changes to
-arrive via a PR with passing CI checks. Always push to a feature branch and open a PR:
+arrive via a PR with passing CI checks. Always push to a feature branch and open a PR.
+This applies to **all** changes — even in a solo/personal repo, branch protection rules
+reject direct pushes. Always create a feature branch before committing:
 
 ```bash
-git checkout -b chore/release-<version>
-git push -u origin chore/release-<version>
-gh pr create --title "chore: release <version>" ...
+git checkout -b <type>/<slug>-<issue-number>
+git push -u origin <type>/<slug>-<issue-number>
+gh pr create --title "<type>(<scope>): description" ...
 ```
 
 ### Version bumping — avoid `pnpm version` / `npm version` in nvm environments
@@ -178,6 +180,28 @@ a stale global link exists. Remove it with `pnpm remove --global <package-name>`
   Build Documentation, CodeQL JS, `claude-review`
 - **Pre-existing infrastructure noise**: `Release to npm` OIDC failures when publishing
   was already completed manually.
+
+### GitHub API — prefer REST over GraphQL
+
+Prefer `gh api` (REST) over `gh pr create`, `gh pr merge`, and other high-level `gh`
+subcommands for PR and issue operations. The GraphQL API used by `gh pr` has stricter
+rate limits; REST endpoints have separate, more generous limits.
+
+```bash
+# Create PR via REST (instead of gh pr create)
+gh api repos/:owner/:repo/pulls \
+  -f title="feat: description" -f body="..." -f head="branch" -f base="main"
+
+# Merge PR via REST (instead of gh pr merge)
+gh api -X PUT repos/:owner/:repo/pulls/<number>/merge -f merge_method="squash"
+
+# Update PR branch (rebase onto base)
+gh api -X PUT repos/:owner/:repo/pulls/<number>/update-branch
+
+# Check CI via REST
+gh api "repos/:owner/:repo/commits/<sha>/check-runs" \
+  --jq '.check_runs[] | "\(.status)/\(.conclusion) \(.name)"'
+```
 
 ### Session start — prior incomplete tasks
 

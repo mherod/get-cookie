@@ -1,5 +1,5 @@
 import { CompositeCookieQueryStrategy } from "@core/browsers/CompositeCookieQueryStrategy";
-import MockCookieQueryStrategy from "@core/browsers/mock/MockCookieQueryStrategy";
+import { MockCookieQueryStrategy } from "@core/browsers/mock/MockCookieQueryStrategy";
 
 import { CookieStrategyFactory } from "../CookieStrategyFactory";
 

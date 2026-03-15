@@ -27,7 +27,11 @@ jest.mock("../adapters/DatabaseAdapter");
 // Mock node:fs for file discovery tests
 jest.mock("node:fs", () => ({
   existsSync: jest.fn().mockReturnValue(false),
-  readdirSync: jest.fn().mockReturnValue([]),
+}));
+
+// Mock fast-glob for file discovery tests (replaces readdirSync-based iteration)
+jest.mock("fast-glob", () => ({
+  sync: jest.fn().mockReturnValue([]),
 }));
 
 // Mock getPlatform to return "darwin" so path lookups are deterministic across CI
@@ -44,7 +48,7 @@ describe("EnhancedCookieQueryService", () => {
   let mockStmt: { all: jest.Mock; get: jest.Mock; run: jest.Mock };
   let manager: DatabaseConnectionManager;
   let mockExistsSync: jest.Mock;
-  let mockReaddirSync: jest.Mock;
+  let mockFgSync: jest.Mock;
 
   beforeEach(() => {
     mockStmt = {
@@ -65,9 +69,11 @@ describe("EnhancedCookieQueryService", () => {
 
     const fs = require("node:fs");
     mockExistsSync = fs.existsSync as jest.Mock;
-    mockReaddirSync = fs.readdirSync as jest.Mock;
     mockExistsSync.mockReturnValue(false);
-    mockReaddirSync.mockReturnValue([]);
+
+    const fg = require("fast-glob");
+    mockFgSync = fg.sync as jest.Mock;
+    mockFgSync.mockReturnValue([]);
 
     manager = new DatabaseConnectionManager({
       maxConnections: 2,
@@ -156,21 +162,17 @@ describe("EnhancedCookieQueryService", () => {
 
   describe("discoverBrowserFiles via queryCookies", () => {
     it("discovers Chromium cookie files from Default profile", async () => {
+      // Data dir must exist for the guard check
       mockExistsSync.mockImplementation((...args: unknown[]) => {
         const p = String(args[0]).replace(/\\/g, "/");
-        if (p.endsWith("/Default/Cookies")) {
-          return true;
-        }
-        // Data dir must exist
-        if (
+        return (
           p.includes("Chrome") &&
           !p.includes("Default") &&
           !p.includes("Profile")
-        ) {
-          return true;
-        }
-        return false;
+        );
       });
+      // fg.sync returns the discovered cookie files
+      mockFgSync.mockReturnValue(["/fake/Chrome/Default/Cookies"]);
 
       const options: EnhancedQueryOptions = {
         browser: "chrome",
@@ -184,20 +186,14 @@ describe("EnhancedCookieQueryService", () => {
     });
 
     it("discovers Firefox cookie files from profile directories", async () => {
+      // Profiles dir must exist for the guard check
       mockExistsSync.mockImplementation((...args: unknown[]) => {
         const p = String(args[0]).replace(/\\/g, "/");
-        if (p.includes("Firefox") || p.includes("firefox")) {
-          return true;
-        }
-        if (p.endsWith("abc123.default/cookies.sqlite")) {
-          return true;
-        }
-        return false;
+        return p.includes("Firefox") || p.includes("firefox");
       });
-      mockReaddirSync.mockReturnValue([
-        "abc123.default",
-        "profiles.ini",
-        "xyz789.default-release",
+      // fg.sync returns the discovered cookie files
+      mockFgSync.mockReturnValue([
+        "/fake/Firefox/Profiles/abc123.default/cookies.sqlite",
       ]);
 
       const options: EnhancedQueryOptions = {
@@ -207,27 +203,20 @@ describe("EnhancedCookieQueryService", () => {
       };
 
       await service.queryCookies(options);
-      // Should have found at least the abc123.default profile
-      expect(mockExistsSync).toHaveBeenCalledWith(
-        expect.stringContaining("cookies.sqlite"),
-      );
+      // Should have attempted to query the discovered file
+      expect(mockDb.prepare).toHaveBeenCalled();
     });
 
     it("discovers Brave cookie files from Default profile", async () => {
       mockExistsSync.mockImplementation((...args: unknown[]) => {
         const p = String(args[0]).replace(/\\/g, "/");
-        if (p.endsWith("/Default/Cookies")) {
-          return true;
-        }
-        if (
+        return (
           p.includes("Brave") &&
           !p.includes("Default") &&
           !p.includes("Profile")
-        ) {
-          return true;
-        }
-        return false;
+        );
       });
+      mockFgSync.mockReturnValue(["/fake/Brave/Default/Cookies"]);
 
       const options: EnhancedQueryOptions = {
         browser: "brave",
@@ -242,18 +231,11 @@ describe("EnhancedCookieQueryService", () => {
     it("discovers Arc cookie files from Default profile", async () => {
       mockExistsSync.mockImplementation((...args: unknown[]) => {
         const p = String(args[0]).replace(/\\/g, "/");
-        if (p.endsWith("/Default/Cookies")) {
-          return true;
-        }
-        if (
-          p.includes("Arc") &&
-          !p.includes("Default") &&
-          !p.includes("Profile")
-        ) {
-          return true;
-        }
-        return false;
+        return (
+          p.includes("Arc") && !p.includes("Default") && !p.includes("Profile")
+        );
       });
+      mockFgSync.mockReturnValue(["/fake/Arc/Default/Cookies"]);
 
       const options: EnhancedQueryOptions = {
         browser: "arc",
@@ -292,16 +274,14 @@ describe("EnhancedCookieQueryService", () => {
     it("returns empty array when Chromium data dir exists but no profiles found", async () => {
       mockExistsSync.mockImplementation((...args: unknown[]) => {
         const p = String(args[0]).replace(/\\/g, "/");
-        // Data dir exists but no profile Cookies files
-        if (
+        return (
           p.includes("Chrome") &&
           !p.includes("Default") &&
           !p.includes("Profile")
-        ) {
-          return true;
-        }
-        return false;
+        );
       });
+      // fg.sync returns empty — no profile directories found
+      mockFgSync.mockReturnValue([]);
 
       const options: EnhancedQueryOptions = {
         browser: "chrome",

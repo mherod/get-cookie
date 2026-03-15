@@ -3,9 +3,11 @@
  * Combines query building, connection management, and validation in a unified interface
  */
 
-import { existsSync, readdirSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { homedir } from "node:os";
+
+import fg from "fast-glob";
 import type { SqliteDatabase } from "./adapters/DatabaseAdapter";
 import { createTaggedLogger, logError } from "@utils/logHelpers";
 import { getPlatform } from "@utils/platformUtils";
@@ -457,21 +459,11 @@ export class EnhancedCookieQueryService {
       return [];
     }
 
-    const cookieFiles: string[] = [];
-
-    // Check Default profile
-    const defaultCookies = join(dataDir, "Default", "Cookies");
-    if (existsSync(defaultCookies)) {
-      cookieFiles.push(defaultCookies);
-    }
-
-    // Check numbered profiles (Profile 1 through Profile 10)
-    for (let i = 1; i <= 10; i++) {
-      const profileCookies = join(dataDir, `Profile ${i}`, "Cookies");
-      if (existsSync(profileCookies)) {
-        cookieFiles.push(profileCookies);
-      }
-    }
+    // Single glob replaces 12 existsSync calls (Default/Cookies + Profile 1..10/Cookies)
+    const cookieFiles = fg.sync(["{Default,Profile *}/Cookies"], {
+      cwd: dataDir,
+      absolute: true,
+    });
 
     logger.debug("Discovered Chromium cookie files", {
       browser,
@@ -514,23 +506,11 @@ export class EnhancedCookieQueryService {
       return [];
     }
 
-    const cookieFiles: string[] = [];
-
-    try {
-      const entries = readdirSync(profilesDir);
-      for (const entry of entries) {
-        if (entry.includes("default")) {
-          const cookiesPath = join(profilesDir, entry, "cookies.sqlite");
-          if (existsSync(cookiesPath)) {
-            cookieFiles.push(cookiesPath);
-          }
-        }
-      }
-    } catch {
-      logger.debug("Failed to read Firefox profiles directory", {
-        profilesDir,
-      });
-    }
+    // Single glob replaces readdirSync + existsSync loop
+    const cookieFiles = fg.sync(["*default*/cookies.sqlite"], {
+      cwd: profilesDir,
+      absolute: true,
+    });
 
     logger.debug("Discovered Firefox cookie files", {
       count: cookieFiles.length,

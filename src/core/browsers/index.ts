@@ -6,7 +6,6 @@ export * from "./chrome";
 export * from "./chromium";
 export * from "./edge";
 export * from "./firefox";
-export * from "./mock";
 export * from "./opera";
 export * from "./safari";
 export * from "./safari/decodeBinaryCookies";

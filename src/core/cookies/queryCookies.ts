@@ -3,6 +3,13 @@ import { ChromeCookieQueryStrategy } from "../browsers/chrome/ChromeCookieQueryS
 import { FirefoxCookieQueryStrategy } from "../browsers/firefox/FirefoxCookieQueryStrategy";
 import { SafariCookieQueryStrategy } from "../browsers/safari/SafariCookieQueryStrategy";
 
+/** Reusable default strategy instances — stateless after construction */
+const defaultStrategies = [
+  new ChromeCookieQueryStrategy(),
+  new FirefoxCookieQueryStrategy(),
+  new SafariCookieQueryStrategy(),
+];
+
 /**
  * Queries cookies from all available browser strategies (Chrome, Firefox, Safari).
  * This function acts as a unified interface to retrieve cookies across different browsers.
@@ -36,16 +43,7 @@ export async function queryCookies(
     return [];
   }
 
-  /**
-   * Initialize all available browser-specific strategies
-   * The order of strategies can affect performance but not functionality
-   * Each strategy is responsible for its own error handling
-   */
-  const strategies = [
-    new ChromeCookieQueryStrategy(),
-    new FirefoxCookieQueryStrategy(),
-    new SafariCookieQueryStrategy(),
-  ];
+  const strategies = defaultStrategies;
 
   /**
    * Query all strategies in parallel and handle failures gracefully

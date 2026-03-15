@@ -9,6 +9,13 @@ import { CompositeCookieQueryStrategy } from "../browsers/CompositeCookieQuerySt
 import { FirefoxCookieQueryStrategy } from "../browsers/firefox/FirefoxCookieQueryStrategy";
 import { SafariCookieQueryStrategy } from "../browsers/safari/SafariCookieQueryStrategy";
 
+/** Reusable default composite strategy — stateless after construction */
+const defaultCompositeStrategy = new CompositeCookieQueryStrategy([
+  new ChromeCookieQueryStrategy(),
+  new FirefoxCookieQueryStrategy(),
+  new SafariCookieQueryStrategy(),
+]);
+
 /**
  * Configuration options for cookie queries
  * @property {CookieQueryStrategy} [strategy] - Strategy to use for querying cookies
@@ -67,13 +74,7 @@ export async function comboQueryCookieSpec(
   cookieSpec: MultiCookieSpec,
   options: QueryOptions = {},
 ): Promise<ExportedCookie[]> {
-  const strategy =
-    options.strategy ??
-    new CompositeCookieQueryStrategy([
-      new ChromeCookieQueryStrategy(),
-      new FirefoxCookieQueryStrategy(),
-      new SafariCookieQueryStrategy(),
-    ]);
+  const strategy = options.strategy ?? defaultCompositeStrategy;
 
   const queryFn = async (cs: CookieSpec): Promise<ExportedCookie[]> => {
     const cookies = await strategy.queryCookies(

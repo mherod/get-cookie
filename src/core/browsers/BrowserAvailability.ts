@@ -491,12 +491,10 @@ function findBrowserProfiles(browser: BrowserType): string[] {
 }
 
 /**
- * Detects all available browsers on the current system
- *
- * Note: This function is intentionally synchronous. All file system operations
- * (existsSync, readdirSync) are synchronous, and all callers use this function
- * synchronously. No async/await patterns are used anywhere in the codebase.
- *
+ * Detects all available browsers on the current system.
+ * This function is synchronous — it checks file system paths only.
+ * Browser version detection is async and available separately via
+ * {@link getBrowserVersionAsync}.
  * @returns Array of available browser information
  */
 export function detectAvailableBrowsers(): AvailableBrowser[] {
@@ -544,32 +542,26 @@ export function detectAvailableBrowsers(): AvailableBrowser[] {
 }
 
 /**
- * Gets detailed information about a specific browser
+ * Gets detailed information about a specific browser.
+ * Version is not included — use {@link getBrowserVersionAsync} separately if needed.
  * @param browser - The browser type
  * @returns Browser information or undefined if not available
  */
-export async function getBrowserInfo(
+export function getBrowserInfo(
   browser: BrowserType,
-): Promise<AvailableBrowser | undefined> {
+): AvailableBrowser | undefined {
   const installed = checkBrowserInstalled(browser);
 
   if (!installed) {
     return undefined;
   }
 
-  const result: AvailableBrowser = {
+  return {
     type: browser,
     name: getBrowserDisplayName(browser),
     installed: true,
     profilePaths: findBrowserProfiles(browser),
   };
-
-  const version = await getBrowserVersionAsync(browser);
-  if (version !== undefined) {
-    result.version = version;
-  }
-
-  return result;
 }
 
 /**

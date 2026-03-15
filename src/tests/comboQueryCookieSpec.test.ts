@@ -1,4 +1,4 @@
-import MockCookieQueryStrategy from "../core/browsers/mock/MockCookieQueryStrategy";
+import { MockCookieQueryStrategy } from "../core/browsers/mock/MockCookieQueryStrategy";
 import { comboQueryCookieSpec } from "../core/cookies/comboQueryCookieSpec";
 import type { CookieQueryOptions } from "../core/cookies/cookieQueryOptions";
 import type {

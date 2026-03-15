@@ -3,9 +3,11 @@
  * @module BrowserAvailability
  */
 
-import { existsSync, readdirSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
+
+import fg from "fast-glob";
 
 import { createTaggedLogger } from "@utils/logHelpers";
 import { getPlatform, isLinux, isMacOS, isWindows } from "@utils/platformUtils";
@@ -259,17 +261,26 @@ export const FIREFOX_DATA_DIRS: Partial<Record<string, string[]>> = {
   linux: [join(homedir(), ".mozilla", "firefox")],
 };
 
+/** Module-level cache for browser installation checks — installations don't change during process lifetime */
+const installCache = new Map<BrowserType, boolean>();
+
 /**
  * Checks if a browser is installed by looking for its paths
  * @param browser - The browser type to check
  * @returns True if the browser is installed
  */
 function checkBrowserInstalled(browser: BrowserType): boolean {
+  const cached = installCache.get(browser);
+  if (cached !== undefined) {
+    return cached;
+  }
+
   const platform = getPlatform();
 
   // Defensive check: handle unexpected platform values gracefully
   // Check if platform exists in BROWSER_PATHS before accessing
   if (!(platform in BROWSER_PATHS)) {
+    installCache.set(browser, false);
     return false;
   }
 
@@ -282,10 +293,12 @@ function checkBrowserInstalled(browser: BrowserType): boolean {
   for (const path of paths) {
     if (existsSync(path)) {
       logger.debug("Found browser installation", { browser, path });
+      installCache.set(browser, true);
       return true;
     }
   }
 
+  installCache.set(browser, false);
   return false;
 }
 
@@ -370,27 +383,16 @@ export async function getBrowserVersionAsync(
  * @returns Array of profile paths found
  */
 function findChromiumProfiles(basePath: string): string[] {
-  const profiles: string[] = [];
-
   if (!existsSync(basePath)) {
-    return profiles;
+    return [];
   }
 
-  // Look for Default profile
-  const defaultProfile = join(basePath, "Default");
-  if (existsSync(defaultProfile)) {
-    profiles.push(defaultProfile);
-  }
-
-  // Look for numbered profiles (Profile 1, Profile 2, etc.)
-  for (let i = 1; i <= 10; i++) {
-    const profilePath = join(basePath, `Profile ${i}`);
-    if (existsSync(profilePath)) {
-      profiles.push(profilePath);
-    }
-  }
-
-  return profiles;
+  // Single glob replaces 12 existsSync calls (Default + Profile 1..10)
+  return fg.sync(["Default", "Profile *"], {
+    cwd: basePath,
+    onlyDirectories: true,
+    absolute: true,
+  });
 }
 
 /**
@@ -399,22 +401,12 @@ function findChromiumProfiles(basePath: string): string[] {
  * @returns Array of profile paths found
  */
 function findFirefoxProfilesInPath(basePath: string): string[] {
-  const profiles: string[] = [];
-
-  if (!existsSync(basePath)) {
-    return profiles;
-  }
-
-  const profileDirs: string[] = readdirSync(basePath);
-  for (const dir of profileDirs) {
-    // Firefox profiles usually have .default or .default-release suffix
-    if (dir.includes("default")) {
-      const profilePath = join(basePath, dir);
-      profiles.push(profilePath);
-    }
-  }
-
-  return profiles;
+  // Single glob replaces existsSync + readdirSync + manual filter
+  return fg.sync(["*default*"], {
+    cwd: basePath,
+    onlyDirectories: true,
+    absolute: true,
+  });
 }
 
 /**

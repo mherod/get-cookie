@@ -6,6 +6,7 @@
 export {
   createSqliteDatabase,
   getCurrentRuntime,
+  setRuntimeOverride,
   type Runtime,
   type SqliteDatabase,
   type SqliteOptions,

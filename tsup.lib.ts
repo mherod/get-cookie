@@ -10,11 +10,11 @@ import { defineConfig } from "tsup";
  * ```
  */
 export default defineConfig({
-  entry: ["src/index.ts"],
+  entry: ["src/index.ts", "src/node.ts", "src/bun.ts"],
   format: ["cjs", "esm"],
   dts: {
     resolve: true,
-    entry: ["src/index.ts"],
+    entry: ["src/index.ts", "src/node.ts", "src/bun.ts"],
     compilerOptions: {
       strict: true,
       noEmitOnError: true,

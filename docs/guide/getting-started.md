@@ -49,6 +49,20 @@ async function example() {
 }
 ```
 
+#### Runtime-Specific Entrypoints
+
+For deterministic adapter selection, use a runtime-specific entrypoint instead of the auto-detecting root import:
+
+```typescript
+// Force Node.js (always uses better-sqlite3)
+import { getCookie } from "@mherod/get-cookie/node";
+
+// Force Bun (always uses bun:sqlite)
+import { getCookie } from "@mherod/get-cookie/bun";
+```
+
+The root `@mherod/get-cookie` import auto-detects the runtime and picks the right SQLite adapter. When running under Bun, the `"bun"` conditional export automatically resolves to the Bun entrypoint.
+
 ## Platform Support
 
 - **Windows**: Chrome, Edge, Arc, Opera, Opera GX, Firefox

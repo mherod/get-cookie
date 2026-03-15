@@ -19,7 +19,7 @@ import type {
  * const cookies = await strategy.queryCookies('session', 'example.com');
  * ```
  */
-export default class MockCookieQueryStrategy implements CookieQueryStrategy {
+export class MockCookieQueryStrategy implements CookieQueryStrategy {
   /**
    * The browser name for this strategy
    */

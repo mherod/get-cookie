@@ -3,7 +3,7 @@
  * @module BrowserDetector
  */
 
-import { existsSync, readFileSync } from "node:fs";
+import { closeSync, existsSync, openSync, readSync } from "node:fs";
 
 import { createTaggedLogger } from "@utils/logHelpers";
 
@@ -61,15 +61,18 @@ const BROWSER_PATTERNS: Array<{
  * @returns True if the file has Safari's binary cookie format signature
  */
 export function checkSafariMagicBytes(storePath: string): boolean {
+  let fd: number | undefined;
   try {
-    const buffer = readFileSync(storePath);
+    fd = openSync(storePath, "r");
+    const buf = Buffer.alloc(4);
+    const bytesRead = readSync(fd, buf, 0, 4, 0);
     // Safari binary cookies start with "cook" magic bytes
     return (
-      buffer.length >= 4 &&
-      buffer[0] === SAFARI_MAGIC_BYTES.c &&
-      buffer[1] === SAFARI_MAGIC_BYTES.o1 &&
-      buffer[2] === SAFARI_MAGIC_BYTES.o2 &&
-      buffer[3] === SAFARI_MAGIC_BYTES.k
+      bytesRead === 4 &&
+      buf[0] === SAFARI_MAGIC_BYTES.c &&
+      buf[1] === SAFARI_MAGIC_BYTES.o1 &&
+      buf[2] === SAFARI_MAGIC_BYTES.o2 &&
+      buf[3] === SAFARI_MAGIC_BYTES.k
     );
   } catch (error) {
     logger.debug("Failed to read file for magic bytes check", {
@@ -77,6 +80,10 @@ export function checkSafariMagicBytes(storePath: string): boolean {
       error,
     });
     return false;
+  } finally {
+    if (fd !== undefined) {
+      closeSync(fd);
+    }
   }
 }
 

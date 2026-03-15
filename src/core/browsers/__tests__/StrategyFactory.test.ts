@@ -11,13 +11,13 @@ import { OperaCookieQueryStrategy } from "../opera/OperaCookieQueryStrategy";
 import { OperaGXCookieQueryStrategy } from "../opera/OperaGXCookieQueryStrategy";
 import { SafariCookieQueryStrategy } from "../safari/SafariCookieQueryStrategy";
 import { VivaldiCookieQueryStrategy } from "../vivaldi/VivaldiCookieQueryStrategy";
+import { isValidBrowserType } from "../BrowserDetector";
 import {
   createBrowserStrategy,
   createCompositeStrategy,
   createSelectiveCompositeStrategy,
   createStrategy,
   getAvailableBrowsers,
-  isBrowserSupported,
 } from "../StrategyFactory";
 
 describe("createBrowserStrategy", () => {
@@ -161,52 +161,52 @@ describe("getAvailableBrowsers", () => {
   });
 });
 
-describe("isBrowserSupported", () => {
+describe("isValidBrowserType", () => {
   it("returns true for 'chrome'", () => {
-    expect(isBrowserSupported("chrome")).toBe(true);
+    expect(isValidBrowserType("chrome")).toBe(true);
   });
 
   it("returns true for 'firefox'", () => {
-    expect(isBrowserSupported("firefox")).toBe(true);
+    expect(isValidBrowserType("firefox")).toBe(true);
   });
 
   it("returns true for 'safari'", () => {
-    expect(isBrowserSupported("safari")).toBe(true);
+    expect(isValidBrowserType("safari")).toBe(true);
   });
 
   it("returns true for 'edge'", () => {
-    expect(isBrowserSupported("edge")).toBe(true);
+    expect(isValidBrowserType("edge")).toBe(true);
   });
 
   it("returns true for 'arc'", () => {
-    expect(isBrowserSupported("arc")).toBe(true);
+    expect(isValidBrowserType("arc")).toBe(true);
   });
 
   it("returns true for 'brave'", () => {
-    expect(isBrowserSupported("brave")).toBe(true);
+    expect(isValidBrowserType("brave")).toBe(true);
   });
 
   it("returns true for 'opera'", () => {
-    expect(isBrowserSupported("opera")).toBe(true);
+    expect(isValidBrowserType("opera")).toBe(true);
   });
 
   it("returns true for 'opera-gx'", () => {
-    expect(isBrowserSupported("opera-gx")).toBe(true);
+    expect(isValidBrowserType("opera-gx")).toBe(true);
   });
 
   it("returns true for 'vivaldi'", () => {
-    expect(isBrowserSupported("vivaldi")).toBe(true);
+    expect(isValidBrowserType("vivaldi")).toBe(true);
   });
 
   it("returns false for 'netscape'", () => {
-    expect(isBrowserSupported("netscape")).toBe(false);
+    expect(isValidBrowserType("netscape")).toBe(false);
   });
 
   it("returns false for an empty string", () => {
-    expect(isBrowserSupported("")).toBe(false);
+    expect(isValidBrowserType("")).toBe(false);
   });
 
   it("returns false for 'CHROME' (case-sensitive)", () => {
-    expect(isBrowserSupported("CHROME")).toBe(false);
+    expect(isValidBrowserType("CHROME")).toBe(false);
   });
 });

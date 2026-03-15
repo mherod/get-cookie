@@ -163,12 +163,3 @@ export function createStrategy(options?: {
 export function getAvailableBrowsers(): BrowserType[] {
   return Object.keys(STRATEGY_REGISTRY) as BrowserType[];
 }
-
-/**
- * Checks if a browser is supported
- * @param browser - The browser to check
- * @returns True if the browser is supported
- */
-export function isBrowserSupported(browser: string): boolean {
-  return isValidBrowserType(browser);
-}

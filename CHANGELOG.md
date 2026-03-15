@@ -6,24 +6,40 @@ All notable changes to this project will be documented in this file.
 
 ### New Features
 
-- `discoverBrowserFiles()` auto-discovers cookie file paths for Chromium
-  and Firefox browsers, removing the requirement to pass an explicit
-  `filepath` to `EnhancedCookieQueryService.queryCookies()` (#440, PR #452)
-- Added Brave and Arc browser data directory paths to
-  `CHROMIUM_DATA_DIRS`, enabling auto-discovery of their cookie files
-  via `discoverBrowserFiles()` (PR #455)
+- Added separate Node and Bun runtime entrypoints — import
+  from `@mherod/get-cookie/node` or `@mherod/get-cookie/bun`
+  to force a specific SQLite adapter instead of relying on
+  auto-detection (#474, PR #475)
+- Added Vivaldi as a fully supported browser with cookie
+  extraction, profile discovery, and strategy wiring (#470)
+- Added `--list-profiles` support for all browsers — lists
+  installed profiles for any Chromium browser via Local State
+  and Firefox via profiles.ini (#462)
+- Added profile name filtering for Firefox via profiles.ini
+  parsing, enabling `--profile` flag support (#461)
+- Extended `--profile` filtering to all Chromium browsers
+  (Brave, Edge, Arc, Opera, OperaGX), not just Chrome (#460)
+- Auto-discovery of Brave and Arc cookie files via browser
+  data directory paths (#455)
+- Auto-discovery of cookie file paths for Chromium and Firefox
+  browsers, removing the need to pass an explicit filepath
+  (#440, PR #452)
 
-### Refactoring
+### Bug Fixes
 
-- Added `opera-gx` to `SqlBrowserType` union and `BROWSER_SCHEMAS` map,
-  enabling Opera GX cookie queries through the SQL infrastructure (#445)
-- `createCompositeStrategy()` derives the strategy list from
-  `STRATEGY_REGISTRY` instead of a hardcoded array (#437)
-- Added unit tests for `StrategyFactory` functions (#450)
-
-### Chores
-
-- Excluded `.swiz/` cache directory from Biome formatting checks (#451)
+- Profile listing now reads each browser's own Local State
+  file instead of always reading Chrome's, fixing incorrect
+  profile enumeration for Brave, Opera, and Edge (#458)
+- Added Brave to the profile listing output (#456)
+- Chromium browsers now warn when `--profile` specifies a
+  name that does not match any installed profile, listing
+  the available names (#466)
+- Firefox now warns when `--profile` specifies a name not
+  found in profiles.ini, listing available profiles (#464)
+- Safari now warns when `--profile` is used, since Safari
+  does not support profile filtering (#463)
+- Safari profile warning now appears alongside query results
+  instead of at strategy creation time (#465)
 
 ## [4.4.3] - 2026-02-24
 

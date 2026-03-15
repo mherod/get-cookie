@@ -5,6 +5,14 @@ import type { BaseCookieQueryStrategy } from "../browsers/BaseCookieQueryStrateg
 import { ChromeCookieQueryStrategy } from "../browsers/chrome/ChromeCookieQueryStrategy";
 import { FirefoxCookieQueryStrategy } from "../browsers/firefox/FirefoxCookieQueryStrategy";
 import { SafariCookieQueryStrategy } from "../browsers/safari/SafariCookieQueryStrategy";
+
+/** Reusable default strategy instances — stateless after construction */
+const defaultStrategies: BaseCookieQueryStrategy[] = [
+  new ChromeCookieQueryStrategy(),
+  new FirefoxCookieQueryStrategy(),
+  new SafariCookieQueryStrategy(),
+];
+
 /**
  * Batch query cookies from browser strategies with optimized SQL queries.
  * This function groups cookie specs and executes combined queries where possible.
@@ -146,25 +154,27 @@ export async function batchQueryCookies(
 
   logger.debug(`Batch querying ${validSpecs.length} cookie specs`);
 
-  // Initialize strategies
-  const strategies = [
-    new ChromeCookieQueryStrategy(),
-    new FirefoxCookieQueryStrategy(),
-    new SafariCookieQueryStrategy(),
-  ];
+  const strategies = defaultStrategies;
 
   const allResults: ExportedCookie[] = [];
   const allErrors: Error[] = [];
 
-  // Query each strategy with all specs
-  for (const strategy of strategies) {
-    const { cookies, errors } = await queryStrategy(
-      strategy,
-      validSpecs,
-      continueOnError,
-    );
-    allResults.push(...cookies);
-    allErrors.push(...errors);
+  // Query all strategies in parallel — each targets independent browser databases
+  const strategyResults = await Promise.allSettled(
+    strategies.map((strategy) =>
+      queryStrategy(strategy, validSpecs, continueOnError),
+    ),
+  );
+
+  for (const result of strategyResults) {
+    if (result.status === "fulfilled") {
+      allResults.push(...result.value.cookies);
+      allErrors.push(...result.value.errors);
+    } else if (continueOnError) {
+      allErrors.push(ensureError(result.reason, "Strategy query failed"));
+    } else {
+      throw result.reason;
+    }
   }
 
   if (allErrors.length > 0) {

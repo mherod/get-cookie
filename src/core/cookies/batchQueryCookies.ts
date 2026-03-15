@@ -5,6 +5,14 @@ import type { BaseCookieQueryStrategy } from "../browsers/BaseCookieQueryStrateg
 import { ChromeCookieQueryStrategy } from "../browsers/chrome/ChromeCookieQueryStrategy";
 import { FirefoxCookieQueryStrategy } from "../browsers/firefox/FirefoxCookieQueryStrategy";
 import { SafariCookieQueryStrategy } from "../browsers/safari/SafariCookieQueryStrategy";
+
+/** Reusable default strategy instances — stateless after construction */
+const defaultStrategies: BaseCookieQueryStrategy[] = [
+  new ChromeCookieQueryStrategy(),
+  new FirefoxCookieQueryStrategy(),
+  new SafariCookieQueryStrategy(),
+];
+
 /**
  * Batch query cookies from browser strategies with optimized SQL queries.
  * This function groups cookie specs and executes combined queries where possible.
@@ -146,12 +154,7 @@ export async function batchQueryCookies(
 
   logger.debug(`Batch querying ${validSpecs.length} cookie specs`);
 
-  // Initialize strategies
-  const strategies = [
-    new ChromeCookieQueryStrategy(),
-    new FirefoxCookieQueryStrategy(),
-    new SafariCookieQueryStrategy(),
-  ];
+  const strategies = defaultStrategies;
 
   const allResults: ExportedCookie[] = [];
   const allErrors: Error[] = [];

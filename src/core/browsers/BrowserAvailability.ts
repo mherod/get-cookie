@@ -3,13 +3,13 @@
  * @module BrowserAvailability
  */
 
-import { execSync } from "node:child_process";
 import { existsSync, readdirSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
 import { createTaggedLogger } from "@utils/logHelpers";
 import { getPlatform, isLinux, isMacOS, isWindows } from "@utils/platformUtils";
+import { execSimple } from "@utils/execSimple";
 
 import { getBrowserDisplayName } from "./BrowserDetector";
 import type { BrowserType } from "./BrowserDetector";
@@ -290,55 +290,70 @@ function checkBrowserInstalled(browser: BrowserType): boolean {
 }
 
 /**
- * Gets the version of an installed browser
+ * Gets the version command for a browser on the current platform
+ * @param browser - The browser type
+ * @returns Shell command to get browser version, or undefined
+ */
+function getVersionCommand(browser: BrowserType): string | undefined {
+  if (isMacOS()) {
+    const versionCommands: Partial<Record<BrowserType, string>> = {
+      chrome:
+        "/Applications/Google\\ Chrome.app/Contents/MacOS/Google\\ Chrome --version 2>/dev/null",
+      firefox:
+        "/Applications/Firefox.app/Contents/MacOS/firefox --version 2>/dev/null",
+      safari:
+        "defaults read /Applications/Safari.app/Contents/Info.plist CFBundleShortVersionString 2>/dev/null",
+      edge: "/Applications/Microsoft\\ Edge.app/Contents/MacOS/Microsoft\\ Edge --version 2>/dev/null",
+      arc: "defaults read /Applications/Arc.app/Contents/Info.plist CFBundleShortVersionString 2>/dev/null",
+      brave:
+        "/Applications/Brave\\ Browser.app/Contents/MacOS/Brave\\ Browser --version 2>/dev/null",
+      opera:
+        "/Applications/Opera.app/Contents/MacOS/Opera --version 2>/dev/null",
+      "opera-gx":
+        "/Applications/Opera\\ GX.app/Contents/MacOS/Opera\\ GX --version 2>/dev/null",
+      vivaldi:
+        "/Applications/Vivaldi.app/Contents/MacOS/Vivaldi --version 2>/dev/null",
+    };
+    return versionCommands[browser];
+  }
+
+  if (isLinux()) {
+    const versionCommands: Partial<Record<BrowserType, string>> = {
+      chrome:
+        "google-chrome --version 2>/dev/null || google-chrome-stable --version 2>/dev/null",
+      firefox: "firefox --version 2>/dev/null",
+      edge: "microsoft-edge --version 2>/dev/null",
+      brave:
+        "brave-browser --version 2>/dev/null || brave-browser-stable --version 2>/dev/null",
+      opera: "opera --version 2>/dev/null",
+      "opera-gx": "opera-gx --version 2>/dev/null",
+      vivaldi:
+        "vivaldi --version 2>/dev/null || vivaldi-stable --version 2>/dev/null",
+    };
+    return versionCommands[browser];
+  }
+
+  // Windows version detection is more complex, skip for now
+  return undefined;
+}
+
+/**
+ * Gets the version of an installed browser asynchronously
  * @param browser - The browser type
  * @returns The browser version or undefined
  */
-function getBrowserVersion(browser: BrowserType): string | undefined {
+export async function getBrowserVersionAsync(
+  browser: BrowserType,
+): Promise<string | undefined> {
   try {
-    let command: string | undefined;
-
-    if (isMacOS()) {
-      const versionCommands: Partial<Record<BrowserType, string>> = {
-        chrome:
-          "/Applications/Google\\ Chrome.app/Contents/MacOS/Google\\ Chrome --version 2>/dev/null",
-        firefox:
-          "/Applications/Firefox.app/Contents/MacOS/firefox --version 2>/dev/null",
-        safari:
-          "defaults read /Applications/Safari.app/Contents/Info.plist CFBundleShortVersionString 2>/dev/null",
-        edge: "/Applications/Microsoft\\ Edge.app/Contents/MacOS/Microsoft\\ Edge --version 2>/dev/null",
-        arc: "defaults read /Applications/Arc.app/Contents/Info.plist CFBundleShortVersionString 2>/dev/null",
-        brave:
-          "/Applications/Brave\\ Browser.app/Contents/MacOS/Brave\\ Browser --version 2>/dev/null",
-        opera:
-          "/Applications/Opera.app/Contents/MacOS/Opera --version 2>/dev/null",
-        "opera-gx":
-          "/Applications/Opera\\ GX.app/Contents/MacOS/Opera\\ GX --version 2>/dev/null",
-        vivaldi:
-          "/Applications/Vivaldi.app/Contents/MacOS/Vivaldi --version 2>/dev/null",
-      };
-      command = versionCommands[browser];
-    } else if (isLinux()) {
-      const versionCommands: Partial<Record<BrowserType, string>> = {
-        chrome:
-          "google-chrome --version 2>/dev/null || google-chrome-stable --version 2>/dev/null",
-        firefox: "firefox --version 2>/dev/null",
-        edge: "microsoft-edge --version 2>/dev/null",
-        brave:
-          "brave-browser --version 2>/dev/null || brave-browser-stable --version 2>/dev/null",
-        opera: "opera --version 2>/dev/null",
-        "opera-gx": "opera-gx --version 2>/dev/null",
-        vivaldi:
-          "vivaldi --version 2>/dev/null || vivaldi-stable --version 2>/dev/null",
-      };
-      command = versionCommands[browser];
-    } else if (isWindows()) {
-      // Windows version detection is more complex, skip for now
+    const command = getVersionCommand(browser);
+    if (command === undefined) {
       return undefined;
     }
 
-    if (command !== undefined) {
-      const version = execSync(command, { encoding: "utf8" }).trim();
+    const { stdout } = await execSimple(command);
+    const version = stdout.trim();
+    if (version) {
       logger.debug("Got browser version", { browser, version });
       return version;
     }
@@ -510,14 +525,8 @@ export function detectAvailableBrowsers(): AvailableBrowser[] {
         profilePaths: findBrowserProfiles(browser),
       };
 
-      const version = getBrowserVersion(browser);
-      if (version !== undefined) {
-        info.version = version;
-      }
-
       logger.info("Found available browser", {
         browser: info.name,
-        version: info.version,
         profiles: info.profilePaths?.length ?? 0,
       });
 
@@ -539,9 +548,9 @@ export function detectAvailableBrowsers(): AvailableBrowser[] {
  * @param browser - The browser type
  * @returns Browser information or undefined if not available
  */
-export function getBrowserInfo(
+export async function getBrowserInfo(
   browser: BrowserType,
-): AvailableBrowser | undefined {
+): Promise<AvailableBrowser | undefined> {
   const installed = checkBrowserInstalled(browser);
 
   if (!installed) {
@@ -555,7 +564,7 @@ export function getBrowserInfo(
     profilePaths: findBrowserProfiles(browser),
   };
 
-  const version = getBrowserVersion(browser);
+  const version = await getBrowserVersionAsync(browser);
   if (version !== undefined) {
     result.version = version;
   }

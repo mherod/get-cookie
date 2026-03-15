@@ -535,15 +535,6 @@ export function detectAvailableBrowsers(): AvailableBrowser[] {
 }
 
 /**
- * Checks if a specific browser is available
- * @param browser - The browser type to check
- * @returns True if the browser is available
- */
-export function isBrowserAvailable(browser: BrowserType): boolean {
-  return checkBrowserInstalled(browser);
-}
-
-/**
  * Gets detailed information about a specific browser
  * @param browser - The browser type
  * @returns Browser information or undefined if not available

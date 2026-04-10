@@ -6,7 +6,11 @@ import { describe, it, expect } from "@jest/globals";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
-import { CHROMIUM_DATA_DIRS } from "../BrowserAvailability";
+import {
+  BROWSER_PATHS,
+  CHROMIUM_DATA_DIRS,
+  FIREFOX_DATA_DIRS,
+} from "../BrowserAvailability";
 
 describe("CHROMIUM_DATA_DIRS", () => {
   it("has entries for darwin, win32, and linux", () => {
@@ -78,6 +82,44 @@ describe("CHROMIUM_DATA_DIRS", () => {
     it("edge path is under .config/microsoft-edge", () => {
       expect(linux?.["edge"]).toBe(
         join(homedir(), ".config", "microsoft-edge"),
+      );
+    });
+  });
+});
+
+describe("FIREFOX_DATA_DIRS", () => {
+  it("has entries for darwin, win32, and linux", () => {
+    expect(FIREFOX_DATA_DIRS).toHaveProperty("darwin");
+    expect(FIREFOX_DATA_DIRS).toHaveProperty("win32");
+    expect(FIREFOX_DATA_DIRS).toHaveProperty("linux");
+  });
+
+  describe("linux paths", () => {
+    const linux = FIREFOX_DATA_DIRS["linux"];
+
+    it("includes the traditional ~/.mozilla/firefox path", () => {
+      expect(linux).toContainEqual(join(homedir(), ".mozilla", "firefox"));
+    });
+
+    it("includes the XDG-style ~/.config/mozilla/firefox path", () => {
+      expect(linux).toContainEqual(
+        join(homedir(), ".config", "mozilla", "firefox"),
+      );
+    });
+  });
+});
+
+describe("BROWSER_PATHS", () => {
+  describe("linux firefox paths", () => {
+    const firefoxPaths = BROWSER_PATHS.linux.firefox;
+
+    it("includes the traditional ~/.mozilla/firefox path", () => {
+      expect(firefoxPaths).toContainEqual(`${homedir()}/.mozilla/firefox`);
+    });
+
+    it("includes the XDG-style ~/.config/mozilla/firefox path", () => {
+      expect(firefoxPaths).toContainEqual(
+        `${homedir()}/.config/mozilla/firefox`,
       );
     });
   });

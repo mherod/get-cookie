@@ -98,9 +98,7 @@ describe("FIREFOX_DATA_DIRS", () => {
     const linux = FIREFOX_DATA_DIRS["linux"];
 
     it("includes the traditional ~/.mozilla/firefox path", () => {
-      expect(linux).toContainEqual(
-        join(homedir(), ".mozilla", "firefox"),
-      );
+      expect(linux).toContainEqual(join(homedir(), ".mozilla", "firefox"));
     });
 
     it("includes the XDG-style ~/.config/mozilla/firefox path", () => {

@@ -109,8 +109,14 @@ function findFirefoxCookieFiles(
       break;
     }
     case "linux":
-      profileDirs.push(join(home, ".mozilla/firefox"));
-      patterns.push(join(home, ".mozilla/firefox/*/cookies.sqlite"));
+      profileDirs.push(
+        join(home, ".mozilla/firefox"),
+        join(home, ".config/mozilla/firefox"),
+      );
+      patterns.push(
+        join(home, ".mozilla/firefox/*/cookies.sqlite"),
+        join(home, ".config/mozilla/firefox/*/cookies.sqlite"),
+      );
       break;
     default:
       logger.debug("Unsupported platform for Firefox cookie extraction", {

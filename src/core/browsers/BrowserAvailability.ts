@@ -127,6 +127,7 @@ export const BROWSER_PATHS = {
     ],
     firefox: [
       `${homedir()}/.mozilla/firefox`,
+      `${homedir()}/.config/mozilla/firefox`,
       "/usr/bin/firefox",
       "/usr/lib/firefox",
       "/snap/firefox",
@@ -258,7 +259,10 @@ export const FIREFOX_DATA_DIRS: Partial<Record<string, string[]>> = {
     ),
     join(homedir(), "AppData", "Roaming", "Mozilla", "Firefox ESR"),
   ],
-  linux: [join(homedir(), ".mozilla", "firefox")],
+  linux: [
+    join(homedir(), ".mozilla", "firefox"),
+    join(homedir(), ".config", "mozilla", "firefox"),
+  ],
 };
 
 /** Module-level cache for browser installation checks — installations don't change during process lifetime */

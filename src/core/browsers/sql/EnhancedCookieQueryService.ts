@@ -5,13 +5,12 @@
 
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-import { homedir } from "node:os";
 
 import fg from "fast-glob";
 import type { SqliteDatabase } from "./adapters/DatabaseAdapter";
 import { createTaggedLogger, logError } from "@utils/logHelpers";
 import { getPlatform } from "@utils/platformUtils";
-import { CHROMIUM_DATA_DIRS } from "../BrowserAvailability";
+import { CHROMIUM_DATA_DIRS, FIREFOX_DATA_DIRS } from "../BrowserAvailability";
 
 import type { ExportedCookie } from "../../../types/schemas";
 import { chromeTimestampToDate } from "../../../utils/chromeDates";
@@ -478,42 +477,37 @@ export class EnhancedCookieQueryService {
    * @returns Array of cookie file paths that exist on disk
    */
   private discoverFirefoxCookieFiles(): string[] {
-    const home = homedir();
     const platform = getPlatform();
+    const baseDirs = FIREFOX_DATA_DIRS[platform] ?? [];
 
-    let profilesDir: string;
-    if (platform === "darwin") {
-      profilesDir = join(
-        home,
-        "Library",
-        "Application Support",
-        "Firefox",
-        "Profiles",
-      );
-    } else if (platform === "win32") {
-      profilesDir = join(
-        process.env.APPDATA ?? "",
-        "Mozilla",
-        "Firefox",
-        "Profiles",
-      );
-    } else {
-      profilesDir = join(home, ".mozilla", "firefox");
-    }
+    // macOS and Windows store profiles under a `Profiles` subdirectory; on
+    // Linux profiles live directly under the platform dir (both the
+    // traditional `~/.mozilla/firefox` and the XDG `~/.config/mozilla/firefox`).
+    const needsProfilesSubdir = platform === "darwin" || platform === "win32";
+    const profilesDirs = baseDirs
+      .map((dir) => (needsProfilesSubdir ? join(dir, "Profiles") : dir))
+      .filter((dir) => existsSync(dir));
 
-    if (!existsSync(profilesDir)) {
-      logger.debug("Firefox profiles directory not found", { profilesDir });
+    if (profilesDirs.length === 0) {
+      logger.debug("Firefox profiles directory not found", {
+        checked: baseDirs,
+        platform,
+      });
       return [];
     }
 
-    // Single glob replaces readdirSync + existsSync loop
-    const cookieFiles = fg.sync(["*default*/cookies.sqlite"], {
-      cwd: profilesDir,
-      absolute: true,
-    });
+    const cookieFiles: string[] = [];
+    for (const dir of profilesDirs) {
+      const matches = fg.sync(["*default*/cookies.sqlite"], {
+        cwd: dir,
+        absolute: true,
+      });
+      cookieFiles.push(...matches);
+    }
 
     logger.debug("Discovered Firefox cookie files", {
       count: cookieFiles.length,
+      profilesDirs,
     });
 
     return cookieFiles;

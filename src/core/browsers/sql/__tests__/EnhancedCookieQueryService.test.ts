@@ -207,6 +207,81 @@ describe("EnhancedCookieQueryService", () => {
       expect(mockDb.prepare).toHaveBeenCalled();
     });
 
+    it("discovers Linux Firefox cookies from the traditional ~/.mozilla/firefox path", async () => {
+      const { getPlatform } = jest.requireMock("@utils/platformUtils") as {
+        getPlatform: jest.Mock;
+      };
+      getPlatform.mockReturnValueOnce("linux");
+      // Only the traditional dir exists; the XDG dir is absent.
+      mockExistsSync.mockImplementation((...args: unknown[]) => {
+        const p = String(args[0]).replace(/\\/g, "/");
+        return p.endsWith("/.mozilla/firefox");
+      });
+      mockFgSync.mockReturnValue([
+        "/home/user/.mozilla/firefox/abc.default/cookies.sqlite",
+      ]);
+
+      await service.queryCookies({
+        browser: "firefox",
+        name: "%",
+        domain: "%",
+      });
+
+      expect(mockDb.prepare).toHaveBeenCalled();
+      expect(mockFgSync).toHaveBeenCalledWith(
+        ["*default*/cookies.sqlite"],
+        expect.objectContaining({
+          cwd: expect.stringMatching(/\.mozilla[/\\]firefox$/),
+        }),
+      );
+    });
+
+    it("discovers Linux Firefox cookies from the XDG ~/.config/mozilla/firefox path when the traditional path is absent", async () => {
+      const { getPlatform } = jest.requireMock("@utils/platformUtils") as {
+        getPlatform: jest.Mock;
+      };
+      getPlatform.mockReturnValueOnce("linux");
+      // Traditional dir absent; XDG dir is the only one present.
+      mockExistsSync.mockImplementation((...args: unknown[]) => {
+        const p = String(args[0]).replace(/\\/g, "/");
+        return p.endsWith("/.config/mozilla/firefox");
+      });
+      mockFgSync.mockReturnValue([
+        "/home/user/.config/mozilla/firefox/xyz.default/cookies.sqlite",
+      ]);
+
+      await service.queryCookies({
+        browser: "firefox",
+        name: "%",
+        domain: "%",
+      });
+
+      expect(mockDb.prepare).toHaveBeenCalled();
+      expect(mockFgSync).toHaveBeenCalledWith(
+        ["*default*/cookies.sqlite"],
+        expect.objectContaining({
+          cwd: expect.stringMatching(/\.config[/\\]mozilla[/\\]firefox$/),
+        }),
+      );
+    });
+
+    it("returns empty data on Linux when neither Firefox profile root exists", async () => {
+      const { getPlatform } = jest.requireMock("@utils/platformUtils") as {
+        getPlatform: jest.Mock;
+      };
+      getPlatform.mockReturnValueOnce("linux");
+      mockExistsSync.mockReturnValue(false);
+
+      const result = await service.queryCookies({
+        browser: "firefox",
+        name: "%",
+        domain: "%",
+      });
+
+      expect(result.data).toEqual([]);
+      expect(mockDb.prepare).not.toHaveBeenCalled();
+    });
+
     it("discovers Brave cookie files from Default profile", async () => {
       mockExistsSync.mockImplementation((...args: unknown[]) => {
         const p = String(args[0]).replace(/\\/g, "/");

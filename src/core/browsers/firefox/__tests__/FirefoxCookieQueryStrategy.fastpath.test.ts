@@ -58,8 +58,6 @@ import { FirefoxCookieQueryStrategy } from "../FirefoxCookieQueryStrategy";
 jest.mock("node:fs");
 jest.mock("node:os");
 jest.mock("fast-glob", () => ({
-  __esModule: true,
-  default: jest.fn(),
   sync: jest.fn(),
 }));
 jest.mock("@utils/platformUtils", () => ({
@@ -107,7 +105,7 @@ function expectEmptyResult(result: unknown[]): void {
   expect(result).toEqual([]);
 }
 
-describe.skip("FirefoxCookieQueryStrategy - Fast Path Optimization", () => {
+describe("FirefoxCookieQueryStrategy - Fast Path Optimization", () => {
   let strategy: FirefoxCookieQueryStrategy;
 
   beforeEach(() => {

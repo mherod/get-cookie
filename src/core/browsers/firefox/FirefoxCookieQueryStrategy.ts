@@ -11,6 +11,7 @@ import { isFirefoxRunning } from "@utils/ProcessDetector";
 
 import type { ExportedCookie } from "../../../types/schemas";
 import { BaseCookieQueryStrategy } from "../BaseCookieQueryStrategy";
+import { FIREFOX_DATA_DIRS } from "../BrowserAvailability";
 import { BrowserLockHandler } from "../BrowserLockHandler";
 import { getGlobalConnectionManager } from "../sql/DatabaseConnectionManager";
 import { getGlobalQueryMonitor } from "../sql/QueryMonitor";
@@ -108,16 +109,17 @@ function findFirefoxCookieFiles(
       }
       break;
     }
-    case "linux":
-      profileDirs.push(
-        join(home, ".mozilla/firefox"),
-        join(home, ".config/mozilla/firefox"),
-      );
-      patterns.push(
-        join(home, ".mozilla/firefox/*/cookies.sqlite"),
-        join(home, ".config/mozilla/firefox/*/cookies.sqlite"),
-      );
+    case "linux": {
+      // Source of truth for Linux Firefox profile roots: native
+      // ~/.mozilla/firefox, XDG (~/.config/mozilla/firefox or
+      // $XDG_CONFIG_HOME/mozilla/firefox), Snap, and Flatpak installs.
+      const linuxDirs = FIREFOX_DATA_DIRS.linux ?? [];
+      for (const dir of linuxDirs) {
+        profileDirs.push(dir);
+        patterns.push(join(dir, "*", "cookies.sqlite"));
+      }
       break;
+    }
     default:
       logger.debug("Unsupported platform for Firefox cookie extraction", {
         platform,

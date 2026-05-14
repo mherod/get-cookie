@@ -262,8 +262,18 @@ export const CHROMIUM_DATA_DIRS: Partial<
  * Firefox data directories per platform.
  * Firefox uses profiles.ini rather than Local State for profile metadata.
  * Each entry is an array because Firefox variants (regular, Developer Edition, ESR)
- * may coexist on the same machine.
+ * and packaging formats (native, Snap, Flatpak) may coexist on the same machine.
+ *
+ * Linux entries cover, in order: the traditional `~/.mozilla/firefox` location,
+ * the XDG Base Directory location (`$XDG_CONFIG_HOME/mozilla/firefox`, which
+ * Firefox 147+ uses by default per Mozilla bug 259356), the Snap-packaged
+ * Firefox profile root, and the Flatpak-packaged Firefox profile root.
  */
+const linuxXdgConfigHome =
+  process.env.XDG_CONFIG_HOME && process.env.XDG_CONFIG_HOME.trim() !== ""
+    ? process.env.XDG_CONFIG_HOME
+    : join(homedir(), ".config");
+
 export const FIREFOX_DATA_DIRS: Partial<Record<string, string[]>> = {
   darwin: [join(homedir(), "Library", "Application Support", "Firefox")],
   win32: [
@@ -279,7 +289,16 @@ export const FIREFOX_DATA_DIRS: Partial<Record<string, string[]>> = {
   ],
   linux: [
     join(homedir(), ".mozilla", "firefox"),
-    join(homedir(), ".config", "mozilla", "firefox"),
+    join(linuxXdgConfigHome, "mozilla", "firefox"),
+    join(homedir(), "snap", "firefox", "common", ".mozilla", "firefox"),
+    join(
+      homedir(),
+      ".var",
+      "app",
+      "org.mozilla.firefox",
+      ".mozilla",
+      "firefox",
+    ),
   ],
 };
 

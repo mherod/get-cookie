@@ -265,7 +265,7 @@ describe("EnhancedCookieQueryService", () => {
       );
     });
 
-    it("returns empty data on Linux when neither Firefox profile root exists", async () => {
+    it("returns empty data on Linux when no Firefox profile root exists", async () => {
       const { getPlatform } = jest.requireMock("@utils/platformUtils") as {
         getPlatform: jest.Mock;
       };
@@ -280,6 +280,68 @@ describe("EnhancedCookieQueryService", () => {
 
       expect(result.data).toEqual([]);
       expect(mockDb.prepare).not.toHaveBeenCalled();
+    });
+
+    it("discovers Linux Firefox cookies from the Snap profile path when only Snap is installed", async () => {
+      const { getPlatform } = jest.requireMock("@utils/platformUtils") as {
+        getPlatform: jest.Mock;
+      };
+      getPlatform.mockReturnValueOnce("linux");
+      // Only the Snap dir exists; native / XDG / Flatpak roots are absent.
+      mockExistsSync.mockImplementation((...args: unknown[]) => {
+        const p = String(args[0]).replace(/\\/g, "/");
+        return p.endsWith("/snap/firefox/common/.mozilla/firefox");
+      });
+      mockFgSync.mockReturnValue([
+        "/home/user/snap/firefox/common/.mozilla/firefox/abc.default/cookies.sqlite",
+      ]);
+
+      await service.queryCookies({
+        browser: "firefox",
+        name: "%",
+        domain: "%",
+      });
+
+      expect(mockDb.prepare).toHaveBeenCalled();
+      expect(mockFgSync).toHaveBeenCalledWith(
+        ["*default*/cookies.sqlite"],
+        expect.objectContaining({
+          cwd: expect.stringMatching(
+            /snap[/\\]firefox[/\\]common[/\\]\.mozilla[/\\]firefox$/,
+          ),
+        }),
+      );
+    });
+
+    it("discovers Linux Firefox cookies from the Flatpak profile path when only Flatpak is installed", async () => {
+      const { getPlatform } = jest.requireMock("@utils/platformUtils") as {
+        getPlatform: jest.Mock;
+      };
+      getPlatform.mockReturnValueOnce("linux");
+      // Only the Flatpak dir exists.
+      mockExistsSync.mockImplementation((...args: unknown[]) => {
+        const p = String(args[0]).replace(/\\/g, "/");
+        return p.endsWith("/.var/app/org.mozilla.firefox/.mozilla/firefox");
+      });
+      mockFgSync.mockReturnValue([
+        "/home/user/.var/app/org.mozilla.firefox/.mozilla/firefox/xyz.default/cookies.sqlite",
+      ]);
+
+      await service.queryCookies({
+        browser: "firefox",
+        name: "%",
+        domain: "%",
+      });
+
+      expect(mockDb.prepare).toHaveBeenCalled();
+      expect(mockFgSync).toHaveBeenCalledWith(
+        ["*default*/cookies.sqlite"],
+        expect.objectContaining({
+          cwd: expect.stringMatching(
+            /\.var[/\\]app[/\\]org\.mozilla\.firefox[/\\]\.mozilla[/\\]firefox$/,
+          ),
+        }),
+      );
     });
 
     it("discovers Brave cookie files from Default profile", async () => {

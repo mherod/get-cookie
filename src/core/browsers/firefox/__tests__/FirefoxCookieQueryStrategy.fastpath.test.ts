@@ -56,7 +56,9 @@ import { FirefoxCookieQueryStrategy } from "../FirefoxCookieQueryStrategy";
 
 // Mock dependencies
 jest.mock("node:fs");
-jest.mock("node:os");
+jest.mock("node:os", () => ({
+  homedir: jest.fn().mockReturnValue("/Users/test"),
+}));
 jest.mock("fast-glob", () => ({
   sync: jest.fn(),
 }));

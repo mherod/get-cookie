@@ -19,7 +19,16 @@ import type { BrowserType } from "./BrowserDetector";
 const logger = createTaggedLogger("BrowserAvailability");
 
 /**
- * Information about an available browser
+ * Information about an available browser.
+ *
+ * @remarks
+ * The {@link AvailableBrowser.version} field is intentionally optional and is
+ * **not populated** by the synchronous detection paths
+ * ({@link detectAvailableBrowsers} and {@link getBrowserInfo}). Browser
+ * version lookup runs a shell command and is therefore exposed as a separate
+ * async helper — call {@link getBrowserVersionAsync} when a version string is
+ * required. Consumers must treat `version` as potentially `undefined` even
+ * when `installed` is `true`.
  */
 export interface AvailableBrowser {
   type: BrowserType;
@@ -27,6 +36,15 @@ export interface AvailableBrowser {
   installed: boolean;
   profilePaths?: string[];
   executablePath?: string;
+  /**
+   * Browser version string, when known.
+   *
+   * @remarks
+   * Absent from {@link detectAvailableBrowsers} and {@link getBrowserInfo}
+   * results — those paths intentionally skip version detection because it
+   * shells out. Call {@link getBrowserVersionAsync} separately to populate
+   * this field.
+   */
   version?: string;
 }
 
@@ -488,9 +506,30 @@ function findBrowserProfiles(browser: BrowserType): string[] {
 
 /**
  * Detects all available browsers on the current system.
- * This function is synchronous — it checks file system paths only.
- * Browser version detection is async and available separately via
- * {@link getBrowserVersionAsync}.
+ *
+ * @remarks
+ * This function is synchronous — it checks file system paths only and does
+ * **not** populate {@link AvailableBrowser.version}. To get a version string,
+ * call {@link getBrowserVersionAsync} for each browser of interest.
+ *
+ * @example
+ * ```typescript
+ * import {
+ *   detectAvailableBrowsers,
+ *   getBrowserVersionAsync,
+ * } from "@mherod/get-cookie";
+ *
+ * const browsers = await Promise.all(
+ *   detectAvailableBrowsers()
+ *     .filter((b) => b.installed)
+ *     .map(async (b) => ({
+ *       ...b,
+ *       // `b.version` is always undefined here — fill it in via the async helper.
+ *       version: await getBrowserVersionAsync(b.type),
+ *     })),
+ * );
+ * ```
+ *
  * @returns Array of available browser information
  */
 export function detectAvailableBrowsers(): AvailableBrowser[] {
@@ -539,7 +578,12 @@ export function detectAvailableBrowsers(): AvailableBrowser[] {
 
 /**
  * Gets detailed information about a specific browser.
- * Version is not included — use {@link getBrowserVersionAsync} separately if needed.
+ *
+ * @remarks
+ * The returned record's {@link AvailableBrowser.version} field is always
+ * `undefined` here — this synchronous path checks file system paths only.
+ * Use {@link getBrowserVersionAsync} to look the version up when required.
+ *
  * @param browser - The browser type
  * @returns Browser information or undefined if not available
  */

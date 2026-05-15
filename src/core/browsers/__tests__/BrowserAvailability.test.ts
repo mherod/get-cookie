@@ -107,6 +107,37 @@ describe("FIREFOX_DATA_DIRS", () => {
       );
     });
   });
+
+  describe("win32 paths", () => {
+    const win32 = FIREFOX_DATA_DIRS["win32"];
+
+    it("includes the homedir-derived Firefox stable path", () => {
+      expect(win32).toContainEqual(
+        join(homedir(), "AppData", "Roaming", "Mozilla", "Firefox"),
+      );
+    });
+
+    it("includes Developer Edition and ESR variants", () => {
+      expect(win32).toContainEqual(
+        join(
+          homedir(),
+          "AppData",
+          "Roaming",
+          "Mozilla",
+          "Firefox Developer Edition",
+        ),
+      );
+      expect(win32).toContainEqual(
+        join(homedir(), "AppData", "Roaming", "Mozilla", "Firefox ESR"),
+      );
+    });
+
+    it("has no duplicate entries when APPDATA matches the homedir default", () => {
+      expect(win32).toBeDefined();
+      const unique = new Set(win32);
+      expect(unique.size).toBe(win32?.length);
+    });
+  });
 });
 
 describe("BROWSER_PATHS", () => {

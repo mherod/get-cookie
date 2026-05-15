@@ -52,11 +52,14 @@ import fg from "fast-glob";
 
 import { getPlatform } from "@utils/platformUtils";
 
+import { FIREFOX_DATA_DIRS } from "../../BrowserAvailability";
 import { FirefoxCookieQueryStrategy } from "../FirefoxCookieQueryStrategy";
 
 // Mock dependencies
 jest.mock("node:fs");
-jest.mock("node:os");
+jest.mock("node:os", () => ({
+  homedir: jest.fn().mockReturnValue("/Users/test"),
+}));
 jest.mock("fast-glob", () => ({
   sync: jest.fn(),
 }));
@@ -122,35 +125,35 @@ describe("FirefoxCookieQueryStrategy - Fast Path Optimization", () => {
   });
 
   it("should check platform-specific Firefox directories", async () => {
-    const testCases: Array<{
-      platform: "darwin" | "win32" | "linux";
-      expectedPaths: string[];
-    }> = [
-      {
-        platform: "darwin",
-        expectedPaths: ["Library/Application Support/Firefox"],
-      },
-      {
-        platform: "win32",
-        expectedPaths: ["AppData/Roaming/Mozilla/Firefox"],
-      },
-      {
-        // Linux discovery covers both the traditional ~/.mozilla/firefox
-        // root and the XDG-style ~/.config/mozilla/firefox root added in
-        // PR #505 for newer Firefox installs.
-        platform: "linux",
-        expectedPaths: [".mozilla/firefox", ".config/mozilla/firefox"],
-      },
-    ];
+    const platforms = ["darwin", "win32", "linux"] as const;
 
-    for (const { platform, expectedPaths } of testCases) {
+    for (const platform of platforms) {
       mockGetPlatform.mockReturnValue(platform);
       setupMocksForNoFirefox();
       await strategy.queryCookies("test", "example.com");
+
+      // Linux: strategy reads FIREFOX_DATA_DIRS.linux directly (XDG/Snap/Flatpak).
+      // darwin/win32: strategy computes paths from homedir() at runtime — mirror that here
+      // so the assertion is portable across environments (APPDATA is not mocked, homedir is).
+      const home = homedir();
+      let expectedPaths: string[];
+      switch (platform) {
+        case "darwin":
+          expectedPaths = [
+            join(home, "Library", "Application Support", "Firefox"),
+          ];
+          break;
+        case "win32":
+          expectedPaths = [
+            join(home, "AppData", "Roaming", "Mozilla", "Firefox"),
+          ];
+          break;
+        case "linux":
+          expectedPaths = FIREFOX_DATA_DIRS.linux ?? [];
+          break;
+      }
       for (const expectedPath of expectedPaths) {
-        expect(mockExistsSync).toHaveBeenCalledWith(
-          join("/Users/test", expectedPath),
-        );
+        expect(mockExistsSync).toHaveBeenCalledWith(expectedPath);
       }
     }
   });

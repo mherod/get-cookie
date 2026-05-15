@@ -131,7 +131,28 @@ describe("FirefoxCookieQueryStrategy - Fast Path Optimization", () => {
       mockGetPlatform.mockReturnValue(platform);
       setupMocksForNoFirefox();
       await strategy.queryCookies("test", "example.com");
-      for (const expectedPath of FIREFOX_DATA_DIRS[platform] ?? []) {
+
+      // Linux: strategy reads FIREFOX_DATA_DIRS.linux directly (XDG/Snap/Flatpak).
+      // darwin/win32: strategy computes paths from homedir() at runtime — mirror that here
+      // so the assertion is portable across environments (APPDATA is not mocked, homedir is).
+      const home = homedir();
+      let expectedPaths: string[];
+      switch (platform) {
+        case "darwin":
+          expectedPaths = [
+            join(home, "Library", "Application Support", "Firefox"),
+          ];
+          break;
+        case "win32":
+          expectedPaths = [
+            join(home, "AppData", "Roaming", "Mozilla", "Firefox"),
+          ];
+          break;
+        case "linux":
+          expectedPaths = FIREFOX_DATA_DIRS.linux ?? [];
+          break;
+      }
+      for (const expectedPath of expectedPaths) {
         expect(mockExistsSync).toHaveBeenCalledWith(expectedPath);
       }
     }

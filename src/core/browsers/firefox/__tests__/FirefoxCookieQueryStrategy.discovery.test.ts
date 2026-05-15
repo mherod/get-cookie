@@ -46,10 +46,9 @@ jest.mock("../../sql/QueryMonitor", () => ({
 
 import { FirefoxCookieQueryStrategy } from "../FirefoxCookieQueryStrategy";
 
-// Mock fast-glob
+// Mock fast-glob — matches the CJS module shape so the strategy's default
+// import (`import fg from "fast-glob"`) resolves to an object with `.sync`.
 jest.mock("fast-glob", () => ({
-  __esModule: true,
-  default: jest.fn(),
   sync: jest.fn(),
 }));
 
@@ -79,7 +78,7 @@ interface MockFastGlob {
   sync: jest.Mock;
 }
 
-describe.skip("FirefoxCookieQueryStrategy - File Discovery", () => {
+describe("FirefoxCookieQueryStrategy - File Discovery", () => {
   let strategy: FirefoxCookieQueryStrategy;
   const originalHome = process.env.HOME;
 
@@ -124,12 +123,21 @@ describe.skip("FirefoxCookieQueryStrategy - File Discovery", () => {
       if (pattern.includes(".mozilla/firefox")) {
         return ["/mock/home/.mozilla/firefox/xyz789/cookies.sqlite"];
       }
+      if (pattern.includes(".config/mozilla/firefox")) {
+        return ["/mock/home/.config/mozilla/firefox/xdg111/cookies.sqlite"];
+      }
       return [];
     });
 
     await strategy.queryCookies("test-cookie", "example.com");
+    // Linux Firefox discovery queries both the traditional and XDG roots.
     expect(sync).toHaveBeenCalledWith(
       expect.stringMatching(/\.mozilla[/\\]firefox[/\\]\*[/\\]cookies\.sqlite/),
+    );
+    expect(sync).toHaveBeenCalledWith(
+      expect.stringMatching(
+        /\.config[/\\]mozilla[/\\]firefox[/\\]\*[/\\]cookies\.sqlite/,
+      ),
     );
   });
 

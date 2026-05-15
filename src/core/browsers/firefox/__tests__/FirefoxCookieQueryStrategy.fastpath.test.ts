@@ -58,8 +58,6 @@ import { FirefoxCookieQueryStrategy } from "../FirefoxCookieQueryStrategy";
 jest.mock("node:fs");
 jest.mock("node:os");
 jest.mock("fast-glob", () => ({
-  __esModule: true,
-  default: jest.fn(),
   sync: jest.fn(),
 }));
 jest.mock("@utils/platformUtils", () => ({
@@ -107,7 +105,7 @@ function expectEmptyResult(result: unknown[]): void {
   expect(result).toEqual([]);
 }
 
-describe.skip("FirefoxCookieQueryStrategy - Fast Path Optimization", () => {
+describe("FirefoxCookieQueryStrategy - Fast Path Optimization", () => {
   let strategy: FirefoxCookieQueryStrategy;
 
   beforeEach(() => {
@@ -124,22 +122,36 @@ describe.skip("FirefoxCookieQueryStrategy - Fast Path Optimization", () => {
   });
 
   it("should check platform-specific Firefox directories", async () => {
-    const testCases = [
+    const testCases: Array<{
+      platform: "darwin" | "win32" | "linux";
+      expectedPaths: string[];
+    }> = [
       {
         platform: "darwin",
-        expectedPath: "Library/Application Support/Firefox",
+        expectedPaths: ["Library/Application Support/Firefox"],
       },
-      { platform: "win32", expectedPath: "AppData/Roaming/Mozilla/Firefox" },
-      { platform: "linux", expectedPath: ".mozilla/firefox" },
+      {
+        platform: "win32",
+        expectedPaths: ["AppData/Roaming/Mozilla/Firefox"],
+      },
+      {
+        // Linux discovery covers both the traditional ~/.mozilla/firefox
+        // root and the XDG-style ~/.config/mozilla/firefox root added in
+        // PR #505 for newer Firefox installs.
+        platform: "linux",
+        expectedPaths: [".mozilla/firefox", ".config/mozilla/firefox"],
+      },
     ];
 
-    for (const { platform, expectedPath } of testCases) {
-      mockGetPlatform.mockReturnValue(platform as "darwin" | "win32" | "linux");
+    for (const { platform, expectedPaths } of testCases) {
+      mockGetPlatform.mockReturnValue(platform);
       setupMocksForNoFirefox();
       await strategy.queryCookies("test", "example.com");
-      expect(mockExistsSync).toHaveBeenCalledWith(
-        join("/Users/test", expectedPath),
-      );
+      for (const expectedPath of expectedPaths) {
+        expect(mockExistsSync).toHaveBeenCalledWith(
+          join("/Users/test", expectedPath),
+        );
+      }
     }
   });
 

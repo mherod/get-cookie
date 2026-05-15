@@ -9,7 +9,11 @@ import { CompositeCookieQueryStrategy } from "../browsers/CompositeCookieQuerySt
 import { FirefoxCookieQueryStrategy } from "../browsers/firefox/FirefoxCookieQueryStrategy";
 import { SafariCookieQueryStrategy } from "../browsers/safari/SafariCookieQueryStrategy";
 
-/** Reusable default composite strategy — stateless after construction */
+/**
+ * Reusable default composite strategy — stateless after construction.
+ * @internal Not part of the public API. Callers needing a custom strategy
+ * should pass `options.strategy` to {@link comboQueryCookieSpec}.
+ */
 const defaultCompositeStrategy = new CompositeCookieQueryStrategy([
   new ChromeCookieQueryStrategy(),
   new FirefoxCookieQueryStrategy(),

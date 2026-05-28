@@ -19,7 +19,6 @@ jest.mock("@utils/platformUtils", () => ({
 jest.mock("../../platform/PlatformBrowserControl", () => ({
   createPlatformBrowserControl: jest.fn().mockReturnValue({
     closeBrowserGracefully: jest.fn().mockResolvedValue(false),
-    closeBrowserForAction: jest.fn().mockResolvedValue(null),
     waitForBrowserToClose: jest.fn().mockResolvedValue(false),
   }),
 }));

@@ -3,11 +3,11 @@ import { join } from "node:path";
 
 import { errorMessageContains, formatErrorForLogging } from "@utils/errorUtils";
 import { isMacOS } from "@utils/platformUtils";
-import { isSafariRunning } from "@utils/ProcessDetector";
+import { isSafariRunning } from "@utils/processDetector";
 import {
   checkFilePermission,
   handleSafariPermissionError,
-} from "@utils/SystemPermissions";
+} from "@utils/systemPermissions";
 
 import type { ExportedCookie } from "../../../types/schemas";
 import { BaseCookieQueryStrategy } from "../BaseCookieQueryStrategy";

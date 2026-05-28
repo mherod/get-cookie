@@ -5,7 +5,7 @@ import path from "node:path";
 import { FirefoxCookieQueryStrategy } from "../FirefoxCookieQueryStrategy";
 
 // Mock the ProcessDetector
-jest.mock("@utils/ProcessDetector");
+jest.mock("@utils/processDetector");
 
 // Mock platform utils to ensure consistent behavior across platforms
 jest.mock("@utils/platformUtils", () => ({

@@ -71,4 +71,4 @@ export type {
   SafeParseSuccess,
   SafeParseError,
   SafeParseResult,
-} from "./ZodUtils";
+} from "./zodUtils";

@@ -30,7 +30,7 @@ export function setupDatabaseLockMocks(testSetup: TestSetup): {
   );
   const { sync } = jest.requireMock<MockFastGlob>("fast-glob");
   const { isFirefoxRunning } = jest.requireMock<MockProcessDetector>(
-    "@utils/ProcessDetector",
+    "@utils/processDetector",
   );
 
   // Mock finding Firefox cookie files

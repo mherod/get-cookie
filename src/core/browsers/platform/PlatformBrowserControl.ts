@@ -1,7 +1,7 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 
-import type { BrowserName } from "@utils/BrowserControl";
+import type { BrowserName } from "@utils/browserControl";
 import { getPlatform, isWindows, type Platform } from "@utils/platformUtils";
 
 const execFileAsync = promisify(execFile);

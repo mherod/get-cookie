@@ -7,7 +7,7 @@ import { SafariCookieQueryStrategy } from "../SafariCookieQueryStrategy";
 jest.mock("../decodeBinaryCookies");
 
 // Mock SystemPermissions utilities
-jest.mock("@utils/SystemPermissions", () => ({
+jest.mock("@utils/systemPermissions", () => ({
   checkFilePermission: jest.fn().mockResolvedValue(true),
   handleSafariPermissionError: jest.fn().mockResolvedValue(false),
 }));

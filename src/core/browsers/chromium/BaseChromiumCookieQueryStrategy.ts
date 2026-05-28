@@ -1,6 +1,6 @@
 import { getErrorMessage } from "@utils/errorUtils";
 import { getPlatform, isPlatformSupported } from "@utils/platformUtils";
-import { isChromeRunning } from "@utils/ProcessDetector";
+import { isChromeRunning } from "@utils/processDetector";
 
 import type {
   CookieRow,

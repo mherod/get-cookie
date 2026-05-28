@@ -69,13 +69,12 @@ jest.mock("@utils/platformUtils", () => ({
   isWindows: jest.fn().mockReturnValue(false),
   isLinux: jest.fn().mockReturnValue(false),
 }));
-jest.mock("@utils/ProcessDetector", () => ({
+jest.mock("@utils/processDetector", () => ({
   isFirefoxRunning: jest.fn().mockResolvedValue([]),
 }));
 jest.mock("../../platform/PlatformBrowserControl", () => ({
   createPlatformBrowserControl: jest.fn().mockReturnValue({
     closeBrowserGracefully: jest.fn().mockResolvedValue(false),
-    closeBrowserForAction: jest.fn().mockResolvedValue(null),
     waitForBrowserToClose: jest.fn().mockResolvedValue(false),
   }),
 }));

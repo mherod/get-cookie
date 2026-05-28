@@ -189,39 +189,6 @@ async function promptUserConfirmation(
 }
 
 /**
- * Relaunch a browser after it has been closed
- * @param browserName - Name of the browser to relaunch
- * @returns Promise that resolves to true if browser was relaunched
- */
-async function relaunchBrowserMacOS(
-  browserName: BrowserName,
-): Promise<boolean> {
-  try {
-    const appName = BROWSER_APP_NAMES[browserName];
-
-    // Launch the browser
-    const launchScript = `tell application "${appName}" to activate`;
-    await execAsync(`osascript -e '${launchScript}'`);
-
-    // Give it a moment to start
-    await new Promise((resolve) => setTimeout(resolve, 3000));
-
-    // Check if it's running
-    const isRunning = await isBrowserRunningMacOS(browserName);
-    if (isRunning) {
-      logger.info("Browser relaunched successfully", { browserName });
-      return true;
-    }
-
-    logger.warn("Browser did not relaunch", { browserName });
-    return false;
-  } catch (error) {
-    logger.error("Failed to relaunch browser", { browserName, error });
-    return false;
-  }
-}
-
-/**
  * Attempt to close a browser gracefully
  * @param browserName - Name of the browser to close
  * @param options - Control options
@@ -273,73 +240,6 @@ export async function closeBrowserGracefully(
   } catch (error) {
     logger.error("Failed to control browser", { browserName, error });
     return false;
-  }
-}
-
-/**
- * Close browser, perform an action, then relaunch the browser
- * @param browserName - Name of the browser
- * @param action - Action to perform while browser is closed
- * @param options - Control options
- * @returns Promise that resolves to the result of the action
- */
-export async function closeBrowserForAction<T>(
-  browserName: BrowserName,
-  action: () => Promise<T>,
-  options: BrowserControlOptions = {},
-): Promise<T | null> {
-  if (!isMacOS()) {
-    logger.debug("Browser control only supported on macOS");
-    return null;
-  }
-
-  let browserWasClosed = false;
-
-  try {
-    // Check if browser is running
-    const wasRunning = await isBrowserRunningMacOS(browserName);
-
-    if (wasRunning) {
-      // Close the browser
-      browserWasClosed = await closeBrowserGracefully(browserName, options);
-
-      if (!browserWasClosed) {
-        logger.warn("Failed to close browser, attempting action anyway");
-      } else {
-        // Wait for browser to fully close
-        await waitForBrowserToClose(browserName, 5000);
-      }
-    }
-
-    // Perform the action
-    const result = await action();
-
-    // Relaunch browser if we closed it
-    if (wasRunning && browserWasClosed) {
-      logger.info(`Relaunching ${browserName}...`);
-      const relaunched = await relaunchBrowserMacOS(browserName);
-
-      if (relaunched) {
-        logger.success(
-          `${browserName} has been relaunched with your tabs restored`,
-        );
-      } else {
-        logger.warn(
-          `Could not relaunch ${browserName} automatically. Please reopen it manually.`,
-        );
-      }
-    }
-
-    return result;
-  } catch (error) {
-    logger.error("Failed during browser action", { browserName, error });
-
-    // Try to relaunch browser if we closed it
-    if (browserWasClosed) {
-      await relaunchBrowserMacOS(browserName);
-    }
-
-    return null;
   }
 }
 

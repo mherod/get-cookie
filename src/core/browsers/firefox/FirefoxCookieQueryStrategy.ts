@@ -7,7 +7,7 @@ import fg from "fast-glob";
 import { getErrorMessage } from "@utils/errorUtils";
 import type { createTaggedLogger } from "@utils/logHelpers";
 import { getPlatform } from "@utils/platformUtils";
-import { isFirefoxRunning } from "@utils/ProcessDetector";
+import { isFirefoxRunning } from "@utils/processDetector";
 
 import type { ExportedCookie } from "../../../types/schemas";
 import { BaseCookieQueryStrategy } from "../BaseCookieQueryStrategy";

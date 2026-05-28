@@ -2,15 +2,15 @@ import {
   type BrowserName,
   closeBrowserGracefully,
   waitForBrowserToClose,
-} from "@utils/BrowserControl";
+} from "@utils/browserControl";
 import {
   getDatabaseErrorType,
   getErrorMessage,
   isError,
 } from "@utils/errorUtils";
-import { detectFileHandles, getFileLockInfo } from "@utils/FileHandleDetector";
+import { detectFileHandles, getFileLockInfo } from "@utils/fileHandleDetector";
 import type { createTaggedLogger } from "@utils/logHelpers";
-import { getBrowserConflictAdvice } from "@utils/ProcessDetector";
+import { getBrowserConflictAdvice } from "@utils/processDetector";
 
 import {
   createPlatformBrowserControl,

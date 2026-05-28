@@ -426,16 +426,6 @@ export async function detectFileHandles(
 }
 
 /**
- * Check if a file is locked by any process
- * @param filePath - Path to the file to check
- * @returns True if file has open handles, false otherwise
- */
-export async function isFileLocked(filePath: string): Promise<boolean> {
-  const handles = await detectFileHandles(filePath);
-  return handles.length > 0;
-}
-
-/**
  * Get detailed information about processes locking a file
  * @param filePath - Path to the file to check
  * @returns Human-readable string describing the lock status

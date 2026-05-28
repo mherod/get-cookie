@@ -23,7 +23,7 @@ describe("FirefoxCookieQueryStrategy - Database Lock Handling", () => {
     it("should call Firefox process detection when database lock error occurs", async () => {
       const mocks = setupDatabaseLockMocks(testSetup);
       const { getBrowserConflictAdvice } =
-        jest.requireMock<MockProcessDetector>("@utils/ProcessDetector");
+        jest.requireMock<MockProcessDetector>("@utils/processDetector");
 
       // Mock Firefox process detection
       mocks.isFirefoxRunning.mockResolvedValue([

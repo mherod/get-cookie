@@ -113,14 +113,22 @@ export abstract class BaseChromiumCookieQueryStrategy extends BaseCookieQueryStr
 
     try {
       const password = await getChromiumPassword(this.browserType);
-      const results: ExportedCookie[] = [];
 
-      for (const file of files) {
-        const fileResults = await this.processBatchFile(file, specs, password);
-        results.push(...fileResults);
-      }
+      // Profiles are independent SQLite databases with no cross-file data
+      // dependency, so read them concurrently instead of summing their
+      // latencies. allSettled keeps the "one locked/bad profile doesn't fail
+      // the rest" behaviour; the shared DatabaseConnectionManager pool bounds
+      // real concurrency, and result order matches the input file order.
+      const settled = await Promise.allSettled(
+        files.map((file) => this.processBatchFile(file, specs, password)),
+      );
 
-      return results;
+      return settled
+        .filter(
+          (result): result is PromiseFulfilledResult<ExportedCookie[]> =>
+            result.status === "fulfilled",
+        )
+        .flatMap((result) => result.value);
     } catch (error) {
       this.logger.error(
         `Failed to get ${this.browserDisplayName} password for batch query`,
@@ -256,6 +264,10 @@ export abstract class BaseChromiumCookieQueryStrategy extends BaseCookieQueryStr
       const password = await getChromiumPassword(this.browserType);
       const results: ExportedCookie[] = [];
 
+      // Kept sequential: processFileWithRetry can close and relaunch the
+      // browser to resolve a locked database, so concurrent profiles must not
+      // race on browser process management. The independent-read fast path is
+      // parallelized in batchQueryCookies instead.
       for (const file of files) {
         const fileResults = await this.processFileWithRetry(
           file,

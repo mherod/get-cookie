@@ -118,6 +118,50 @@ function extractValue(decodedString: string): string {
 }
 
 /**
+ * Cache of derived AES keys, keyed by the source password string.
+ *
+ * Chrome's key derivation is a pure function of the password: the salt
+ * ("saltysalt"), iteration count (1003), key length (16) and digest (sha1) are
+ * all constant, so the same password always yields the same 16-byte key.
+ * Re-running PBKDF2 (1003 HMAC-SHA1 rounds) for every cookie is wasted work —
+ * memoizing collapses it to a single derivation per distinct password.
+ *
+ * The in-flight Promise (not the resolved Buffer) is cached so that concurrent
+ * callers coalesce onto one derivation. A rejected derivation is evicted so a
+ * transient failure cannot poison subsequent lookups.
+ */
+const derivedKeyCache = new Map<string, Promise<Buffer>>();
+
+/**
+ * Derives (or returns a cached) AES-128 key from a Chrome password via PBKDF2.
+ * @param password - The Chrome encryption password
+ * @returns A promise resolving to the 16-byte derived key
+ */
+function deriveKey(password: string): Promise<Buffer> {
+  const cached = derivedKeyCache.get(password);
+  if (cached !== undefined) {
+    return cached;
+  }
+
+  const keyPromise = new Promise<Buffer>((resolve, reject) => {
+    pbkdf2(password, "saltysalt", 1003, 16, "sha1", (error, key) => {
+      if (error) {
+        reject(new Error(`Failed to derive key: ${error.message}`));
+        return;
+      }
+      resolve(key);
+    });
+  }).catch((error: unknown) => {
+    // Don't cache failures — let the next call retry from scratch.
+    derivedKeyCache.delete(password);
+    throw error;
+  });
+
+  derivedKeyCache.set(password, keyPromise);
+  return keyPromise;
+}
+
+/**
  * Decrypts Chrome's encrypted cookie values
  * @param encryptedValue - The encrypted cookie value as a Buffer
  * @param password - The Chrome encryption password
@@ -165,51 +209,46 @@ export async function decrypt(
     throw new Error("encryptedData must be a Buffer");
   }
 
-  return new Promise((resolve, reject) => {
-    pbkdf2(password, "saltysalt", 1003, 16, "sha1", (error, key) => {
-      try {
-        if (error) {
-          reject(new Error(`Failed to derive key: ${error.message}`));
-          return;
-        }
+  // Derive the AES key once per password (cached); see deriveKey above.
+  const key = await deriveKey(password);
 
-        const value = removeV10Prefix(encryptedValue);
-        if (value.length % 16 !== 0) {
-          reject(new Error("Encrypted data length is not a multiple of 16"));
-          return;
-        }
+  const value = removeV10Prefix(encryptedValue);
+  if (value.length % 16 !== 0) {
+    throw new Error("Encrypted data length is not a multiple of 16");
+  }
 
-        // Chrome's encryption parameters
-        const iv = Buffer.alloc(16, " "); // 16 spaces
-        const decipher = createDecipheriv("aes-128-cbc", key, iv);
-        decipher.setAutoPadding(false);
+  try {
+    // Chrome's encryption parameters
+    const iv = Buffer.alloc(16, " "); // 16 spaces
+    const decipher = createDecipheriv("aes-128-cbc", key, iv);
+    decipher.setAutoPadding(false);
 
-        // Decrypt the value
-        let decrypted: Buffer = decipher.update(value);
-        try {
-          decipher.final();
-        } catch (e) {
-          reject(
-            new Error(`Failed to finalize decryption: ${(e as Error).message}`),
-          );
-          return;
-        }
+    // Decrypt the value
+    let decrypted: Buffer = decipher.update(value);
+    try {
+      decipher.final();
+    } catch (e) {
+      throw new Error(`Failed to finalize decryption: ${(e as Error).message}`);
+    }
 
-        decrypted = removePadding(decrypted);
+    decrypted = removePadding(decrypted);
 
-        // Skip the first 32 bytes (hash prefix) if meta version >= 24
-        // Ref: https://chromium.googlesource.com/chromium/src/+/b02dcebd7cafab92770734dc2bc317bd07f1d891/net/extras/sqlite/sqlite_persistent_cookie_store.cc#223
-        const useHashPrefix = (metaVersion ?? 0) >= 24;
-        const finalDecrypted =
-          useHashPrefix && decrypted.length > 32
-            ? decrypted.slice(32)
-            : decrypted;
+    // Skip the first 32 bytes (hash prefix) if meta version >= 24
+    // Ref: https://chromium.googlesource.com/chromium/src/+/b02dcebd7cafab92770734dc2bc317bd07f1d891/net/extras/sqlite/sqlite_persistent_cookie_store.cc#223
+    const useHashPrefix = (metaVersion ?? 0) >= 24;
+    const finalDecrypted =
+      useHashPrefix && decrypted.length > 32 ? decrypted.slice(32) : decrypted;
 
-        const decodedString = finalDecrypted.toString("utf8");
-        resolve(extractValue(decodedString));
-      } catch (e) {
-        reject(new Error(`Decryption failed: ${(e as Error).message}`));
-      }
-    });
-  });
+    const decodedString = finalDecrypted.toString("utf8");
+    return extractValue(decodedString);
+  } catch (e) {
+    // Preserve the specific finalize-failure message; wrap anything else.
+    if (
+      e instanceof Error &&
+      e.message.startsWith("Failed to finalize decryption")
+    ) {
+      throw e;
+    }
+    throw new Error(`Decryption failed: ${(e as Error).message}`);
+  }
 }

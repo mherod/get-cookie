@@ -62,6 +62,14 @@ export function createExportedCookie(
  * This abstract class provides shared logic for Chrome, Chromium, Brave, Edge, etc.
  */
 export abstract class BaseChromiumCookieQueryStrategy extends BaseCookieQueryStrategy {
+  /**
+   * Maximum number of profile cookie files read concurrently in a single batch
+   * query. Bounds the number of simultaneously open SQLite handles; kept in line
+   * with the DatabaseConnectionManager default pool size (`maxConnections: 5`)
+   * so a full batch fits the pool without forcing it to open extra connections.
+   */
+  private static readonly MAX_CONCURRENT_PROFILE_READS = 5;
+
   protected lockHandler: BrowserLockHandler;
   protected browserDisplayName: string;
   protected browserType: ChromiumBrowser;
@@ -113,11 +121,35 @@ export abstract class BaseChromiumCookieQueryStrategy extends BaseCookieQueryStr
 
     try {
       const password = await getChromiumPassword(this.browserType);
-      const results: ExportedCookie[] = [];
 
-      for (const file of files) {
-        const fileResults = await this.processBatchFile(file, specs, password);
-        results.push(...fileResults);
+      // Profiles are independent SQLite databases with no cross-file data
+      // dependency, so read them concurrently instead of summing their
+      // latencies. Concurrency is bounded explicitly: under a wide fan-out the
+      // DatabaseConnectionManager pool does NOT cap open handles — when every
+      // connection is in use it briefly waits and then opens another — so
+      // reading every profile at once could leave one SQLite handle open per
+      // profile. Processing in fixed-size batches keeps open handles bounded
+      // while still parallelising the common case (a handful of profiles).
+      // allSettled preserves the "one locked/bad profile doesn't fail the rest"
+      // behaviour, and batch + in-batch order matches the input file order.
+      const results: ExportedCookie[] = [];
+      for (
+        let i = 0;
+        i < files.length;
+        i += BaseChromiumCookieQueryStrategy.MAX_CONCURRENT_PROFILE_READS
+      ) {
+        const batch = files.slice(
+          i,
+          i + BaseChromiumCookieQueryStrategy.MAX_CONCURRENT_PROFILE_READS,
+        );
+        const settled = await Promise.allSettled(
+          batch.map((file) => this.processBatchFile(file, specs, password)),
+        );
+        for (const result of settled) {
+          if (result.status === "fulfilled") {
+            results.push(...result.value);
+          }
+        }
       }
 
       return results;
@@ -256,6 +288,10 @@ export abstract class BaseChromiumCookieQueryStrategy extends BaseCookieQueryStr
       const password = await getChromiumPassword(this.browserType);
       const results: ExportedCookie[] = [];
 
+      // Kept sequential: processFileWithRetry can close and relaunch the
+      // browser to resolve a locked database, so concurrent profiles must not
+      // race on browser process management. The independent-read fast path is
+      // parallelized in batchQueryCookies instead.
       for (const file of files) {
         const fileResults = await this.processFileWithRetry(
           file,

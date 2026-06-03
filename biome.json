@@ -113,6 +113,32 @@
           }
         }
       }
+    },
+    {
+      "includes": [
+        "src/core/browsers/**/*.ts",
+        "src/cli/**/*.ts",
+        "!src/core/browsers/runtime/**",
+        "!**/__tests__/**",
+        "!**/__mocks__/**",
+        "!**/*.test.ts",
+        "!**/*.spec.ts"
+      ],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "paths": {
+                  "node:fs": "Import disk access through the runtime FileSystemAdapter (src/core/browsers/runtime/FileSystemAdapter) instead of node:fs directly.",
+                  "fs": "Import disk access through the runtime FileSystemAdapter (src/core/browsers/runtime/FileSystemAdapter) instead of node:fs directly."
+                }
+              }
+            }
+          }
+        }
+      }
     }
   ]
 }

@@ -10,7 +10,12 @@ import { FirefoxCookieQueryStrategy } from "../browsers/firefox/FirefoxCookieQue
 import { SafariCookieQueryStrategy } from "../browsers/safari/SafariCookieQueryStrategy";
 
 /**
- * Reusable default composite strategy — stateless after construction.
+ * Reusable default composite strategy, shared across every call.
+ * Safe only because the composed strategies are stateless after construction:
+ * each query threads its own arguments through and accumulates no per-call
+ * state. If any composed strategy (or a collaborator such as
+ * `BrowserLockHandler`) starts holding per-invocation state, this shared
+ * singleton would leak it across callers — revisit the singleton choice then.
  * @internal Not part of the public API. Callers needing a custom strategy
  * should pass `options.strategy` to {@link comboQueryCookieSpec}.
  */

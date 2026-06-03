@@ -367,37 +367,31 @@ function getVersionCommand(browser: BrowserType): string | undefined {
   if (isMacOS()) {
     const versionCommands: Partial<Record<BrowserType, string>> = {
       chrome:
-        "/Applications/Google\\ Chrome.app/Contents/MacOS/Google\\ Chrome --version 2>/dev/null",
-      firefox:
-        "/Applications/Firefox.app/Contents/MacOS/firefox --version 2>/dev/null",
+        "/Applications/Google\\ Chrome.app/Contents/MacOS/Google\\ Chrome --version",
+      firefox: "/Applications/Firefox.app/Contents/MacOS/firefox --version",
       safari:
-        "defaults read /Applications/Safari.app/Contents/Info.plist CFBundleShortVersionString 2>/dev/null",
-      edge: "/Applications/Microsoft\\ Edge.app/Contents/MacOS/Microsoft\\ Edge --version 2>/dev/null",
-      arc: "defaults read /Applications/Arc.app/Contents/Info.plist CFBundleShortVersionString 2>/dev/null",
+        "defaults read /Applications/Safari.app/Contents/Info.plist CFBundleShortVersionString",
+      edge: "/Applications/Microsoft\\ Edge.app/Contents/MacOS/Microsoft\\ Edge --version",
+      arc: "defaults read /Applications/Arc.app/Contents/Info.plist CFBundleShortVersionString",
       brave:
-        "/Applications/Brave\\ Browser.app/Contents/MacOS/Brave\\ Browser --version 2>/dev/null",
-      opera:
-        "/Applications/Opera.app/Contents/MacOS/Opera --version 2>/dev/null",
+        "/Applications/Brave\\ Browser.app/Contents/MacOS/Brave\\ Browser --version",
+      opera: "/Applications/Opera.app/Contents/MacOS/Opera --version",
       "opera-gx":
-        "/Applications/Opera\\ GX.app/Contents/MacOS/Opera\\ GX --version 2>/dev/null",
-      vivaldi:
-        "/Applications/Vivaldi.app/Contents/MacOS/Vivaldi --version 2>/dev/null",
+        "/Applications/Opera\\ GX.app/Contents/MacOS/Opera\\ GX --version",
+      vivaldi: "/Applications/Vivaldi.app/Contents/MacOS/Vivaldi --version",
     };
     return versionCommands[browser];
   }
 
   if (isLinux()) {
     const versionCommands: Partial<Record<BrowserType, string>> = {
-      chrome:
-        "google-chrome --version 2>/dev/null || google-chrome-stable --version 2>/dev/null",
-      firefox: "firefox --version 2>/dev/null",
-      edge: "microsoft-edge --version 2>/dev/null",
-      brave:
-        "brave-browser --version 2>/dev/null || brave-browser-stable --version 2>/dev/null",
-      opera: "opera --version 2>/dev/null",
-      "opera-gx": "opera-gx --version 2>/dev/null",
-      vivaldi:
-        "vivaldi --version 2>/dev/null || vivaldi-stable --version 2>/dev/null",
+      chrome: "google-chrome --version || google-chrome-stable --version",
+      firefox: "firefox --version",
+      edge: "microsoft-edge --version",
+      brave: "brave-browser --version || brave-browser-stable --version",
+      opera: "opera --version",
+      "opera-gx": "opera-gx --version",
+      vivaldi: "vivaldi --version || vivaldi-stable --version",
     };
     return versionCommands[browser];
   }

@@ -143,6 +143,33 @@ describe("getBrowserVersionAsync", () => {
     });
   });
 
+  describe("command hygiene", () => {
+    it("does not embed shell stderr redirects in macOS commands", async () => {
+      setMacOS();
+      mockExecSimple.mockResolvedValueOnce({ stdout: "x\n", stderr: "" });
+
+      await getBrowserVersionAsync("chrome");
+
+      const command = mockExecSimple.mock.calls[0]?.[0] ?? "";
+      expect(command).toContain("--version");
+      // execSimple captures stderr separately, so the redirect is redundant.
+      expect(command).not.toContain("2>/dev/null");
+    });
+
+    it("does not embed redirects but keeps the || fallback on Linux", async () => {
+      setLinux();
+      mockExecSimple.mockResolvedValueOnce({ stdout: "y\n", stderr: "" });
+
+      await getBrowserVersionAsync("chrome");
+
+      const command = mockExecSimple.mock.calls[0]?.[0] ?? "";
+      expect(command).not.toContain("2>/dev/null");
+      // The || fallback to the -stable binary must survive the cleanup.
+      expect(command).toContain("||");
+      expect(command).toContain("google-chrome-stable --version");
+    });
+  });
+
   describe("failure modes", () => {
     it("returns undefined when execSimple rejects", async () => {
       mockExecSimple.mockRejectedValueOnce(new Error("ENOENT"));

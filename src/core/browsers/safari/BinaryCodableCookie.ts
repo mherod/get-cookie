@@ -374,19 +374,11 @@ export class BinaryCodableCookie {
    */
   private readTimestamps(container: BinaryCodableContainer): void {
     // Read expiration time (8 bytes, little-endian double)
-    const expirationBuffer = Buffer.alloc(8);
-    for (let i = 0; i < 8; i++) {
-      expirationBuffer[i] = container.buffer[container.offset + i]!;
-    }
-    const expiration = expirationBuffer.readDoubleLE(0);
+    const expiration = container.buffer.readDoubleLE(container.offset);
     container.offset += 8;
 
     // Read creation time (8 bytes, little-endian double)
-    const creationBuffer = Buffer.alloc(8);
-    for (let i = 0; i < 8; i++) {
-      creationBuffer[i] = container.buffer[container.offset + i]!;
-    }
-    const creation = creationBuffer.readDoubleLE(0);
+    const creation = container.buffer.readDoubleLE(container.offset);
     container.offset += 8;
 
     // Store raw timestamps (seconds since 2001-01-01)

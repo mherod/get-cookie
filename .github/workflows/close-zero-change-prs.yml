@@ -1,0 +1,43 @@
+name: Close Zero-Change PRs
+
+# Closes any open PR whose merge into the base branch would introduce no
+# changes (its content is already present on the base). Useful when a fix is
+# applied independently and the original PR becomes a no-op.
+#
+# Runs on a schedule and on demand. The manual trigger exposes a dry_run input
+# so the detection can be inspected without closing anything.
+
+on:
+  schedule:
+    # Daily at 8 AM UTC
+    - cron: '0 8 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Report decisions without commenting or closing'
+        type: boolean
+        default: false
+
+concurrency:
+  group: close-zero-change-prs
+  cancel-in-progress: false
+
+jobs:
+  close-zero-change-prs:
+    permissions:
+      contents: read
+      pull-requests: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # Full history so merge simulations have the base and merge-bases.
+          fetch-depth: 0
+
+      - name: Close zero-change PRs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BASE_BRANCH: ${{ github.event.repository.default_branch }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+        run: bash scripts/close-zero-change-prs.sh

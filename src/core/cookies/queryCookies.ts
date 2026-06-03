@@ -1,10 +1,18 @@
 import type { CookieSpec, ExportedCookie } from "../../types/schemas";
+import type { BaseCookieQueryStrategy } from "../browsers/BaseCookieQueryStrategy";
 import { ChromeCookieQueryStrategy } from "../browsers/chrome/ChromeCookieQueryStrategy";
 import { FirefoxCookieQueryStrategy } from "../browsers/firefox/FirefoxCookieQueryStrategy";
 import { SafariCookieQueryStrategy } from "../browsers/safari/SafariCookieQueryStrategy";
 
-/** Reusable default strategy instances — stateless after construction */
-const defaultStrategies = [
+/**
+ * Reusable default strategy instances, shared across every `queryCookies` call.
+ * Safe only because each strategy is stateless after construction: a query
+ * threads its own arguments through and accumulates no per-invocation state.
+ * If a strategy (or a collaborator such as `BrowserLockHandler`) ever starts
+ * holding per-call mutable state, this shared singleton would leak it across
+ * callers — revisit the singleton choice rather than reuse instances then.
+ */
+const defaultStrategies: BaseCookieQueryStrategy[] = [
   new ChromeCookieQueryStrategy(),
   new FirefoxCookieQueryStrategy(),
   new SafariCookieQueryStrategy(),

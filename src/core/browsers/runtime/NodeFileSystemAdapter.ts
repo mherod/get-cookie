@@ -7,7 +7,13 @@
  * this adapter is a correct synchronous implementation under Bun as well.
  */
 
-import { closeSync, existsSync, openSync, readSync } from "node:fs";
+import {
+  closeSync,
+  existsSync,
+  openSync,
+  readFileSync,
+  readSync,
+} from "node:fs";
 
 import { createTaggedLogger } from "@utils/logHelpers";
 
@@ -23,6 +29,14 @@ export function createNodeFileSystemAdapter(): FileSystemAdapter {
   return {
     fileExists(path: string): boolean {
       return existsSync(path);
+    },
+
+    readFile(path: string): Buffer {
+      return readFileSync(path);
+    },
+
+    readTextFile(path: string): string {
+      return readFileSync(path, "utf8");
     },
 
     readLeadingBytes(path: string, length: number): Buffer | null {

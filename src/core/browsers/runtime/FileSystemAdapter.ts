@@ -13,7 +13,8 @@
  */
 
 /**
- * Minimal synchronous filesystem surface required by browser detection.
+ * Minimal synchronous filesystem surface required by browser detection and the
+ * browser-specific cookie query strategies.
  */
 export interface FileSystemAdapter {
   /**
@@ -27,13 +28,36 @@ export interface FileSystemAdapter {
    * Read the leading bytes of a file without loading the whole file.
    *
    * Used to sniff format signatures (e.g. Safari's `cook` binary cookie magic
-   * bytes) cheaply, even when the underlying store is large.
+   * bytes) cheaply, even when the underlying store is large. This is a tolerant
+   * "sniff" operation — it returns `null` rather than throwing on failure.
    *
    * @param path - Path to the file to read
    * @param length - Number of bytes to read from the start of the file
    * @returns A buffer of up to `length` bytes, or `null` if the read failed
    */
   readLeadingBytes(path: string, length: number): Buffer | null;
+
+  /**
+   * Read an entire file as a raw `Buffer`.
+   *
+   * Unlike {@link readLeadingBytes}, this is a "load" operation and throws on
+   * failure, matching `fs.readFileSync` semantics so existing call sites keep
+   * their error behaviour.
+   *
+   * @param path - Path to the file to read
+   * @returns The full file contents as a `Buffer`
+   */
+  readFile(path: string): Buffer;
+
+  /**
+   * Read an entire file as a UTF-8 string.
+   *
+   * Throws on failure, matching `fs.readFileSync(path, "utf8")` semantics.
+   *
+   * @param path - Path to the file to read
+   * @returns The full file contents decoded as UTF-8
+   */
+  readTextFile(path: string): string;
 }
 
 /**
@@ -80,4 +104,38 @@ export function getFileSystemAdapter(): FileSystemAdapter {
   const adapter = createNodeFileSystemAdapter();
   currentAdapter = adapter;
   return adapter;
+}
+
+/**
+ * Convenience wrapper for {@link FileSystemAdapter.fileExists} on the active
+ * adapter. Lets call sites read like `fileExists(path)` instead of threading
+ * `getFileSystemAdapter()` through every check.
+ *
+ * @param path - Path to test
+ * @returns True when the path exists
+ */
+export function fileExists(path: string): boolean {
+  return getFileSystemAdapter().fileExists(path);
+}
+
+/**
+ * Convenience wrapper for {@link FileSystemAdapter.readFile} on the active
+ * adapter.
+ *
+ * @param path - Path to read
+ * @returns The full file contents as a `Buffer`
+ */
+export function readFile(path: string): Buffer {
+  return getFileSystemAdapter().readFile(path);
+}
+
+/**
+ * Convenience wrapper for {@link FileSystemAdapter.readTextFile} on the active
+ * adapter.
+ *
+ * @param path - Path to read
+ * @returns The full file contents decoded as UTF-8
+ */
+export function readTextFile(path: string): string {
+  return getFileSystemAdapter().readTextFile(path);
 }

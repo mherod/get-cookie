@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 
-import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 // Local imports - core
@@ -9,6 +8,10 @@ import {
   FIREFOX_DATA_DIRS,
 } from "@core/browsers/BrowserAvailability";
 import { parseFirefoxProfilesIni } from "@core/browsers/firefox/FirefoxCookieQueryStrategy";
+import {
+  fileExists,
+  readTextFile,
+} from "@core/browsers/runtime/FileSystemAdapter";
 import { cookieSpecsFromUrl } from "@core/cookies/cookieSpecsFromUrl";
 import { parseArgv } from "@utils/argv";
 import { getErrorMessage } from "@utils/errorUtils";
@@ -120,11 +123,11 @@ function listChromiumProfiles(browser: string, dataDir: string): void {
   try {
     const localStatePath = join(dataDir, "Local State");
 
-    if (!existsSync(localStatePath)) {
+    if (!fileExists(localStatePath)) {
       return;
     }
 
-    const localState = JSON.parse(readFileSync(localStatePath, "utf8"));
+    const localState = JSON.parse(readTextFile(localStatePath));
     const profileCache = localState.profile?.info_cache ?? {};
     const entries = Object.entries(profileCache);
 
@@ -151,7 +154,7 @@ function listFirefoxProfiles(): void {
 
   for (const dataDir of dirs) {
     const iniPath = join(dataDir, "profiles.ini");
-    if (!existsSync(iniPath)) {
+    if (!fileExists(iniPath)) {
       continue;
     }
 
@@ -204,7 +207,7 @@ function listProfiles(browser?: string): void {
   // No --browser specified: list profiles for all browsers
   const platformDirs = CHROMIUM_DATA_DIRS[process.platform] ?? {};
   for (const [name, dataDir] of Object.entries(platformDirs)) {
-    if (dataDir && existsSync(join(dataDir, "Local State"))) {
+    if (dataDir && fileExists(join(dataDir, "Local State"))) {
       listChromiumProfiles(name, dataDir);
     }
   }

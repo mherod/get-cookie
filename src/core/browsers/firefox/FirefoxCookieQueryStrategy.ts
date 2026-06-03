@@ -1,4 +1,3 @@
-import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { basename, join } from "node:path";
 
@@ -11,6 +10,7 @@ import { isFirefoxRunning } from "@utils/processDetector";
 
 import type { ExportedCookie } from "../../../types/schemas";
 import { BaseCookieQueryStrategy } from "../BaseCookieQueryStrategy";
+import { fileExists, readTextFile } from "../runtime/FileSystemAdapter";
 import { FIREFOX_DATA_DIRS } from "../BrowserAvailability";
 import { BrowserLockHandler } from "../BrowserLockHandler";
 import { getGlobalConnectionManager } from "../sql/DatabaseConnectionManager";
@@ -77,7 +77,7 @@ function findFirefoxCookieFiles(
         "Mozilla",
         "Firefox Developer Edition",
       );
-      if (existsSync(devEditionPath)) {
+      if (fileExists(devEditionPath)) {
         profileDirs.push(devEditionPath);
         patterns.push(join(devEditionPath, "Profiles", "*", "cookies.sqlite"));
       }
@@ -89,7 +89,7 @@ function findFirefoxCookieFiles(
         "Mozilla",
         "Firefox ESR",
       );
-      if (existsSync(esrPath)) {
+      if (fileExists(esrPath)) {
         profileDirs.push(esrPath);
         patterns.push(join(esrPath, "Profiles", "*", "cookies.sqlite"));
       }
@@ -101,7 +101,7 @@ function findFirefoxCookieFiles(
         "Mozilla",
         "Firefox",
       );
-      if (existsSync(localFirefoxPath)) {
+      if (fileExists(localFirefoxPath)) {
         profileDirs.push(localFirefoxPath);
         patterns.push(
           join(localFirefoxPath, "Profiles", "*", "cookies.sqlite"),
@@ -127,7 +127,7 @@ function findFirefoxCookieFiles(
       return [];
   }
 
-  const existingProfileDirs = profileDirs.filter((dir) => existsSync(dir));
+  const existingProfileDirs = profileDirs.filter((dir) => fileExists(dir));
 
   if (existingProfileDirs.length === 0) {
     logger.debug(
@@ -180,7 +180,7 @@ export function parseFirefoxProfilesIni(
   iniPath: string,
 ): FirefoxProfileEntry[] {
   try {
-    const content = readFileSync(iniPath, "utf8");
+    const content = readTextFile(iniPath);
     const lines = content.split(/\r?\n/);
     const profiles: FirefoxProfileEntry[] = [];
 
@@ -259,7 +259,7 @@ function filterByFirefoxProfile(
 
   for (const dataDir of profileDirs) {
     const iniPath = join(dataDir, "profiles.ini");
-    if (!existsSync(iniPath)) {
+    if (!fileExists(iniPath)) {
       continue;
     }
 
@@ -281,7 +281,7 @@ function filterByFirefoxProfile(
     const knownNames = new Set<string>();
     for (const dataDir of profileDirs) {
       const iniPath = join(dataDir, "profiles.ini");
-      if (!existsSync(iniPath)) {
+      if (!fileExists(iniPath)) {
         continue;
       }
       for (const p of parseFirefoxProfilesIni(iniPath)) {

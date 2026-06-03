@@ -1,10 +1,10 @@
-import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { getErrorMessage } from "@utils/errorUtils";
 import { isWindows } from "@utils/platformUtils";
 
 import { chromeApplicationSupport } from "../ChromeApplicationSupport";
+import { readTextFile } from "../../runtime/FileSystemAdapter";
 
 /**
  * Windows Chrome Local State file structure for encrypted key
@@ -71,7 +71,7 @@ async function decryptDPAPIKey(encryptedKey: Buffer): Promise<Buffer> {
 export async function getChromePassword(): Promise<string> {
   try {
     const localStatePath = join(chromeApplicationSupport, "Local State");
-    const localStateContent = readFileSync(localStatePath, "utf8");
+    const localStateContent = readTextFile(localStatePath);
     const localState = JSON.parse(localStateContent) as WindowsChromeLocalState;
 
     if (!localState.os_crypt.encrypted_key) {

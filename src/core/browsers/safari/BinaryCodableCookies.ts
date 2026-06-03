@@ -1,5 +1,4 @@
 import { Buffer } from "node:buffer";
-import { readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
@@ -7,6 +6,7 @@ import type { BinaryCookieRow } from "../../../types/schemas";
 import { getErrorMessage } from "../../../utils/errorUtils";
 import { createTaggedLogger, logWarn } from "../../../utils/logHelpers";
 
+import { readFile } from "../runtime/FileSystemAdapter";
 import { BinaryCodablePage } from "./BinaryCodablePage";
 import type { BinaryCodableContainer } from "./interfaces/BinaryCodableContainer";
 
@@ -48,7 +48,7 @@ export class BinaryCodableCookies {
    * @returns A new BinaryCookies instance
    */
   public static fromFile(path: string): BinaryCodableCookies {
-    const buffer = readFileSync(path);
+    const buffer = readFile(path);
     return new BinaryCodableCookies(buffer);
   }
 

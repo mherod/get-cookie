@@ -1,10 +1,11 @@
 import type { CookieSpec, ExportedCookie } from "../../types/schemas";
+import type { BaseCookieQueryStrategy } from "../browsers/BaseCookieQueryStrategy";
 import { ChromeCookieQueryStrategy } from "../browsers/chrome/ChromeCookieQueryStrategy";
 import { FirefoxCookieQueryStrategy } from "../browsers/firefox/FirefoxCookieQueryStrategy";
 import { SafariCookieQueryStrategy } from "../browsers/safari/SafariCookieQueryStrategy";
 
 /** Reusable default strategy instances — stateless after construction */
-const defaultStrategies = [
+const defaultStrategies: BaseCookieQueryStrategy[] = [
   new ChromeCookieQueryStrategy(),
   new FirefoxCookieQueryStrategy(),
   new SafariCookieQueryStrategy(),

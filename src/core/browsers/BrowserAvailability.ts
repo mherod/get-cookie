@@ -3,7 +3,6 @@
  * @module BrowserAvailability
  */
 
-import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
@@ -14,6 +13,7 @@ import { getPlatform, isLinux, isMacOS, isWindows } from "@utils/platformUtils";
 import { execSimple } from "@utils/execSimple";
 
 import { getBrowserDisplayName } from "./BrowserDetector";
+import { fileExists } from "./runtime/FileSystemAdapter";
 import type { BrowserType } from "./BrowserDetector";
 
 const logger = createTaggedLogger("BrowserAvailability");
@@ -347,7 +347,7 @@ function checkBrowserInstalled(browser: BrowserType): boolean {
   const paths = browser in platformPaths ? platformPaths[browser] : [];
 
   for (const path of paths) {
-    if (existsSync(path)) {
+    if (fileExists(path)) {
       logger.debug("Found browser installation", { browser, path });
       installCache.set(browser, true);
       return true;
@@ -433,7 +433,7 @@ export async function getBrowserVersionAsync(
  * @returns Array of profile paths found
  */
 function findChromiumProfiles(basePath: string): string[] {
-  if (!existsSync(basePath)) {
+  if (!fileExists(basePath)) {
     return [];
   }
 

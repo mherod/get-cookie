@@ -3,7 +3,6 @@
  * Combines query building, connection management, and validation in a unified interface
  */
 
-import { existsSync } from "node:fs";
 import { join } from "node:path";
 
 import fg from "fast-glob";
@@ -11,6 +10,7 @@ import type { SqliteDatabase } from "./adapters/DatabaseAdapter";
 import { createTaggedLogger, logError } from "@utils/logHelpers";
 import { getPlatform } from "@utils/platformUtils";
 import { CHROMIUM_DATA_DIRS, FIREFOX_DATA_DIRS } from "../BrowserAvailability";
+import { fileExists } from "../runtime/FileSystemAdapter";
 
 import type { ExportedCookie } from "../../../types/schemas";
 import { chromeTimestampToDate } from "../../../utils/chromeDates";
@@ -453,7 +453,7 @@ export class EnhancedCookieQueryService {
     const platform = getPlatform();
     const dataDir = CHROMIUM_DATA_DIRS[platform]?.[browser];
 
-    if (!dataDir || !existsSync(dataDir)) {
+    if (!dataDir || !fileExists(dataDir)) {
       logger.debug("No data directory found", { browser, platform });
       return [];
     }
@@ -486,7 +486,7 @@ export class EnhancedCookieQueryService {
     const needsProfilesSubdir = platform === "darwin" || platform === "win32";
     const profilesDirs = baseDirs
       .map((dir) => (needsProfilesSubdir ? join(dir, "Profiles") : dir))
-      .filter((dir) => existsSync(dir));
+      .filter((dir) => fileExists(dir));
 
     if (profilesDirs.length === 0) {
       logger.debug("Firefox profiles directory not found", {

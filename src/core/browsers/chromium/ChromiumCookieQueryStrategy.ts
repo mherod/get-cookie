@@ -1,4 +1,3 @@
-import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
 import fg from "fast-glob";
@@ -7,6 +6,7 @@ import {
   type ChromiumBrowser,
   getChromiumBrowserPath,
 } from "../chrome/ChromiumBrowsers";
+import { fileExists, readTextFile } from "../runtime/FileSystemAdapter";
 
 import { BaseChromiumCookieQueryStrategy } from "./BaseChromiumCookieQueryStrategy";
 
@@ -112,11 +112,11 @@ export class ChromiumCookieQueryStrategy extends BaseChromiumCookieQueryStrategy
       const dataDir = dirname(dirname(firstPath));
       const localStatePath = join(dataDir, "Local State");
 
-      if (!existsSync(localStatePath)) {
+      if (!fileExists(localStatePath)) {
         return paths;
       }
 
-      const localState = JSON.parse(readFileSync(localStatePath, "utf8"));
+      const localState = JSON.parse(readTextFile(localStatePath));
       const profileCache = localState.profile?.info_cache || {};
 
       // Find the directory for the given profile name

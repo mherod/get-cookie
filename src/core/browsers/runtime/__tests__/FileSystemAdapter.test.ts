@@ -63,6 +63,8 @@ describe("FileSystemAdapter", () => {
       const injected: FileSystemAdapter = {
         fileExists: () => false,
         readLeadingBytes: () => null,
+        readFile: () => Buffer.alloc(0),
+        readTextFile: () => "",
       };
       setFileSystemAdapter(injected);
       expect(getFileSystemAdapter()).toBe(injected);
@@ -72,6 +74,8 @@ describe("FileSystemAdapter", () => {
       const injected: FileSystemAdapter = {
         fileExists: () => false,
         readLeadingBytes: () => null,
+        readFile: () => Buffer.alloc(0),
+        readTextFile: () => "",
       };
       setFileSystemAdapter(injected);
       expect(getFileSystemAdapter()).toBe(injected);
@@ -107,6 +111,21 @@ describe("FileSystemAdapter", () => {
 
     it("returns null when the file does not exist", () => {
       expect(adapter.readLeadingBytes(join(tmpDir, "missing"), 4)).toBeNull();
+    });
+
+    it("reads an entire file as a Buffer", () => {
+      const buf = adapter.readFile(cookFile);
+      expect(Buffer.isBuffer(buf)).toBe(true);
+      expect(buf.toString("ascii")).toBe("cookEXTRA");
+    });
+
+    it("reads an entire file as UTF-8 text", () => {
+      expect(adapter.readTextFile(cookFile)).toBe("cookEXTRA");
+    });
+
+    it("throws when reading a missing file (load semantics)", () => {
+      expect(() => adapter.readFile(join(tmpDir, "missing"))).toThrow();
+      expect(() => adapter.readTextFile(join(tmpDir, "missing"))).toThrow();
     });
   });
 });

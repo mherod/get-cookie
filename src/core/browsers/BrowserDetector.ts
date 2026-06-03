@@ -3,9 +3,9 @@
  * @module BrowserDetector
  */
 
-import { closeSync, existsSync, openSync, readSync } from "node:fs";
-
 import { createTaggedLogger } from "@utils/logHelpers";
+
+import { getFileSystemAdapter } from "./runtime/FileSystemAdapter";
 
 const logger = createTaggedLogger("BrowserDetector");
 
@@ -61,30 +61,19 @@ const BROWSER_PATTERNS: Array<{
  * @returns True if the file has Safari's binary cookie format signature
  */
 export function checkSafariMagicBytes(storePath: string): boolean {
-  let fd: number | undefined;
-  try {
-    fd = openSync(storePath, "r");
-    const buf = Buffer.alloc(4);
-    const bytesRead = readSync(fd, buf, 0, 4, 0);
-    // Safari binary cookies start with "cook" magic bytes
-    return (
-      bytesRead === 4 &&
-      buf[0] === SAFARI_MAGIC_BYTES.c &&
-      buf[1] === SAFARI_MAGIC_BYTES.o1 &&
-      buf[2] === SAFARI_MAGIC_BYTES.o2 &&
-      buf[3] === SAFARI_MAGIC_BYTES.k
-    );
-  } catch (error) {
-    logger.debug("Failed to read file for magic bytes check", {
-      path: storePath,
-      error,
-    });
+  const buf = getFileSystemAdapter().readLeadingBytes(storePath, 4);
+  if (buf === null) {
     return false;
-  } finally {
-    if (fd !== undefined) {
-      closeSync(fd);
-    }
   }
+
+  // Safari binary cookies start with "cook" magic bytes
+  return (
+    buf.length === 4 &&
+    buf[0] === SAFARI_MAGIC_BYTES.c &&
+    buf[1] === SAFARI_MAGIC_BYTES.o1 &&
+    buf[2] === SAFARI_MAGIC_BYTES.o2 &&
+    buf[3] === SAFARI_MAGIC_BYTES.k
+  );
 }
 
 /**
@@ -118,7 +107,7 @@ export function detectBrowserFromFilename(
 export function detectBrowserFromStore(
   storePath: string,
 ): BrowserType | undefined {
-  if (!storePath || !existsSync(storePath)) {
+  if (!storePath || !getFileSystemAdapter().fileExists(storePath)) {
     logger.debug("Store path does not exist", { storePath });
     return undefined;
   }

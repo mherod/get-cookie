@@ -252,4 +252,37 @@ export default [
       "max-lines-per-function": ["error", { max: 100 }],
     },
   },
+  {
+    // Mirror the Biome `noRestrictedImports` guardrail: production browser and
+    // CLI modules must reach disk through the runtime FileSystemAdapter, never
+    // `node:fs` directly. The runtime layer and tests are exempt (they own the
+    // real fs access and the fixtures, respectively).
+    files: ["src/core/browsers/**/*.ts", "src/cli/**/*.ts"],
+    ignores: [
+      "src/core/browsers/runtime/**",
+      "**/__tests__/**",
+      "**/__mocks__/**",
+      "**/*.test.ts",
+      "**/*.spec.ts",
+    ],
+    rules: {
+      "@typescript-eslint/no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "node:fs",
+              message:
+                "Import disk access through the runtime FileSystemAdapter (src/core/browsers/runtime/FileSystemAdapter) instead of node:fs directly.",
+            },
+            {
+              name: "fs",
+              message:
+                "Import disk access through the runtime FileSystemAdapter (src/core/browsers/runtime/FileSystemAdapter) instead of node:fs directly.",
+            },
+          ],
+        },
+      ],
+    },
+  },
 ];

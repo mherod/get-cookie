@@ -8,8 +8,11 @@
  * import { getCookie } from "@mherod/get-cookie/bun";
  * ```
  */
+import { createBunFileSystemAdapter } from "./core/browsers/runtime/BunFileSystemAdapter";
+import { setFileSystemAdapter } from "./core/browsers/runtime/FileSystemAdapter";
 import { setRuntimeOverride } from "./core/browsers/sql/adapters/DatabaseAdapter";
 
 setRuntimeOverride("bun");
+setFileSystemAdapter(createBunFileSystemAdapter());
 
 export * from "./index";

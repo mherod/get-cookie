@@ -8,8 +8,11 @@
  * import { getCookie } from "@mherod/get-cookie/node";
  * ```
  */
+import { createNodeFileSystemAdapter } from "./core/browsers/runtime/NodeFileSystemAdapter";
+import { setFileSystemAdapter } from "./core/browsers/runtime/FileSystemAdapter";
 import { setRuntimeOverride } from "./core/browsers/sql/adapters/DatabaseAdapter";
 
 setRuntimeOverride("node");
+setFileSystemAdapter(createNodeFileSystemAdapter());
 
 export * from "./index";

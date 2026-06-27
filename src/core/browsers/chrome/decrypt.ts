@@ -181,10 +181,15 @@ export async function decrypt(
   if (
     isWindows() &&
     isV10Cookie(encryptedValue) &&
-    encryptedValue.length >= 31 &&
-    Buffer.isBuffer(password)
+    encryptedValue.length >= 31
   ) {
-    return decryptV10Cookie(encryptedValue, password);
+    // The Windows DPAPI master key arrives as a latin1 string (lossless byte<->char
+    // mapping), so normalize it back to the raw key Buffer for AES-256-GCM. Forwarding
+    // metaVersion lets the GCM path strip the Chrome M127+ 32-byte hash prefix.
+    const keyBuffer = Buffer.isBuffer(password)
+      ? password
+      : Buffer.from(password, "latin1");
+    return decryptV10Cookie(encryptedValue, keyBuffer, metaVersion);
   }
 
   // On macOS, cookies that don't start with v10 are considered 'old data' stored as plaintext

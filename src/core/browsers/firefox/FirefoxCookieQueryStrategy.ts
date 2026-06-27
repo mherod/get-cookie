@@ -318,6 +318,25 @@ function filterByFirefoxProfile(
 }
 
 /**
+ * Converts a Firefox `moz_cookies.expiry` value to a JS Date, accounting for the
+ * units change introduced in Firefox 142 (cookies DB `user_version` >= 16), which
+ * switched cookie expiry from seconds to milliseconds.
+ * @param expiry - The raw expiry value from `moz_cookies`
+ * @param schemaVersion - The cookies DB `PRAGMA user_version`
+ * @returns A `Date` for positive expiries, or "Infinity" for session cookies
+ */
+export function firefoxExpiryToDate(
+  expiry: number,
+  schemaVersion: number,
+): Date | "Infinity" {
+  if (!(expiry > 0)) {
+    return "Infinity";
+  }
+  // FF142+ (schema >= 16) already stores milliseconds; earlier schemas use seconds.
+  return new Date(schemaVersion >= 16 ? expiry : expiry * 1000);
+}
+
+/**
  * Strategy for querying cookies from Firefox browser.
  * This class extends the BaseCookieQueryStrategy and implements Firefox-specific
  * cookie extraction logic. It searches for cookie databases in standard Firefox
@@ -363,7 +382,10 @@ export class FirefoxCookieQueryStrategy extends BaseCookieQueryStrategy {
     file: string;
     sql: string;
     params: unknown[];
-    rowTransform: (row: FirefoxCookieRow) => ExportedCookie;
+    rowTransform: (
+      row: FirefoxCookieRow,
+      schemaVersion: number,
+    ) => ExportedCookie;
   }> {
     // Import the query builder dynamically to avoid circular dependencies
     const { CookieQueryBuilder } = await import("../sql/CookieQueryBuilder");
@@ -379,11 +401,14 @@ export class FirefoxCookieQueryStrategy extends BaseCookieQueryStrategy {
       file,
       sql: queryConfig.sql,
       params: queryConfig.params,
-      rowTransform: (row: FirefoxCookieRow): ExportedCookie => ({
+      rowTransform: (
+        row: FirefoxCookieRow,
+        schemaVersion: number,
+      ): ExportedCookie => ({
         name: row.name,
         value: row.value,
         domain: row.domain,
-        expiry: row.expiry > 0 ? new Date(row.expiry * 1000) : "Infinity",
+        expiry: firefoxExpiryToDate(row.expiry, schemaVersion),
         meta: {
           file,
           browser: "Firefox",
@@ -550,7 +575,10 @@ export class FirefoxCookieQueryStrategy extends BaseCookieQueryStrategy {
     file: string;
     sql: string;
     params: unknown[];
-    rowTransform: (row: FirefoxCookieRow) => ExportedCookie;
+    rowTransform: (
+      row: FirefoxCookieRow,
+      schemaVersion: number,
+    ) => ExportedCookie;
   }): Promise<ExportedCookie[]> {
     const connectionManager = getGlobalConnectionManager({
       retryAttempts: 1, // Fail fast for Firefox - we have lock handling
@@ -564,6 +592,13 @@ export class FirefoxCookieQueryStrategy extends BaseCookieQueryStrategy {
     return connectionManager.executeQuery(
       queryConfig.file,
       (db) => {
+        // Firefox 142 (cookies DB user_version >= 16) switched cookie expiry from
+        // seconds to milliseconds; read the schema version to convert correctly.
+        const schemaRow = db.prepare("PRAGMA user_version").get() as
+          | { user_version?: number }
+          | undefined;
+        const schemaVersion = schemaRow?.user_version ?? 0;
+
         // Use the query monitor for tracking
         const rows = monitor.executeQuery<FirefoxCookieRow>(
           db,
@@ -572,8 +607,8 @@ export class FirefoxCookieQueryStrategy extends BaseCookieQueryStrategy {
           queryConfig.file,
         );
 
-        // Apply transformation
-        return rows.map(queryConfig.rowTransform);
+        // Apply transformation (schema-aware expiry units)
+        return rows.map((row) => queryConfig.rowTransform(row, schemaVersion));
       },
       queryConfig.sql, // Pass SQL for monitoring
     );

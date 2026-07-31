@@ -59,7 +59,7 @@ jobs:
   # Quick validation that runs on all platforms - runs lighter for docs-only
   validate:
     name: Validate (${{ matrix.os }}, Node ${{ matrix.node }})
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.os == 'windows-latest' && 'windows-2022' || matrix.os }}
     needs: changes
     strategy:
       fail-fast: false
@@ -215,7 +215,7 @@ jobs:
   # Platform-specific integration tests with real browsers
   integration-tests:
     name: Integration Tests (${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.os == 'windows-latest' && 'windows-2022' || matrix.os }}
     needs: [changes, validate]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     strategy:

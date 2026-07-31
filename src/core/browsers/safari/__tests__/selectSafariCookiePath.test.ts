@@ -22,25 +22,7 @@ describe("selectSafariCookiePath — legacy path fallback", () => {
     );
   });
 
-  it("uses the most recently modified path when both exist", () => {
-    const modifiedAt = (path: string): number =>
-      path === legacyPath ? 200 : 100;
-
-    expect(selectSafariCookiePath(HOME, () => true, modifiedAt)).toBe(
-      legacyPath,
-    );
-  });
-
-  it("prefers Containers when both exist and it is newer", () => {
-    const modifiedAt = (path: string): number =>
-      path === containerPath ? 200 : 100;
-
-    expect(selectSafariCookiePath(HOME, () => true, modifiedAt)).toBe(
-      containerPath,
-    );
-  });
-
-  it("prefers Containers when modification metadata is unavailable", () => {
+  it("prefers Containers when both modern and legacy stores exist", () => {
     expect(selectSafariCookiePath(HOME, () => true)).toBe(containerPath);
   });
 

@@ -12,26 +12,20 @@ import {
 import type { ExportedCookie } from "../../../types/schemas";
 import { BaseCookieQueryStrategy } from "../BaseCookieQueryStrategy";
 import { BrowserLockHandler } from "../BrowserLockHandler";
-import {
-  fileExists,
-  getFileModificationTime,
-} from "../runtime/FileSystemAdapter";
+import { fileExists } from "../runtime/FileSystemAdapter";
 
 import { decodeBinaryCookies } from "./decodeBinaryCookies";
 
 /**
- * Selects the Safari cookie store path. When both modern and legacy stores
- * exist, the most recently modified file wins so stale migration remnants do
- * not mask current cookies.
+ * Selects the Safari cookie store path. The modern Containers store is
+ * authoritative whenever it exists; the legacy path is only a fallback.
  * @param home - The user's home directory
  * @param exists - Predicate testing whether a path exists (injected for testability)
- * @param modifiedAt - Reads a path's modification time (injected for testability)
  * @returns The path to the Safari binarycookies file to read
  */
 export function selectSafariCookiePath(
   home: string,
   exists: (path: string) => boolean,
-  modifiedAt: (path: string) => number | undefined = () => undefined,
 ): string {
   const containerPath = join(
     home,
@@ -49,17 +43,6 @@ export function selectSafariCookiePath(
 
   if (!containerExists && legacyExists) {
     return legacyPath;
-  }
-  if (containerExists && legacyExists) {
-    const containerModifiedAt = modifiedAt(containerPath);
-    const legacyModifiedAt = modifiedAt(legacyPath);
-    if (
-      legacyModifiedAt !== undefined &&
-      (containerModifiedAt === undefined ||
-        legacyModifiedAt > containerModifiedAt)
-    ) {
-      return legacyPath;
-    }
   }
   return containerPath;
 }
@@ -91,7 +74,7 @@ export class SafariCookieQueryStrategy extends BaseCookieQueryStrategy {
    * @returns Path to the cookie database
    */
   private getCookieDbPath(home: string): string {
-    return selectSafariCookiePath(home, fileExists, getFileModificationTime);
+    return selectSafariCookiePath(home, fileExists);
   }
 
   /**

@@ -54,4 +54,10 @@ describe("decryptV10Cookie — Chrome M127+ hash prefix", () => {
 
     expect(decryptV10Cookie(blob, key, 24)).toBe(value);
   });
+
+  it("returns an empty value when the decrypted payload is only the hash prefix", () => {
+    const blob = buildV10Blob(randomBytes(32), key);
+
+    expect(decryptV10Cookie(blob, key, 24)).toBe("");
+  });
 });

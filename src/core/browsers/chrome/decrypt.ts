@@ -31,7 +31,13 @@ function memoizeBuffer(
   };
 }
 
-import { decryptV10Cookie, isV10Cookie } from "./windows/decryptV10Cookie";
+import {
+  CHROME_DOMAIN_HASH_LENGTH,
+  CHROME_M127_META_VERSION,
+  decryptV10Cookie,
+  isV10Cookie,
+  WINDOWS_GCM_KEY_LENGTH,
+} from "./windows/decryptV10Cookie";
 
 /**
  * Removes the v10 prefix from the encrypted value if present
@@ -177,7 +183,7 @@ export async function decrypt(
 ): Promise<string> {
   // v10 cookies use AES-GCM on Windows only
   // On macOS, cookies starting with v10 are actually v11 encrypted with a value that starts with "v10,"
-  // Only treat as v10 cookie if we're on Windows AND it has sufficient length AND password is a Buffer (real scenario)
+  // Only dispatch to GCM when the normalized DPAPI master key is exactly 32 bytes.
   if (
     isWindows() &&
     isV10Cookie(encryptedValue) &&
@@ -189,7 +195,9 @@ export async function decrypt(
     const keyBuffer = Buffer.isBuffer(password)
       ? password
       : Buffer.from(password, "latin1");
-    return decryptV10Cookie(encryptedValue, keyBuffer, metaVersion);
+    if (keyBuffer.length === WINDOWS_GCM_KEY_LENGTH) {
+      return decryptV10Cookie(encryptedValue, keyBuffer, metaVersion);
+    }
   }
 
   // On macOS, cookies that don't start with v10 are considered 'old data' stored as plaintext
@@ -240,9 +248,11 @@ export async function decrypt(
 
     // Skip the first 32 bytes (hash prefix) if meta version >= 24
     // Ref: https://chromium.googlesource.com/chromium/src/+/b02dcebd7cafab92770734dc2bc317bd07f1d891/net/extras/sqlite/sqlite_persistent_cookie_store.cc#223
-    const useHashPrefix = (metaVersion ?? 0) >= 24;
+    const useHashPrefix = (metaVersion ?? 0) >= CHROME_M127_META_VERSION;
     const finalDecrypted =
-      useHashPrefix && decrypted.length > 32 ? decrypted.slice(32) : decrypted;
+      useHashPrefix && decrypted.length >= CHROME_DOMAIN_HASH_LENGTH
+        ? decrypted.slice(CHROME_DOMAIN_HASH_LENGTH)
+        : decrypted;
 
     const decodedString = finalDecrypted.toString("utf8");
     return extractValue(decodedString);

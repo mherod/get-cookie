@@ -1,5 +1,9 @@
 import { createDecipheriv } from "node:crypto";
 
+export const CHROME_M127_META_VERSION = 24;
+export const CHROME_DOMAIN_HASH_LENGTH = 32;
+export const WINDOWS_GCM_KEY_LENGTH = 32;
+
 /**
  * Decrypts Chrome v10 encrypted cookies on Windows using AES-256-GCM
  *
@@ -54,8 +58,11 @@ export function decryptV10Cookie(
   // Chrome M127+ (cookie DB meta.version >= 24) prepends a 32-byte SHA-256 hash of
   // the cookie's domain to the decrypted plaintext; strip it to recover the value.
   // Ref: https://chromium.googlesource.com/chromium/src/+/b02dcebd7cafab92770734dc2bc317bd07f1d891/net/extras/sqlite/sqlite_persistent_cookie_store.cc#223
-  if ((metaVersion ?? 0) >= 24 && decrypted.length > 32) {
-    return decrypted.subarray(32).toString("utf8");
+  if (
+    (metaVersion ?? 0) >= CHROME_M127_META_VERSION &&
+    decrypted.length >= CHROME_DOMAIN_HASH_LENGTH
+  ) {
+    return decrypted.subarray(CHROME_DOMAIN_HASH_LENGTH).toString("utf8");
   }
 
   return decrypted.toString("utf8");

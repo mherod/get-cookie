@@ -12,21 +12,26 @@ import {
 import type { ExportedCookie } from "../../../types/schemas";
 import { BaseCookieQueryStrategy } from "../BaseCookieQueryStrategy";
 import { BrowserLockHandler } from "../BrowserLockHandler";
-import { fileExists } from "../runtime/FileSystemAdapter";
+import {
+  fileExists,
+  getFileModificationTime,
+} from "../runtime/FileSystemAdapter";
 
 import { decodeBinaryCookies } from "./decodeBinaryCookies";
 
 /**
- * Selects the Safari cookie store path, preferring the modern sandboxed
- * Containers location and falling back to the legacy non-sandboxed
- * ~/Library/Cookies path used by older macOS when only it exists.
+ * Selects the Safari cookie store path. When both modern and legacy stores
+ * exist, the most recently modified file wins so stale migration remnants do
+ * not mask current cookies.
  * @param home - The user's home directory
  * @param exists - Predicate testing whether a path exists (injected for testability)
+ * @param modifiedAt - Reads a path's modification time (injected for testability)
  * @returns The path to the Safari binarycookies file to read
  */
 export function selectSafariCookiePath(
   home: string,
   exists: (path: string) => boolean,
+  modifiedAt: (path: string) => number | undefined = () => undefined,
 ): string {
   const containerPath = join(
     home,
@@ -39,10 +44,22 @@ export function selectSafariCookiePath(
     "Cookies.binarycookies",
   );
   const legacyPath = join(home, "Library", "Cookies", "Cookies.binarycookies");
-  // Modern sandboxed Safari uses the Containers path; only fall back to the
-  // legacy location when the Containers file is absent but the legacy one exists.
-  if (!exists(containerPath) && exists(legacyPath)) {
+  const containerExists = exists(containerPath);
+  const legacyExists = exists(legacyPath);
+
+  if (!containerExists && legacyExists) {
     return legacyPath;
+  }
+  if (containerExists && legacyExists) {
+    const containerModifiedAt = modifiedAt(containerPath);
+    const legacyModifiedAt = modifiedAt(legacyPath);
+    if (
+      legacyModifiedAt !== undefined &&
+      (containerModifiedAt === undefined ||
+        legacyModifiedAt > containerModifiedAt)
+    ) {
+      return legacyPath;
+    }
   }
   return containerPath;
 }
@@ -74,7 +91,7 @@ export class SafariCookieQueryStrategy extends BaseCookieQueryStrategy {
    * @returns Path to the cookie database
    */
   private getCookieDbPath(home: string): string {
-    return selectSafariCookiePath(home, fileExists);
+    return selectSafariCookiePath(home, fileExists, getFileModificationTime);
   }
 
   /**

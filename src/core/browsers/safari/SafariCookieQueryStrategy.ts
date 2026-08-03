@@ -12,8 +12,40 @@ import {
 import type { ExportedCookie } from "../../../types/schemas";
 import { BaseCookieQueryStrategy } from "../BaseCookieQueryStrategy";
 import { BrowserLockHandler } from "../BrowserLockHandler";
+import { fileExists } from "../runtime/FileSystemAdapter";
 
 import { decodeBinaryCookies } from "./decodeBinaryCookies";
+
+/**
+ * Selects the Safari cookie store path. The modern Containers store is
+ * authoritative whenever it exists; the legacy path is only a fallback.
+ * @param home - The user's home directory
+ * @param exists - Predicate testing whether a path exists (injected for testability)
+ * @returns The path to the Safari binarycookies file to read
+ */
+export function selectSafariCookiePath(
+  home: string,
+  exists: (path: string) => boolean,
+): string {
+  const containerPath = join(
+    home,
+    "Library",
+    "Containers",
+    "com.apple.Safari",
+    "Data",
+    "Library",
+    "Cookies",
+    "Cookies.binarycookies",
+  );
+  const legacyPath = join(home, "Library", "Cookies", "Cookies.binarycookies");
+  const containerExists = exists(containerPath);
+  const legacyExists = exists(legacyPath);
+
+  if (!containerExists && legacyExists) {
+    return legacyPath;
+  }
+  return containerPath;
+}
 
 /**
  * Strategy for querying cookies from Safari browser.
@@ -42,16 +74,7 @@ export class SafariCookieQueryStrategy extends BaseCookieQueryStrategy {
    * @returns Path to the cookie database
    */
   private getCookieDbPath(home: string): string {
-    return join(
-      home,
-      "Library",
-      "Containers",
-      "com.apple.Safari",
-      "Data",
-      "Library",
-      "Cookies",
-      "Cookies.binarycookies",
-    );
+    return selectSafariCookiePath(home, fileExists);
   }
 
   /**

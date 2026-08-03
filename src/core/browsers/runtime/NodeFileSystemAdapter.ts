@@ -13,6 +13,7 @@ import {
   openSync,
   readFileSync,
   readSync,
+  statSync,
 } from "node:fs";
 
 import { createTaggedLogger } from "@utils/logHelpers";
@@ -29,6 +30,15 @@ export function createNodeFileSystemAdapter(): FileSystemAdapter {
   return {
     fileExists(path: string): boolean {
       return existsSync(path);
+    },
+
+    getFileModificationTime(path: string): number | undefined {
+      try {
+        return statSync(path).mtimeMs;
+      } catch (error) {
+        logger.debug("Failed to read file modification time", { path, error });
+        return undefined;
+      }
     },
 
     readFile(path: string): Buffer {

@@ -25,6 +25,18 @@ export interface FileSystemAdapter {
   fileExists(path: string): boolean;
 
   /**
+   * Read a file's last-modified time.
+   *
+   * This is a tolerant metadata operation used to choose between multiple
+   * valid browser stores. It returns `undefined` rather than throwing when the
+   * path cannot be inspected.
+   *
+   * @param path - Path to inspect
+   * @returns Modification time in Unix milliseconds, or undefined on failure
+   */
+  getFileModificationTime(path: string): number | undefined;
+
+  /**
    * Read the leading bytes of a file without loading the whole file.
    *
    * Used to sniff format signatures (e.g. Safari's `cook` binary cookie magic
@@ -116,6 +128,17 @@ export function getFileSystemAdapter(): FileSystemAdapter {
  */
 export function fileExists(path: string): boolean {
   return getFileSystemAdapter().fileExists(path);
+}
+
+/**
+ * Convenience wrapper for
+ * {@link FileSystemAdapter.getFileModificationTime} on the active adapter.
+ *
+ * @param path - Path to inspect
+ * @returns Modification time in Unix milliseconds, or undefined on failure
+ */
+export function getFileModificationTime(path: string): number | undefined {
+  return getFileSystemAdapter().getFileModificationTime(path);
 }
 
 /**

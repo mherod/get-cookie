@@ -62,6 +62,7 @@ describe("FileSystemAdapter", () => {
     it("returns the injected adapter once one is set", () => {
       const injected: FileSystemAdapter = {
         fileExists: () => false,
+        getFileModificationTime: () => undefined,
         readLeadingBytes: () => null,
         readFile: () => Buffer.alloc(0),
         readTextFile: () => "",
@@ -73,6 +74,7 @@ describe("FileSystemAdapter", () => {
     it("reverts to the lazy default when the override is cleared", () => {
       const injected: FileSystemAdapter = {
         fileExists: () => false,
+        getFileModificationTime: () => undefined,
         readLeadingBytes: () => null,
         readFile: () => Buffer.alloc(0),
         readTextFile: () => "",
@@ -95,6 +97,15 @@ describe("FileSystemAdapter", () => {
     it("reports existence of real and missing files", () => {
       expect(adapter.fileExists(cookFile)).toBe(true);
       expect(adapter.fileExists(join(tmpDir, "nope"))).toBe(false);
+    });
+
+    it("reads modification time for real files and tolerates missing files", () => {
+      expect(adapter.getFileModificationTime(cookFile)).toEqual(
+        expect.any(Number),
+      );
+      expect(
+        adapter.getFileModificationTime(join(tmpDir, "missing")),
+      ).toBeUndefined();
     });
 
     it("reads the requested number of leading bytes", () => {

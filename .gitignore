@@ -140,3 +140,4 @@ test-exports/
 # Dependency analysis reports
 dependency-report.html
 madge-graph.svg
+/.pnpm-store

@@ -168,6 +168,26 @@ function deriveKey(password: string): Promise<Buffer> {
 }
 
 /**
+ * Normalizes a Windows v10 master key to raw bytes without throwing.
+ *
+ * `Buffer.from()` raises a TypeError on anything that isn't a string or bytes, and
+ * callers reach decrypt() through untyped SQLite rows. Returning null instead lets
+ * the caller fall through to the "password must be a string" guard, which reports
+ * the real problem.
+ * @param password - The Chrome encryption password or DPAPI master key
+ * @returns The key as raw bytes, or null if the input isn't string-or-Buffer
+ */
+function normalizeV10MasterKey(password: string | Buffer): Buffer | null {
+  if (Buffer.isBuffer(password)) {
+    return password;
+  }
+  if (typeof password !== "string") {
+    return null;
+  }
+  return Buffer.from(password, "latin1");
+}
+
+/**
  * Decrypts Chrome's encrypted cookie values
  * @param encryptedValue - The encrypted cookie value as a Buffer
  * @param password - The Chrome encryption password
@@ -192,10 +212,8 @@ export async function decrypt(
     // The Windows DPAPI master key arrives as a latin1 string (lossless byte<->char
     // mapping), so normalize it back to the raw key Buffer for AES-256-GCM. Forwarding
     // metaVersion lets the GCM path strip the Chrome M127+ 32-byte hash prefix.
-    const keyBuffer = Buffer.isBuffer(password)
-      ? password
-      : Buffer.from(password, "latin1");
-    if (keyBuffer.length === WINDOWS_GCM_KEY_LENGTH) {
+    const keyBuffer = normalizeV10MasterKey(password);
+    if (keyBuffer?.length === WINDOWS_GCM_KEY_LENGTH) {
       return decryptV10Cookie(encryptedValue, keyBuffer, metaVersion);
     }
   }

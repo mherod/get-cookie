@@ -33,6 +33,31 @@ function memoizeBuffer(
 
 import { decryptV10Cookie, isV10Cookie } from "./windows/decryptV10Cookie";
 
+/** AES-256 key size in bytes; the Windows DPAPI master key is exactly this long. */
+const AES_256_KEY_LENGTH = 32;
+
+/**
+ * Normalizes a Windows v10 master key to raw bytes, or null if it isn't one.
+ *
+ * The DPAPI master key arrives as a latin1 string (a lossless byte<->char mapping)
+ * rather than a Buffer, so the type alone can't distinguish it from a PBKDF2
+ * password. Length can: AES-256-GCM requires exactly 32 bytes, while the AES-CBC
+ * path derives its key from an arbitrary-length password. Anything that isn't a
+ * 32-byte key returns null so the caller falls through to the CBC path.
+ * @param password - The Chrome encryption password or DPAPI master key
+ * @returns The 32-byte master key, or null if the input isn't one
+ */
+function toV10MasterKey(password: string | Buffer): Buffer | null {
+  if (Buffer.isBuffer(password)) {
+    return password.length === AES_256_KEY_LENGTH ? password : null;
+  }
+  if (typeof password !== "string") {
+    return null;
+  }
+  const keyBuffer = Buffer.from(password, "latin1");
+  return keyBuffer.length === AES_256_KEY_LENGTH ? keyBuffer : null;
+}
+
 /**
  * Removes the v10 prefix from the encrypted value if present
  * @param value - The encrypted value
@@ -177,19 +202,18 @@ export async function decrypt(
 ): Promise<string> {
   // v10 cookies use AES-GCM on Windows only
   // On macOS, cookies starting with v10 are actually v11 encrypted with a value that starts with "v10,"
-  // Only treat as v10 cookie if we're on Windows AND it has sufficient length AND password is a Buffer (real scenario)
+  // Only treat as v10 cookie if we're on Windows AND it has sufficient length AND we hold
+  // a real 32-byte DPAPI master key; anything else falls through to the AES-CBC path below.
   if (
     isWindows() &&
     isV10Cookie(encryptedValue) &&
     encryptedValue.length >= 31
   ) {
-    // The Windows DPAPI master key arrives as a latin1 string (lossless byte<->char
-    // mapping), so normalize it back to the raw key Buffer for AES-256-GCM. Forwarding
-    // metaVersion lets the GCM path strip the Chrome M127+ 32-byte hash prefix.
-    const keyBuffer = Buffer.isBuffer(password)
-      ? password
-      : Buffer.from(password, "latin1");
-    return decryptV10Cookie(encryptedValue, keyBuffer, metaVersion);
+    // Forwarding metaVersion lets the GCM path strip the Chrome M127+ 32-byte hash prefix.
+    const masterKey = toV10MasterKey(password);
+    if (masterKey !== null) {
+      return decryptV10Cookie(encryptedValue, masterKey, metaVersion);
+    }
   }
 
   // On macOS, cookies that don't start with v10 are considered 'old data' stored as plaintext

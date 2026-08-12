@@ -1,6 +1,5 @@
 import jsonwebtoken from "jsonwebtoken";
 
-import { parseArgv } from "./argv";
 import { getErrorMessage } from "./errorUtils";
 import logger from "./logger";
 
@@ -82,10 +81,7 @@ function verifySignature(
       verifyError instanceof Error
         ? verifyError.message
         : "Unknown verification error";
-    const args = parseArgv(process.argv);
-    if (args.values.verbose === true) {
-      logger.debug(`JWT verification failed: ${error}`);
-    }
+    logger.debug(`JWT verification failed: ${error}`);
     return { isValid: false, error };
   }
 }
@@ -122,14 +118,7 @@ function checkExpiration(payload: JwtPayload): ValidationResult {
  * @param data - Optional data to log with the message
  */
 function debugLog(message: string, data?: unknown): void {
-  try {
-    const args = parseArgv(process.argv);
-    if (args.values.verbose === true) {
-      logger.debug(message, data);
-    }
-  } catch (_error) {
-    // Ignore parsing errors in debug logging
-  }
+  logger.debug(message, data);
 }
 
 /**

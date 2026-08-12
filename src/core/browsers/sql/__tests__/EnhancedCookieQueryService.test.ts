@@ -11,15 +11,15 @@ import {
   afterEach,
 } from "@jest/globals";
 
-import {
-  EnhancedCookieQueryService,
-  type EnhancedQueryOptions,
-} from "../EnhancedCookieQueryService";
+import type { SqliteDatabase } from "../adapters/DatabaseAdapter";
 import {
   DatabaseConnectionManager,
   resetGlobalConnectionManager,
 } from "../DatabaseConnectionManager";
-import type { SqliteDatabase } from "../adapters/DatabaseAdapter";
+import {
+  EnhancedCookieQueryService,
+  type EnhancedQueryOptions,
+} from "../EnhancedCookieQueryService";
 
 // Mock the adapter factory so no real SQLite files are needed
 jest.mock("../adapters/DatabaseAdapter");

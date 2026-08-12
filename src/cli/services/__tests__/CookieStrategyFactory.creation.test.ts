@@ -1,6 +1,6 @@
 import { ChromeCookieQueryStrategy } from "@core/browsers/chrome/ChromeCookieQueryStrategy";
+import { ChromiumCookieQueryStrategy } from "@core/browsers/chromium/ChromiumCookieQueryStrategy";
 import { CompositeCookieQueryStrategy } from "@core/browsers/CompositeCookieQueryStrategy";
-import { EdgeCookieQueryStrategy } from "@core/browsers/edge/EdgeCookieQueryStrategy";
 import { FirefoxCookieQueryStrategy } from "@core/browsers/firefox/FirefoxCookieQueryStrategy";
 import { SafariCookieQueryStrategy } from "@core/browsers/safari/SafariCookieQueryStrategy";
 
@@ -24,7 +24,7 @@ describe("CookieStrategyFactory - Strategy Creation", () => {
 
   it("should create an Edge strategy when 'edge' is specified", () => {
     const strategy = CookieStrategyFactory.createStrategy("edge");
-    expect(strategy).toBeInstanceOf(EdgeCookieQueryStrategy);
+    expect(strategy).toBeInstanceOf(ChromiumCookieQueryStrategy);
   });
 
   it("should create a composite strategy when no browser is specified", () => {

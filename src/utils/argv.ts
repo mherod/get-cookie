@@ -30,6 +30,7 @@ const CLI_OPTIONS = {
   string: [
     "browser",
     "profile",
+    "container",
     "url",
     "domain",
     "name",
@@ -55,6 +56,7 @@ const CLI_OPTIONS = {
   alias: {
     b: "browser",
     p: "profile",
+    c: "container",
     u: "url",
     d: "dump",
     D: "domain",

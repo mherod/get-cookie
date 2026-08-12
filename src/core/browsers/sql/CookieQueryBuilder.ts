@@ -174,7 +174,8 @@ export class CookieQueryBuilder {
    * @returns SQL query configuration object
    */
   public buildSelectQuery(options: CookieQueryOptions): SqlQueryConfig {
-    const { name, domain, exactDomain, limit, includeExpired } = options;
+    const { name, domain, exactDomain, limit, includeExpired, container } =
+      options;
     const schema = this.schema;
 
     // Build SELECT clause based on browser type
@@ -186,6 +187,7 @@ export class CookieQueryBuilder {
       domain,
       exactDomain,
       includeExpired,
+      container,
     );
 
     // Build complete SQL
@@ -234,6 +236,7 @@ export class CookieQueryBuilder {
         spec.domain,
         spec.exactDomain,
         spec.includeExpired,
+        spec.container,
       );
 
       if (whereClause) {
@@ -340,6 +343,9 @@ export class CookieQueryBuilder {
     if (schema.httpOnlyColumn !== undefined) {
       columns.push(schema.httpOnlyColumn);
     }
+    if (this.browser === "firefox") {
+      columns.push("originAttributes");
+    }
 
     // Use aliases for consistent output
     return columns
@@ -419,6 +425,7 @@ export class CookieQueryBuilder {
     domain: string,
     exactDomain?: boolean,
     includeExpired?: boolean,
+    container?: string | number,
   ): { whereClause: string; params: unknown[] } {
     const schema = this.schema;
     const conditions: string[] = [];
@@ -460,6 +467,29 @@ export class CookieQueryBuilder {
         // Chrome timestamp: microseconds since January 1, 1601
         // We'll let the caller handle the conversion
         conditions.push(`${schema.expiryColumn} > 0`);
+      }
+    }
+
+    // Handle container condition for Firefox
+    if (this.browser === "firefox" && container !== undefined) {
+      if (String(container).toLowerCase() === "none") {
+        conditions.push(
+          "(originAttributes IS NULL OR originAttributes NOT LIKE '%userContextId=%')",
+        );
+      } else {
+        const containerId =
+          typeof container === "number"
+            ? container
+            : Number.parseInt(String(container), 10);
+        if (!Number.isNaN(containerId)) {
+          conditions.push(
+            "(originAttributes LIKE ? OR originAttributes LIKE ?)",
+          );
+          params.push(
+            `%userContextId=${containerId}`,
+            `%userContextId=${containerId}&%`,
+          );
+        }
       }
     }
 

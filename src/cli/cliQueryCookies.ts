@@ -164,10 +164,15 @@ export async function cliQueryCookies(
   try {
     const browser = typeof args.browser === "string" ? args.browser : undefined;
     const profile = typeof args.profile === "string" ? args.profile : undefined;
+    const container =
+      typeof args.container === "string" || typeof args.container === "number"
+        ? args.container
+        : undefined;
     const strategy = CookieStrategyFactory.createStrategy(
       browser,
       store,
       profile,
+      container,
     );
     const queryService = new CookieQueryService(strategy);
     const specs = Array.isArray(cookieSpec) ? cookieSpec : [cookieSpec];

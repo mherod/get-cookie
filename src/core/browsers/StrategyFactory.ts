@@ -54,20 +54,28 @@ const CHROMIUM_BROWSERS: Set<string> = new Set([
  *
  * @param browser - The browser to create a strategy for
  * @param profile - Optional profile name to target (supported by Chromium-based browsers)
+ * @param container - Optional Firefox container name, ID, or "none"
  * @returns A cookie query strategy for the specified browser
  */
 export function createBrowserStrategy(
   browser: BrowserType,
   profile?: string,
+  container?: string | number,
 ): BaseCookieQueryStrategy {
-  logger.debug("Creating browser strategy", { browser, profile });
+  logger.debug("Creating browser strategy", { browser, profile, container });
+
+  if (container !== undefined && browser !== "firefox") {
+    logger.warn(
+      `--container option is only supported for Firefox, ignoring for ${browser}`,
+    );
+  }
 
   if (browser === "safari") {
     return new SafariCookieQueryStrategy();
   }
 
   if (browser === "firefox") {
-    return new FirefoxCookieQueryStrategy(profile);
+    return new FirefoxCookieQueryStrategy(profile, container);
   }
 
   if (browser === "chrome") {
@@ -119,14 +127,16 @@ export function createSelectiveCompositeStrategy(
  * @param options.browser - Optional browser type
  * @param options.storePath - Optional path to a cookie store file
  * @param options.profile - Optional browser profile name (supported by all Chromium-based browsers)
+ * @param options.container - Optional Firefox container name, ID, or "none"
  * @returns A cookie query strategy
  */
 export function createStrategy(options?: {
   browser?: string;
   storePath?: string;
   profile?: string;
+  container?: string | number;
 }): AnyQueryStrategy {
-  const { browser, storePath, profile } = options ?? {};
+  const { browser, storePath, profile, container } = options ?? {};
 
   // If store path is provided, try to detect the browser type
   if (storePath !== undefined && browser === undefined) {
@@ -136,7 +146,7 @@ export function createStrategy(options?: {
         browser: detectedBrowser,
         storePath,
       });
-      return createBrowserStrategy(detectedBrowser);
+      return createBrowserStrategy(detectedBrowser, profile, container);
     }
   }
 
@@ -144,7 +154,7 @@ export function createStrategy(options?: {
   if (browser !== undefined) {
     const normalizedBrowser = browser.toLowerCase();
     if (isValidBrowserType(normalizedBrowser)) {
-      return createBrowserStrategy(normalizedBrowser, profile);
+      return createBrowserStrategy(normalizedBrowser, profile, container);
     }
     logger.warn("Invalid browser type specified", { browser });
   }

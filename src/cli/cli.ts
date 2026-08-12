@@ -61,6 +61,9 @@ function showHelp(): void {
     "  --profile NAME            Target specific browser profile by name (e.g., 'Default', 'Profile 1')",
   );
   logger.log(
+    "  -c, --container NAME|ID   Target Firefox container name, userContextId, or 'none'",
+  );
+  logger.log(
     "  --store PATH              Path to a specific cookie store file",
   );
   logger.log(

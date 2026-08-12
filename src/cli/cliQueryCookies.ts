@@ -7,7 +7,7 @@ import type { CookieSpec, ExportedCookie } from "../types/schemas";
 import { getErrorMessage } from "../utils/errorUtils";
 import { logger } from "../utils/logHelpers";
 
-import { OutputHandlerFactory } from "./handlers/OutputHandlerFactory";
+import { formatAndPrintCookies } from "./CookieFormatter";
 import { CookieQueryService } from "./services/CookieQueryService";
 import {
   type CookieQueryStrategy,
@@ -229,9 +229,7 @@ export async function cliQueryCookies(
       return;
     }
 
-    const outputFactory = new OutputHandlerFactory();
-    const outputHandler = outputFactory.getHandler(args);
-    outputHandler.handle(results);
+    formatAndPrintCookies(results, args);
   } catch (error) {
     logger.error(getErrorMessage(error));
   }

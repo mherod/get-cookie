@@ -303,7 +303,7 @@ export const WINDOWS_ERROR_CASES = {
    */
   invalidPrefix: {
     name: "invalid_prefix",
-    encrypted: Buffer.from("v99" + "0".repeat(60), "utf8"),
+    encrypted: Buffer.from(`v99${"0".repeat(60)}`, "utf8"),
     expectedError: "Not a v10 encrypted cookie",
   },
 

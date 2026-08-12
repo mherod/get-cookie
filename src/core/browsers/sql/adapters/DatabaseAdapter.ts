@@ -85,7 +85,6 @@ let runtimeOverride: Runtime | undefined;
  * Force a specific runtime for SQLite adapter selection.
  * Called by the `@mherod/get-cookie/node` and `@mherod/get-cookie/bun` entrypoints
  * so consumers get deterministic adapter resolution without relying on auto-detection.
- *
  * @param runtime - The runtime to force ("node" or "bun"), or undefined to clear
  */
 export function setRuntimeOverride(runtime: Runtime | undefined): void {
@@ -110,7 +109,6 @@ function detectRuntime(): Runtime {
 /**
  * Create a SQLite database adapter instance
  * Automatically detects the runtime and returns the appropriate adapter
- *
  * @param filepath - Path to the SQLite database file
  * @param options - Database connection options
  * @returns A SqliteDatabase instance compatible with the current runtime

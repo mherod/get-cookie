@@ -8,6 +8,9 @@ import type {
   SqlCookieQueryOptions,
 } from "../../../types/schemas";
 
+/**
+ *
+ */
 export type { SqlBrowserType };
 
 /**

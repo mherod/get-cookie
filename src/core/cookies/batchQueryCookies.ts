@@ -168,7 +168,7 @@ export async function batchQueryCookies(
 
   // Query all strategies in parallel — each targets independent browser databases
   const strategyResults = await Promise.allSettled(
-    strategies.map((strategy) =>
+    strategies.map(async (strategy) =>
       queryStrategy(strategy, validSpecs, continueOnError),
     ),
   );

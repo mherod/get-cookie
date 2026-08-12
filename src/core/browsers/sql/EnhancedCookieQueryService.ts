@@ -6,15 +6,16 @@
 import { join } from "node:path";
 
 import fg from "fast-glob";
-import type { SqliteDatabase } from "./adapters/DatabaseAdapter";
+
 import { createTaggedLogger, logError } from "@utils/logHelpers";
 import { getPlatform } from "@utils/platformUtils";
-import { CHROMIUM_DATA_DIRS, FIREFOX_DATA_DIRS } from "../BrowserAvailability";
-import { fileExists } from "../runtime/FileSystemAdapter";
 
 import type { ExportedCookie } from "../../../types/schemas";
 import { chromeTimestampToDate } from "../../../utils/chromeDates";
+import { CHROMIUM_DATA_DIRS, FIREFOX_DATA_DIRS } from "../BrowserAvailability";
+import { fileExists } from "../runtime/FileSystemAdapter";
 
+import type { SqliteDatabase } from "./adapters/DatabaseAdapter";
 import {
   CookieQueryBuilder,
   type CookieQueryOptions,

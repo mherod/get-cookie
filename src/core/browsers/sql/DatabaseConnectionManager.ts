@@ -5,12 +5,13 @@
 
 import { EventEmitter } from "node:events";
 
+import { getErrorMessage } from "@utils/errorUtils";
+import { createTaggedLogger, logError } from "@utils/logHelpers";
+
 import {
   createSqliteDatabase,
   type SqliteDatabase,
 } from "./adapters/DatabaseAdapter";
-import { getErrorMessage } from "@utils/errorUtils";
-import { createTaggedLogger, logError } from "@utils/logHelpers";
 
 const logger = createTaggedLogger("DatabaseConnectionManager");
 

@@ -2,9 +2,10 @@
  * Tests for BrowserAvailability exports
  */
 
-import { describe, it, expect } from "@jest/globals";
 import { homedir } from "node:os";
 import { join } from "node:path";
+
+import { describe, it, expect } from "@jest/globals";
 
 import {
   BROWSER_PATHS,
@@ -20,22 +21,22 @@ describe("CHROMIUM_DATA_DIRS", () => {
   });
 
   describe("darwin paths", () => {
-    const darwin = CHROMIUM_DATA_DIRS["darwin"];
+    const darwin = CHROMIUM_DATA_DIRS.darwin;
 
     it("has a chrome entry", () => {
-      expect(typeof darwin?.["chrome"]).toBe("string");
+      expect(typeof darwin?.chrome).toBe("string");
     });
 
     it("chrome path points to Google/Chrome under Application Support", () => {
-      expect(darwin?.["chrome"]).toBe(
+      expect(darwin?.chrome).toBe(
         join(homedir(), "Library", "Application Support", "Google", "Chrome"),
       );
     });
 
     it("has edge, arc, opera, and opera-gx entries", () => {
-      expect(typeof darwin?.["edge"]).toBe("string");
-      expect(typeof darwin?.["arc"]).toBe("string");
-      expect(typeof darwin?.["opera"]).toBe("string");
+      expect(typeof darwin?.edge).toBe("string");
+      expect(typeof darwin?.arc).toBe("string");
+      expect(typeof darwin?.opera).toBe("string");
       expect(typeof darwin?.["opera-gx"]).toBe("string");
     });
 
@@ -45,44 +46,40 @@ describe("CHROMIUM_DATA_DIRS", () => {
   });
 
   describe("win32 paths", () => {
-    const win32 = CHROMIUM_DATA_DIRS["win32"];
+    const win32 = CHROMIUM_DATA_DIRS.win32;
 
     it("has chrome, edge, opera, and opera-gx entries", () => {
-      expect(typeof win32?.["chrome"]).toBe("string");
-      expect(typeof win32?.["edge"]).toBe("string");
-      expect(typeof win32?.["opera"]).toBe("string");
+      expect(typeof win32?.chrome).toBe("string");
+      expect(typeof win32?.edge).toBe("string");
+      expect(typeof win32?.opera).toBe("string");
       expect(typeof win32?.["opera-gx"]).toBe("string");
     });
 
     it("chrome path includes User Data suffix", () => {
-      expect(win32?.["chrome"]).toContain("User Data");
+      expect(win32?.chrome).toContain("User Data");
     });
 
     it("edge path includes User Data suffix", () => {
-      expect(win32?.["edge"]).toContain("User Data");
+      expect(win32?.edge).toContain("User Data");
     });
   });
 
   describe("linux paths", () => {
-    const linux = CHROMIUM_DATA_DIRS["linux"];
+    const linux = CHROMIUM_DATA_DIRS.linux;
 
     it("has chrome, edge, opera, and opera-gx entries", () => {
-      expect(typeof linux?.["chrome"]).toBe("string");
-      expect(typeof linux?.["edge"]).toBe("string");
-      expect(typeof linux?.["opera"]).toBe("string");
+      expect(typeof linux?.chrome).toBe("string");
+      expect(typeof linux?.edge).toBe("string");
+      expect(typeof linux?.opera).toBe("string");
       expect(typeof linux?.["opera-gx"]).toBe("string");
     });
 
     it("chrome path is under .config/google-chrome", () => {
-      expect(linux?.["chrome"]).toBe(
-        join(homedir(), ".config", "google-chrome"),
-      );
+      expect(linux?.chrome).toBe(join(homedir(), ".config", "google-chrome"));
     });
 
     it("edge path is under .config/microsoft-edge", () => {
-      expect(linux?.["edge"]).toBe(
-        join(homedir(), ".config", "microsoft-edge"),
-      );
+      expect(linux?.edge).toBe(join(homedir(), ".config", "microsoft-edge"));
     });
   });
 });
@@ -95,7 +92,7 @@ describe("FIREFOX_DATA_DIRS", () => {
   });
 
   describe("linux paths", () => {
-    const linux = FIREFOX_DATA_DIRS["linux"];
+    const linux = FIREFOX_DATA_DIRS.linux;
 
     it("includes the traditional ~/.mozilla/firefox path", () => {
       expect(linux).toContainEqual(join(homedir(), ".mozilla", "firefox"));
@@ -109,7 +106,7 @@ describe("FIREFOX_DATA_DIRS", () => {
   });
 
   describe("win32 paths", () => {
-    const win32 = FIREFOX_DATA_DIRS["win32"];
+    const win32 = FIREFOX_DATA_DIRS.win32;
 
     it("includes the homedir-derived Firefox stable path", () => {
       expect(win32).toContainEqual(

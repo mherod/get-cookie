@@ -1,8 +1,9 @@
 import { describe, it, expect } from "@jest/globals";
 
-import { BaseCookieQueryStrategy } from "../BaseCookieQueryStrategy";
 import { ArcCookieQueryStrategy } from "../arc/ArcCookieQueryStrategy";
+import { BaseCookieQueryStrategy } from "../BaseCookieQueryStrategy";
 import { BraveCookieQueryStrategy } from "../brave/BraveCookieQueryStrategy";
+import { isValidBrowserType } from "../BrowserDetector";
 import { ChromeCookieQueryStrategy } from "../chrome/ChromeCookieQueryStrategy";
 import { CompositeCookieQueryStrategy } from "../CompositeCookieQueryStrategy";
 import { EdgeCookieQueryStrategy } from "../edge/EdgeCookieQueryStrategy";
@@ -10,8 +11,6 @@ import { FirefoxCookieQueryStrategy } from "../firefox/FirefoxCookieQueryStrateg
 import { OperaCookieQueryStrategy } from "../opera/OperaCookieQueryStrategy";
 import { OperaGXCookieQueryStrategy } from "../opera/OperaGXCookieQueryStrategy";
 import { SafariCookieQueryStrategy } from "../safari/SafariCookieQueryStrategy";
-import { VivaldiCookieQueryStrategy } from "../vivaldi/VivaldiCookieQueryStrategy";
-import { isValidBrowserType } from "../BrowserDetector";
 import {
   createBrowserStrategy,
   createCompositeStrategy,
@@ -19,6 +18,7 @@ import {
   createStrategy,
   getAvailableBrowsers,
 } from "../StrategyFactory";
+import { VivaldiCookieQueryStrategy } from "../vivaldi/VivaldiCookieQueryStrategy";
 
 describe("createBrowserStrategy", () => {
   it("returns a Chrome strategy for 'chrome'", () => {

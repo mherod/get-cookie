@@ -76,7 +76,7 @@ describe("SafariCookieQueryStrategy - Value Types", () => {
     const mockCookies: BinaryCookieRow[] = [
       {
         name: "test-cookie",
-        value: 12345 as unknown as string,
+        value: 12345,
         domain: "example.com",
         path: "/",
         creation: 1234567890,
@@ -95,7 +95,7 @@ describe("SafariCookieQueryStrategy - Value Types", () => {
     const mockCookies: BinaryCookieRow[] = [
       {
         name: "test-cookie",
-        value: true as unknown as string,
+        value: true,
         domain: "example.com",
         path: "/",
         creation: 1234567890,
@@ -130,7 +130,7 @@ describe("SafariCookieQueryStrategy - Invalid Values", () => {
     const mockCookies: BinaryCookieRow[] = [
       {
         name: "test-cookie",
-        value: undefined as unknown as string,
+        value: undefined,
         domain: "example.com",
         path: "/",
         creation: 1234567890,
@@ -149,7 +149,7 @@ describe("SafariCookieQueryStrategy - Invalid Values", () => {
     const mockCookies: BinaryCookieRow[] = [
       {
         name: "test-cookie",
-        value: null as unknown as string,
+        value: null,
         domain: "example.com",
         path: "/",
         creation: 1234567890,

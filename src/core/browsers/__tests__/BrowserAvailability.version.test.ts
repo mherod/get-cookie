@@ -32,9 +32,10 @@ jest.mock("@utils/platformUtils", () => {
   };
 });
 
-import { getBrowserVersionAsync } from "../BrowserAvailability";
 import { execSimple } from "@utils/execSimple";
 import { isMacOS, isLinux } from "@utils/platformUtils";
+
+import { getBrowserVersionAsync } from "../BrowserAvailability";
 
 const mockExecSimple = execSimple as jest.MockedFunction<typeof execSimple>;
 const mockIsMacOS = isMacOS as jest.MockedFunction<typeof isMacOS>;

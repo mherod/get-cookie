@@ -8,19 +8,18 @@ import { join } from "node:path";
 
 import fg from "fast-glob";
 
+import { execSimple } from "@utils/execSimple";
 import { createTaggedLogger } from "@utils/logHelpers";
 import { getPlatform, isLinux, isMacOS, isWindows } from "@utils/platformUtils";
-import { execSimple } from "@utils/execSimple";
 
 import { getBrowserDisplayName } from "./BrowserDetector";
-import { fileExists } from "./runtime/FileSystemAdapter";
 import type { BrowserType } from "./BrowserDetector";
+import { fileExists } from "./runtime/FileSystemAdapter";
 
 const logger = createTaggedLogger("BrowserAvailability");
 
 /**
  * Information about an available browser.
- *
  * @remarks
  * The {@link AvailableBrowser.version} field is intentionally optional and is
  * **not populated** by the synchronous detection paths
@@ -38,7 +37,6 @@ export interface AvailableBrowser {
   executablePath?: string;
   /**
    * Browser version string, when known.
-   *
    * @remarks
    * Absent from {@link detectAvailableBrowsers} and {@link getBrowserInfo}
    * results — those paths intentionally skip version detection because it
@@ -299,6 +297,9 @@ const win32FirefoxDataDirs = ((): string[] => {
   return [...roots];
 })();
 
+/**
+ *
+ */
 export const FIREFOX_DATA_DIRS: Partial<Record<string, string[]>> = {
   darwin: [join(homedir(), "Library", "Application Support", "Firefox")],
   win32: win32FirefoxDataDirs,
@@ -534,12 +535,11 @@ function findBrowserProfiles(browser: BrowserType): string[] {
 
 /**
  * Detects all available browsers on the current system.
- *
+ * @returns Array of available browser information
  * @remarks
  * This function is synchronous — it checks file system paths only and does
  * **not** populate {@link AvailableBrowser.version}. To get a version string,
  * call {@link getBrowserVersionAsync} for each browser of interest.
- *
  * @example
  * ```typescript
  * import {
@@ -557,8 +557,6 @@ function findBrowserProfiles(browser: BrowserType): string[] {
  *     })),
  * );
  * ```
- *
- * @returns Array of available browser information
  */
 export function detectAvailableBrowsers(): AvailableBrowser[] {
   const browsers: BrowserType[] = [
@@ -606,14 +604,12 @@ export function detectAvailableBrowsers(): AvailableBrowser[] {
 
 /**
  * Gets detailed information about a specific browser.
- *
+ * @param browser - The browser type
+ * @returns Browser information or undefined if not available
  * @remarks
  * The returned record's {@link AvailableBrowser.version} field is always
  * `undefined` here — this synchronous path checks file system paths only.
  * Use {@link getBrowserVersionAsync} to look the version up when required.
- *
- * @param browser - The browser type
- * @returns Browser information or undefined if not available
  */
 export function getBrowserInfo(
   browser: BrowserType,

@@ -57,7 +57,6 @@ const STRATEGY_REGISTRY: Record<BrowserType, StrategyConstructor> = {
  * Note: This is an internal function with strict typing. It expects a validated
  * BrowserType and does not perform validation or fallback. For public API usage
  * with validation and graceful fallback, use createStrategy() instead.
- *
  * @param browser - The browser to create a strategy for (must be a valid BrowserType)
  * @param profile - Optional profile name to target (supported by Chromium-based browsers)
  * @returns A cookie query strategy for the specified browser

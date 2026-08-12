@@ -114,7 +114,7 @@ describe("decrypt", () => {
       const baseline = await decrypt(encryptedValue, TEST_PASSWORD);
 
       const results = await Promise.all(
-        Array.from({ length: 25 }, () =>
+        Array.from({ length: 25 }, async () =>
           decrypt(encryptedValue, TEST_PASSWORD),
         ),
       );

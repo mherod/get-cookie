@@ -1,11 +1,11 @@
-import { MockCookieQueryStrategy } from "../../browsers/mock/MockCookieQueryStrategy";
-import { comboQueryCookieSpec } from "../comboQueryCookieSpec";
-import type { CookieQueryOptions } from "../cookieQueryOptions";
 import type {
   CookieQueryStrategy,
   ExportedCookie,
   MultiCookieSpec,
 } from "../../../types/schemas";
+import { MockCookieQueryStrategy } from "../../browsers/mock/MockCookieQueryStrategy";
+import { comboQueryCookieSpec } from "../comboQueryCookieSpec";
+import type { CookieQueryOptions } from "../cookieQueryOptions";
 
 const createTestCookie = (): ExportedCookie => ({
   name: "test",

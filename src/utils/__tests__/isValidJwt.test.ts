@@ -54,7 +54,7 @@ describe("isValidJwt - Basic Validation", () => {
   });
 
   it("should handle null token", () => {
-    const result = validateToken("" as unknown as string);
+    const result = validateToken("");
     expect(result.isValid).toBe(false);
     expect(result.error).toContain("Token is empty or whitespace");
   });

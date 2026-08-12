@@ -1,4 +1,5 @@
 import { describe, it, expect } from "@jest/globals";
+
 import type { ExportedCookie } from "../../../types/schemas";
 import {
   detectJwtCookies,

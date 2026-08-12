@@ -141,6 +141,10 @@ export function detectJwtCookies(
 /**
  * Enriches JWT metadata with decoded claims
  * @internal
+ * @param meta
+ * @param payload
+ * @param checkExpiration
+ * @param verbose
  */
 function enrichJwtMetadata(
   meta: JwtCookieMeta,

@@ -3,6 +3,9 @@
  * Provides runtime-aware database adapter selection
  */
 
+/**
+ *
+ */
 export {
   createSqliteDatabase,
   getCurrentRuntime,
@@ -13,5 +16,11 @@ export {
   type SqliteStatement,
 } from "./DatabaseAdapter";
 
+/**
+ *
+ */
 export { BetterSqlite3Adapter } from "./BetterSqlite3Adapter";
+/**
+ *
+ */
 export { BunSqliteAdapter } from "./BunSqliteAdapter";

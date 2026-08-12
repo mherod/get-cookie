@@ -3,16 +3,19 @@
  * Uses actual SQLite databases to measure performance improvements
  */
 
-import { join } from "node:path";
 import { rmSync, existsSync } from "node:fs";
+import { join } from "node:path";
+
+import BetterSqlite3 from "better-sqlite3";
+
 import type { CookieSpec } from "../../../types/schemas";
+import { CookieQueryBuilder } from "../../browsers/sql/CookieQueryBuilder";
 import {
   getGlobalConnectionManager,
   resetGlobalConnectionManager,
 } from "../../browsers/sql/DatabaseConnectionManager";
-import { CookieQueryBuilder } from "../../browsers/sql/CookieQueryBuilder";
+
 import { createTestDatabases } from "./fixtures/createTestDatabase";
-import BetterSqlite3 from "better-sqlite3";
 
 // Performance metrics interface
 interface BenchmarkResult {
@@ -291,6 +294,9 @@ describe("Real Database Performance Benchmarks", () => {
 
 /**
  * Helper function to run a benchmark comparison
+ * @param name
+ * @param specs
+ * @param testDbPath
  */
 async function runBenchmark(
   name: string,
@@ -325,6 +331,8 @@ async function runBenchmark(
 
 /**
  * Execute individual queries for each spec
+ * @param specs
+ * @param testDbPath
  */
 async function executeIndividualQueries(
   specs: CookieSpec[],
@@ -358,6 +366,8 @@ async function executeIndividualQueries(
 
 /**
  * Execute a single batch query for all specs
+ * @param specs
+ * @param testDbPath
  */
 async function executeBatchQuery(specs: CookieSpec[], testDbPath: string) {
   const connectionManager = getGlobalConnectionManager();

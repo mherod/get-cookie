@@ -65,7 +65,7 @@ describe("SafariCookieQueryStrategy - Error Handling", () => {
       const mockCookies: BinaryCookieRow[] = [
         {
           name: "test-cookie",
-          value: {} as unknown as string,
+          value: {},
           domain: "example.com",
           path: "/",
           creation: 1234567890,
@@ -84,7 +84,7 @@ describe("SafariCookieQueryStrategy - Error Handling", () => {
       const mockCookies: BinaryCookieRow[] = [
         {
           name: "test-cookie",
-          value: null as unknown as string,
+          value: null,
           domain: "example.com",
           path: "/",
           creation: 1234567890,

@@ -95,7 +95,7 @@ function setupMocksForNoFirefox(): void {
 }
 
 function setupMocksForInstalledFirefox(platform: string): void {
-  mockGetPlatform.mockReturnValue(platform as "darwin" | "win32" | "linux");
+  mockGetPlatform.mockReturnValue(platform);
   mockExistsSync.mockReturnValue(true);
 }
 
@@ -191,7 +191,7 @@ describe("FirefoxCookieQueryStrategy - Fast Path Optimization", () => {
   });
 
   it("should return empty array for unsupported platforms", async () => {
-    mockGetPlatform.mockReturnValue("unknown" as "darwin" | "win32" | "linux");
+    mockGetPlatform.mockReturnValue("unknown");
     const result = await strategy.queryCookies("test", "example.com");
     expectEmptyResult(result);
     expect(mockExistsSync).not.toHaveBeenCalled();

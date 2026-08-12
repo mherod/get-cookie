@@ -24,7 +24,7 @@ import { getBrowserCookie } from "./getBrowserCookie";
  * });
  * ```
  */
-export function getChromeCookie(
+export async function getChromeCookie(
   cookieSpec: CookieSpec,
 ): Promise<ExportedCookie[]> {
   return getBrowserCookie("chrome", cookieSpec);

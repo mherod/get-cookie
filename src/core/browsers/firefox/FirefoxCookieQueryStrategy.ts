@@ -10,9 +10,9 @@ import { isFirefoxRunning } from "@utils/processDetector";
 
 import type { ExportedCookie } from "../../../types/schemas";
 import { BaseCookieQueryStrategy } from "../BaseCookieQueryStrategy";
-import { fileExists, readTextFile } from "../runtime/FileSystemAdapter";
 import { FIREFOX_DATA_DIRS } from "../BrowserAvailability";
 import { BrowserLockHandler } from "../BrowserLockHandler";
+import { fileExists, readTextFile } from "../runtime/FileSystemAdapter";
 import { getGlobalConnectionManager } from "../sql/DatabaseConnectionManager";
 import { getGlobalQueryMonitor } from "../sql/QueryMonitor";
 

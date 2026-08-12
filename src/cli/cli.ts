@@ -114,6 +114,7 @@ interface ChromeProfileInfo {
 
 /**
  * Resolves the user data directory for a Chromium-based browser on the current platform.
+ * @param browserLower
  */
 function getChromiumDataDir(browserLower: string): string | undefined {
   return CHROMIUM_DATA_DIRS[process.platform]?.[browserLower];

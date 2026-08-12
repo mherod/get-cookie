@@ -143,7 +143,9 @@ export abstract class BaseChromiumCookieQueryStrategy extends BaseCookieQueryStr
           i + BaseChromiumCookieQueryStrategy.MAX_CONCURRENT_PROFILE_READS,
         );
         const settled = await Promise.allSettled(
-          batch.map((file) => this.processBatchFile(file, specs, password)),
+          batch.map(async (file) =>
+            this.processBatchFile(file, specs, password),
+          ),
         );
         for (const result of settled) {
           if (result.status === "fulfilled") {

@@ -142,7 +142,7 @@ describe("QueryMonitor", () => {
           return 1200; // End time in executeQuery (200ms later)
         }
         return 1200;
-      }) as unknown as typeof Date.now;
+      });
 
       mockStmt.all.mockReturnValue([
         { id: 1, name: "test1" },
@@ -312,7 +312,7 @@ describe("QueryMonitor", () => {
           return 1000; // Start time
         }
         return 1000 + (durations[call] || 0); // End time with duration
-      }) as unknown as typeof Date.now;
+      });
 
       mockStmt.all.mockReturnValue([]);
 
@@ -384,7 +384,7 @@ describe("QueryMonitor", () => {
           return 1000; // Start time
         }
         return 1020; // End time (20ms later, above 10ms threshold)
-      }) as unknown as typeof Date.now;
+      });
 
       mockStmt.all.mockReturnValue([]);
 
@@ -461,7 +461,7 @@ describe("QueryMonitor", () => {
           return baseTime; // Start time
         }
         return baseTime + 10; // End time
-      }) as unknown as typeof Date.now;
+      });
 
       monitor.executeQuery(
         mockDb,

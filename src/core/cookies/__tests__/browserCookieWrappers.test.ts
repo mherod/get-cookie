@@ -1,7 +1,6 @@
 import type { ExportedCookie } from "../../../types/schemas";
-
-import { getChromeCookie } from "../getChromeCookie";
 import { getBrowserCookie } from "../getBrowserCookie";
+import { getChromeCookie } from "../getChromeCookie";
 import { getFirefoxCookie } from "../getFirefoxCookie";
 
 jest.mock("../getBrowserCookie", () => ({

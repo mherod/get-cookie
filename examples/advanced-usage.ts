@@ -1,56 +1,46 @@
-/**
- * @module
- * @internal
- */
+import { batchGetCookiesWithResults, getCookie } from "../src/index";
 
-/**
- * @description
- * This example demonstrates advanced usage of the cookie retrieval functions.
- * It shows how to retrieve cookies using different patterns and filters.
- * @internal
- * @example
- * ```typescript
- * import { getCookie } from "@mherod/get-cookie";
- *
- * // Get all cookies for a domain
- * const cookies = await getCookie({
- *   name: "*",
- *   domain: "github.com"
- * });
- *
- * // Get specific cookies
- * const authCookie = await getCookie({
- *   name: "auth",
- *   domain: "api.github.com"
- * });
- * ```
- */
+const domain = "app.example.com";
 
-import { getCookie } from "../src";
+function report(label: string, count: number): void {
+  if (count === 0) {
+    console.log(`${label}: no readable matches`);
+    return;
+  }
 
-/**
- * @description
- * Run advanced examples of cookie retrieval.
- * @internal
- * @returns A promise that resolves when all examples have completed.
- */
-export async function runAdvancedExamples(): Promise<void> {
-  // Example 1: Get a specific cookie by name and domain
-  const cookie = await getCookie({
-    name: "session",
-    domain: "github.com",
-  });
-
-  console.log("Example 1 - Specific cookie:", cookie);
-
-  // Example 2: Get all cookies for a domain using wildcard
-  const cookies = await getCookie({
-    name: "*",
-    domain: "github.com",
-  });
-
-  console.log("Example 2 - All domain cookies:", cookies);
+  console.log(`${label}: ${count} matching cookie(s)`);
 }
 
-// Execute the examples
-runAdvancedExamples().catch(console.error);
+export async function runAdvancedExamples(): Promise<void> {
+  // SQL-backed browsers use "%" for a name wildcard.
+  const allForDomain = await getCookie({
+    name: "%",
+    domain,
+  });
+  report("All cookies for the placeholder domain", allForDomain.length);
+
+  const results = await batchGetCookiesWithResults(
+    [
+      { name: "session_token", domain },
+      { name: "csrf_token", domain },
+    ],
+    {
+      concurrency: 2,
+      continueOnError: true,
+    },
+  );
+
+  for (const result of results) {
+    const label = `Cookie ${result.spec.name}`;
+    if (result.error) {
+      console.log(`${label}: query failed`);
+      continue;
+    }
+    report(label, result.cookies.length);
+  }
+}
+
+void runAdvancedExamples().catch(() => {
+  console.error("Advanced cookie lookup failed.");
+  process.exitCode = 1;
+});

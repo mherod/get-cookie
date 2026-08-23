@@ -39,10 +39,10 @@ global CLI install.
 
 - `quick-start.sh` — a guided tour of basic extraction, URL queries, rendered
   headers, and login checks.
-- `curl-integration.sh` — local `curl`, `wget`, and HTTPie patterns for
-  sites where browser-cookie authentication is appropriate.
-- `github-auth.sh` — GitHub web-session examples and the distinction between
-  GitHub web cookies and API authentication.
+- `curl-integration.sh` — a fail-closed local `curl` helper with opt-in
+  requests.
+- `github-auth.sh` — a legacy-named, placeholder-domain web-session example
+  and the distinction between browser cookies and API authentication.
 - `features-demo.sh` — profile discovery, browser selection, deduplication,
   expired-cookie filtering, and combined CLI flags.
 - `cli-examples.sh` — source-tree CLI examples; it wraps
@@ -58,8 +58,9 @@ Run a shell example from the repository root:
 ./examples/cli-examples.sh
 ```
 
-Read a script before executing it. Several examples query real local sessions
-and may print cookie-derived output to the terminal.
+Read a script before executing it. The scripts can query real local sessions,
+but the current examples report only presence, counts, and HTTP status rather
+than cookie values.
 
 ## TypeScript examples
 
@@ -68,8 +69,8 @@ and may print cookie-derived output to the terminal.
   entrypoint.
 - `comprehensive-demo.ts` — broader source-tree walkthrough, including
   browser-specific strategy selection and metadata summaries.
-- `auth-tokens.ts` — sensitive local token-discovery example with truncated
-  output; use only with accounts you are authorized to inspect.
+- `auth-tokens.ts` — prepares an in-memory request without logging the
+  credential; use only with accounts you are authorized to inspect.
 
 Run them from the repository root:
 

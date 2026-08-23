@@ -4,7 +4,14 @@ export default defineConfig({
   title: "get-cookie",
   description: "Read local browser cookies from the CLI or TypeScript",
   base: "/get-cookie/",
+  lastUpdated: true,
+  sitemap: {
+    hostname: "https://mherod.github.io/get-cookie/",
+  },
   themeConfig: {
+    search: {
+      provider: "local",
+    },
     nav: [
       { text: "Guide", link: "/guide/getting-started" },
       { text: "CLI", link: "/guide/cli-usage" },

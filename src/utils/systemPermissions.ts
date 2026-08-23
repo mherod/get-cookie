@@ -1,4 +1,5 @@
 import { exec } from "node:child_process";
+import { access, constants } from "node:fs/promises";
 import readline from "node:readline";
 import { promisify } from "node:util";
 
@@ -181,12 +182,7 @@ Press Enter when you've completed these steps...`);
  */
 export async function checkFilePermission(filePath: string): Promise<boolean> {
   try {
-    const { exec } = await import("node:child_process");
-    const { promisify } = await import("node:util");
-    const execAsync = promisify(exec);
-
-    // Try to read the file
-    await execAsync(`cat "${filePath}" > /dev/null 2>&1`);
+    await access(filePath, constants.R_OK);
     return true;
   } catch {
     return false;

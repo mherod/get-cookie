@@ -10,13 +10,13 @@
     "ignoreUnknown": false,
     "includes": [
       "**",
-      "!**/dist/**",
-      "!**/node_modules/**",
-      "!**/coverage/**",
-      "!**/docs/.vitepress/cache/**",
+      "!**/dist",
+      "!**/node_modules",
+      "!**/coverage",
+      "!**/docs/.vitepress/cache",
       "!**/*.log",
-      "!**/.parcel-cache/**",
-      "!**/.swiz/**"
+      "!**/.parcel-cache",
+      "!**/.swiz"
     ]
   },
   "formatter": {

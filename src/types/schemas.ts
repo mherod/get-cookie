@@ -207,6 +207,7 @@ export const CookieMetaSchema = z
     secure: z.boolean().optional(),
     httpOnly: z.boolean().optional(),
     path: CookiePathSchema.optional(),
+    containerId: z.number().int().optional(),
   })
   .catchall(z.unknown());
 
@@ -400,6 +401,8 @@ export const BaseCookieQueryOptionsSchema = z.object({
   store: z.string().optional(),
   /** Force query even if browser is running */
   force: z.boolean().optional(),
+  /** Target Firefox container name or ID */
+  container: z.union([z.string(), z.number()]).optional(),
 });
 
 /**
@@ -439,6 +442,8 @@ export const SqlCookieQueryOptionsSchema = CookieSpecSchema.extend({
   limit: z.number().int().positive().optional(),
   /** Include expired cookies */
   includeExpired: z.boolean().optional(),
+  /** Target Firefox container name or ID */
+  container: z.union([z.string(), z.number()]).optional(),
 });
 
 /**

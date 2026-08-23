@@ -1,7 +1,16 @@
 import { createDecipheriv } from "node:crypto";
 
+/**
+ *
+ */
 export const CHROME_M127_META_VERSION = 24;
+/**
+ *
+ */
 export const CHROME_DOMAIN_HASH_LENGTH = 32;
+/**
+ *
+ */
 export const WINDOWS_GCM_KEY_LENGTH = 32;
 
 /**

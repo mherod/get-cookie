@@ -3,11 +3,12 @@
  * Provides clean, type-safe monitoring without monkey-patching
  */
 
+import { createTaggedLogger } from "@utils/logHelpers";
+
 import type {
   SqliteDatabase,
   SqliteStatement,
 } from "./adapters/DatabaseAdapter";
-import { createTaggedLogger } from "@utils/logHelpers";
 
 const logger = createTaggedLogger("QueryMonitor");
 

@@ -1,10 +1,13 @@
 {
   "name": "@mherod/get-cookie",
-  "version": "4.4.3",
+  "version": "4.5.0",
   "description": "Node.js module for querying cookies from Chrome, Firefox, and Safari browsers",
   "packageManager": "pnpm@9.15.2",
   "type": "module",
   "source": "src/index.ts",
+  "files": [
+    "dist"
+  ],
   "bin": {
     "get-cookie": "./dist/cli.cjs"
   },
@@ -62,7 +65,7 @@
     "prepublishOnly": "pnpm run clean && pnpm run validate && pnpm run build",
     "dev": "tsc -w -p tsconfig.json & tsc-alias -w -p tsconfig.json",
     "read-github": "NODE_OPTIONS=\"-r tsconfig-paths/register\" tsx scripts/read-github-cookies.ts",
-    "prepare": "husky install",
+    "prepare": "[ -d .git ] && husky || true",
     "docs": "typedoc && ./scripts/fix-typedoc.sh && vitepress build docs",
     "docs:dev": "vitepress dev docs",
     "docs:preview": "vitepress preview docs",
@@ -75,7 +78,7 @@
     "deps:validate": "depcruise src --config .dependency-cruiser.js"
   },
   "engines": {
-    "node": "^20.0.0 || ^22.0.0 || ^24.0.0 || ^25.0.0"
+    "node": "^20.0.0 || ^22.0.0 || ^24.0.0 || ^25.0.0 || ^26.0.0"
   },
   "keywords": [],
   "author": "Matthew Herod",

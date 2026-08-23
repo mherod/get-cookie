@@ -10,17 +10,22 @@ import { isFirefoxRunning } from "@utils/processDetector";
 
 import type { ExportedCookie } from "../../../types/schemas";
 import { BaseCookieQueryStrategy } from "../BaseCookieQueryStrategy";
-import { fileExists, readTextFile } from "../runtime/FileSystemAdapter";
 import { FIREFOX_DATA_DIRS } from "../BrowserAvailability";
 import { BrowserLockHandler } from "../BrowserLockHandler";
+import { fileExists, readTextFile } from "../runtime/FileSystemAdapter";
 import { getGlobalConnectionManager } from "../sql/DatabaseConnectionManager";
 import { getGlobalQueryMonitor } from "../sql/QueryMonitor";
+import {
+  extractUserContextId,
+  resolveFirefoxContainer,
+} from "./FirefoxContainers";
 
 interface FirefoxCookieRow {
   name: string;
   value: string;
   domain: string;
   expiry: number | null;
+  originAttributes?: string | null;
 }
 
 /**
@@ -376,16 +381,21 @@ export function isFirefoxCookieUnexpired(
 export class FirefoxCookieQueryStrategy extends BaseCookieQueryStrategy {
   private readonly lockHandler: BrowserLockHandler;
   private readonly profileName?: string;
+  private readonly container?: string | number;
 
   /**
    * Creates a new instance of FirefoxCookieQueryStrategy
    * @param profileName - Optional specific profile name to target (matches Name in profiles.ini)
+   * @param container - Optional container name, ID, or "none" to filter by
    */
-  public constructor(profileName?: string) {
+  public constructor(profileName?: string, container?: string | number) {
     super("FirefoxCookieQueryStrategy", "Firefox");
     this.lockHandler = new BrowserLockHandler(this.logger, "Firefox");
     if (profileName !== undefined) {
       this.profileName = profileName;
+    }
+    if (container !== undefined) {
+      this.container = container;
     }
   }
 
@@ -414,6 +424,11 @@ export class FirefoxCookieQueryStrategy extends BaseCookieQueryStrategy {
     const { CookieQueryBuilder } = await import("../sql/CookieQueryBuilder");
     const queryBuilder = new CookieQueryBuilder("firefox");
 
+    let containerOption: string | number | undefined;
+    if (this.container !== undefined) {
+      containerOption = resolveFirefoxContainer(this.container, file);
+    }
+
     const queryConfig = queryBuilder.buildSelectQuery({
       name,
       domain,
@@ -421,6 +436,7 @@ export class FirefoxCookieQueryStrategy extends BaseCookieQueryStrategy {
       // Firefox changed expiry units in schema 16. Fetch matching rows first,
       // then apply the schema-aware cutoff after reading PRAGMA user_version.
       includeExpired: true,
+      ...(containerOption !== undefined && { container: containerOption }),
     });
 
     return {
@@ -430,17 +446,21 @@ export class FirefoxCookieQueryStrategy extends BaseCookieQueryStrategy {
       rowTransform: (
         row: FirefoxCookieRow,
         schemaVersion: number,
-      ): ExportedCookie => ({
-        name: row.name,
-        value: row.value,
-        domain: row.domain,
-        expiry: firefoxExpiryToDate(row.expiry, schemaVersion),
-        meta: {
-          file,
-          browser: "Firefox",
-          decrypted: false,
-        },
-      }),
+      ): ExportedCookie => {
+        const userContextId = extractUserContextId(row.originAttributes);
+        return {
+          name: row.name,
+          value: row.value,
+          domain: row.domain,
+          expiry: firefoxExpiryToDate(row.expiry, schemaVersion),
+          meta: {
+            file,
+            browser: "Firefox",
+            decrypted: false,
+            ...(userContextId !== undefined && { containerId: userContextId }),
+          },
+        };
+      },
     };
   }
 

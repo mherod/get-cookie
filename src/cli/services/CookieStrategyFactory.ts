@@ -41,6 +41,7 @@ export const CookieStrategyFactory = {
     browser?: string,
     storePath?: string,
     profile?: string,
+    container?: string | number,
   ): CookieQueryStrategy {
     // Delegate to the core strategy factory
     // Only pass defined values to avoid exactOptionalPropertyTypes issues
@@ -53,6 +54,9 @@ export const CookieStrategyFactory = {
     }
     if (profile !== undefined) {
       options.profile = profile;
+    }
+    if (container !== undefined) {
+      options.container = container;
     }
     return createCoreStrategy(options);
   },

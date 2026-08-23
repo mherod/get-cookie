@@ -1,13 +1,13 @@
-import type { CookieSpec, ExportedCookie } from "../types/schemas";
-import { getErrorMessage } from "../utils/errorUtils";
-import { logger } from "../utils/logHelpers";
 import {
   detectJwtCookies,
   filterJwtCookies,
   type JwtDetectionOptions,
 } from "../core/cookies/JwtCookieDetector";
+import type { CookieSpec, ExportedCookie } from "../types/schemas";
+import { getErrorMessage } from "../utils/errorUtils";
+import { logger } from "../utils/logHelpers";
 
-import { OutputHandlerFactory } from "./handlers/OutputHandlerFactory";
+import { formatAndPrintCookies } from "./CookieFormatter";
 import { CookieQueryService } from "./services/CookieQueryService";
 import {
   type CookieQueryStrategy,
@@ -164,10 +164,15 @@ export async function cliQueryCookies(
   try {
     const browser = typeof args.browser === "string" ? args.browser : undefined;
     const profile = typeof args.profile === "string" ? args.profile : undefined;
+    const container =
+      typeof args.container === "string" || typeof args.container === "number"
+        ? args.container
+        : undefined;
     const strategy = CookieStrategyFactory.createStrategy(
       browser,
       store,
       profile,
+      container,
     );
     const queryService = new CookieQueryService(strategy);
     const specs = Array.isArray(cookieSpec) ? cookieSpec : [cookieSpec];
@@ -229,9 +234,7 @@ export async function cliQueryCookies(
       return;
     }
 
-    const outputFactory = new OutputHandlerFactory();
-    const outputHandler = outputFactory.getHandler(args);
-    outputHandler.handle(results);
+    formatAndPrintCookies(results, args);
   } catch (error) {
     logger.error(getErrorMessage(error));
   }

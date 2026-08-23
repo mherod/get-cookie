@@ -12,7 +12,7 @@ jest.mock("../batchQueryCookies");
 
 // Helper to create mock cookies with minimal required fields
 const mockCookie = (partial: Partial<ExportedCookie>): ExportedCookie[] => {
-  return [{ name: "", domain: "", value: "", ...partial } as ExportedCookie];
+  return [{ name: "", domain: "", value: "", ...partial }];
 };
 
 describe("batchGetCookies", () => {
@@ -38,17 +38,17 @@ describe("batchGetCookies", () => {
           name: "auth",
           domain: "example.com",
           value: "auth123",
-        } as ExportedCookie,
+        },
         {
           name: "session",
           domain: "api.example.com",
           value: "session456",
-        } as ExportedCookie,
+        },
         {
           name: "token",
           domain: "app.example.com",
           value: "token789",
-        } as ExportedCookie,
+        },
       ]);
 
       const result = await batchGetCookies(specs);
@@ -73,7 +73,7 @@ describe("batchGetCookies", () => {
           name: "test",
           domain: "example.com",
           value: "test123",
-        } as ExportedCookie,
+        },
       ]);
 
       const result = await batchGetCookies([spec]);
@@ -97,12 +97,12 @@ describe("batchGetCookies", () => {
           name: "auth",
           domain: "example.com",
           value: "short",
-        } as ExportedCookie,
+        },
         {
           name: "auth",
           domain: "example.com",
           value: "longervalue",
-        } as ExportedCookie,
+        },
       ]);
 
       const result = await batchGetCookies(specs);
@@ -122,12 +122,12 @@ describe("batchGetCookies", () => {
           name: "auth",
           domain: "example.com",
           value: "value1",
-        } as ExportedCookie,
+        },
         {
           name: "auth",
           domain: "example.com",
           value: "value2",
-        } as ExportedCookie,
+        },
       ]);
 
       const result = await batchGetCookies(specs, { deduplicate: false });
@@ -147,17 +147,17 @@ describe("batchGetCookies", () => {
           name: "auth",
           domain: "example.com",
           value: "auth1",
-        } as ExportedCookie,
+        },
         {
           name: "session",
           domain: "example.com",
           value: "session1",
-        } as ExportedCookie,
+        },
         {
           name: "auth",
           domain: "api.example.com",
           value: "auth2",
-        } as ExportedCookie,
+        },
       ]);
 
       const result = await batchGetCookies(specs);
@@ -302,12 +302,12 @@ describe("batchGetCookiesWithResults", () => {
         name: "cookie1",
         domain: "example.com",
         value: "value1",
-      } as ExportedCookie,
+      },
       {
         name: "cookie2",
         domain: "example.com",
         value: "value2",
-      } as ExportedCookie,
+      },
     ]);
 
     const results = await batchGetCookiesWithResults(specs);

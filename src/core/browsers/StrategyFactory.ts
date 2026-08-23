@@ -5,22 +5,18 @@
 
 import { createTaggedLogger } from "@utils/logHelpers";
 
-import { ArcCookieQueryStrategy } from "./arc/ArcCookieQueryStrategy";
 import type { BaseCookieQueryStrategy } from "./BaseCookieQueryStrategy";
-import { BraveCookieQueryStrategy } from "./brave/BraveCookieQueryStrategy";
 import {
   type BrowserType,
   detectBrowserFromStore,
   isValidBrowserType,
 } from "./BrowserDetector";
 import { ChromeCookieQueryStrategy } from "./chrome/ChromeCookieQueryStrategy";
+import type { ChromiumBrowser } from "./chrome/ChromiumBrowsers";
+import { ChromiumCookieQueryStrategy } from "./chromium/ChromiumCookieQueryStrategy";
 import { CompositeCookieQueryStrategy } from "./CompositeCookieQueryStrategy";
-import { EdgeCookieQueryStrategy } from "./edge/EdgeCookieQueryStrategy";
 import { FirefoxCookieQueryStrategy } from "./firefox/FirefoxCookieQueryStrategy";
-import { OperaCookieQueryStrategy } from "./opera/OperaCookieQueryStrategy";
-import { OperaGXCookieQueryStrategy } from "./opera/OperaGXCookieQueryStrategy";
 import { SafariCookieQueryStrategy } from "./safari/SafariCookieQueryStrategy";
-import { VivaldiCookieQueryStrategy } from "./vivaldi/VivaldiCookieQueryStrategy";
 
 /**
  * A strategy that can query cookies - either a single browser or composite
@@ -31,48 +27,66 @@ export type AnyQueryStrategy =
 
 const logger = createTaggedLogger("StrategyFactory");
 
-/**
- * Strategy constructor type
- */
-type StrategyConstructor = new (profile?: string) => BaseCookieQueryStrategy;
+const AVAILABLE_BROWSERS: BrowserType[] = [
+  "chrome",
+  "edge",
+  "arc",
+  "brave",
+  "opera",
+  "opera-gx",
+  "vivaldi",
+  "firefox",
+  "safari",
+];
 
-/**
- * Registry of browser strategies
- */
-const STRATEGY_REGISTRY: Record<BrowserType, StrategyConstructor> = {
-  safari: SafariCookieQueryStrategy,
-  firefox: FirefoxCookieQueryStrategy,
-  chrome: ChromeCookieQueryStrategy,
-  edge: EdgeCookieQueryStrategy,
-  arc: ArcCookieQueryStrategy,
-  brave: BraveCookieQueryStrategy,
-  opera: OperaCookieQueryStrategy,
-  "opera-gx": OperaGXCookieQueryStrategy,
-  vivaldi: VivaldiCookieQueryStrategy,
-};
+const CHROMIUM_BROWSERS: Set<string> = new Set([
+  "chrome",
+  "edge",
+  "arc",
+  "brave",
+  "opera",
+  "opera-gx",
+  "vivaldi",
+]);
 
 /**
  * Creates a strategy for the specified browser
  *
- * Note: This is an internal function with strict typing. It expects a validated
- * BrowserType and does not perform validation or fallback. For public API usage
- * with validation and graceful fallback, use createStrategy() instead.
- *
- * @param browser - The browser to create a strategy for (must be a valid BrowserType)
+ * @param browser - The browser to create a strategy for
  * @param profile - Optional profile name to target (supported by Chromium-based browsers)
+ * @param container - Optional Firefox container name, ID, or "none"
  * @returns A cookie query strategy for the specified browser
- * @throws {Error} if browser is not in STRATEGY_REGISTRY (should not happen with valid BrowserType)
  */
 export function createBrowserStrategy(
   browser: BrowserType,
   profile?: string,
+  container?: string | number,
 ): BaseCookieQueryStrategy {
-  const Strategy = STRATEGY_REGISTRY[browser];
-  logger.debug("Creating browser strategy", { browser, profile });
-  if (profile !== undefined) {
-    return new Strategy(profile);
+  logger.debug("Creating browser strategy", { browser, profile, container });
+
+  if (container !== undefined && browser !== "firefox") {
+    logger.warn(
+      `--container option is only supported for Firefox, ignoring for ${browser}`,
+    );
   }
-  return new Strategy();
+
+  if (browser === "safari") {
+    return new SafariCookieQueryStrategy();
+  }
+
+  if (browser === "firefox") {
+    return new FirefoxCookieQueryStrategy(profile, container);
+  }
+
+  if (browser === "chrome") {
+    return new ChromeCookieQueryStrategy(profile);
+  }
+
+  if (CHROMIUM_BROWSERS.has(browser)) {
+    return new ChromiumCookieQueryStrategy(browser as ChromiumBrowser, profile);
+  }
+
+  return new ChromiumCookieQueryStrategy("chrome", profile);
 }
 
 /**
@@ -81,8 +95,8 @@ export function createBrowserStrategy(
  */
 export function createCompositeStrategy(): CompositeCookieQueryStrategy {
   logger.debug("Creating composite strategy with all browsers");
-  const strategies = Object.values(STRATEGY_REGISTRY).map(
-    (Strategy) => new Strategy(),
+  const strategies = AVAILABLE_BROWSERS.map((browser) =>
+    createBrowserStrategy(browser),
   );
   return new CompositeCookieQueryStrategy(strategies);
 }
@@ -97,10 +111,7 @@ export function createSelectiveCompositeStrategy(
 ): CompositeCookieQueryStrategy {
   logger.debug("Creating selective composite strategy", { browsers });
 
-  const strategies = browsers.map((browser) => {
-    const Strategy = STRATEGY_REGISTRY[browser];
-    return new Strategy();
-  });
+  const strategies = browsers.map((browser) => createBrowserStrategy(browser));
 
   if (strategies.length === 0) {
     logger.warn("No valid strategies found, using full composite");
@@ -116,14 +127,16 @@ export function createSelectiveCompositeStrategy(
  * @param options.browser - Optional browser type
  * @param options.storePath - Optional path to a cookie store file
  * @param options.profile - Optional browser profile name (supported by all Chromium-based browsers)
+ * @param options.container - Optional Firefox container name, ID, or "none"
  * @returns A cookie query strategy
  */
 export function createStrategy(options?: {
   browser?: string;
   storePath?: string;
   profile?: string;
+  container?: string | number;
 }): AnyQueryStrategy {
-  const { browser, storePath, profile } = options ?? {};
+  const { browser, storePath, profile, container } = options ?? {};
 
   // If store path is provided, try to detect the browser type
   if (storePath !== undefined && browser === undefined) {
@@ -133,7 +146,7 @@ export function createStrategy(options?: {
         browser: detectedBrowser,
         storePath,
       });
-      return createBrowserStrategy(detectedBrowser);
+      return createBrowserStrategy(detectedBrowser, profile, container);
     }
   }
 
@@ -141,17 +154,12 @@ export function createStrategy(options?: {
   if (browser !== undefined) {
     const normalizedBrowser = browser.toLowerCase();
     if (isValidBrowserType(normalizedBrowser)) {
-      return createBrowserStrategy(normalizedBrowser, profile);
+      return createBrowserStrategy(normalizedBrowser, profile, container);
     }
-    // Invalid browser type: log warning and fall back to composite strategy
-    // This provides graceful degradation when users pass invalid browser strings
-    // (e.g., from config files) instead of throwing an error
     logger.warn("Invalid browser type specified", { browser });
   }
 
   // Default to composite strategy (queries all browsers)
-  // This provides a sensible fallback when no browser is specified or
-  // when an invalid browser type is provided
   logger.debug("Creating composite strategy as default");
   return createCompositeStrategy();
 }
@@ -161,5 +169,5 @@ export function createStrategy(options?: {
  * @returns Array of available browser types
  */
 export function getAvailableBrowsers(): BrowserType[] {
-  return Object.keys(STRATEGY_REGISTRY) as BrowserType[];
+  return [...AVAILABLE_BROWSERS];
 }

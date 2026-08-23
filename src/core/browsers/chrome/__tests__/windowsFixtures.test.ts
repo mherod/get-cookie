@@ -365,7 +365,7 @@ describe("Windows Cookie Fixtures - validateV10Format", () => {
   });
 
   it("should detect missing prefix", () => {
-    const invalid = Buffer.from("xyz" + "0".repeat(50));
+    const invalid = Buffer.from(`xyz${"0".repeat(50)}`);
     const result = validateV10Format(invalid);
 
     expect(result.valid).toBe(false);

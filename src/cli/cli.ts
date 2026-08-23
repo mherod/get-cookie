@@ -7,11 +7,9 @@ import {
   CHROMIUM_DATA_DIRS,
   FIREFOX_DATA_DIRS,
 } from "@core/browsers/BrowserAvailability";
+import { getChromiumProfiles } from "@core/browsers/chromium/getChromiumProfiles";
 import { parseFirefoxProfilesIni } from "@core/browsers/firefox/FirefoxCookieQueryStrategy";
-import {
-  fileExists,
-  readTextFile,
-} from "@core/browsers/runtime/FileSystemAdapter";
+import { fileExists } from "@core/browsers/runtime/FileSystemAdapter";
 import { cookieSpecsFromUrl } from "@core/cookies/cookieSpecsFromUrl";
 import { parseArgv } from "@utils/argv";
 import { getErrorMessage } from "@utils/errorUtils";
@@ -63,6 +61,9 @@ function showHelp(): void {
     "  --profile NAME            Target specific browser profile by name (e.g., 'Default', 'Profile 1')",
   );
   logger.log(
+    "  -c, --container NAME|ID   Target Firefox container name, userContextId, or 'none'",
+  );
+  logger.log(
     "  --store PATH              Path to a specific cookie store file",
   );
   logger.log(
@@ -106,41 +107,17 @@ function normalizeWildcard(pattern: string): string {
   return pattern === "*" ? "%" : pattern;
 }
 
-interface ChromeProfileInfo {
-  name: string;
-  user_name?: string;
-  [key: string]: unknown;
-}
-
-/**
- * Resolves the user data directory for a Chromium-based browser on the current platform.
- */
-function getChromiumDataDir(browserLower: string): string | undefined {
-  return CHROMIUM_DATA_DIRS[process.platform]?.[browserLower];
-}
-
-function listChromiumProfiles(browser: string, dataDir: string): void {
+function listChromiumProfiles(browser: string): void {
   try {
-    const localStatePath = join(dataDir, "Local State");
-
-    if (!fileExists(localStatePath)) {
-      return;
-    }
-
-    const localState = JSON.parse(readTextFile(localStatePath));
-    const profileCache = localState.profile?.info_cache ?? {};
-    const entries = Object.entries(profileCache);
-
-    if (entries.length === 0) {
+    const profiles = getChromiumProfiles(browser);
+    if (profiles.length === 0) {
       return;
     }
 
     logger.log(`${browser} profiles:`);
-
-    for (const [dir, info] of entries) {
-      const profile = info as ChromeProfileInfo;
-      const userSuffix = profile.user_name ? ` (${profile.user_name})` : "";
-      logger.log(`  • ${profile.name}${userSuffix}  [${dir}]`);
+    for (const profile of profiles) {
+      const userSuffix = profile.userName ? ` (${profile.userName})` : "";
+      logger.log(`  • ${profile.name}${userSuffix}  [${profile.directory}]`);
     }
     logger.log("");
   } catch (error) {
@@ -195,9 +172,9 @@ function listProfiles(browser?: string): void {
       return;
     }
 
-    const dataDir = getChromiumDataDir(browserLower);
-    if (dataDir) {
-      listChromiumProfiles(browser, dataDir);
+    const platformDirs = CHROMIUM_DATA_DIRS[process.platform] ?? {};
+    if (platformDirs[browserLower]) {
+      listChromiumProfiles(browser);
     } else {
       logger.error(`Unknown browser: ${browser}`);
     }
@@ -206,10 +183,8 @@ function listProfiles(browser?: string): void {
 
   // No --browser specified: list profiles for all browsers
   const platformDirs = CHROMIUM_DATA_DIRS[process.platform] ?? {};
-  for (const [name, dataDir] of Object.entries(platformDirs)) {
-    if (dataDir && fileExists(join(dataDir, "Local State"))) {
-      listChromiumProfiles(name, dataDir);
-    }
+  for (const name of Object.keys(platformDirs)) {
+    listChromiumProfiles(name);
   }
   listFirefoxProfiles();
 }

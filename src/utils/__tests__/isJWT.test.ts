@@ -2,14 +2,14 @@ import { isJWT } from "../jwt";
 
 describe("isJWT", () => {
   it("should return false for null or undefined", () => {
-    expect(isJWT(null as unknown as string)).toBe(false);
+    expect(isJWT(null)).toBe(false);
     expect(isJWT(undefined as unknown as string)).toBe(false);
   });
 
   it("should return false for non-string values", () => {
-    expect(isJWT(123 as unknown as string)).toBe(false);
-    expect(isJWT({} as unknown as string)).toBe(false);
-    expect(isJWT([] as unknown as string)).toBe(false);
+    expect(isJWT(123)).toBe(false);
+    expect(isJWT({})).toBe(false);
+    expect(isJWT([] as unknown)).toBe(false);
   });
 
   it("should return false for strings that don't have three parts", () => {

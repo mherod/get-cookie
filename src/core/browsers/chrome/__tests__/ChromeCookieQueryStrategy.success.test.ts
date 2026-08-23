@@ -1,6 +1,6 @@
 import { jest } from "@jest/globals";
-
 import fg from "fast-glob";
+
 import { CookieQueryBuilder } from "../../sql/CookieQueryBuilder";
 import { getGlobalConnectionManager } from "../../sql/DatabaseConnectionManager";
 import { getGlobalQueryMonitor } from "../../sql/QueryMonitor";

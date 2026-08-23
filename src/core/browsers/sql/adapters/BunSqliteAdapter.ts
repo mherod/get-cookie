@@ -60,8 +60,16 @@ class BunStatement implements SqliteStatement {
 export class BunSqliteAdapter implements SqliteDatabase {
   private readonly db: BunSqliteDB;
 
+  /**
+   *
+   */
   readonly?: boolean;
 
+  /**
+   *
+   * @param filepath
+   * @param options
+   */
   constructor(filepath: string, options: SqliteOptions = {}) {
     // Guard: this adapter must only run inside Bun.
     // When the bundle is loaded in Node.js the class body is evaluated but
@@ -73,7 +81,7 @@ export class BunSqliteAdapter implements SqliteDatabase {
     }
 
     // Dynamically require Bun's sqlite module
-    // eslint-disable-next-line global-require
+
     const { Database } = require("bun:sqlite") as {
       Database: BunDatabaseConstructor;
     };
@@ -91,11 +99,19 @@ export class BunSqliteAdapter implements SqliteDatabase {
     this.readonly = options.readonly ?? false;
   }
 
+  /**
+   *
+   * @param sql
+   */
   prepare(sql: string): SqliteStatement {
     const stmt = this.db.prepare(sql);
     return new BunStatement(stmt);
   }
 
+  /**
+   *
+   * @param pragma
+   */
   pragma(pragma: string): unknown {
     // Bun uses exec() for PRAGMA statements instead of pragma()
     // Convert "key = value" format to "PRAGMA key = value"
@@ -104,6 +120,9 @@ export class BunSqliteAdapter implements SqliteDatabase {
     return undefined;
   }
 
+  /**
+   *
+   */
   close(): void {
     this.db.close();
   }

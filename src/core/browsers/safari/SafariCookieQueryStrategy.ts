@@ -355,7 +355,7 @@ export class SafariCookieQueryStrategy extends BaseCookieQueryStrategy {
       typeof cookie === "object" &&
       cookie !== null &&
       "name" in cookie &&
-      typeof (cookie as { name: unknown }).name === "string"
+      typeof cookie.name === "string"
     );
   }
 

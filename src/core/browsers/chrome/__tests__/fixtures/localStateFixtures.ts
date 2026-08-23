@@ -10,10 +10,10 @@
  * - The encrypted key has format: "DPAPI" (5 bytes) + DPAPI-encrypted data
  */
 
-import { writeFileSync, mkdirSync, existsSync, rmSync } from "node:fs";
-import { join, dirname } from "node:path";
-import { tmpdir } from "node:os";
 import { randomBytes } from "node:crypto";
+import { writeFileSync, mkdirSync, existsSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, dirname } from "node:path";
 
 import { WINDOWS_TEST_KEY, DPAPI_PREFIX } from "./windowsFixtures";
 
@@ -67,7 +67,6 @@ export interface CreateLocalStateOptions {
  * our test infrastructure can recognize.
  *
  * Format: "DPAPI" (5 bytes) + raw key
- *
  * @param key - The encryption key to wrap
  * @returns Buffer with DPAPI prefix + key
  */
@@ -77,7 +76,6 @@ export function createMockDPAPIKey(key: Buffer = WINDOWS_TEST_KEY): Buffer {
 
 /**
  * Create a Local State object with the given encryption key
- *
  * @param options - Configuration options
  * @returns A Local State object ready for JSON serialization
  */
@@ -131,7 +129,6 @@ export function createLocalStateObject(
 
 /**
  * Create a Local State JSON string
- *
  * @param options - Configuration options
  * @returns JSON string representation
  */
@@ -174,7 +171,6 @@ export interface WindowsTestEnvironment {
  *     Default/
  *       Cookies
  * ```
- *
  * @param options - Configuration options
  * @returns Test environment with paths and cleanup function
  */
@@ -226,7 +222,6 @@ export function createWindowsTestEnvironment(
 
 /**
  * Write a Local State file to a specific path
- *
  * @param path - The file path to write to
  * @param options - Configuration options
  */
@@ -294,7 +289,7 @@ export const INVALID_LOCAL_STATE_CASES = {
     name: "missing_dpapi_prefix",
     content: JSON.stringify({
       os_crypt: {
-        encrypted_key: Buffer.from("WRONG" + "x".repeat(32)).toString("base64"),
+        encrypted_key: Buffer.from(`WRONG${"x".repeat(32)}`).toString("base64"),
       },
     }),
     expectedError: "Invalid DPAPI key prefix",
@@ -321,7 +316,6 @@ export const INVALID_LOCAL_STATE_CASES = {
 
 /**
  * Write an invalid Local State file for error testing
- *
  * @param path - The file path to write to
  * @param caseKey - The error case to write
  */
@@ -403,7 +397,6 @@ export function validateLocalState(
 /**
  * Extract the encryption key from a Local State object
  * (Only works with mock DPAPI keys, not real Windows DPAPI)
- *
  * @param localState - The parsed Local State object
  * @returns The extracted key buffer
  */

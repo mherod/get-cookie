@@ -15,13 +15,13 @@ import {
   jest,
 } from "@jest/globals";
 
+import type { SqliteDatabase } from "../adapters/DatabaseAdapter";
 import {
   DatabaseConnectionManager,
   getGlobalConnectionManager,
   resetGlobalConnectionManager,
   type PoolConfig,
 } from "../DatabaseConnectionManager";
-import type { SqliteDatabase } from "../adapters/DatabaseAdapter";
 
 // Mock the adapter factory
 jest.mock("../adapters/DatabaseAdapter");
@@ -128,13 +128,13 @@ describe("DatabaseConnectionManager", () => {
 
     it("should handle connection errors with retry", async () => {
       let attempt = 0;
-      createSqliteDatabase.mockImplementation((() => {
+      createSqliteDatabase.mockImplementation(() => {
         attempt++;
         if (attempt === 1) {
           throw new Error("database is locked");
         }
         return mockDb;
-      }) as jest.Mock);
+      });
 
       const connection = await manager.getConnection(testDbPath);
 
@@ -143,9 +143,9 @@ describe("DatabaseConnectionManager", () => {
     });
 
     it("should fail after max retry attempts", async () => {
-      createSqliteDatabase.mockImplementation((() => {
+      createSqliteDatabase.mockImplementation(() => {
         throw new Error("database is locked");
-      }) as unknown as jest.Mock);
+      });
 
       await expect(manager.getConnection(testDbPath)).rejects.toThrow(
         "database is locked",
@@ -362,9 +362,9 @@ describe("DatabaseConnectionManager", () => {
 
   describe("Error Handling", () => {
     it("should handle non-lock database errors", async () => {
-      createSqliteDatabase.mockImplementation((() => {
+      createSqliteDatabase.mockImplementation(() => {
         throw new Error("File not found");
-      }) as unknown as jest.Mock);
+      });
 
       await expect(manager.getConnection(testDbPath)).rejects.toThrow(
         "File not found",

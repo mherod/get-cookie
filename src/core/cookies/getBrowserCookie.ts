@@ -29,4 +29,7 @@ export async function getBrowserCookie(
   }
 }
 
+/**
+ *
+ */
 export default getBrowserCookie;

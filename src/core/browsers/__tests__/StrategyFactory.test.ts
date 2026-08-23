@@ -1,17 +1,12 @@
-import { describe, it, expect } from "@jest/globals";
+import { describe, expect, it } from "@jest/globals";
 
 import { BaseCookieQueryStrategy } from "../BaseCookieQueryStrategy";
-import { ArcCookieQueryStrategy } from "../arc/ArcCookieQueryStrategy";
-import { BraveCookieQueryStrategy } from "../brave/BraveCookieQueryStrategy";
-import { ChromeCookieQueryStrategy } from "../chrome/ChromeCookieQueryStrategy";
-import { CompositeCookieQueryStrategy } from "../CompositeCookieQueryStrategy";
-import { EdgeCookieQueryStrategy } from "../edge/EdgeCookieQueryStrategy";
-import { FirefoxCookieQueryStrategy } from "../firefox/FirefoxCookieQueryStrategy";
-import { OperaCookieQueryStrategy } from "../opera/OperaCookieQueryStrategy";
-import { OperaGXCookieQueryStrategy } from "../opera/OperaGXCookieQueryStrategy";
-import { SafariCookieQueryStrategy } from "../safari/SafariCookieQueryStrategy";
-import { VivaldiCookieQueryStrategy } from "../vivaldi/VivaldiCookieQueryStrategy";
 import { isValidBrowserType } from "../BrowserDetector";
+import { ChromeCookieQueryStrategy } from "../chrome/ChromeCookieQueryStrategy";
+import { ChromiumCookieQueryStrategy } from "../chromium/ChromiumCookieQueryStrategy";
+import { CompositeCookieQueryStrategy } from "../CompositeCookieQueryStrategy";
+import { FirefoxCookieQueryStrategy } from "../firefox/FirefoxCookieQueryStrategy";
+import { SafariCookieQueryStrategy } from "../safari/SafariCookieQueryStrategy";
 import {
   createBrowserStrategy,
   createCompositeStrategy,
@@ -39,39 +34,39 @@ describe("createBrowserStrategy", () => {
     expect(strategy).toBeInstanceOf(BaseCookieQueryStrategy);
   });
 
-  it("returns an Edge strategy for 'edge'", () => {
+  it("returns a Chromium strategy for 'edge'", () => {
     const strategy = createBrowserStrategy("edge");
-    expect(strategy).toBeInstanceOf(EdgeCookieQueryStrategy);
+    expect(strategy).toBeInstanceOf(ChromiumCookieQueryStrategy);
     expect(strategy).toBeInstanceOf(BaseCookieQueryStrategy);
   });
 
-  it("returns an Arc strategy for 'arc'", () => {
+  it("returns a Chromium strategy for 'arc'", () => {
     const strategy = createBrowserStrategy("arc");
-    expect(strategy).toBeInstanceOf(ArcCookieQueryStrategy);
+    expect(strategy).toBeInstanceOf(ChromiumCookieQueryStrategy);
     expect(strategy).toBeInstanceOf(BaseCookieQueryStrategy);
   });
 
-  it("returns a Brave strategy for 'brave'", () => {
+  it("returns a Chromium strategy for 'brave'", () => {
     const strategy = createBrowserStrategy("brave");
-    expect(strategy).toBeInstanceOf(BraveCookieQueryStrategy);
+    expect(strategy).toBeInstanceOf(ChromiumCookieQueryStrategy);
     expect(strategy).toBeInstanceOf(BaseCookieQueryStrategy);
   });
 
-  it("returns an Opera strategy for 'opera'", () => {
+  it("returns a Chromium strategy for 'opera'", () => {
     const strategy = createBrowserStrategy("opera");
-    expect(strategy).toBeInstanceOf(OperaCookieQueryStrategy);
+    expect(strategy).toBeInstanceOf(ChromiumCookieQueryStrategy);
     expect(strategy).toBeInstanceOf(BaseCookieQueryStrategy);
   });
 
-  it("returns an Opera GX strategy for 'opera-gx'", () => {
+  it("returns a Chromium strategy for 'opera-gx'", () => {
     const strategy = createBrowserStrategy("opera-gx");
-    expect(strategy).toBeInstanceOf(OperaGXCookieQueryStrategy);
+    expect(strategy).toBeInstanceOf(ChromiumCookieQueryStrategy);
     expect(strategy).toBeInstanceOf(BaseCookieQueryStrategy);
   });
 
-  it("returns a Vivaldi strategy for 'vivaldi'", () => {
+  it("returns a Chromium strategy for 'vivaldi'", () => {
     const strategy = createBrowserStrategy("vivaldi");
-    expect(strategy).toBeInstanceOf(VivaldiCookieQueryStrategy);
+    expect(strategy).toBeInstanceOf(ChromiumCookieQueryStrategy);
     expect(strategy).toBeInstanceOf(BaseCookieQueryStrategy);
   });
 });
@@ -82,13 +77,8 @@ describe("createCompositeStrategy", () => {
     expect(strategy).toBeInstanceOf(CompositeCookieQueryStrategy);
   });
 
-  // This count assertion ties createCompositeStrategy to STRATEGY_REGISTRY size.
-  // If a browser is added to STRATEGY_REGISTRY (and getAvailableBrowsers grows),
-  // this test fails — prompting the developer to also update createCompositeStrategy.
   it("covers the same number of browsers as the strategy registry", () => {
     const registrySize = getAvailableBrowsers().length;
-    // createCompositeStrategy hardcodes strategies — this must stay in sync.
-    // Currently: chrome, edge, arc, opera, opera-gx, brave, firefox, safari, vivaldi = 9.
     expect(registrySize).toBe(9);
   });
 });
@@ -102,7 +92,6 @@ describe("createSelectiveCompositeStrategy", () => {
   it("falls back to the full composite when given an empty array", () => {
     const full = createCompositeStrategy();
     const fromEmpty = createSelectiveCompositeStrategy([]);
-    // Both should be CompositeCookieQueryStrategy instances
     expect(fromEmpty).toBeInstanceOf(CompositeCookieQueryStrategy);
     expect(full).toBeInstanceOf(CompositeCookieQueryStrategy);
   });

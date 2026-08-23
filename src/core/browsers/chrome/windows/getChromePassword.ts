@@ -3,8 +3,8 @@ import { join } from "node:path";
 import { getErrorMessage } from "@utils/errorUtils";
 import { isWindows } from "@utils/platformUtils";
 
-import { chromeApplicationSupport } from "../ChromeApplicationSupport";
 import { readTextFile } from "../../runtime/FileSystemAdapter";
+import { chromeApplicationSupport } from "../ChromeApplicationSupport";
 
 /**
  * Windows Chrome Local State file structure for encrypted key

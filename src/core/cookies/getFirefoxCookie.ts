@@ -24,7 +24,7 @@ import { getBrowserCookie } from "./getBrowserCookie";
  * });
  * ```
  */
-export function getFirefoxCookie(
+export async function getFirefoxCookie(
   cookieSpec: CookieSpec,
 ): Promise<ExportedCookie[]> {
   return getBrowserCookie("firefox", cookieSpec);

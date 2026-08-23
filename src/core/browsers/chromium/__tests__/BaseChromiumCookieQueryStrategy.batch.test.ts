@@ -51,9 +51,7 @@ class TestBatchStrategy extends BaseChromiumCookieQueryStrategy {
       throw new Error(`simulated failure for ${file}`);
     }
 
-    return [
-      { name: file, domain: "example.com", value: file } as ExportedCookie,
-    ];
+    return [{ name: file, domain: "example.com", value: file }];
   }
 }
 

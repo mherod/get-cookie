@@ -143,7 +143,7 @@ const derivedKeyCache = new Map<string, Promise<Buffer>>();
  * @param password - The Chrome encryption password
  * @returns A promise resolving to the 16-byte derived key
  */
-function deriveKey(password: string): Promise<Buffer> {
+async function deriveKey(password: string): Promise<Buffer> {
   const cached = derivedKeyCache.get(password);
   if (cached !== undefined) {
     return cached;

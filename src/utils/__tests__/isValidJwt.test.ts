@@ -1,19 +1,12 @@
-import { parseArgv } from "../argv";
 import { validateToken } from "../jwt";
 import logger from "../logger";
 
-// Mock logger and argv
+// Mock logger
 jest.mock("../logger", () => ({
   debug: jest.fn(),
   withTag: () => ({
     debug: jest.fn(),
   }),
-}));
-
-jest.mock("../argv", () => ({
-  parseArgv: jest
-    .fn()
-    .mockReturnValue({ values: { verbose: false }, positionals: [] }),
 }));
 
 const validToken =
@@ -27,10 +20,6 @@ const secretKey = "your-256-bit-secret";
 describe("isValidJwt - Basic Validation", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (parseArgv as jest.Mock).mockReturnValue({
-      values: { verbose: false },
-      positionals: [],
-    });
   });
 
   it("should validate a well-formed JWT", () => {
@@ -54,7 +43,7 @@ describe("isValidJwt - Basic Validation", () => {
   });
 
   it("should handle null token", () => {
-    const result = validateToken("" as unknown as string);
+    const result = validateToken("");
     expect(result.isValid).toBe(false);
     expect(result.error).toContain("Token is empty or whitespace");
   });
@@ -122,10 +111,6 @@ describe("isValidJwt - Expiration Validation", () => {
 describe("isValidJwt - Signature Verification", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (parseArgv as jest.Mock).mockReturnValue({
-      values: { verbose: true },
-      positionals: [],
-    });
   });
 
   it("should verify signature when secret key is provided", () => {
@@ -183,10 +168,6 @@ describe("isValidJwt - Payload and Header Information", () => {
 describe("isValidJwt - Verbose Logging", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (parseArgv as jest.Mock).mockReturnValue({
-      values: { verbose: true },
-      positionals: [],
-    });
   });
 
   it("should log decoded token in verbose mode", () => {

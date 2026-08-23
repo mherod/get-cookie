@@ -37,8 +37,16 @@ class BetterSqlite3Statement implements SqliteStatement {
 export class BetterSqlite3Adapter implements SqliteDatabase {
   private readonly db: BetterSqlite3.Database;
 
+  /**
+   *
+   */
   readonly?: boolean;
 
+  /**
+   *
+   * @param filepath
+   * @param options
+   */
   constructor(filepath: string, options: SqliteOptions = {}) {
     this.db = new BetterSqlite3(filepath, {
       readonly: options.readonly ?? false,
@@ -49,15 +57,26 @@ export class BetterSqlite3Adapter implements SqliteDatabase {
     this.readonly = options.readonly ?? false;
   }
 
+  /**
+   *
+   * @param sql
+   */
   prepare(sql: string): SqliteStatement {
     const stmt = this.db.prepare(sql);
     return new BetterSqlite3Statement(stmt);
   }
 
+  /**
+   *
+   * @param pragma
+   */
   pragma(pragma: string): unknown {
     return this.db.pragma(pragma);
   }
 
+  /**
+   *
+   */
   close(): void {
     this.db.close();
   }

@@ -2,44 +2,41 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [4.5.0] - 2026-08-23
 
 ### New Features
 
-- Added separate Node and Bun runtime entrypoints — import
-  from `@mherod/get-cookie/node` or `@mherod/get-cookie/bun`
-  to force a specific SQLite adapter instead of relying on
-  auto-detection (#474, PR #475)
-- Added Vivaldi as a fully supported browser with cookie
-  extraction, profile discovery, and strategy wiring (#470)
-- Added `--list-profiles` support for all browsers — lists
-  installed profiles for any Chromium browser via Local State
-  and Firefox via profiles.ini (#462)
-- Added profile name filtering for Firefox via profiles.ini
-  parsing, enabling `--profile` flag support (#461)
-- Extended `--profile` filtering to all Chromium browsers
-  (Brave, Edge, Arc, Opera, OperaGX), not just Chrome (#460)
-- Auto-discovery of Brave and Arc cookie files via browser
-  data directory paths (#455)
-- Auto-discovery of cookie file paths for Chromium and Firefox
-  browsers, removing the need to pass an explicit filepath
-  (#440, PR #452)
+- Added Firefox container cookies support via `userContextId` filtering (#586)
+- Exported Chromium profile discovery (`getChromiumProfiles`) from core library API (#585)
+- Added separate Node and Bun runtime entrypoints — import from `@mherod/get-cookie/node` or `@mherod/get-cookie/bun` to force a specific SQLite adapter (#474, PR #475)
+- Added Vivaldi as a fully supported browser with cookie extraction, profile discovery, and strategy wiring (#470)
+- Added `--list-profiles` support for all browsers — lists installed profiles for any Chromium browser via Local State and Firefox via profiles.ini (#462)
+- Added profile name filtering for Firefox via profiles.ini parsing, enabling `--profile` flag support (#461)
+- Extended `--profile` filtering to all Chromium browsers (Brave, Edge, Arc, Opera, OperaGX), not just Chrome (#460)
+- Auto-discovery of Brave and Arc cookie files via browser data directory paths (#455)
+- Auto-discovery of cookie file paths for Chromium and Firefox browsers (#440, PR #452)
 
 ### Bug Fixes
 
-- Profile listing now reads each browser's own Local State
-  file instead of always reading Chrome's, fixing incorrect
-  profile enumeration for Brave, Opera, and Edge (#458)
-- Added Brave to the profile listing output (#456)
-- Chromium browsers now warn when `--profile` specifies a
-  name that does not match any installed profile, listing
-  the available names (#466)
-- Firefox now warns when `--profile` specifies a name not
-  found in profiles.ini, listing available profiles (#464)
-- Safari now warns when `--profile` is used, since Safari
-  does not support profile filtering (#463)
-- Safari profile warning now appears alongside query results
-  instead of at strategy creation time (#465)
+- Used native `fs.access` in `checkFilePermission` to safely check file readability without spawning subshells (#580)
+- Validated password type before normalizing Windows v10 master key (#579)
+- Stripped 32-byte domain hash prefix on Windows GCM cookies for Chrome M127+ (#556, #566)
+- Gated Firefox cookie expiry conversion on database schema version for Firefox 142+ (#558, #566)
+- Added fallback to legacy `~/Library/Cookies/Cookies.binarycookies` path on macOS when sandbox container is absent (#561, #566)
+- Profile listing now reads each browser's own Local State file instead of always reading Chrome's (#458)
+- Added Brave to profile listing output (#456)
+- Chromium and Firefox browsers now warn when `--profile` specifies an unrecognized profile name (#464, #466)
+- Safari now warns at query time when `--profile` is requested (#463, #465)
+
+### Refactoring & Performance
+
+- Consolidated Chromium browser subclasses into unified `ChromiumCookieQueryStrategy` (#581)
+- Replaced OOP output handler classes with functional `CookieFormatter` module (#582)
+- Removed global `process.argv` parsing from pure JWT utility functions (#583)
+- PBKDF2 key derived once per password rather than per cookie on Chrome (#537)
+- Memoized Safe Storage keychain passwords per browser (#538)
+- Read profile cookie files concurrently in batch queries (#539)
+- Parallelized browser strategy queries in composite strategy (#491)
 
 ## [4.4.3] - 2026-02-24
 

@@ -1,418 +1,100 @@
-# Browser Automation 🎭
+---
+title: Browser automation
+description: Pass local browser cookies into a short-lived Playwright context.
+---
 
-Learn how to use get-cookie with Puppeteer and Playwright for browser automation.
+# Browser automation
 
-## Puppeteer Integration
+You can use `get-cookie` to seed a fresh local browser context with cookies
+from an existing local session. This is useful for a user-initiated test or
+debugging run that should not repeat an interactive login.
 
-### Basic Setup
+The example below assumes Playwright is already installed in your project.
 
-```typescript
-import puppeteer from "puppeteer";
-import { getCookie } from "@mherod/get-cookie";
+> [!CAUTION]
+> Injecting cookies transfers an authenticated session into another browser
+> context. Keep this local, use only authorized accounts and domains, and do
+> not save Playwright storage state, traces, screenshots, or logs that contain
+> cookie values.
 
-async function setupBrowser() {
-  // Get authentication cookies
-  const cookies = await getCookie({
-    name: "%",
-    domain: "example.com",
-  });
+## Playwright example
 
-  // Launch browser
-  const browser = await puppeteer.launch();
-  const page = await browser.newPage();
-
-  // Set cookies before navigation
-  await Promise.all(
-    cookies.map((cookie) =>
-      page.setCookie({
-        name: cookie.name,
-        value: cookie.value,
-        domain: cookie.domain,
-        path: "/",
-        expires:
-          cookie.expiry === "Infinity"
-            ? Date.now() + 86400000 // 24 hours
-            : new Date(cookie.expiry).getTime() / 1000,
-      }),
-    ),
-  );
-
-  return { browser, page };
-}
-
-// Usage
-const { browser, page } = await setupBrowser();
-await page.goto("https://example.com/dashboard");
-// Page is now authenticated
-await browser.close();
-```
-
-### Reusable Authentication
-
-```typescript
-// auth.ts
-import { Browser, Page } from "puppeteer";
-import { getCookie, ExportedCookie } from "@mherod/get-cookie";
-
-export class BrowserAuthenticator {
-  private cookies: ExportedCookie[] = [];
-
-  async initialize(domain: string) {
-    this.cookies = await getCookie({
-      name: "%",
-      domain,
-      removeExpired: true,
-    });
-  }
-
-  async authenticatePage(page: Page) {
-    if (this.cookies.length === 0) {
-      throw new Error("No cookies available. Call initialize() first.");
-    }
-
-    await Promise.all(
-      this.cookies.map((cookie) =>
-        page.setCookie({
-          name: cookie.name,
-          value: cookie.value,
-          domain: cookie.domain,
-          path: "/",
-          expires: this.getExpiryTimestamp(cookie.expiry),
-        }),
-      ),
-    );
-  }
-
-  private getExpiryTimestamp(expiry: Date | "Infinity"): number {
-    if (expiry === "Infinity") {
-      return Date.now() + 86400000; // 24 hours
-    }
-    return new Date(expiry).getTime() / 1000;
-  }
-}
-
-// Usage
-const auth = new BrowserAuthenticator();
-await auth.initialize("example.com");
-
-const browser = await puppeteer.launch();
-const page = await browser.newPage();
-await auth.authenticatePage(page);
-```
-
-### Multi-Domain Support
-
-```typescript
-// multi-domain-auth.ts
-import { getCookie } from "@mherod/get-cookie";
-import { Page } from "puppeteer";
-
-async function authenticateForDomains(page: Page, domains: string[]) {
-  for (const domain of domains) {
-    const cookies = await getCookie({
-      name: "%",
-      domain,
-    });
-
-    await Promise.all(
-      cookies.map((cookie) =>
-        page.setCookie({
-          name: cookie.name,
-          value: cookie.value,
-          domain: cookie.domain,
-          path: "/",
-        }),
-      ),
-    );
-  }
-}
-
-// Usage
-const domains = ["api.example.com", "app.example.com"];
-await authenticateForDomains(page, domains);
-```
-
-## Playwright Integration
-
-### Basic Setup
+This example asks for cookies only for one domain, fails closed when none are
+found, and closes the context when the task ends:
 
 ```typescript
 import { chromium } from "playwright";
 import { getCookie } from "@mherod/get-cookie";
 
-async function setupPlaywright() {
-  // Get authentication cookies
-  const cookies = await getCookie({
-    name: "%",
-    domain: "example.com",
-  });
+const targetUrl = "https://example.com/dashboard";
 
-  // Format cookies for Playwright
-  const playwrightCookies = cookies.map((cookie) => ({
-    name: cookie.name,
-    value: cookie.value,
-    domain: cookie.domain,
-    path: "/",
-    expires:
-      cookie.expiry === "Infinity"
-        ? Date.now() + 86400000
-        : new Date(cookie.expiry).getTime(),
-  }));
+const cookies = await getCookie({
+  name: "%",
+  domain: "example.com",
+});
 
-  // Launch browser
-  const browser = await chromium.launch();
-  const context = await browser.newContext();
+if (cookies.length === 0) {
+  throw new Error("No matching browser cookies found");
+}
 
-  // Set cookies
-  await context.addCookies(playwrightCookies);
+const browser = await chromium.launch();
+const context = await browser.newContext();
+
+try {
+  await context.addCookies(
+    cookies.map((cookie) => ({
+      name: cookie.name,
+      value: String(cookie.value),
+      domain: cookie.domain,
+      path: cookie.meta?.path ?? "/",
+      ...(cookie.meta?.secure !== undefined && {
+        secure: cookie.meta.secure,
+      }),
+      ...(cookie.meta?.httpOnly !== undefined && {
+        httpOnly: cookie.meta.httpOnly,
+      }),
+    })),
+  );
 
   const page = await context.newPage();
-  return { browser, context, page };
-}
+  await page.goto(targetUrl);
 
-// Usage
-const { browser, page } = await setupPlaywright();
-await page.goto("https://example.com/dashboard");
-await browser.close();
-```
-
-### Context Manager
-
-```typescript
-// playwright-context.ts
-import { BrowserContext, chromium } from "playwright";
-import { getCookie } from "@mherod/get-cookie";
-
-export class PlaywrightContextManager {
-  private context?: BrowserContext;
-
-  async createAuthenticatedContext(domain: string) {
-    const cookies = await getCookie({
-      name: "%",
-      domain,
-    });
-
-    const browser = await chromium.launch();
-    this.context = await browser.newContext();
-
-    await this.context.addCookies(
-      cookies.map((cookie) => ({
-        name: cookie.name,
-        value: cookie.value,
-        domain: cookie.domain,
-        path: "/",
-        expires: this.getExpiryTimestamp(cookie.expiry),
-      })),
-    );
-
-    return this.context;
-  }
-
-  private getExpiryTimestamp(expiry: Date | "Infinity"): number {
-    return expiry === "Infinity"
-      ? Date.now() + 86400000
-      : new Date(expiry).getTime();
-  }
-}
-
-// Usage
-const manager = new PlaywrightContextManager();
-const context = await manager.createAuthenticatedContext("example.com");
-const page = await context.newPage();
-```
-
-## Testing Integration
-
-### Jest with Puppeteer
-
-```typescript
-// jest.setup.ts
-import { getCookie } from "@mherod/get-cookie";
-import puppeteer from "puppeteer";
-
-let browser: puppeteer.Browser;
-let page: puppeteer.Page;
-
-beforeAll(async () => {
-  browser = await puppeteer.launch();
-  page = await browser.newPage();
-
-  // Set up authentication
-  const cookies = await getCookie({
-    name: "%",
-    domain: "example.com",
-  });
-
-  await Promise.all(
-    cookies.map((cookie) =>
-      page.setCookie({
-        name: cookie.name,
-        value: cookie.value,
-        domain: cookie.domain,
-        path: "/",
-      }),
-    ),
-  );
-});
-
-afterAll(async () => {
+  // Perform the local, authorized task here.
+} finally {
+  await context.close();
   await browser.close();
-});
-
-// Test example
-test("authenticated page access", async () => {
-  await page.goto("https://example.com/dashboard");
-  await expect(page.locator("h1")).toHaveText("Welcome back");
-});
-```
-
-### Playwright Test
-
-```typescript
-// playwright.config.ts
-import { PlaywrightTestConfig } from "@playwright/test";
-import { getCookie } from "@mherod/get-cookie";
-
-async function globalSetup() {
-  const cookies = await getCookie({
-    name: "%",
-    domain: "example.com",
-  });
-
-  return {
-    cookies: cookies.map((cookie) => ({
-      name: cookie.name,
-      value: cookie.value,
-      domain: cookie.domain,
-      path: "/",
-    })),
-  };
-}
-
-const config: PlaywrightTestConfig = {
-  globalSetup,
-  use: {
-    // Set cookies for all tests
-    storageState: {
-      cookies: (global as any).cookies || [],
-    },
-  },
-};
-
-export default config;
-```
-
-## Best Practices
-
-### Cookie Refresh
-
-```typescript
-async function refreshPageCookies(page: Page) {
-  // Clear existing cookies
-  const client = await page.target().createCDPSession();
-  await client.send("Network.clearBrowserCookies");
-
-  // Get fresh cookies
-  const cookies = await getCookie({
-    name: "%",
-    domain: "example.com",
-    removeExpired: true,
-  });
-
-  // Set new cookies
-  await Promise.all(
-    cookies.map((cookie) =>
-      page.setCookie({
-        name: cookie.name,
-        value: cookie.value,
-        domain: cookie.domain,
-        path: "/",
-      }),
-    ),
-  );
 }
 ```
 
-### Error Handling
+The public `getCookie` API accepts a cookie `name` and `domain`. Use `%`
+as the name only when the target needs all matching cookies; a named cookie is
+safer when one is enough.
 
-```typescript
-async function safeAuthenticate(page: Page) {
-  try {
-    const cookies = await getCookie({
-      name: "%",
-      domain: "example.com",
-    });
+## Keep the boundary narrow
 
-    if (cookies.length === 0) {
-      throw new Error("No cookies found");
-    }
+- Extract cookies immediately before creating the context.
+- Use one target domain at a time.
+- Do not cache, serialize, or share the returned array.
+- Do not run this pattern in CI or on a shared machine.
+- Prefer the service's official API token or test-login mechanism for
+  repeatable automation.
 
-    await Promise.all(
-      cookies.map((cookie) =>
-        page
-          .setCookie({
-            name: cookie.name,
-            value: cookie.value,
-            domain: cookie.domain,
-            path: "/",
-          })
-          .catch((error) => {
-            console.error(`Failed to set cookie ${cookie.name}:`, error);
-          }),
-      ),
-    );
-  } catch (error) {
-    console.error("Authentication failed:", error);
-    throw error;
-  }
-}
-```
+## If no cookies are found
 
-### Performance Tips
+1. Confirm you are signed in to the target site in a supported local browser.
+2. Check available profiles with `get-cookie --list-profiles`.
+3. Try the equivalent CLI query locally:
 
-1. **Cache Cookies**
-
-   ```typescript
-   const cookieCache = new Map<string, ExportedCookie[]>();
-
-   async function getCachedCookies(domain: string) {
-     if (!cookieCache.has(domain)) {
-       const cookies = await getCookie({ name: "%", domain });
-       cookieCache.set(domain, cookies);
-     }
-     return cookieCache.get(domain)!;
-   }
+   ```bash
+   get-cookie --url https://example.com/dashboard --render
    ```
 
-2. **Parallel Page Setup**
+4. See [troubleshooting](/guide/troubleshooting) for permissions, locked
+   databases, and decryption errors.
 
-   ```typescript
-   async function setupPages(count: number) {
-     const cookies = await getCookie({
-       name: "%",
-       domain: "example.com",
-     });
+## Related docs
 
-     const browser = await puppeteer.launch();
-     const pages = await Promise.all(
-       Array(count)
-         .fill(0)
-         .map(async () => {
-           const page = await browser.newPage();
-           await Promise.all(
-             cookies.map((cookie) =>
-               page.setCookie({
-                 name: cookie.name,
-                 value: cookie.value,
-                 domain: cookie.domain,
-                 path: "/",
-               }),
-             ),
-           );
-           return page;
-         }),
-     );
-
-     return { browser, pages };
-   }
-   ```
+- [Automation overview](/automation/)
+- [Shell scripts](/automation/shell-scripts)
+- [CLI usage](/guide/cli-usage)
+- [Security and privacy](/guide/security)

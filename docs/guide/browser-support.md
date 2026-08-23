@@ -1,72 +1,68 @@
 # Browser Support Reference
 
-This page provides the definitive browser and platform support matrix for get-cookie.
+This is the canonical browser matrix for the CLI `--browser` selector. It
+describes the current source-level support contract; it is not a live
+compatibility certification for every browser release.
 
-## Platform Support Matrix
+## CLI browser selectors
 
-| Browser                   | macOS | Linux | Windows |
-|---------------------------|-------|-------|---------|
-| Chrome                    | ✅     | ✅     | ✅       |
-| Edge                      | ✅     | ✅     | ✅       |
-| Arc                       | ✅     | ❌     | ✅       |
-| Opera                     | ✅     | ✅     | ✅       |
-| Opera GX                  | ✅     | ✅     | ✅       |
-| Firefox                   | ✅     | ✅     | ✅       |
-| Firefox Developer Edition | ✅     | ✅     | ✅       |
-| Firefox ESR               | ✅     | ✅     | ✅       |
-| Safari                    | ✅     | ❌     | ❌       |
-| Chromium                  | ✅     | ✅     | ✅       |
-| Brave                     | ✅     | ✅     | ✅       |
+| Selector | Browser family | macOS | Linux | Windows | Notes |
+| --- | --- | --- | --- | --- | --- |
+| `chrome` | Chromium | ✅ | ✅ | ✅ | Uses Chrome's platform data directory. |
+| `edge` | Chromium | ✅ | ✅ | ✅ | Uses Microsoft Edge's platform data directory. |
+| `arc` | Chromium | ✅ | — | ⚠️ | Windows query paths exist, but availability detection still marks Arc unavailable; verify locally before relying on it. |
+| `brave` | Chromium | ✅ | ✅ | ✅ | Uses Brave's platform data directory. |
+| `opera` | Chromium | ✅ | ✅ | ✅ | Uses Opera's platform data directory. |
+| `opera-gx` | Chromium | ✅ | ✅ | ✅ | Uses Opera GX's platform data directory. |
+| `vivaldi` | Chromium | ✅ | ✅ | ✅ | Uses Vivaldi's platform data directory. |
+| `firefox` | Firefox | ✅ | ✅ | ✅ | Covers regular Firefox plus discovered variant profile roots. |
+| `safari` | Safari | ✅ | — | — | Safari is skipped outside macOS. |
 
-**Legend:** ✅ Full Support | ❌ Not Supported
+- ✅ implemented platform path and strategy
+- ⚠️ selector exists, but current source has conflicting platform assumptions
+- — unavailable or intentionally skipped
 
-## Browser Categories
+When `--browser` is omitted, the CLI creates a composite strategy containing
+all nine selectors above. An invalid browser value also falls back to that
+composite strategy, so use `--verbose` if a selector appears to be ignored.
 
-### Chromium-Based Browsers
-**Chrome, Edge, Arc, Opera, Opera GX, Chromium, Brave**
+## Library API boundary
 
-- Share the same cookie storage format and encryption methods
-- Differ only in storage locations and keychain service names  
-- All use platform-specific encryption (Keychain on macOS, DPAPI on Windows, keyring on Linux)
+The root `getCookie()` and `batchGetCookies()` helpers query Chrome, Firefox,
+and Safari by default. They do not accept a `browser` option. For a specific
+CLI selector in code, construct a browser strategy directly:
 
-### Firefox-Based Browsers
-**Firefox, Firefox Developer Edition, Firefox ESR**
+```typescript
+import {
+  ChromiumCookieQueryStrategy,
+  FirefoxCookieQueryStrategy,
+} from "@mherod/get-cookie";
 
-- Use SQLite databases without additional encryption
-- Support multiple profiles with automatic discovery
-- Cross-platform with variant-specific profile paths
+const edge = new ChromiumCookieQueryStrategy("edge", "Work");
+const firefox = new FirefoxCookieQueryStrategy("default-release");
+```
 
-### Safari
-**Safari (macOS only)**
+`ChromiumCookieQueryStrategy` also accepts `chromium` and `whale` when used
+directly, but neither is a CLI `--browser` selector.
 
-- Uses proprietary binary cookie format
-- Single system-wide cookie store
-- Requires container permissions on macOS
+## Profiles and containers
 
-## Platform Notes
+- Chromium selectors discover profiles from `Local State` and match
+  `--profile` case-insensitively against either the display name or directory
+  name.
+- Firefox discovers profiles from `profiles.ini`; `--profile` matches the
+  profile `Name` case-insensitively.
+- `--container` applies only to Firefox and accepts a container name, numeric
+  user-context ID, or `none`.
+- Safari has one cookie store and does not support named profile filtering.
+- Pass `--browser` with `--profile` or `--container`; the default composite
+  strategy does not apply those filters.
 
-### Arc Browser Availability
-- **macOS**: Originally supported platform
-- **Linux**: Arc browser is not available on Linux  
-- **Windows**: Added Windows 11/10 support in April 2024
+## Firefox variants
 
-### Firefox on Windows
-Full support for all Firefox variants on Windows:
-- **Regular Firefox**: Standard installation in AppData\\Roaming
-- **Firefox Developer Edition**: Separate profile support
-- **Firefox ESR**: Extended Support Release detection
-- **Local AppData**: Handles both Roaming and Local installations
+Firefox Developer Edition and Firefox ESR are not separate CLI selectors. The
+`firefox` strategy discovers their profile roots on Windows alongside regular
+Firefox. On Linux it checks native, XDG, Snap, and Flatpak profile roots.
 
-## Implementation Details
-
-For detailed information about how each browser is supported:
-
-- **Storage locations**: [Browser-Specific Details](./browsers.md)  
-- **Platform requirements**: [Platform Support Guide](./platform-support.md)
-- **Security implementation**: [Security Guide](./security.md)
-
-## Version History
-
-- **2024-04**: Arc browser added Windows support
-- **2024**: Firefox Windows support implemented
-- **2023**: Initial cross-platform support for Chrome, Edge, Firefox, Safari
+For storage and encryption details, see [Browser-Specific Details](./browsers.md).
+For operating-system requirements, see [Platform Support](./platform-support.md).

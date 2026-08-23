@@ -1,115 +1,66 @@
-# Automation with get-cookie 🤖
+---
+title: Automation
+description: Use local browser cookies in short-lived scripts and browser sessions.
+---
 
-Learn how to automate tasks and integrate get-cookie into your workflows.
+# Automation with get-cookie
 
-## What Can You Automate?
+`get-cookie` is useful when a local, user-initiated task needs the same
+authenticated session that already exists in your browser. It reads browser
+storage on the current machine; it is not a credential-management system.
 
-- 🔄 API Testing with Real Cookies
-- 🤖 CI/CD Pipeline Integration
-- ⏱️ Scheduled Cookie Refresh
-- 📊 Cookie Monitoring & Metrics
-- 🔍 Automated Debug Workflows
-- 🧪 Test Environment Setup
+> [!CAUTION]
+> A browser cookie can grant account access. Use cookies only for accounts and
+> sites you are authorized to access. Keep them in memory, do not print or
+> persist them, and prefer official API tokens for unattended or CI workflows.
 
-## Getting Started
+## Choose a path
 
-Choose your automation approach:
+- [Shell scripts](/automation/shell-scripts) cover short-lived local `curl`
+  requests.
+- [Browser automation](/automation/browser-automation) covers passing cookies
+  into a fresh local browser context.
+- [CLI usage](/guide/cli-usage) documents query, browser, profile, container,
+  and output flags.
+- [API reference](/reference/) documents the exported TypeScript surface.
 
-### Shell Scripts
+## Two building blocks
 
-Perfect for simple automation and CI/CD pipelines:
+For a request that needs every applicable cookie for one URL, `--url` derives
+the cookie query and `--render` returns a Cookie-header string:
 
 ```bash
-# Basic cookie extraction
-AUTH_COOKIE=$(get-cookie auth example.com)
-
-# Use in curl requests
-curl -H "Cookie: auth=$AUTH_COOKIE" https://api.example.com/data
+get-cookie --url https://example.com/dashboard --render
 ```
 
-[Learn more about Shell Scripts →](/automation/shell-scripts)
-
-### Node.js Integration
-
-Ideal for complex automation and TypeScript projects:
+For programmatic use, query by cookie name and domain:
 
 ```typescript
 import { getCookie } from "@mherod/get-cookie";
 
 const cookies = await getCookie({
-  name: "auth",
+  name: "%",
   domain: "example.com",
 });
 ```
 
-[Learn more about the API →](/reference/index/functions/getCookie)
+`getCookie` returns an array. An empty array is a normal result when no
+matching cookie is available, so automation should stop rather than continue
+without authentication.
 
-### Browser Automation
+## Safe operating rules
 
-[Learn more about Browser Automation →](/automation/browser-automation)
+1. Run automation on the same local machine and user account as the browser
+   session.
+2. Request only the domain and cookie names needed for the current task.
+3. Keep cookie values in process memory; never write them to files, logs,
+   screenshots, traces, or shell history.
+4. Check for an empty result before sending a request or opening a page.
+5. Close browser contexts and unset shell variables as soon as the task ends.
 
-## Key Features
+## Next steps
 
-### Error Recovery
-
-- Retry mechanisms
-- Health checks
-- Failure monitoring
-- Alert systems
-
-### Monitoring
-
-- Cookie metrics
-- Performance tracking
-- Health status
-- Audit logging
-
-### Security
-
-- Secure storage
-- Access patterns
-- Credential rotation
-- Cleanup routines
-
-## Best Practices
-
-1. **Error Handling**
-
-   - Always implement retries
-   - Log failures appropriately
-   - Set up monitoring
-   - Plan for recovery
-
-2. **Performance**
-
-   - Cache when possible
-   - Optimize refresh intervals
-   - Use batch operations
-   - Monitor timing
-
-3. **Security**
-
-   - Rotate credentials
-   - Secure storage
-   - Regular cleanup
-   - Access control
-
-4. **Maintenance**
-   - Regular updates
-   - Health checks
-   - Log rotation
-   - Dependency management
-
-## Next Steps
-
-- [📚 View Complete Examples →](/guide/examples) - Comprehensive working examples
-- [Start with Shell Scripts →](/automation/shell-scripts)
-- [Read Browser Automation Guide →](/automation/browser-automation)
-- [Check the API Reference →](/reference/)
-
-## Need Help?
-
-- [📚 Examples & Tutorials →](/guide/examples) - Complete working examples
-- [Check the Troubleshooting Guide →](/guide/troubleshooting)
-- [Review Security Best Practices →](/guide/security)
-- [Read API Documentation →](/reference/)
+- [Shell scripts](/automation/shell-scripts)
+- [Browser automation](/automation/browser-automation)
+- [Security and privacy](/guide/security)
+- [Troubleshooting](/guide/troubleshooting)

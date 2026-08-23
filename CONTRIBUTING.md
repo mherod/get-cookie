@@ -1,214 +1,138 @@
 # Contributing to get-cookie
 
-Thank you for your interest in contributing to get-cookie! This document provides guidelines and instructions to help you get started.
+Thanks for contributing. This repository uses a protected `main` branch: every
+change lands through a pull request with passing CI.
 
-## Development Environment Setup
+## Set up the repository
 
-### Node.js Version Management
-
-This project requires Node.js v20.0.0 or v22.0.0. We strongly recommend using [nvm (Node Version Manager)](https://github.com/nvm-sh/nvm) to manage your Node.js versions.
+Use the Node.js version pinned in `.nvmrc` and the pnpm version declared in
+`package.json`.
 
 ```bash
-# Install nvm if you haven't already
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
-
-# Install the required Node.js version
-nvm install 22.0.0
-
-# Use the required Node.js version
-nvm use 22.0.0
+nvm install
+nvm use
+corepack enable
+pnpm install --frozen-lockfile
 ```
 
-The project includes an `.nvmrc` file that specifies the required Node.js version, so you can simply run `nvm use` in the project directory to switch to the correct version.
+If you do not use nvm, install the version in `.nvmrc` manually. The package
+supports the Node.js versions listed in `package.json`, but contributors
+should use the pinned development version for reproducible local results.
 
-### Ensuring nvm Node.js is Prioritized
+## Work on a change
 
-To ensure that the nvm-managed version of Node.js is always used (instead of any system-installed versions), add the following to your shell configuration file (`.bashrc`, `.zshrc`, etc.):
-
-```bash
-# Load nvm and ensure it's in the PATH
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
-
-# Optional: Automatically use the Node.js version specified in .nvmrc if present
-autoload -U add-zsh-hook
-load-nvmrc() {
-  local node_version="$(nvm version)"
-  local nvmrc_path="$(nvm_find_nvmrc)"
-
-  if [ -n "$nvmrc_path" ]; then
-    local nvmrc_node_version=$(nvm version "$(cat "${nvmrc_path}")")
-
-    if [ "$nvmrc_node_version" = "N/A" ]; then
-      nvm install
-    elif [ "$nvmrc_node_version" != "$node_version" ]; then
-      nvm use
-    fi
-  elif [ "$node_version" != "$(nvm version default)" ]; then
-    nvm use default
-  fi
-}
-add-zsh-hook chpwd load-nvmrc
-load-nvmrc
-```
-
-This configuration ensures that:
-1. nvm is loaded and available in your PATH
-2. The correct Node.js version is automatically used when you navigate to the project directory
-3. The nvm-managed Node.js version takes precedence over any system-installed versions
-
-## Package Manager
-
-We use [pnpm](https://pnpm.io/) as our package manager. After setting up Node.js with nvm, install pnpm:
+Create a branch from current `main`; do not commit or push directly to
+`main`.
 
 ```bash
-npm install -g pnpm@9.15.2
-```
+git switch main
+git pull --ff-only origin main
+git switch -c feat/short-description
 
-## Getting Started
-
-1. Fork the repository
-2. Clone your fork: `git clone https://github.com/YOUR_USERNAME/get-cookie.git`
-3. Navigate to the project directory: `cd get-cookie`
-4. Switch to the correct Node.js version: `nvm use`
-5. Install dependencies: `pnpm install`
-6. Run tests to verify your setup: `pnpm test`
-
-## Git Flow Workflow
-
-This project uses [git-flow](https://github.com/nvie/gitflow) for branch management and releases. Git-flow provides a structured approach to managing features, releases, and hotfixes.
-
-### Branch Structure
-
-- **main** - Production-ready code. Only release and hotfix branches merge here.
-- **develop** - Integration branch for the next release. Feature branches merge here.
-- **feature/*** - New features and enhancements
-- **release/*** - Prepare new releases, bug fixes, and version bumps
-- **hotfix/*** - Critical fixes for production issues
-
-### Installing Git-Flow
-
-```bash
-# macOS
-brew install git-flow-avh
-
-# Ubuntu/Debian
-sudo apt-get install git-flow
-
-# Windows
-# Download from: https://github.com/petervanderdoes/gitflow-avh/wiki/Installing-on-Windows
-```
-
-### Git-Flow Configuration
-
-The repository is already configured with these settings:
-- Production branch: `main`
-- Development branch: `develop`
-- Feature prefix: `feature/`
-- Release prefix: `release/`
-- Hotfix prefix: `hotfix/`
-- Version tag prefix: `v`
-
-### Development Workflow
-
-#### Working on a New Feature
-
-```bash
-# Start a new feature
-git flow feature start my-new-feature
-
-# Work on your feature...
-# Make commits as usual
-git add .
-git commit -m "feat: add new feature"
-
-# Run validation before finishing
+# Make your change, then run the relevant checks.
 pnpm run validate
+pnpm run build
 
-# Finish the feature (merges to develop)
-git flow feature finish my-new-feature
+git add <changed-files>
+git commit -m "feat: describe the change"
+git push -u origin feat/short-description
+gh pr create
 ```
 
-#### Creating a Release
+Use a branch prefix that matches the change, such as `feat/`, `fix/`,
+`docs/`, `test/`, `refactor/`, or `chore/`. Commits follow
+[Conventional Commits](https://www.conventionalcommits.org/).
+
+In the pull request, explain the user-visible behavior, note any platform or
+browser-specific testing, and list the commands you ran. Keep cookie values,
+browser profile names, local paths, and other sensitive data out of commits,
+logs, screenshots, and PR descriptions.
+
+## Validation commands
+
+`pnpm run validate` is the normal pre-PR gate. It runs type checking, Biome
+linting, Jest, the documentation link check, and the formatting check.
+
+Useful focused commands:
 
 ```bash
-# Start a new release
-git flow release start 4.4.0
-
-# Update version in package.json
-npm version 4.4.0 --no-git-tag-version
-
-# Run final validation
-pnpm run validate
-
-# Commit release changes
-git add .
-git commit -m "chore: prepare release 4.4.0"
-
-# Finish the release (merges to main and develop, creates tag)
-git flow release finish 4.4.0
-
-# Push everything
-git push origin main develop --tags
+pnpm test
+pnpm test -- src/core/browsers/firefox/
+pnpm test -- --testNamePattern="specific test name"
+pnpm run type-check
+pnpm run lint
+pnpm run lint:all
+pnpm run check-links
+pnpm run build
 ```
 
-#### Emergency Hotfixes
+`validate` does not build the package, so run `pnpm run build` as well when
+changing exports, entrypoints, the CLI, bundling, or release-facing code.
+
+## Documentation changes
+
+The documentation site is built with VitePress and the API reference is
+generated with TypeDoc.
 
 ```bash
-# Start a hotfix from main
-git flow hotfix start 4.4.1
+pnpm run docs:dev      # local VitePress server
+pnpm run check-links   # link integrity check
+pnpm run docs          # generate TypeDoc and build the site
+```
 
-# Fix the critical issue
-git add .
-git commit -m "fix: critical security issue"
+Prefer updating source JSDoc or TypeDoc configuration over hand-editing
+`docs/reference/generated/`, because `pnpm run docs` regenerates that
+directory. The stable `docs/reference/index.md` page is the hand-written
+overview. When adding or moving a page, update `docs/.vitepress/config.mjs`
+and run both `pnpm run check-links` and `pnpm run docs`.
 
-# Update version
-npm version 4.4.1 --no-git-tag-version
+Documentation examples must use placeholder domains and values. Do not include
+real cookies, tokens, account identifiers, profile names, or instructions that
+persist sensitive cookie output.
+
+## Git hooks
+
+Husky and lint-staged run formatting and checks for staged files during commit.
+They help catch issues early but do not replace the validation commands above.
+
+## Maintainer release workflow
+
+Releases also go through a pull request. Do not use `npm version` or
+`pnpm version` in this repository; those commands can leave a partially
+staged version change in nvm environments.
+
+1. Start a release branch from current `main`.
+2. Edit the `version` field in `package.json` manually.
+3. Commit the version using the version number as the commit message.
+4. Push the branch and open a release PR.
+5. Wait for the required CI checks and merge the PR.
+6. After the release PR is merged, tag the merged commit and push the tag
+   separately.
+
+```bash
+git switch main
+git pull --ff-only origin main
+git switch -c chore/release-<version>
+
+# Edit package.json manually.
 git add package.json
-git commit -m "chore: bump version to 4.4.1"
+git commit -m "<version>"
+git push -u origin chore/release-<version>
+gh pr create --title "chore: release <version>"
 
-# Finish hotfix (merges to main and develop, creates tag)
-git flow hotfix finish 4.4.1
-
-# Push everything
-git push origin main develop --tags
+# After the PR merges:
+git switch main
+git pull --ff-only origin main
+git tag v<version>
+git push origin v<version>
 ```
 
-### Code Quality Requirements
+The pushed tag triggers the release workflow. If a manual npm publish is
+explicitly needed, build and validate first, then use
+`pnpm publish --access public`.
 
-All branches must pass these checks:
+## Getting help
 
-```bash
-pnpm run validate  # Runs all of the following:
-pnpm run type-check    # TypeScript compilation
-pnpm run lint          # ESLint + Biome formatting  
-pnpm run test          # Jest test suite
-pnpm run build         # Library and CLI builds
-pnpm run check-links   # Documentation validation
-```
-
-### Commit Message Convention
-
-We use [Conventional Commits](https://www.conventionalcommits.org/):
-- `feat:` - New features
-- `fix:` - Bug fixes  
-- `chore:` - Maintenance tasks
-- `docs:` - Documentation updates
-- `test:` - Test additions/updates
-- `refactor:` - Code refactoring
-- `perf:` - Performance improvements
-
-## Git Hooks
-
-This project uses [husky](https://github.com/typicode/husky) and [lint-staged](https://github.com/okonet/lint-staged) to run checks before commits. The hooks are configured to use the nvm-managed Node.js version, ensuring compatibility with the project requirements.
-
-## Need Help?
-
-If you have any questions or need help with your contribution, please open an issue or reach out to the maintainers.
-
-Thank you for contributing to get-cookie! 🍪
-
-## Git Flow Status
-
-✅ Git-flow has been successfully configured for this repository!
+Search existing issues before opening a new one. For bugs, include the package
+version, operating system, browser family, minimal reproduction steps, and
+redacted error output. Never attach cookie values or raw browser databases.

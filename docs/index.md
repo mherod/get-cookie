@@ -1,28 +1,27 @@
 ---
 layout: home
 hero:
-  name: Get Cookie
-  text: Browser Cookie Query Tool
-  tagline: A powerful Node.js module for querying browser cookies
+  name: get-cookie
+  text: Local browser cookies, when you need them
+  tagline: Read cookies from supported browser profiles with a CLI or a typed library.
   actions:
     - theme: brand
-      text: Get Started
-      link: /guide/
+      text: Get started
+      link: /guide/getting-started
     - theme: alt
-      text: View on GitHub
-      link: https://github.com/mherod/get-cookie
+      text: CLI reference
+      link: /guide/cli-usage
+    - theme: alt
+      text: Library usage
+      link: /guide/api-usage
 
 features:
-  - title: Multi-Browser Support
-    details: Query cookies from Chrome, Firefox, and Safari browsers on macOS, with experimental Firefox support on Linux
-  - title: Secure Cookie Handling
-    details: Handles encrypted Chrome cookies via Keychain, SQLite databases for Firefox, and binary formats for Safari
-  - title: TypeScript Ready
-    details: Built with TypeScript for excellent type safety and IDE support
-  - title: Platform Specific
-    details: Optimised for macOS with native integration for browser security features
-  - title: Error Resilient
-    details: Gracefully handles missing permissions, locked profiles, and encryption issues
-  - title: Profile Aware
-    details: Supports multiple browser profiles for Chrome and Firefox
+  - title: CLI and library
+    details: Query a cookie in a shell, or use the same local data from TypeScript.
+  - title: Browser-aware
+    details: Supports Chromium-family browsers, Firefox, and Safari with platform-specific storage handling.
+  - title: Runtime-aware
+    details: Use the auto-detecting root import or explicit Node.js and Bun entrypoints.
+  - title: Local by design
+    details: Extraction happens on the machine that owns the browser profile; treat every returned value as a credential.
 ---

@@ -1,323 +1,112 @@
-# Shell Script Automation 📜
+---
+title: Shell scripts
+description: Use get-cookie in short-lived local shell commands without persisting cookies.
+---
 
-Learn how to automate tasks with get-cookie using shell scripts. For complete working examples, see the [Examples Guide](../guide/examples.md) and the `examples/` directory in the repository.
+# Shell script automation
 
-## Basic Scripts
+Use shell scripts for small, local tasks such as making one authenticated
+request with `curl`. The safest pattern is to derive a Cookie header, use it
+immediately, and then discard it.
 
-### Cookie Extraction
+> [!CAUTION]
+> Do not enable `set -x`, echo cookie values, redirect them to a file, or pass
+> them to a shared log. For CI and unattended jobs, use the service's supported
+> token or machine-authentication flow instead.
 
-```bash
-#!/bin/bash
-
-# Get a single cookie
-AUTH_COOKIE=$(get-cookie auth example.com)
-
-# Get multiple cookies
-get-cookie % example.com --output json > cookies.json
-
-# Use with curl
-curl -H "Cookie: auth=$AUTH_COOKIE" https://api.example.com/data
-```
-
-### Error Handling
+## Authenticated curl helper
 
 ```bash
-#!/bin/bash
-set -e
+#!/usr/bin/env bash
 
-function get_auth_cookie() {
-    local domain=$1
-    local cookie
+auth_curl() {
+  local url=$1
+  shift
 
-    if ! cookie=$(get-cookie auth "$domain"); then
-        echo "Failed to get auth cookie" >&2
-        return 1
-    }
+  local cookie_header
+  local status
 
-    if [ -z "$cookie" ]; then
-        echo "No auth cookie found" >&2
-        return 1
-    }
-
-    echo "$cookie"
-}
-
-# Usage with error handling
-if cookie=$(get_auth_cookie "example.com"); then
-    echo "Cookie found: $cookie"
-else
-    echo "Error: $?"
-    exit 1
-fi
-```
-
-## Common Use Cases
-
-### API Testing
-
-```bash
-#!/bin/bash
-
-# Test endpoints with authentication
-function test_endpoint() {
-    local endpoint=$1
-    local domain=$2
-    local cookie
-
-    cookie=$(get-cookie auth "$domain") || {
-        echo "Failed to get auth cookie" >&2
-        return 1
-    }
-
-    curl -H "Cookie: auth=$cookie" "https://$domain$endpoint"
-}
-
-# Usage
-test_endpoint "/api/user" "example.com"
-```
-
-### Cookie Backup
-
-```bash
-#!/bin/bash
-
-# Backup cookies for a domain
-function backup_cookies() {
-    local domain=$1
-    local backup_dir="./cookie-backups"
-    local timestamp=$(date +%Y%m%d_%H%M%S)
-    local filename="$backup_dir/${domain//[.]/_}_$timestamp.json"
-
-    mkdir -p "$backup_dir"
-    get-cookie % "$domain" --output json > "$filename"
-    echo "Cookies backed up to: $filename"
-}
-
-# Usage
-backup_cookies "example.com"
-```
-
-### Multi-Domain Scripts
-
-```bash
-#!/bin/bash
-
-# Process multiple domains
-function process_domains() {
-    local domains=("$@")
-    local success=0
-    local failed=()
-
-    for domain in "${domains[@]}"; do
-        if get-cookie auth "$domain" > /dev/null; then
-            ((success++))
-        else
-            failed+=("$domain")
-        fi
-    done
-
-    echo "Processed $success domains successfully"
-    if [ ${#failed[@]} -gt 0 ]; then
-        echo "Failed domains: ${failed[*]}"
-        return 1
-    fi
-}
-
-# Usage
-process_domains "api.example.com" "auth.example.com" "app.example.com"
-```
-
-## CI/CD Integration
-
-### GitHub Actions
-
-```yaml
-# .github/workflows/test.yml
-name: API Tests
-on: [push]
-
-jobs:
-  test:
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: Setup
-        run: |
-          npm install -g @mherod/get-cookie
-
-      - name: Run Tests
-        run: |
-          ./scripts/test-api.sh
-```
-
-### Test Script
-
-```bash
-#!/bin/bash
-# test-api.sh
-
-set -e
-
-# Setup
-echo "Setting up test environment..."
-npm install -g @mherod/get-cookie
-
-# Get auth cookie
-AUTH_COOKIE=$(get-cookie auth api.example.com) || {
-    echo "Failed to get auth cookie"
-    exit 1
-}
-
-# Run tests
-echo "Running API tests..."
-for endpoint in "/api/v1/user" "/api/v1/data" "/api/v1/settings"; do
-    if ! curl -H "Cookie: auth=$AUTH_COOKIE" "https://api.example.com$endpoint"; then
-        echo "Failed testing endpoint: $endpoint"
-        exit 1
-    fi
-done
-
-echo "All tests passed!"
-```
-
-## Best Practices
-
-### Error Handling
-
-```bash
-#!/bin/bash
-
-# Set error handling
-set -e                  # Exit on error
-set -u                  # Exit on undefined variable
-set -o pipefail        # Exit on pipe failure
-
-# Trap errors
-trap 'echo "Error on line $LINENO"' ERR
-
-# Function with proper error handling
-function safe_get_cookie() {
-    local domain=$1
-    local retries=3
-    local delay=1
-
-    for ((i=1; i<=retries; i++)); do
-        if cookie=$(get-cookie auth "$domain"); then
-            echo "$cookie"
-            return 0
-        fi
-
-        echo "Attempt $i failed, retrying in ${delay}s..." >&2
-        sleep $delay
-        delay=$((delay * 2))
-    done
-
-    echo "Failed after $retries attempts" >&2
+  cookie_header="$(get-cookie --url "$url" --render 2>/dev/null)"
+  if [ -z "$cookie_header" ]; then
+    printf '%s\n' "No matching cookies found for $url" >&2
     return 1
+  fi
+
+  if curl --fail-with-body -H "Cookie: $cookie_header" "$@" "$url"; then
+    status=0
+  else
+    status=$?
+  fi
+
+  unset cookie_header
+  return "$status"
 }
+
+auth_curl https://example.com/dashboard --silent --show-error
 ```
 
-### Logging
+`get-cookie` may produce no output when no matching cookie is available.
+Check for an empty header before making the request; do not rely only on the
+command's exit status.
+
+## Target a browser or profile
+
+List profiles first, then use the exact displayed name:
 
 ```bash
-#!/bin/bash
+get-cookie --browser chrome --list-profiles
 
-# Setup logging
-LOG_FILE="cookie-script.log"
+url="https://example.com/dashboard"
+cookie_header="$(
+  get-cookie --url "$url" --browser chrome --profile "Work" --render
+)"
+```
 
-function log() {
-    local level=$1
-    local message=$2
-    echo "[$(date +'%Y-%m-%d %H:%M:%S')] [$level] $message" | tee -a "$LOG_FILE"
-}
+Firefox containers can be selected with `--container`:
 
-# Usage
-log "INFO" "Starting cookie extraction"
-if ! cookie=$(get-cookie auth example.com); then
-    log "ERROR" "Failed to get cookie"
-    exit 1
+```bash
+get-cookie --url https://example.com/dashboard \
+  --browser firefox \
+  --container work \
+  --render
+```
+
+When you are finished with a captured value, remove it from the shell:
+
+```bash
+unset cookie_header
+```
+
+## Query one cookie
+
+If a request needs exactly one named cookie, keep the name explicit:
+
+```bash
+cookie_value="$(get-cookie sessionid example.com)"
+
+if [ -z "$cookie_value" ]; then
+  printf '%s\n' "No session cookie found" >&2
+  exit 1
 fi
-log "SUCCESS" "Cookie extracted successfully"
+
+# Use the value immediately, then discard it.
+curl --fail-with-body \
+  -H "Cookie: sessionid=$cookie_value" \
+  https://example.com/profile
+
+unset cookie_value
 ```
 
-### Cleanup
+For multiple cookies or URL-specific matching, prefer `--url --render` rather
+than assembling a header yourself.
 
-```bash
-#!/bin/bash
+## Debug without leaking values
 
-# Cleanup function
-function cleanup() {
-    log "INFO" "Cleaning up..."
-    rm -f cookies.json
-    # Add other cleanup tasks
-}
+- Use `get-cookie --browser chrome --list-profiles` to confirm profile names.
+- Add `--verbose` only in a private local terminal.
+- Treat `--output json`, `--dump`, and `--dump-grouped` as sensitive because
+  they include cookie values.
 
-# Register cleanup
-trap cleanup EXIT
-
-# Script logic
-get-cookie % example.com --output json > cookies.json
-# Process cookies
-# Cleanup happens automatically on exit
-```
-
-## Debug Support
-
-```bash
-#!/bin/bash
-
-# Debug mode
-DEBUG=${DEBUG:-0}
-
-function debug() {
-    if [ "$DEBUG" = "1" ]; then
-        echo "[DEBUG] $*" >&2
-    fi
-}
-
-# Usage
-debug "Attempting to get cookie for domain: $domain"
-cookie=$(get-cookie auth "$domain")
-debug "Cookie result: ${cookie:0:10}..."
-```
-
-## Security Considerations
-
-1. **Cookie Storage**
-
-   ```bash
-   # Store cookies securely
-   umask 077  # Restrict file permissions
-   get-cookie auth example.com > secure_cookie.txt
-   ```
-
-2. **Cleanup Sensitive Data**
-
-   ```bash
-   # Secure cleanup
-   function secure_cleanup() {
-       local file=$1
-       dd if=/dev/urandom of="$file" bs=1k count=1
-       rm -f "$file"
-   }
-   ```
-
-3. **Environment Variables**
-   ```bash
-   # Avoid exposing sensitive data
-   cookie=$(get-cookie auth example.com)
-   export COOKIE_HASH=$(echo "$cookie" | sha256sum)
-   # Use COOKIE_HASH for tracking, not the actual cookie
-   ```
-
-## Example Scripts
-
-For comprehensive shell script examples, see:
-
-- **[Quick Start Examples](../guide/examples.md#quick-start-examples)** - Essential patterns and reusable functions
-- **[curl Integration Examples](../guide/examples.md#curl-integration-examples)** - Complete curl integration guide
-- **[GitHub Authentication Examples](../guide/examples.md#github-authentication-examples)** - GitHub-specific patterns
-- **[CLI Features Examples](../guide/examples.md#cli-features-examples)** - All CLI feature demonstrations
-
-All example scripts are available in the `examples/` directory of the repository.
+See [CLI usage](/guide/cli-usage) for the full option list and
+[troubleshooting](/guide/troubleshooting) for permission, profile, and
+decryption problems.

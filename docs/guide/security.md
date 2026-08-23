@@ -1,175 +1,83 @@
 # Security & Privacy Guide
 
-This guide covers important security and privacy considerations when using get-cookie.
+`get-cookie` reads authentication material from local browser stores. Treat
+every returned value as a live credential, even when it looks harmless.
 
-## Platform-Specific Requirements
+## What the tool accesses
 
-### macOS Requirements
+- Chromium-family cookie databases and their platform Safe Storage secret
+- Firefox `cookies.sqlite` files and optional `containers.json`
+- Safari's macOS `Cookies.binarycookies` file
 
-- **Keychain Access**: Required for Chrome cookie decryption
-- **Browser Profile Directories**: Required for all browsers
-- **Safari Container Access**: Required for Safari cookies
-- **System Integrity Protection**: Must be enabled for secure operation
+Extraction and decryption happen locally in the process. The package does not
+need a remote service to read cookies, but your own shell commands, logs, files,
+and downstream HTTP clients can still expose the values.
 
-### Linux Requirements (Experimental)
+## Safe handling
 
-- **Firefox Only**: Currently only Firefox is supported
-- **Profile Directory**: Requires read access to `~/.mozilla/firefox`
-- **SQLite Access**: Direct database access needed
-- **No Encryption Support**: Only unencrypted cookies accessible
+- Run only against accounts and browser profiles you are authorized to access.
+- Avoid pasting raw output into chat, issue trackers, CI logs, or shared
+  terminals.
+- Prefer the default value-only output for a single cookie; `--dump`,
+  `--dump-grouped`, and `--output json` include complete cookie objects and
+  source metadata.
+- Do not commit cookie exports, shell transcripts, or generated JSON files.
+- Redact cookie values, JWTs, usernames in paths, and `--jwt-secret` values
+  before sharing diagnostics.
+- Remember that a secret passed with `--jwt-secret` may be visible in shell
+  history or process listings.
 
-## System Access Requirements
+## Platform credential boundaries
 
-Different browsers have different security models:
+### macOS
 
-### Chrome (macOS only)
+Chromium-family decryption calls the `security` command for a browser-specific
+Safe Storage entry. If a non-Chrome browser's entry is unavailable, the code
+can try `Chrome Safe Storage` as a fallback. Do not copy or log the returned
+secret.
 
-- Requires Keychain access for Safe Storage password
-- Each profile has a unique encryption key
-- Database must be readable by current user
-- Chrome must be installed and configured
+Safari uses macOS container-protected files. When access is denied, an
+interactive run can guide you to Full Disk Access for the terminal or host
+application. Grant the narrowest access you need and revoke it when it is no
+longer required.
 
-### Firefox (macOS & Linux)
+### Windows
 
-- Direct access to profile directory required
-- SQLite database must be unlocked
-- No encryption handling needed
-- Profile discovery varies by platform
+Chromium-family decryption reads the encrypted key from `Local State` and
+unwraps it with DPAPI in the current Windows user context. The optional native
+`@primno/dpapi` binding is required for real encrypted cookies; do not export
+or persist the unwrapped key.
 
-### Safari (macOS only)
+Firefox uses readable SQLite files without an extra browser encryption layer.
+Filesystem access to the profile is therefore the main boundary.
 
-- Container access permissions required
-- Binary cookie format parsing
-- System-wide cookie storage
-- No profile-specific permissions
+### Linux
 
-## Data Handling
+Chromium-family decryption tries `secret-tool`, Python `keyring`, and
+KWallet before using Chromium's historical `peanuts` fallback. A fallback
+result does not mean every cookie can be decrypted; it must match how that
+browser stored its data.
 
-### Local Processing
+Firefox reads local SQLite files from native, XDG, Snap, or Flatpak profile
+roots. Keep those directories private to the owning user.
 
-- All cookie decryption happens locally
-- No network communication
-- No external services contacted
-- Memory-only processing where possible
+## Browser locks and prompts
 
-### Cookie Security
+When a database is locked, an interactive macOS run can ask whether to close
+the browser, retry the read, and relaunch it. This is a user-visible state
+change. Decline the prompt if closing the browser would be disruptive.
 
-- Treat cookies as sensitive auth tokens
-- Never commit to version control
-- Avoid logging in CI/CD pipelines
-- Clear from memory after use
+`--force` suppresses interactive close and Safari permission prompts. It does
+not grant access, unlock a database, or bypass encryption.
 
-## Best Practices
+## Reporting problems safely
 
-1. **Access Control**
+Use `--verbose` and report the OS, runtime, browser selector, profile name,
+and exact error text. Redact:
 
-   - Use only on development machines
-   - Avoid shared/public computers
-   - Maintain secure system configuration
-   - Regular security updates
+- cookie names and values when they identify an account
+- JWT payloads and signing secrets
+- account emails shown by `--list-profiles`
+- absolute paths containing usernames
 
-2. **Data Storage**
-
-   - Use secure environment variables
-   - Clear after use
-   - Encrypt if storage needed
-   - Use secure memory handling
-
-3. **Usage Guidelines**
-   - Only access authorized cookies
-   - Respect browser security models
-   - Monitor for permission changes
-   - Regular security audits
-
-## Platform-Specific Risks
-
-### macOS Risks
-
-- Keychain access restrictions
-- Container permission changes
-- Profile corruption
-- System updates affecting access
-
-### Linux Risks (Firefox)
-
-- Profile directory permissions
-- Database locking issues
-- Missing browser support
-- Limited functionality
-
-## Troubleshooting
-
-### macOS Issues
-
-1. **Keychain Access**
-
-   ```bash
-   # Verify Chrome Keychain entry
-   security find-generic-password -s "Chrome Safe Storage"
-
-   # Check Keychain permissions
-   security list-keychains
-   ```
-
-2. **Profile Access**
-
-   ```bash
-   # Chrome profiles
-   ls -la ~/Library/Application\ Support/Google/Chrome/
-
-   # Firefox profiles
-   ls -la ~/Library/Application\ Support/Firefox/Profiles/
-   ```
-
-3. **Safari Container**
-   ```bash
-   # Check container
-   ls -la ~/Library/Containers/com.apple.Safari/
-   ```
-
-### Linux Issues (Firefox)
-
-1. **Profile Access**
-
-   ```bash
-   # Check Firefox profiles
-   ls -la ~/.mozilla/firefox/
-
-   # Verify database
-   file ~/.mozilla/firefox/*/cookies.sqlite
-   ```
-
-2. **Permissions**
-   ```bash
-   # Fix profile permissions
-   chmod 600 ~/.mozilla/firefox/*/cookies.sqlite
-   ```
-
-## Security Updates
-
-- Keep get-cookie updated
-- Monitor security advisories
-- Report issues via GitHub
-- Check browser compatibility
-
-## Error Recovery
-
-1. **Permission Denied**
-
-   - Check file ownership
-   - Verify user permissions
-   - Review security settings
-   - Check browser status
-
-2. **Encryption Failures**
-
-   - Verify Keychain status
-   - Check profile integrity
-   - Review browser config
-   - Update if needed
-
-3. **Access Blocked**
-   - Check security settings
-   - Review permissions
-   - Verify browser state
-   - Update system config
+For symptom-specific recovery, see [Troubleshooting](./troubleshooting.md).

@@ -1,79 +1,94 @@
 ---
-title: Getting Started
-description: Learn how to install and use get-cookie
+title: Getting started
+description: Install get-cookie and run a first local query.
 ---
 
-# Getting Started
+# Getting started
 
-## Installation
+## Before you start
 
-Install the package using npm:
+You need:
+
+- Node.js 20, 22, 24, 25, or 26, or Bun
+- A supported browser profile with the cookie already stored
+- Permission to read that profile and its encryption key
+
+Cookie values are credentials. Use examples with accounts you control, keep
+the output local, and do not commit or paste it into shared logs.
+
+## Install the CLI
 
 ```bash
-npm install @mherod/get-cookie
+pnpm add -g @mherod/get-cookie
 ```
 
-Or using yarn:
+You can use npm instead:
 
 ```bash
-yarn add @mherod/get-cookie
+npm install -g @mherod/get-cookie
 ```
 
-Or using pnpm:
+## Run a first query
+
+The positional form is `get-cookie [name] [domain] [options]`:
+
+```bash
+get-cookie sessionid example.com
+```
+
+Use `%` to match every cookie name for a domain:
+
+```bash
+get-cookie % example.com --output json
+```
+
+For an HTTP request, `--url` derives cookie specs for the URL hostname and
+its parent domains, while `--render` builds a Cookie header value:
+
+```bash
+curl -H "Cookie: $(get-cookie --url https://app.example.com --render)" https://app.example.com/api/me
+```
+
+If several profiles may contain the same cookie, list profiles first and then
+select one:
+
+```bash
+get-cookie --browser chrome --list-profiles
+get-cookie sessionid example.com --browser chrome --profile "Work"
+```
+
+See the [CLI reference](./cli-usage.md) for every supported flag and the exact
+output modes.
+
+## Install the library
 
 ```bash
 pnpm add @mherod/get-cookie
 ```
 
-## Basic Usage
-
-### Using the CLI
-
-The simplest way to get started is using the CLI:
-
-```bash
-npx @mherod/get-cookie --domain github.com
-```
-
-### Using in Code
-
 ```typescript
 import { getCookie } from "@mherod/get-cookie";
 
-async function example() {
-  const cookies = await getCookie({
-    domain: "github.com",
-  });
+const cookies = await getCookie({
+  name: "sessionid",
+  domain: "example.com",
+});
 
-  console.log("Found cookies:", cookies);
+const first = cookies[0];
+if (first) {
+  console.log(first.name, first.domain);
 }
 ```
 
-#### Runtime-Specific Entrypoints
+Both `name` and `domain` are required. A missing cookie or an unreadable
+browser returns an empty array, so always handle that case.
 
-For deterministic adapter selection, use a runtime-specific entrypoint instead of the auto-detecting root import:
+Use [Library usage](./api-usage.md) for batch queries, runtime-specific
+entrypoints, and direct browser strategies.
 
-```typescript
-// Force Node.js (always uses better-sqlite3)
-import { getCookie } from "@mherod/get-cookie/node";
+## Next steps
 
-// Force Bun (always uses bun:sqlite)
-import { getCookie } from "@mherod/get-cookie/bun";
-```
-
-The root `@mherod/get-cookie` import auto-detects the runtime and picks the right SQLite adapter. When running under Bun, the `"bun"` conditional export automatically resolves to the Bun entrypoint.
-
-## Platform Support
-
-- **Windows**: Chrome, Edge, Arc, Opera, Opera GX, Firefox
-- **macOS**: Chrome, Edge, Arc, Opera, Opera GX, Firefox, Safari
-- **Linux**: Chrome, Edge, Arc, Opera, Opera GX, Firefox
-
-## Next Steps
-
-- **[Examples & Tutorials](/guide/examples)** - Complete working examples and tutorials
-- [CLI Usage Guide](/guide/cli-usage) - Learn command-line usage
-- [Use Cases](/guide/use-cases) - Real-world application patterns
-- [API Reference](/reference/index) - Programmatic usage documentation
-- [Browser Support](/guide/browsers) - Browser-specific features
-- [Architecture Overview](/guide/architecture) - How it works under the hood
+- [Browser support](./browser-support.md) for platform and profile caveats
+- [Security and privacy](./security.md) before storing or forwarding values
+- [Troubleshooting](./troubleshooting.md) if a query returns no results
+- [Examples](./examples.md) for small, vetted local recipes

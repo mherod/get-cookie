@@ -1,35 +1,38 @@
 ---
-title: What is get-cookie?
-description: A powerful Node.js module for querying browser cookies
+title: Guide
+description: Choose the shortest path to a safe, accurate get-cookie workflow.
 ---
 
-# What is get-cookie?
+# Guide
 
-`get-cookie` is a Node.js module designed to securely retrieve cookies from your local browsers. It provides a simple and secure way to access browser cookies programmatically, with support for multiple browsers and profiles.
+`get-cookie` reads cookies from browser data already present on your local
+machine. Start with the path that matches what you are trying to do:
 
-## Key Features
+- Need a value in a shell? Start with [Getting started](./getting-started.md),
+  then keep the [CLI reference](./cli-usage.md) nearby.
+- Calling from TypeScript? Read [Library usage](./api-usage.md).
+- Unsure whether your browser or operating system is covered? Check the
+  [browser support matrix](./browser-support.md).
+- Seeing empty output, profile mismatches, or permission errors? Go to
+  [Troubleshooting](./troubleshooting.md).
 
-- **Multi-Browser Support**: Query cookies from Chrome, Edge, Arc, Opera, Opera GX, Firefox, and Safari browsers
-- **Cross-Platform**: Full support for Windows, macOS, and Linux (Safari is macOS-only)
-- **Secure Handling**: Safe cookie extraction with proper encryption handling (Keychain on macOS, DPAPI on Windows, keyring on Linux)
-- **TypeScript Ready**: Built with TypeScript for excellent type safety and IDE support
-- **Chrome Profile Selection**: Target specific Chrome profiles with `--profile` flag
-- **Profile Discovery**: List available browser profiles with `--list-profiles`
-- **Smart Cookie Deduplication**: Automatically keeps the most valid cookie values from multiple profiles
-- **Expired Cookie Filtering**: Filters expired cookies by default with override options
-- **CLI Tool**: Easy to use command-line interface with multiple output formats
-- **Performance Optimized**: Connection pooling, query monitoring, and automatic retry mechanisms
-- **Graceful Degradation**: Handles locked databases and permission issues elegantly
+Cookies often grant account access. Before scripting with them, read
+[Security and privacy](./security.md).
 
-## Use Cases
+## What the package does
 
-- Automated testing requiring browser cookies
-- Development tools needing cookie access
-- Browser automation scripts
-- Cookie management utilities
-- API authentication and testing
-- Security auditing and compliance
-- Multi-profile cookie management
-- CI/CD pipeline integration
+The CLI can target a named browser, profile, Firefox container, or explicit
+store path. The root library helpers intentionally have a smaller contract:
+they query the default Chrome, Firefox, and Safari strategies with a required
+`{ name, domain }` specification.
 
-See our comprehensive [Examples & Tutorials Guide](./examples.md) for complete working examples, and the [Use Cases Guide](./use-cases.md) for detailed patterns and best practices.
+That distinction matters. Use the CLI when you need selection flags; use the
+library helpers when you want a small, typed API in local code.
+
+## Recommended reading order
+
+1. [Getting started](./getting-started.md)
+2. [CLI reference](./cli-usage.md) or [Library usage](./api-usage.md)
+3. [Browser support](./browser-support.md)
+4. [Security and privacy](./security.md)
+5. [Troubleshooting](./troubleshooting.md)

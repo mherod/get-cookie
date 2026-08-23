@@ -67,7 +67,7 @@
     "read-github": "NODE_OPTIONS=\"-r tsconfig-paths/register\" tsx scripts/read-github-cookies.ts",
     "prepare": "[ -d .git ] && husky || true",
     "docs": "typedoc && ./scripts/fix-typedoc.sh && vitepress build docs",
-    "docs:dev": "vitepress dev docs",
+    "docs:dev": "typedoc && ./scripts/fix-typedoc.sh && vitepress dev docs",
     "docs:preview": "vitepress preview docs",
     "check-links": "./scripts/check-vitepress-links.sh",
     "deps": "madge --ts-config ./tsconfig.json src/index.ts",

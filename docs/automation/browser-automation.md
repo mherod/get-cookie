@@ -42,15 +42,26 @@ const playwrightCookies = cookies.map((cookie) => {
   const path = cookie.meta?.path;
   const secure = cookie.meta?.secure;
   const httpOnly = cookie.meta?.httpOnly;
+  const expires =
+    cookie.expiry === "Infinity"
+      ? undefined
+      : cookie.expiry instanceof Date
+        ? Math.floor(cookie.expiry.getTime() / 1000)
+        : typeof cookie.expiry === "number"
+          ? cookie.expiry
+          : Number.NaN;
 
   if (
     !path ||
     !path.startsWith("/") ||
     typeof secure !== "boolean" ||
-    typeof httpOnly !== "boolean"
+    typeof httpOnly !== "boolean" ||
+    (expires !== undefined &&
+      (!Number.isSafeInteger(expires) ||
+        expires <= Math.floor(Date.now() / 1000)))
   ) {
     throw new Error(
-      "Cannot replay a cookie without its original scope metadata",
+      "Cannot replay a cookie without valid scope and lifetime metadata",
     );
   }
 
@@ -61,6 +72,7 @@ const playwrightCookies = cookies.map((cookie) => {
     path,
     secure,
     httpOnly,
+    ...(expires !== undefined && { expires }),
   };
 });
 
@@ -80,10 +92,13 @@ try {
 }
 ```
 
-The example intentionally has no fallback scope. Some browser strategies do not
-currently expose `meta.path`, `meta.secure`, or `meta.httpOnly`; those results
-are not safe to replay because substituting `/` could widen a path-scoped
-cookie and guessed flags can change how it is exposed or sent. Use only
+The example intentionally has no fallback scope or lifetime. Some browser
+strategies do not currently expose `meta.path`, `meta.secure`, or
+`meta.httpOnly`; those results are not safe to replay because substituting `/`
+could widen a path-scoped cookie and guessed flags can change how it is
+exposed or sent. `"Infinity"` remains a session cookie, while a future `Date`
+or Unix-seconds numeric expiry is forwarded as Playwright's `expires`.
+Missing, invalid, or already-expired lifetimes stop the handoff. Use only
 results that retain their original scope metadata, or use the service's normal
 login or test-auth flow instead.
 

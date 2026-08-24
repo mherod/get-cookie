@@ -329,7 +329,8 @@ mechanism instead.
 ## Where to go next
 
 - [Use Cases](./use-cases.md) maps common goals to the smallest safe workflow.
-- [Automation overview](/automation/) covers shell and browser handoffs.
+- [Automation overview](/automation/) covers shell checks and metadata-only
+  browser readiness.
 - [Integration Testing](./testing.md) separates deterministic tests from
   opt-in local checks.
 - [Security and Privacy](./security.md) explains the credential boundary.

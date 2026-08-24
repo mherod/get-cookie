@@ -93,10 +93,20 @@ handoff recipe can be reconsidered then.
 
 1. Confirm you are signed in to the target site in a supported local browser.
 2. Check available profiles with `get-cookie --list-profiles`.
-3. Try the equivalent CLI query locally:
+3. Run a metadata-only CLI check locally. The local pipe receives the full
+   result, but `jq` prints only fields that are safe to inspect:
 
    ```bash
-   get-cookie sessionid example.com --browser chrome --output json
+   get-cookie sessionid example.com --browser chrome --output json |
+     jq 'map({
+       name,
+       domain,
+       expiry,
+       browser: .meta.browser,
+       hasPath: (.meta.path | type == "string"),
+       hasSecureFlag: (.meta.secure | type == "boolean"),
+       hasHttpOnlyFlag: (.meta.httpOnly | type == "boolean")
+     })'
    ```
 
 4. See [troubleshooting](/guide/troubleshooting) for permissions, locked

@@ -46,7 +46,7 @@ TypeScript examples import the source entrypoint directly.
   readiness example and the distinction between browser cookies and API
   authentication.
 - `features-demo.sh` — profile discovery, browser selection, deduplication,
-  expired-cookie filtering, and combined CLI flags.
+  the current expired-cookie flag limitation, and combined CLI flags.
 - `cli-examples.sh` — source-tree CLI examples; it wraps
   `pnpm tsx src/cli/cli.ts` instead of requiring a globally installed binary.
 

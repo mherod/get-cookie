@@ -12,7 +12,9 @@ get-cookie [name] [domain] [options]
 ```
 
 With no arguments, it prints help. The positional arguments default to
-`%`, so a bare option-based query can match all names and domains.
+`%`. For SQL-backed browsers, the default domain pattern can omit
+single-label stored domains such as `localhost`; pass that domain explicitly
+when it matters.
 
 ## First commands
 
@@ -36,7 +38,7 @@ SQL-style `%` and `_` patterns instead.
 | Option                   | Alias | Meaning                                                       |
 | ------------------------ | ----- | ------------------------------------------------------------- |
 | `[name]`                 |       | Positional cookie-name pattern; defaults to `%`.              |
-| `[domain]`               |       | Positional domain pattern; defaults to `%`.                   |
+| `[domain]`               |       | Positional domain pattern; defaults to `%` (see note above).  |
 | `--name PATTERN`         | `-n`  | Cookie-name pattern.                                          |
 | `--domain PATTERN`       | `-D`  | Cookie-domain pattern.                                        |
 | `--url URL`              | `-u`  | Build `%` specs for the URL hostname and every parent domain. |
@@ -100,7 +102,7 @@ Safari does not expose named-profile filtering.
 
 | Option              | Alias | Meaning                                                                      |
 | ------------------- | ----- | ---------------------------------------------------------------------------- |
-| `--include-expired` |       | Keep expired cookies. By default they are filtered out.                      |
+| `--include-expired` |       | Accepted for compatibility; currently does not change CLI query results.    |
 | `--include-all`     |       | Keep duplicate `name + domain` results. By default one longer value is kept. |
 | `--force`           | `-f`  | Skip interactive lock/permission remediation; it does not guarantee access.  |
 | `--verbose`         | `-v`  | Enable diagnostic logging.                                                   |
@@ -108,8 +110,13 @@ Safari does not expose named-profile filtering.
 For example:
 
 ```bash
-get-cookie % example.com --include-expired --include-all --output json
+get-cookie % example.com --include-all --output json
 ```
+
+> [!NOTE]
+> `--include-expired` is currently accepted by the CLI but not applied by
+> `CookieQueryService`. Browser strategies keep their own expiry behavior, so
+> do not use this flag to infer that expired rows were included.
 
 ## JWT inspection
 

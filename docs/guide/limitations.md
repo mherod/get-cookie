@@ -20,11 +20,14 @@ selector matrix. The limitations below apply even on an implemented platform.
 - For SQL-backed browsers, name patterns use SQL `%` and `_`; only a
   standalone CLI `*` is normalized to `%`. Do not expect `session*` to
   behave as a wildcard.
+- For SQL-backed browsers, the default domain pattern `%` is not a true
+  all-domain sentinel: it can omit single-label stored domains such as
+  `localhost`. Query those domains explicitly.
 - A normal domain query matches the domain and its subdomains. It is not a
   shell-glob matcher, so `*.example.com` is not the recommended form.
-- Expired cookies are excluded by the SQL-backed strategies, and session-cookie
-  handling differs by browser format. Do not rely on `--include-expired` to
-  recover every expired or session cookie.
+- `--include-expired` is currently accepted by the CLI but not applied by
+  `CookieQueryService`; each browser strategy keeps its existing expiry
+  behavior. Do not rely on the flag to recover expired or session cookies.
 - CLI deduplication is on by default and keeps one value for each
   `name:domain` pair, preferring the longer value. Use `--include-all` when
   duplicate rows matter.

@@ -47,12 +47,9 @@ printf '%s\n' "   Default count: $deduplicated_count"
 printf '%s\n' "   With --include-all: $all_count"
 unset deduplicated_count all_count
 
-printf '\n%s\n' "3. Expired-cookie filtering"
-active_count="$(count_json "$COOKIE_NAME" "$TARGET_DOMAIN")"
-including_expired_count="$(count_json "$COOKIE_NAME" "$TARGET_DOMAIN" --include-expired)"
-printf '%s\n' "   Default count: $active_count"
-printf '%s\n' "   With --include-expired: $including_expired_count"
-unset active_count including_expired_count
+printf '\n%s\n' "3. Expired-cookie flag limitation"
+printf '%s\n' "   --include-expired is accepted but currently does not change CLI query results."
+printf '%s\n' "   Browser strategies keep their own expiry behavior."
 
 printf '\n%s\n' "4. Browser-specific queries"
 for browser in chrome firefox safari; do

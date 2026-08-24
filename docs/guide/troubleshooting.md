@@ -17,6 +17,9 @@ Then check:
 
 - Use `%` for all names. A standalone `*` is accepted, but partial shell
   globs such as `session*` are not name wildcards.
+- For a single-label host such as `localhost`, pass that domain explicitly.
+  The default SQL-backed domain pattern `%` can omit single-label stored
+  domains.
 - Pass the bare domain, such as `example.com`; normal domain matching already
   includes subdomains.
 - Use `--url https://app.example.com/path` only for local inspection when you
@@ -25,8 +28,9 @@ Then check:
   exact destination applicability, so do not send rendered output as a generic
   outgoing request header.
 - Add `--include-all` if deduplication may be hiding another row.
-- Remember that expired and session-cookie behavior is browser-specific; do
-  not assume `--include-expired` can recover every row.
+- `--include-expired` is currently accepted but not applied by
+  `CookieQueryService`; browser-specific expiry behavior still controls the
+  result. Do not assume the flag can recover an expired row.
 
 An empty result can also mean the store was unreadable or decryption failed,
 because browser strategies recover many failures by returning an empty array.

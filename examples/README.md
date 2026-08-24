@@ -31,8 +31,10 @@ pnpm run build
 pnpm link --global
 ```
 
-The TypeScript examples run from source with `tsx`; they do not require a
-global CLI install.
+The TypeScript examples run with `tsx`; they do not require a global CLI
+install. `basic-usage.ts` intentionally imports the public package entrypoint,
+so build the library bundle before running it from a fresh checkout. The other
+TypeScript examples import the source entrypoint directly.
 
 ## Shell examples
 
@@ -75,6 +77,7 @@ rather than cookie values or outgoing requests.
 Run them from the repository root:
 
 ```bash
+pnpm run build:lib
 pnpm exec tsx examples/basic-usage.ts
 pnpm exec tsx examples/advanced-usage.ts
 pnpm exec tsx examples/comprehensive-demo.ts

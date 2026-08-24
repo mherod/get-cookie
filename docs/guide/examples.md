@@ -113,14 +113,34 @@ auth.
 ## Make a CSRF-aware local client
 
 Some admin APIs need both a session cookie and a CSRF cookie. A direct strategy
-asks Chrome for one named profile, then the code requires exactly one match for
-each name before it sends anything. If profile discovery is unavailable, the
-strategy can fall back to broader local stores, so keep those count checks.
+asks Chrome for one verified profile, then the code requires exactly one match
+for each name before it sends anything. Verify profile discovery first because
+the strategy can fall back to broader local stores when `Local State` is
+unavailable.
 
 ```typescript
-import { ChromeCookieQueryStrategy } from "@mherod/get-cookie";
+import {
+  ChromeCookieQueryStrategy,
+  getChromiumProfiles,
+} from "@mherod/get-cookie";
 
-const source = new ChromeCookieQueryStrategy("Work");
+const requestedProfile = "Work";
+const profileMatches = getChromiumProfiles("chrome").filter(
+  (profile) =>
+    profile.name.toLowerCase() === requestedProfile.toLowerCase() ||
+    profile.directory.toLowerCase() === requestedProfile.toLowerCase(),
+);
+
+if (profileMatches.length !== 1) {
+  throw new Error("Cannot verify exactly one requested Chrome profile");
+}
+
+const profile = profileMatches[0];
+if (!profile) {
+  throw new Error("Requested Chrome profile was not resolved");
+}
+
+const source = new ChromeCookieQueryStrategy(profile.directory);
 const domain = "app.example.com";
 
 const [sessions, csrfTokens] = await Promise.all([

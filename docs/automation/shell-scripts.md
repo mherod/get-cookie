@@ -1,67 +1,66 @@
 ---
 title: Shell scripts
-description: Use get-cookie in short-lived local shell commands without persisting cookies.
+description: Use get-cookie for status-only local preflights without persisting cookies.
 ---
 
 # Shell script automation
 
-Use shell scripts for small, local tasks such as making one authenticated
-request with `curl`. The safest pattern is to request an explicit cookie for
-a fixed host, use it immediately, and then discard it.
+Use shell scripts for small, local readiness checks: confirm that a known
+cookie is readable, compare profile metadata, and stop before a task starts
+when the expected session is missing.
 
 > [!CAUTION]
 > Do not enable `set -x`, echo cookie values, redirect them to a file, or pass
-> them to a shared log. For CI and unattended jobs, use the service's supported
-> token or machine-authentication flow instead.
+> them to a shared log. For CI, unattended jobs, and outgoing requests, use the
+> service's supported token or machine-authentication flow instead.
 
-## Authenticated curl helper
+## Status-only preflight
 
 ```bash
 #!/usr/bin/env bash
+set -u
 
-auth_curl() {
-  local path=$1
-  shift
+requested_profile=${1:-}
+if [ -z "$requested_profile" ]; then
+  printf '%s\n' "Choose a profile from:" >&2
+  get-cookie --browser chrome --list-profiles >&2
+  exit 2
+fi
 
-  local origin="https://app.example.com"
-  local cookie_header
-  local status
+cookie_value="$(
+  get-cookie sessionid app.example.com \
+    --browser chrome \
+    --profile "$requested_profile" 2>/dev/null || true
+)"
 
-  cookie_header="$(
-    get-cookie sessionid app.example.com --render 2>/dev/null
-  )"
-  if [ -z "$cookie_header" ]; then
-    printf '%s\n' "No session cookie found for app.example.com" >&2
-    return 1
-  fi
+if [ -n "$cookie_value" ]; then
+  printf '%s\n' "ready"
+else
+  printf '%s\n' "sign in first" >&2
+  unset cookie_value
+  exit 1
+fi
 
-  if curl --fail-with-body -H "Cookie: $cookie_header" "$@" "$origin$path"; then
-    status=0
-  else
-    status=$?
-  fi
-
-  unset cookie_header
-  return "$status"
-}
-
-auth_curl /dashboard --silent --show-error
+unset cookie_value
 ```
 
 `get-cookie` may produce no output when no matching cookie is available.
-Check for an empty header before making the request; do not rely only on the
-command's exit status.
+Check for empty stdout rather than relying only on the command's exit status.
+The value is held only long enough to reduce it to a local readiness signal.
 
 ## Target a browser or profile
 
-List profiles first, then use the exact displayed name:
+List profiles first, then use an exact displayed name for a redacted metadata
+check:
 
 ```bash
 get-cookie --browser chrome --list-profiles
 
-cookie_header="$(
-  get-cookie sessionid app.example.com --browser chrome --profile "Work" --render
-)"
+get-cookie sessionid app.example.com \
+  --browser chrome \
+  --profile "Work" \
+  --output json |
+  jq 'map({name, domain, expiry, browser: .meta.browser})'
 ```
 
 Firefox containers can be selected with `--container`:
@@ -70,18 +69,13 @@ Firefox containers can be selected with `--container`:
 get-cookie sessionid app.example.com \
   --browser firefox \
   --container work \
-  --render
+  --output json |
+  jq 'map({name, domain, expiry, browser: .meta.browser, containerId: .meta.containerId})'
 ```
 
-When you are finished with a captured value, remove it from the shell:
+## Check one cookie
 
-```bash
-unset cookie_header
-```
-
-## Query one cookie
-
-If a request needs exactly one named cookie, keep the name explicit:
+Keep the cookie name explicit and reduce the result to a boolean:
 
 ```bash
 cookie_value="$(get-cookie sessionid example.com)"
@@ -91,18 +85,16 @@ if [ -z "$cookie_value" ]; then
   exit 1
 fi
 
-# Use the value immediately, then discard it.
-curl --fail-with-body \
-  -H "Cookie: sessionid=$cookie_value" \
-  https://example.com/profile
-
 unset cookie_value
 ```
 
-For multiple cookies, build an explicit allowlist of names and target domains
-and join only those rendered pairs. Do not use `--url --render` to build an
-outgoing header for an arbitrary URL: URL parent expansion currently reaches
-public suffixes such as `co.uk`.
+## Why this page does not send a request
+
+`--render` serializes matches as `name=value` pairs, but the current query
+result does not prove that every match applies to one exact destination path
+and secure context. An explicit domain can still include a child-host match,
+and `--url` parent expansion can reach public suffixes such as `co.uk`.
+Do not build a generic outgoing header from either form.
 
 ## Debug without leaking values
 

@@ -22,7 +22,6 @@ Shell examples require:
 
 - `get-cookie` on your `PATH`
 - a local browser profile containing the cookies you intend to inspect
-- `curl` for HTTP examples
 - `jq` for JSON-filtering examples
 
 For a source checkout, build before linking the CLI globally:
@@ -37,12 +36,13 @@ global CLI install.
 
 ## Shell examples
 
-- `quick-start.sh` — a guided tour of named-cookie extraction, rendered
-  headers, and login checks.
-- `curl-integration.sh` — a fail-closed local `curl` helper with opt-in
-  requests.
-- `github-auth.sh` — a legacy-named, placeholder-domain web-session example
-  and the distinction between browser cookies and API authentication.
+- `quick-start.sh` — a guided tour of named-cookie readiness and profile
+  discovery.
+- `curl-integration.sh` — a legacy-named, status-only request-readiness
+  check that never sends HTTP.
+- `github-auth.sh` — a legacy-named, placeholder-domain web-session
+  readiness example and the distinction between browser cookies and API
+  authentication.
 - `features-demo.sh` — profile discovery, browser selection, deduplication,
   expired-cookie filtering, and combined CLI flags.
 - `cli-examples.sh` — source-tree CLI examples; it wraps
@@ -59,8 +59,8 @@ Run a shell example from the repository root:
 ```
 
 Read a script before executing it. The scripts can query real local sessions,
-but the current examples report only presence, counts, and HTTP status rather
-than cookie values.
+but the current examples report only presence, counts, and redacted metadata
+rather than cookie values or outgoing requests.
 
 ## TypeScript examples
 
@@ -69,8 +69,8 @@ than cookie values.
   entrypoint.
 - `comprehensive-demo.ts` — broader source-tree walkthrough, including
   browser-specific strategy selection and metadata summaries.
-- `auth-tokens.ts` — prepares an in-memory request without logging the
-  credential; use only with accounts you are authorized to inspect.
+- `auth-tokens.ts` — reports authentication-cookie readiness without
+  building or forwarding a request.
 
 Run them from the repository root:
 
@@ -86,8 +86,8 @@ pnpm exec tsx examples/auth-tokens.ts
 1. Start with `quick-start.sh` for the CLI.
 2. Use `basic-usage.ts` for the public library API.
 3. Use `features-demo.sh` to understand profiles and output flags.
-4. Use `curl-integration.sh` or `github-auth.sh` only for authorized local
-   web-session debugging.
+4. Use `curl-integration.sh` or `github-auth.sh` for local session
+   readiness checks only; they do not send requests.
 5. Use `comprehensive-demo.ts` when working on source internals.
 
 For the full guides, see the documentation under `docs/guide/`. Keep new

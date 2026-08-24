@@ -32,8 +32,8 @@ printf '\n'
 
 printf '%s\n' "1. Profile discovery"
 printf '%s\n' "   get-cookie --browser chrome --list-profiles"
-printf '%s\n' "   get-cookie $COOKIE_NAME $TARGET_DOMAIN --browser chrome --profile 'Work' --render"
-printf '%s\n' "   get-cookie $COOKIE_NAME $TARGET_DOMAIN --browser firefox --container work --render"
+printf '%s\n' "   get-cookie $COOKIE_NAME $TARGET_DOMAIN --browser chrome --profile '<exact profile>' | grep -q ."
+printf '%s\n' "   get-cookie $COOKIE_NAME $TARGET_DOMAIN --browser firefox --container work | grep -q ."
 
 if ! command -v jq >/dev/null 2>&1; then
   printf '\n%s\n' "jq is unavailable, so count-based demonstrations are skipped."
@@ -68,6 +68,7 @@ printf '%s\n' "   --output json: structured results"
 printf '%s\n' "   --dump-grouped: JSON grouped by source file"
 printf '%s\n' "   --render-grouped: header strings grouped by source file"
 printf '%s\n' "   Treat every output mode as sensitive."
+printf '%s\n' "   --render is a serializer, not a safe generic request helper."
 
 printf '\n%s\n' "6. JWT inspection flags"
 printf '%s\n' "   get-cookie $COOKIE_NAME $TARGET_DOMAIN --detect-jwt --output json"

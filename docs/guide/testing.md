@@ -84,10 +84,12 @@ wrong, or the browser store is inaccessible. The CLI logs `No results` but
 does not emit `[]` for a no-match JSON query. Use
 [Troubleshooting](./troubleshooting.md) before widening the query.
 
-## Local programmatic check
+## Local programmatic readiness check
 
 The public API accepts only `name` and `domain` in the cookie spec. Treat an
-empty array as a normal no-result outcome and never log the value.
+empty array as a normal no-result outcome, never log the value, and keep this
+check status-only because the result does not prove exact destination
+applicability.
 
 ```typescript
 import { getCookie } from "@mherod/get-cookie";
@@ -101,24 +103,13 @@ if (cookies.length === 0) {
   throw new Error("Local test cookie not found");
 }
 
-const cookie = cookies[0];
-if (!cookie) {
-  throw new Error("Local test cookie not found");
-}
-
-const response = await fetch("https://app.example.com/api/me", {
-  headers: {
-    Cookie: `${cookie.name}=${cookie.value}`,
-  },
-});
-
-if (!response.ok) {
-  throw new Error(`Local authenticated check failed: ${response.status}`);
-}
+console.log("Local test cookie is readable.");
 ```
 
 Use a disposable test account where possible. Keep this kind of check out of
-the default test suite and out of CI.
+the default test suite and out of CI. For an end-to-end request, use the
+service's supported test-authentication mechanism instead of forwarding a
+browser cookie.
 
 ## Test hygiene
 

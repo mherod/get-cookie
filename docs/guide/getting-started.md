@@ -42,16 +42,21 @@ Use `%` to match every cookie name for a domain:
 get-cookie % example.com --output json
 ```
 
-For an HTTP request, ask for the exact cookie name and target host, then use
-`--render` to build a Cookie header value:
+To check whether one known local session is readable without displaying its
+value, use a status-only pipe:
 
 ```bash
-curl -H "Cookie: $(get-cookie sessionid app.example.com --render)" https://app.example.com/api/me
+if get-cookie sessionid app.example.com | grep -q .; then
+  echo "matching cookie is readable"
+else
+  echo "sign in first" >&2
+fi
 ```
 
-Do not pipe `--url ... --render` into an outgoing request for an arbitrary
-URL. URL expansion currently includes every parent domain and does not stop at
-public suffixes such as `co.uk`.
+`--render` is useful for inspecting the CLI's serialized output, but it is
+not a safe generic outgoing-request helper. A domain query does not prove
+exact destination applicability, and `--url` expansion includes every
+parent domain without stopping at public suffixes such as `co.uk`.
 
 If several profiles may contain the same cookie, list profiles first and then
 select one:

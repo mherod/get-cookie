@@ -7,23 +7,24 @@ pageClass: cookie-examples
 # Examples and recipes
 
 The interesting part of get-cookie is not reading a value. It is what a local
-developer can do next: reproduce one signed-in request, skip a repetitive
-login during a smoke check, or prove which profile has the session you expect.
+developer can prove next: whether a known session is readable, whether an
+admin workflow has its expected inputs, or which profile has the session you
+expect.
 
 Every recipe here uses <code>example.com</code>, keeps credentials in memory,
 and fails closed when nothing is found. Use only accounts and environments you
 are authorized to access.
 
 <div class="example-chooser" aria-label="Choose an example">
-  <a class="example-chooser__card" href="#replay-one-authenticated-request">
+  <a class="example-chooser__card" href="#check-one-authenticated-session">
     <span class="example-chooser__meta">Shell · 2 min</span>
-    <strong>Replay one authenticated request</strong>
-    <span>Turn the browser tab you already trust into one local curl call.</span>
+    <strong>Check one authenticated session</strong>
+    <span>Reduce one trusted browser session to a local ready/not-ready signal.</span>
   </a>
-  <a class="example-chooser__card" href="#make-a-csrf-aware-local-client">
+  <a class="example-chooser__card" href="#check-csrf-aware-inputs">
     <span class="example-chooser__meta">TypeScript · 4 min</span>
-    <strong>Make a CSRF-aware local client</strong>
-    <span>Fetch the two cookies an admin endpoint actually needs.</span>
+    <strong>Check CSRF-aware inputs</strong>
+    <span>Verify the two known cookies an admin flow expects.</span>
   </a>
   <a class="example-chooser__card" href="#check-a-playwright-handoff">
     <span class="example-chooser__meta">Playwright · safety gate</span>
@@ -59,64 +60,62 @@ advanced recipe.
 
 > [!CAUTION]
 > Browser cookies are live credentials. Do not enable shell tracing, echo
-> headers, write cookies to files, save Playwright storage state, or move these
-> patterns into CI. Prefer official API tokens for unattended workflows.
+> values, write cookies to files, save Playwright storage state, or move these
+> patterns into CI. Prefer official API tokens for requests and unattended
+> workflows.
 
-## Replay one authenticated request
+## Check one authenticated session
 
-Use this when the browser is already signed in and you want to reproduce one
-authorized request without copying a cookie out of DevTools. Name the cookie
-and target domain explicitly; <code>--render</code> creates one in-memory
-Cookie header. The explicit browser/profile prevents accidentally mixing
-sessions.
+Use this when a local task needs one known browser session. First choose a
+profile from the CLI's discovery output, then reduce one explicit cookie query
+to a ready/not-ready signal without printing or forwarding the value.
 
 ```bash
 #!/usr/bin/env bash
 set -euo pipefail
 
-origin="https://app.example.com"
-target_url="$origin/api/me"
-cookie_header="$(
+requested_profile=${1:-}
+if [ -z "$requested_profile" ]; then
+  echo "Choose a profile from:" >&2
+  get-cookie --browser chrome --list-profiles >&2
+  exit 2
+fi
+
+cookie_value="$(
   get-cookie \
     sessionid \
     app.example.com \
     --browser chrome \
-    --profile "Work" \
-    --render 2>/dev/null
+    --profile "$requested_profile" 2>/dev/null || true
 )"
 
 cleanup() {
-  unset cookie_header
+  unset cookie_value
 }
 trap cleanup EXIT
 
-if [ -z "$cookie_header" ]; then
+if [ -z "$cookie_value" ]; then
   echo "No matching local session found" >&2
   exit 1
 fi
 
-curl \
-  --fail-with-body \
-  --silent \
-  --show-error \
-  -H "Cookie: $cookie_header" \
-  "$target_url"
+echo "ready"
 ```
 
-This is ideal for reproducing a local API bug or checking an endpoint behind a
-browser login. Do not replace the explicit name/domain with
-<code>--url ... --render</code> for an arbitrary URL: URL expansion currently
-includes every parent domain, including public suffixes such as
-<code>co.uk</code>. This is not a replacement for the service's supported API
-auth.
+This confirms only that a matching value is readable from the selected local
+profile. It does not prove that the cookie applies to an exact destination
+path or secure context. <code>--render</code> is therefore documented as an
+output format, not a generic request helper; <code>--url</code> is broader
+again because it can include public-suffix parents such as
+<code>co.uk</code>. Use the service's supported API auth for requests.
 
-## Make a CSRF-aware local client
+## Check CSRF-aware inputs
 
-Some admin APIs need both a session cookie and a CSRF cookie. A direct strategy
-asks Chrome for one verified profile, then the code requires exactly one match
-for each name before it sends anything. Verify profile discovery first because
-the strategy can fall back to broader local stores when `Local State` is
-unavailable.
+Some local admin workflows expect both a session cookie and a CSRF cookie. A
+direct strategy asks Chrome for one verified profile, then the code requires
+exactly one match for each known name before reporting readiness. Verify
+profile discovery first because the strategy can fall back to broader local
+stores when `Local State` is unavailable.
 
 ```typescript
 import {
@@ -155,30 +154,15 @@ if (sessions.length !== 1 || csrfTokens.length !== 1) {
 const session = sessions[0];
 const csrf = csrfTokens[0];
 if (!session || !csrf) {
-  throw new Error("Sign in locally before running this request");
+  throw new Error("Sign in locally before continuing");
 }
 
-const cookieHeader = [session, csrf]
-  .map((cookie) => cookie.name + "=" + String(cookie.value))
-  .join("; ");
-
-const response = await fetch("https://app.example.com/api/projects", {
-  headers: {
-    Cookie: cookieHeader,
-    "X-CSRF-Token": String(csrf.value),
-  },
-});
-
-if (!response.ok) {
-  throw new Error("Request failed with status " + response.status);
-}
-
-const payload = await response.json();
-console.log("request ok:", response.status, "array:", Array.isArray(payload));
+console.log("session and CSRF inputs are readable");
 ```
 
-The code never prints either value. Keep the requested names narrow; do not
-query every cookie when two known cookies are enough.
+The code never prints either value or builds an outgoing request. Keep the
+requested names narrow; do not query every cookie when two known cookies are
+enough.
 
 ## Check a Playwright handoff
 
@@ -323,30 +307,38 @@ JWT decoding is not signature verification. Do not print
 ## Preflight a local dev command
 
 Use a status-only preflight when a local task needs one known browser session.
-The command checks whether the CLI wrote any value to stdout without keeping
-it in a variable or printing it.
+List profiles first, replace the placeholder with an exact displayed name, and
+reduce the returned value to a boolean without printing it.
 
 ```bash
 #!/usr/bin/env bash
 set -euo pipefail
 
-if get-cookie sessionid app.example.com \
+get-cookie --browser chrome --list-profiles
+
+cookie_value="$(
+  get-cookie sessionid app.example.com \
   --browser chrome \
-  --profile "Work" |
-  grep -q .; then
+  --profile "Work" 2>/dev/null || true
+)"
+
+if [ -n "$cookie_value" ]; then
   echo "ready"
 else
   echo "sign in first" >&2
+  unset cookie_value
   exit 1
 fi
+
+unset cookie_value
 
 # Run the local command that needs the session here.
 ```
 
-The value still crosses a local pipe before <code>grep</code> reduces it to a
-boolean, so keep tracing off. This is a useful front door for local developer
-tooling; for CI, use mocks, fixtures, or the target service's
-test-authentication mechanism instead.
+The value stays in one local process only long enough to become a boolean, so
+keep tracing off. This is a useful front door for local developer tooling; for
+CI, use mocks, fixtures, or the target service's test-authentication
+mechanism instead.
 
 ## Where to go next
 

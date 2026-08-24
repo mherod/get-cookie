@@ -29,20 +29,23 @@ Query every cookie for a domain as JSON:
 get-cookie % example.com --output json
 ```
 
-Build a named `Cookie` header for one host:
+Inspect the rendered form of one named cookie locally:
 
 ```bash
-curl -H "Cookie: $(get-cookie sessionid app.example.com --render)" https://app.example.com/api/me
+get-cookie sessionid app.example.com --render
 ```
 
 The default CLI output is the matching cookie value, one value per line.
 `--render` produces a merged `name=value; name=value` header value, and
-`--output json` preserves metadata for scripts.
+`--output json` preserves metadata for scripts. Treat every output mode as
+sensitive.
 
-`--url` builds wildcard specs for a hostname and its parent domains. Do not
-pipe `--url ... --render` into an outgoing request for an arbitrary URL:
-public-suffix parents such as `co.uk` are not excluded. For requests, name
-each cookie and target domain explicitly.
+`--render` is a serializer, not a safe generic request helper. A domain
+query can still return cookies whose stored domain or path does not prove that
+they apply to one exact destination. `--url` adds another risk because it
+builds wildcard specs for a hostname and its parent domains without excluding
+public suffixes such as `co.uk`. Inspect results locally; do not pipe
+rendered output into an outgoing request.
 
 ## Use it from TypeScript
 
@@ -60,21 +63,16 @@ const cookies = await getCookie({
   domain: "example.com",
 });
 
-const session = cookies[0];
-if (session) {
-  const response = await fetch("https://example.com/api/me", {
-    headers: {
-      Cookie: session.name + "=" + String(session.value),
-    },
-  });
-
-  console.log(response.status);
-}
+console.log(
+  cookies.length > 0 ? "matching cookie is readable" : "sign in first",
+);
 ```
 
 `getCookie` requires both `name` and `domain`. It queries the default
 Chrome, Firefox, and Safari strategies, tolerates browser-specific failures,
-and returns an empty array when nothing can be read.
+and returns an empty array when nothing can be read. The public query result
+does not by itself prove that a cookie applies to a particular outgoing URL,
+so keep this first example status-only.
 
 For multiple specs, use `batchGetCookies`:
 

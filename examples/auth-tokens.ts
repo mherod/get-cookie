@@ -2,17 +2,13 @@
 
 import { getCookie, type ExportedCookie } from "../src/index";
 
-interface PreparedRequest {
-  headers: {
-    Cookie: string;
-  };
+interface CookieReadiness {
+  matchingCookies: number;
 }
 
-function prepareAuthorizedRequest(cookie: ExportedCookie): PreparedRequest {
+function summarizeReadiness(cookies: ExportedCookie[]): CookieReadiness {
   return {
-    headers: {
-      Cookie: `${cookie.name}=${String(cookie.value)}`,
-    },
+    matchingCookies: cookies.length,
   };
 }
 
@@ -27,20 +23,14 @@ async function main(): Promise<void> {
     return;
   }
 
-  const cookie = cookies[0];
-  if (!cookie) {
-    return;
-  }
-
-  // Pass this object directly to an authorized local request. Do not log,
-  // persist, or share it: the Cookie header contains a live credential.
-  const request = prepareAuthorizedRequest(cookie);
-  void request;
+  // Keep this status-only. A domain query does not prove that a cookie is
+  // applicable to one exact outgoing URL.
+  const readiness = summarizeReadiness(cookies);
 
   console.log(
-    `Prepared an in-memory request from ${cookies.length} matching cookie(s).`,
+    `Found ${readiness.matchingCookies} matching authentication cookie(s).`,
   );
-  console.log("Cookie values were not printed.");
+  console.log("Cookie values were not printed or forwarded.");
 }
 
 void main().catch(() => {

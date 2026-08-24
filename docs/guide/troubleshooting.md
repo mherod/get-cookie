@@ -21,8 +21,9 @@ Then check:
   includes subdomains.
 - Use `--url https://app.example.com/path` only for local inspection when you
   want the hostname and parent-domain specs generated for you. It currently
-  does not stop at public suffixes, so do not pipe `--url ... --render` into
-  an outgoing request for an arbitrary URL.
+  does not stop at public suffixes. More generally, `--render` does not prove
+  exact destination applicability, so do not send rendered output as a generic
+  outgoing request header.
 - Add `--include-all` if deduplication may be hiding another row.
 - Remember that expired and session-cookie behavior is browser-specific; do
   not assume `--include-expired` can recover every row.
@@ -164,7 +165,9 @@ get-cookie session example.com --render-grouped
 
 Default output is unique non-empty values. `--dump` and `--output json`
 produce JSON arrays; `--dump-grouped` groups by source file; `--render`
-produces merged `name=value` pairs.
+produces merged `name=value` pairs. Treat `--render` as a sensitive
+serialization format, not a safe generic outgoing-request helper: matching a
+domain does not prove exact destination applicability.
 
 ## The CLI rejects a flag
 

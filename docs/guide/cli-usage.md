@@ -23,7 +23,7 @@ get-cookie sessionid example.com
 # Every cookie for a domain, as structured data
 get-cookie % example.com --output json
 
-# One named cookie, rendered as a Cookie header value
+# One named cookie, rendered for local inspection
 get-cookie sessionid app.example.com --render
 ```
 
@@ -46,10 +46,12 @@ SQL-style `%` and `_` patterns instead.
 | `--store PATH`           |       | Read an explicit cookie-store path.                           |
 
 > [!CAUTION]
-> `--url` currently walks every parent domain and does not stop at public
-> suffixes. For `app.example.co.uk`, it can also query `co.uk`. Do not
-> combine it with `--render` and send the result to an arbitrary URL. For
-> outgoing requests, use explicit cookie names and target domains.
+> `--render` is an output format, not a safe generic request helper. A
+> domain query can still return cookies whose stored scope does not prove
+> applicability to one exact destination. `--url` is broader again: it
+> walks every parent domain and does not stop at public suffixes, so
+> `app.example.co.uk` can also query `co.uk`. Inspect rendered output
+> locally; do not send it as an outgoing request header.
 
 Supported `--browser` values:
 
@@ -146,8 +148,8 @@ TOKEN=$(get-cookie sessionid example.com)
 # Inspect metadata without printing it into a shared log
 get-cookie % example.com --output json
 
-# Build a request header from one known cookie
-curl -H "Cookie: $(get-cookie sessionid app.example.com --render)" https://app.example.com/api/me
+# Inspect one rendered value locally (still sensitive)
+get-cookie sessionid app.example.com --render
 ```
 
 ## Help and diagnostics
@@ -164,22 +166,22 @@ case. Do not rely on a specialized no-results exit-code taxonomy; capture
 stdout and check that it is non-empty before parsing JSON or using rendered
 output.
 
-## Safe shell pattern
+## Safe readiness pattern
 
 ```bash
-COOKIE_HEADER=$(get-cookie sessionid app.example.com --render)
-
-if [ -z "$COOKIE_HEADER" ]; then
-  echo "No local cookie header found" >&2
+if get-cookie sessionid app.example.com --browser chrome --profile "Work" |
+  grep -q .; then
+  echo "matching cookie is readable"
+else
+  echo "No local cookie found" >&2
   exit 1
 fi
-
-curl -H "Cookie: $COOKIE_HEADER" https://app.example.com/api/me
-unset COOKIE_HEADER
 ```
 
-Keep this pattern local. Cookie values should not be committed, cached, or
-sent to a CI system.
+List profiles first and replace `Work` with an exact displayed profile name.
+The value still crosses a local pipe before `grep` reduces it to a boolean,
+so keep tracing off. Cookie values should not be committed, cached, sent to a
+CI system, or forwarded as a generic request header.
 
 ## Related pages
 

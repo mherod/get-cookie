@@ -15,25 +15,25 @@ For access problems, go to [Troubleshooting](./troubleshooting.md).
 
 ## Choose a workflow
 
-| Goal | Recommended workflow | Why |
-| --- | --- | --- |
+| Goal                                       | Recommended workflow                                                                  | Why                                                                   |
+| ------------------------------------------ | ------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
 | Check whether a local browser has a cookie | [Compare browser identities](./examples.md#compare-browser-identities-without-values) | Confirms name, domain, browser, and expiry without exposing the value |
-| Reproduce one authenticated web request | [Replay one authenticated request](./examples.md#replay-one-authenticated-request) | Uses an explicit browser/profile and an in-memory header |
-| Call an endpoint that requires CSRF | [Make a CSRF-aware local client](./examples.md#make-a-csrf-aware-local-client) | Keeps two known values in memory and fails closed |
-| Seed a local browser smoke check | [Check a Playwright handoff](./examples.md#check-a-playwright-handoff) | Refuses to guess when cookie-scope metadata is incomplete |
-| Preflight a local task | [Preflight a local dev command](./examples.md#preflight-a-local-dev-command) | Reports status without printing values |
-| Test project behavior | Deterministic Jest tests first; optional local smoke check second | Keeps CI reproducible and real sessions local |
+| Check whether one local session is ready   | [Check one authenticated session](./examples.md#check-one-authenticated-session)      | Uses an explicit browser/profile and reduces the result to a boolean  |
+| Check an admin flow's CSRF inputs          | [Check CSRF-aware inputs](./examples.md#check-csrf-aware-inputs)                      | Requires two known values without building a request                  |
+| Seed a local browser smoke check           | [Check a Playwright handoff](./examples.md#check-a-playwright-handoff)                | Refuses to guess when cookie-scope metadata is incomplete             |
+| Preflight a local task                     | [Preflight a local dev command](./examples.md#preflight-a-local-dev-command)          | Reports status without printing values                                |
+| Test project behavior                      | Deterministic Jest tests first; optional local smoke check second                     | Keeps CI reproducible and real sessions local                         |
 
-## Local API debugging
+## Local session readiness
 
-Use this when you are already signed in locally and need to reproduce one
-authorized request. The complete, profile-scoped version is in
-[Replay one authenticated request](./examples.md#replay-one-authenticated-request).
+Use this when a local task should stop early unless a known session is
+readable. The complete, profile-scoped version is in
+[Check one authenticated session](./examples.md#check-one-authenticated-session).
 
-The linked recipe includes an empty-result check, cleanup trap, and hostname
-matching caveat. Do not echo the header, enable shell tracing, or save it to a
-file. Some APIs do not accept browser cookies at all; use the service's
-supported API token or OAuth flow in that case.
+The linked recipe includes profile discovery, an empty-result check, and a
+cleanup trap. It intentionally does not construct or send a Cookie header:
+query matches do not prove exact destination applicability. For requests, use
+the service's supported API token or OAuth flow.
 
 ## Profile diagnosis
 

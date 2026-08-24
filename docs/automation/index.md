@@ -16,8 +16,8 @@ storage on the current machine; it is not a credential-management system.
 
 ## Choose a path
 
-- [Shell scripts](/automation/shell-scripts) cover short-lived local `curl`
-  requests.
+- [Shell scripts](/automation/shell-scripts) cover status-only local
+  preflights and redacted metadata checks.
 - [Browser automation](/automation/browser-automation) covers passing cookies
   into a fresh local browser context.
 - [CLI usage](/guide/cli-usage) documents query, browser, profile, container,
@@ -26,16 +26,17 @@ storage on the current machine; it is not a credential-management system.
 
 ## Two building blocks
 
-For a request that needs one known cookie, name the cookie and target domain.
-`--render` returns a Cookie-header string:
+For local inspection, name one known cookie and target domain. `--render`
+serializes matches as a Cookie-header string:
 
 ```bash
 get-cookie sessionid example.com --render
 ```
 
-`--url` can help inspect hostname and parent-domain matches, but it currently
-does not stop at public suffixes. Do not pipe `--url ... --render` into an
-outgoing request for an arbitrary URL.
+`--render` is not a safe generic outgoing-request helper: the query result
+does not prove path, secure-context, or exact-destination applicability.
+`--url` is broader still because it can inspect hostname and parent-domain
+matches without stopping at public suffixes. Keep rendered output local.
 
 For programmatic use, query by cookie name and domain:
 
@@ -59,7 +60,7 @@ without authentication.
 2. Request only the domain and cookie names needed for the current task.
 3. Keep cookie values in process memory; never write them to files, logs,
    screenshots, traces, or shell history.
-4. Check for an empty result before sending a request or opening a page.
+4. Check for an empty result before continuing a local task.
 5. Close browser contexts and unset shell variables as soon as the task ends.
 
 ## Next steps

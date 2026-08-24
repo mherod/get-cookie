@@ -179,24 +179,40 @@ import {
 } from "@mherod/get-cookie";
 
 function toPlaywrightCookie(cookie: ExportedCookie) {
+  const path = cookie.meta?.path;
+  const secure = cookie.meta?.secure;
+  const httpOnly = cookie.meta?.httpOnly;
+  const expires =
+    cookie.expiry === "Infinity"
+      ? undefined
+      : cookie.expiry instanceof Date
+        ? Math.floor(cookie.expiry.getTime() / 1000)
+        : typeof cookie.expiry === "number"
+          ? cookie.expiry
+          : Number.NaN;
+
   if (
-    !cookie.meta?.path ||
-    typeof cookie.meta.secure !== "boolean" ||
-    typeof cookie.meta.httpOnly !== "boolean"
+    !path ||
+    !path.startsWith("/") ||
+    typeof secure !== "boolean" ||
+    typeof httpOnly !== "boolean" ||
+    (expires !== undefined &&
+      (!Number.isSafeInteger(expires) ||
+        expires <= Math.floor(Date.now() / 1000)))
   ) {
-    throw new Error("Cookie metadata is incomplete for a safe handoff");
+    throw new Error(
+      "Cookie scope or lifetime metadata is incomplete for a safe handoff",
+    );
   }
 
   return {
     name: cookie.name,
     value: String(cookie.value),
     domain: cookie.domain,
-    path: cookie.meta.path,
-    secure: cookie.meta.secure,
-    httpOnly: cookie.meta.httpOnly,
-    ...(cookie.expiry instanceof Date && {
-      expires: Math.floor(cookie.expiry.getTime() / 1000),
-    }),
+    path,
+    secure,
+    httpOnly,
+    ...(expires !== undefined && { expires }),
   };
 }
 

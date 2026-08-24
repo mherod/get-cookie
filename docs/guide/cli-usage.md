@@ -115,21 +115,28 @@ get-cookie % example.com --include-expired --include-all --output json
 
 JWT inspection runs after the cookie query:
 
-| Option             | Alias | Meaning                                                          |
-| ------------------ | ----- | ---------------------------------------------------------------- |
-| `--detect-jwt`     | `-j`  | Add decoded JWT metadata to JWT-shaped cookie values.           |
-| `--jwt-only`       |       | Keep JWT-shaped values that pass decoding and expiry filtering. |
-| `--jwt-secret KEY` |       | Verify JWT signatures with the supplied secret.                 |
+| Option             | Alias | Meaning                                                                       |
+| ------------------ | ----- | ----------------------------------------------------------------------------- |
+| `--detect-jwt`     | `-j`  | Annotate JWT-shaped values with decoded metadata when decoding succeeds.      |
+| `--jwt-only`       |       | Keep JWT-shaped values; filter failed expiry or signature checks when known. |
+| `--jwt-secret KEY` |       | With a JWT inspection flag, verify signatures with the supplied secret.     |
 
 ```bash
 get-cookie % example.com --detect-jwt --output json
 get-cookie % example.com --jwt-only --output json
+get-cookie % example.com --jwt-only --jwt-secret "$JWT_SECRET" --output json
 ```
 
-Without `--jwt-secret`, these flags inspect token structure and decoded
-expiry claims; they do not authenticate the token or verify its signature.
-Use `--jwt-secret` when you need secret-backed signature verification, and
-reserve “verified” for tokens that pass that check.
+`--jwt-secret` only takes effect with `--detect-jwt` or `--jwt-only`; by
+itself it does not start JWT inspection. Without it, these flags inspect token
+shape and decoded expiry claims; they do not authenticate the token or verify
+its signature.
+
+`--jwt-only` keeps JWT-shaped values first. It filters a value only when
+inspection metadata shows an expired token or, with `--jwt-secret`, a failed
+signature check; a JWT-shaped value that cannot be decoded can remain in the
+output. Reserve “verified” for tokens that pass a secret-backed signature
+check.
 
 Do not put a real signing secret into shell history or shared logs.
 

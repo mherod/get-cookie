@@ -45,7 +45,7 @@ For programmatic use, query by cookie name and domain:
 import { getCookie } from "@mherod/get-cookie";
 
 const cookies = await getCookie({
-  name: "%",
+  name: "sessionid",
   domain: "example.com",
 });
 ```

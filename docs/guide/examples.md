@@ -282,11 +282,12 @@ get-cookie auth_token app.example.com --detect-jwt --output json |
     cookieExpiry: .expiry,
     isJwt: .meta.isJwt,
     jwtExpiry: .meta.jwtExpiry,
-    jwtValid: .meta.jwtValidation.isValid
+    jwtInspectionPassed: .meta.jwtValidation.isValid
   })'
 ```
 
-JWT decoding is not signature verification. Do not print
+`jwtInspectionPassed` reports the available decode and expiry checks; it is not
+signature verification without a supplied secret. Do not print
 <code>.meta.jwtPayload</code>, and avoid putting a real
 <code>--jwt-secret</code> into shell history.
 

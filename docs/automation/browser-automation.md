@@ -20,7 +20,8 @@ The example below assumes Playwright is already installed in your project.
 ## Playwright example
 
 This example asks for cookies only for one domain, fails closed when none are
-found, and closes the context when the task ends:
+found or when the original cookie scope is unavailable, and closes the context
+when the task ends:
 
 ```typescript
 import { chromium } from "playwright";
@@ -37,24 +38,37 @@ if (cookies.length === 0) {
   throw new Error("No matching browser cookies found");
 }
 
+const playwrightCookies = cookies.map((cookie) => {
+  const path = cookie.meta?.path;
+  const secure = cookie.meta?.secure;
+  const httpOnly = cookie.meta?.httpOnly;
+
+  if (
+    !path ||
+    !path.startsWith("/") ||
+    typeof secure !== "boolean" ||
+    typeof httpOnly !== "boolean"
+  ) {
+    throw new Error(
+      "Cannot replay a cookie without its original scope metadata",
+    );
+  }
+
+  return {
+    name: cookie.name,
+    value: String(cookie.value),
+    domain: cookie.domain,
+    path,
+    secure,
+    httpOnly,
+  };
+});
+
 const browser = await chromium.launch();
 const context = await browser.newContext();
 
 try {
-  await context.addCookies(
-    cookies.map((cookie) => ({
-      name: cookie.name,
-      value: String(cookie.value),
-      domain: cookie.domain,
-      path: cookie.meta?.path ?? "/",
-      ...(cookie.meta?.secure !== undefined && {
-        secure: cookie.meta.secure,
-      }),
-      ...(cookie.meta?.httpOnly !== undefined && {
-        httpOnly: cookie.meta.httpOnly,
-      }),
-    })),
-  );
+  await context.addCookies(playwrightCookies);
 
   const page = await context.newPage();
   await page.goto(targetUrl);
@@ -65,6 +79,13 @@ try {
   await browser.close();
 }
 ```
+
+The example intentionally has no fallback scope. Some browser strategies do not
+currently expose `meta.path`, `meta.secure`, or `meta.httpOnly`; those results
+are not safe to replay because substituting `/` could widen a path-scoped
+cookie and guessed flags can change how it is exposed or sent. Use only
+results that retain their original scope metadata, or use the service's normal
+login or test-auth flow instead.
 
 The public `getCookie` API accepts a cookie `name` and `domain`. Use `%`
 as the name only when the target needs all matching cookies; a named cookie is

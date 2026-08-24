@@ -1,4 +1,4 @@
-import { batchGetCookiesWithResults, getCookie } from "../src/index";
+import { batchGetCookies, getCookie } from "../src/index";
 
 const domain = "app.example.com";
 
@@ -19,7 +19,7 @@ export async function runAdvancedExamples(): Promise<void> {
   });
   report("All cookies for the placeholder domain", allForDomain.length);
 
-  const results = await batchGetCookiesWithResults(
+  const knownCookies = await batchGetCookies(
     [
       { name: "session_token", domain },
       { name: "csrf_token", domain },
@@ -29,15 +29,7 @@ export async function runAdvancedExamples(): Promise<void> {
       continueOnError: true,
     },
   );
-
-  for (const result of results) {
-    const label = `Cookie ${result.spec.name}`;
-    if (result.error) {
-      console.log(`${label}: query failed`);
-      continue;
-    }
-    report(label, result.cookies.length);
-  }
+  report("Known session and CSRF cookies", knownCookies.length);
 }
 
 void runAdvancedExamples().catch(() => {

@@ -83,20 +83,9 @@ The defaults are `deduplicate: true`, `concurrency: 10`, and
 `continueOnError: true`. Deduplication keeps one result for each
 `name + domain` pair, preferring the longer value.
 
-When you need per-spec results, use `batchGetCookiesWithResults`:
-
-```typescript
-import { batchGetCookiesWithResults } from "@mherod/get-cookie";
-
-const results = await batchGetCookiesWithResults([
-  { name: "sessionid", domain: "example.com" },
-  { name: "csrf", domain: "example.com" },
-]);
-
-for (const result of results) {
-  console.log(result.spec.name, result.cookies.length, result.error);
-}
-```
+Use the flat `batchGetCookies` result for local decisions. If you need
+reliable per-spec attribution, query each known specification directly rather
+than relying on detailed grouping for wildcard names or parent-domain matches.
 
 ## Choose a browser directly
 

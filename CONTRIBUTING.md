@@ -120,14 +120,20 @@ git commit -m "<version>"
 git push -u origin chore/release-<version>
 gh pr create --title "chore: release <version>"
 
-# After the PR merges:
-git switch main
-git pull --ff-only origin main
-git tag v<version>
+# After the PR merges, tag that PR's reviewed merge commit:
+RELEASE_PR_NUMBER="<release-pr-number>"
+RELEASE_SHA="$(gh pr view "$RELEASE_PR_NUMBER" --json mergeCommit --jq '.mergeCommit.oid')"
+if [ -z "$RELEASE_SHA" ] || [ "$RELEASE_SHA" = "null" ]; then
+  echo "Release PR is not merged" >&2
+  exit 1
+fi
+git fetch origin main
+git tag v<version> "$RELEASE_SHA"
 git push origin v<version>
 ```
 
-The pushed tag triggers the release workflow. If a manual npm publish is
+Replace `<release-pr-number>` with the merged release PR number. The pushed
+tag triggers the release workflow. If a manual npm publish is
 explicitly needed, build and validate first, then use
 `pnpm publish --access public`.
 

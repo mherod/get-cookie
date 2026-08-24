@@ -79,9 +79,10 @@ get-cookie test_session app.example.com \
   jq 'map({name, domain, expiry, browser: .meta.browser})'
 ```
 
-An empty array can mean the cookie is missing, the selected profile is wrong,
-or the browser store is inaccessible. Use [Troubleshooting](./troubleshooting.md)
-before widening the query.
+No stdout payload can mean the cookie is missing, the selected profile is
+wrong, or the browser store is inaccessible. The CLI logs `No results` but
+does not emit `[]` for a no-match JSON query. Use
+[Troubleshooting](./troubleshooting.md) before widening the query.
 
 ## Local programmatic check
 

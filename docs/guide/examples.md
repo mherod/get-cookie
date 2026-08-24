@@ -303,8 +303,8 @@ JWT decoding is not signature verification. Do not print
 ## Preflight a local dev command
 
 Use a status-only preflight when a local task needs one known browser session.
-The command reports readiness without keeping a cookie value in a variable or
-printing it.
+The command checks whether the CLI wrote any value to stdout without keeping
+it in a variable or printing it.
 
 ```bash
 #!/usr/bin/env bash
@@ -312,21 +312,20 @@ set -euo pipefail
 
 if get-cookie sessionid app.example.com \
   --browser chrome \
-  --profile "Work" \
-  --output json |
-  jq -e 'length > 0' >/dev/null; then
+  --profile "Work" |
+  grep -q .; then
   echo "ready"
 else
   echo "sign in first" >&2
   exit 1
 fi
 
-pnpm run local:smoke
+# Run the local command that needs the session here.
 ```
 
-The full JSON still crosses the local pipe before <code>jq</code> reduces it
-to a boolean, so keep tracing off. This is a useful front door for local
-developer tooling; for CI, use mocks, fixtures, or the target service's
+The value still crosses a local pipe before <code>grep</code> reduces it to a
+boolean, so keep tracing off. This is a useful front door for local developer
+tooling; for CI, use mocks, fixtures, or the target service's
 test-authentication mechanism instead.
 
 ## Where to go next

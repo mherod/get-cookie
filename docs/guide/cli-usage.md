@@ -158,9 +158,11 @@ curl -H "Cookie: $(get-cookie sessionid app.example.com --render)" https://app.e
 | `--verbose`       | `-v`  | Show diagnostic logging.                                        |
 | `--list-profiles` |       | List discoverable profiles, optionally filtered by `--browser`. |
 
-When a query has no matches, the CLI logs `No results`. Do not rely on a
-specialized no-results exit-code taxonomy; use JSON output or check the
-rendered output in your script.
+When a query has no matches, the CLI logs `No results` and writes no result
+payload to stdout. In particular, `--output json` does not emit `[]` for that
+case. Do not rely on a specialized no-results exit-code taxonomy; capture
+stdout and check that it is non-empty before parsing JSON or using rendered
+output.
 
 ## Safe shell pattern
 

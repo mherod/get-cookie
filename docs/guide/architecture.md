@@ -1,237 +1,131 @@
 ---
-title: Architecture Overview
-description: Understanding the technical architecture of get-cookie
+title: Architecture
+description: How get-cookie turns local browser stores into exported cookies.
 ---
 
-# Architecture Overview
+# Architecture
 
-The get-cookie library follows a well-structured, modular architecture designed for maintainability, extensibility, and performance.
+`get-cookie` has two public surfaces over the same browser readers:
 
-## Core Design Patterns
+- The CLI adds argument parsing, browser/profile selection, filtering, JWT
+  inspection, and output formatting.
+- The library exports convenience helpers and strategy classes for TypeScript.
 
-### Strategy Pattern
+## Data flow
 
-The codebase implements the **Strategy Pattern** for browser-specific cookie extraction:
-
+```text
+CLI arguments or CookieSpec
+          |
+          v
+strategy selection
+          |
+          v
+browser store discovery
+          |
+          v
+SQLite query or Safari binary decode
+          |
+          v
+platform decryption and normalization
+          |
+          v
+ExportedCookie[]
+          |
+          v
+CLI formatter or caller code
 ```
-BaseCookieQueryStrategy (Abstract)
-├── BaseChromiumCookieQueryStrategy
-│   ├── ChromeCookieQueryStrategy
-│   ├── EdgeCookieQueryStrategy
-│   ├── ArcCookieQueryStrategy
-│   ├── OperaCookieQueryStrategy
-│   └── OperaGXCookieQueryStrategy
-├── FirefoxCookieQueryStrategy
-├── SafariCookieQueryStrategy
-└── CompositeCookieQueryStrategy
-```
 
-Each strategy encapsulates browser-specific logic while maintaining a consistent interface.
+The package does not need a browser automation session to read cookies. It
+locates the browser's local store, reads it through a strategy, decrypts values
+where the operating system permits that, and normalizes records into exported
+cookies.
 
-### Factory Pattern
+## Public entrypoints
 
-**CookieStrategyFactory** creates appropriate strategies based on:
-- Browser type detection
-- Cookie store file analysis
-- Automatic fallback to composite strategy
+`src/index.ts` exports the root API. `src/node.ts` and `src/bun.ts` set a
+runtime override before re-exporting the same API:
 
-### Composite Pattern
+- Root import: runtime-aware default
+- `@mherod/get-cookie/node`: `better-sqlite3`
+- `@mherod/get-cookie/bun`: `bun:sqlite`
 
-**CompositeCookieQueryStrategy** aggregates multiple strategies to query across all browsers simultaneously.
+The CLI entrypoint is `src/cli/cli.ts`.
 
-## SQL Infrastructure
+## Strategy layer
 
-The library includes a sophisticated SQL layer for database operations:
+`BaseCookieQueryStrategy` standardizes query handling and error isolation.
+Concrete strategies handle browser-specific discovery and decoding:
 
-### DatabaseConnectionManager
+- `ChromeCookieQueryStrategy` for Chrome
+- `ChromiumCookieQueryStrategy` for other Chromium-family stores
+- `FirefoxCookieQueryStrategy` for Firefox SQLite profiles and containers
+- `SafariCookieQueryStrategy` for Safari binary-cookie files on macOS
+- `CompositeCookieQueryStrategy` for aggregating several strategies
 
-- **Connection Pooling**: Maintains reusable database connections
-- **Lifecycle Management**: Handles connection creation, reuse, and cleanup
-- **Retry Logic**: Automatic retry on database lock conditions
-- **Thread Safety**: Ensures safe concurrent access
+The CLI's `StrategyFactory` registry covers nine selectors: Chrome, Edge,
+Arc, Brave, Opera, Opera GX, Vivaldi, Firefox, and Safari. The root
+`getCookie` helper deliberately uses a smaller default set: Chrome, Firefox,
+and Safari.
 
-### QueryMonitor
+## Storage and query layer
 
-- **Performance Tracking**: Monitors query execution times
-- **Slow Query Detection**: Identifies performance bottlenecks
-- **Metrics Collection**: Gathers statistics for optimization
-- **Debug Logging**: Detailed query logging for troubleshooting
+Chromium and Firefox stores are SQLite databases. The SQL layer under
+`src/core/browsers/sql/` contains:
 
-### CookieQueryBuilder
+- `DatabaseConnectionManager` for connection lifecycle and retry behavior
+- `CookieQueryBuilder` for parameterized browser-specific queries
+- `QueryMonitor` for query timing and slow-query diagnostics
+- Runtime adapters for `better-sqlite3` and `bun:sqlite`
 
-- **Type-Safe Construction**: Strongly typed query building
-- **SQL Injection Prevention**: Parameterized queries and validation
-- **Index Optimization**: Leverages database indexes for performance
-- **Cross-Platform SQL**: Handles platform-specific SQL variations
+Safari uses a custom decoder under `src/core/browsers/safari/` because its
+cookie store is a binary file rather than a SQLite database.
 
-### BrowserLockHandler
+## Discovery and profiles
 
-- **Lock Detection**: Identifies when browsers have locked databases
-- **Graceful Retry**: Exponential backoff for locked resources
-- **Process Detection**: Checks if browsers are running
-- **Error Recovery**: Intelligent error handling and recovery
+Browser-specific paths live in `BrowserAvailability.ts` and
+`ChromiumBrowsers.ts`. Chromium profile selection reads `Local State` and
+matches profile display names or directory names. Firefox profile selection
+reads `profiles.ini`; container selection resolves through
+`containers.json`.
 
-## Platform-Specific Implementations
+Discovery is intentionally tolerant: an unavailable store or a failed browser
+strategy should not prevent other strategies from returning results.
 
-### macOS
+## Decryption and permissions
 
-- **Keychain Integration**: Secure password retrieval from macOS Keychain
-- **Container Access**: Safari container permission handling
-- **Binary Cookie Decoder**: Custom parser for Safari's binary format
+The browser reader does not bypass operating-system protections:
 
-### Windows
+- macOS Chromium values use Keychain-backed Safe Storage secrets.
+- Windows Chromium values use DPAPI through the optional native binding.
+- Linux Chromium values try installed secret-service/keyring providers.
+- Safari checks access to its container or legacy binary-cookie file and may
+  guide an interactive user to Full Disk Access.
 
-- **DPAPI Integration**: Windows Data Protection API for Chrome/Edge
-- **Registry Access**: Browser installation detection
-- **Multi-Variant Support**: Firefox Developer Edition, ESR variants
+Database locks are handled through `BrowserLockHandler`. In interactive local
+use, a lock may prompt for browser close/relaunch; `--force` skips that
+remediation rather than guaranteeing a read.
 
-### Linux
+## Error model
 
-- **Keyring Support**: libsecret integration for Chrome passwords
-- **XDG Compliance**: Follows XDG base directory specification
-- **Fallback Mechanisms**: Hardcoded keys when keyring unavailable
+The convenience helpers and composite strategy favor partial results:
 
-## Key Components
+- `getCookie` catches query failures and resolves to an empty array.
+- Composite queries isolate a failed browser from successful browsers.
+- The CLI reports `No results` when the final result set is empty.
 
-### Core Browser Module (`src/core/browsers/`)
+Callers that need browser-specific control should instantiate a strategy
+directly and handle its result deliberately.
 
-- **Strategy Implementations**: Browser-specific query strategies
-- **SQL Utilities**: Database connection and query management
-- **Platform Controls**: OS-specific browser management
-- **Lock Handling**: Database lock detection and retry
+## Where to change things
 
-### CLI Module (`src/cli/`)
+| Change | Primary area |
+| --- | --- |
+| Add or adjust a browser selector | `src/core/browsers/StrategyFactory.ts` |
+| Change profile discovery | `src/core/browsers/chromium/` or `src/core/browsers/firefox/` |
+| Change SQL behavior | `src/core/browsers/sql/` |
+| Change CLI flags or output | `src/utils/argv.ts`, `src/cli/` |
+| Change public exports | `src/index.ts`, `src/node.ts`, `src/bun.ts` |
 
-- **Command Interface**: Argument parsing and validation
-- **Output Handlers**: JSON, rendered, and dump formats
-- **Service Layer**: Cookie query orchestration
-- **Error Reporting**: User-friendly error messages
-
-### Utilities (`src/utils/`)
-
-- **Process Detection**: Check running browser processes
-- **Platform Utils**: OS detection and path resolution
-- **Date Handling**: Chrome timestamp conversion
-- **Encryption**: Cookie decryption utilities
-- **Error Utils**: Standardized error handling
-- **JWT Validation**: Token parsing and validation
-
-### Type Definitions (`src/types/`)
-
-- **Zod Schemas**: Runtime validation schemas
-- **TypeScript Types**: Compile-time type safety
-- **Browser Types**: Browser-specific type definitions
-- **API Contracts**: Public API type definitions
-
-## Data Flow
-
-1. **Request Initiation**
-   - CLI command or API call with cookie query parameters
-
-2. **Strategy Selection**
-   - Factory creates appropriate strategy based on browser parameter
-   - Falls back to composite strategy for multi-browser queries
-
-3. **Cookie Extraction**
-   - Strategy locates browser cookie database
-   - Handles platform-specific encryption/decryption
-   - Manages database locking and retries
-
-4. **Query Execution**
-   - SQL query built with CookieQueryBuilder
-   - Connection obtained from DatabaseConnectionManager
-   - Query monitored by QueryMonitor
-
-5. **Result Processing**
-   - Raw cookies transformed to ExportedCookie format
-   - Metadata attached (browser, file, decryption status)
-   - Results filtered and formatted
-
-6. **Output Rendering**
-   - Output handler formats results based on CLI flags
-   - Results returned to user or written to stdout
-
-## Performance Optimizations
-
-### Database Access
-
-- **Connection Pooling**: Reuses database connections
-- **Indexed Queries**: Uses database indexes for fast lookups
-- **Batch Processing**: Processes multiple profiles efficiently
-- **Lazy Loading**: Only loads necessary data
-
-### Memory Management
-
-- **Streaming**: Processes large result sets without loading all into memory
-- **Resource Cleanup**: Ensures connections and files are properly closed
-- **Garbage Collection**: Efficient memory usage patterns
-
-### Error Handling
-
-- **Graceful Degradation**: Continues operation when individual browsers fail
-- **Retry Mechanisms**: Automatic retry for transient failures
-- **Detailed Logging**: Debug-level logging for troubleshooting
-- **User-Friendly Errors**: Clear error messages for common issues
-
-## Security Considerations
-
-### Encryption Handling
-
-- **Platform-Native**: Uses OS-provided encryption mechanisms
-- **No Key Storage**: Never stores or logs encryption keys
-- **Secure Memory**: Clears sensitive data after use
-
-### Permission Model
-
-- **Least Privilege**: Only requests necessary permissions
-- **Sandboxing**: Respects browser sandbox boundaries
-- **Read-Only**: Never modifies browser data
-
-### Data Protection
-
-- **No Network Access**: Purely local operations
-- **No Data Collection**: No telemetry or analytics
-- **Secure Defaults**: Safe default configurations
-
-## Extensibility
-
-### Adding New Browsers
-
-1. Extend `BaseCookieQueryStrategy` or `BaseChromiumCookieQueryStrategy`
-2. Implement browser-specific logic
-3. Register in `CookieStrategyFactory`
-4. Add tests and documentation
-
-### Custom Output Formats
-
-1. Implement `OutputHandler` interface
-2. Register in output handler factory
-3. Add CLI flag support
-
-### Platform Extensions
-
-1. Add platform detection in `platformUtils`
-2. Implement platform-specific paths
-3. Add encryption/decryption support
-4. Update browser strategies
-
-## Testing Architecture
-
-### Unit Tests
-
-- **Strategy Tests**: Individual browser strategy testing
-- **Utility Tests**: Platform and encryption utility testing
-- **Mock Implementations**: MockCookieQueryStrategy for testing
-
-### Integration Tests
-
-- **Database Tests**: SQLite operation testing
-- **Encryption Tests**: Platform-specific encryption testing
-- **CLI Tests**: Command-line interface testing
-
-### Test Infrastructure
-
-- **Jest Configuration**: TypeScript support via ts-jest
-- **Single Worker Mode**: Prevents SQLite concurrency issues
-- **Fixture Data**: Real-world cookie database samples
-- **Mock Factories**: Consistent test data generation
+See [Testing](./testing.md) before changing a reader, and keep
+[Browser support](./browser-support.md) synchronized with any selector or path
+change.

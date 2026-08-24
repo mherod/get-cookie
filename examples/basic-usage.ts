@@ -1,43 +1,21 @@
-/**
- * @module
- * @internal
- */
-
-/**
- * @description
- * This example demonstrates basic usage of the getCookie function.
- * It shows how to retrieve cookies from all supported browsers using a unified interface.
- * @internal
- * @example
- * ```typescript
- * import { getCookie } from "@mherod/get-cookie";
- *
- * // Get a cookie by name and domain
- * const cookie = await getCookie({
- *   name: "session",
- *   domain: "github.com"
- * });
- *
- * console.log(cookie);
- * ```
- */
-
 import { getCookie } from "@mherod/get-cookie";
 
-/**
- * @description
- * Basic example showing how to retrieve cookies from browsers.
- * @internal
- */
+// Cookie values are credentials, so report only whether a readable match exists.
 async function main(): Promise<void> {
-  // Get all session cookies from github.com
   const cookies = await getCookie({
-    name: "user_session",
-    domain: "github.com",
+    name: "session_token",
+    domain: "app.example.com",
   });
 
-  console.log("Found cookies:", cookies);
+  if (cookies.length === 0) {
+    console.log("No readable matching cookies were found.");
+    return;
+  }
+
+  console.log(`Found ${cookies.length} matching cookie(s).`);
 }
 
-// Run the example
-void main();
+void main().catch(() => {
+  console.error("Cookie lookup failed.");
+  process.exitCode = 1;
+});

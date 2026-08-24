@@ -1,57 +1,65 @@
-# Known Limitations 🚧
+# Known Limitations
 
-This guide details the current limitations and known issues when using get-cookie.
+Use the [Browser Support Reference](./browser-support.md) for the canonical
+selector matrix. The limitations below apply even on an implemented platform.
 
-## Platform Support Limitations
+## Scope
 
-- Full functionality only available on macOS
-- Firefox has experimental Linux support
-- Windows support not implemented
+- The tool reads persisted local browser stores. It cannot retrieve cookies
+  that exist only in a private/incognito session or were never written to disk.
+- The root `getCookie()` and `batchGetCookies()` helpers query only Chrome,
+  Firefox, and Safari by default. Use a strategy directly for another Chromium
+  selector.
+- The CLI accepts nine `--browser` selectors. `chromium` and `whale` are
+  direct `ChromiumCookieQueryStrategy` values, not CLI selectors.
+- Safari is macOS-only and has no named-profile filtering.
 
-## Browser-Specific Limitations
+## Matching and filtering
 
-### Chrome
+- Cookie specs require both `name` and `domain`.
+- For SQL-backed browsers, name patterns use SQL `%` and `_`; only a
+  standalone CLI `*` is normalized to `%`. Do not expect `session*` to
+  behave as a wildcard.
+- For SQL-backed browsers, the default domain pattern `%` is not a true
+  all-domain sentinel: it can omit single-label stored domains such as
+  `localhost`. Query those domains explicitly.
+- A normal domain query matches the domain and its subdomains. It is not a
+  shell-glob matcher, so `*.example.com` is not the recommended form.
+- `--include-expired` is currently accepted by the CLI but not applied by
+  `CookieQueryService`; each browser strategy keeps its existing expiry
+  behavior. Do not rely on the flag to recover expired or session cookies.
+- CLI deduplication is on by default and keeps one value for each
+  `name:domain` pair, preferring the longer value. Use `--include-all` when
+  duplicate rows matter.
 
-- Requires macOS Keychain access
-- Safe Storage password must be accessible
-- Profile directories must be readable
+## Profiles and stores
 
-### Firefox
+- `--profile` and `--container` need an explicit `--browser`; the default
+  composite strategy does not apply those filters.
+- Chromium profile filtering depends on readable `Local State` metadata. If
+  that metadata is missing or malformed, the strategy can fall back to all
+  discovered cookie files.
+- Firefox profile names come from `profiles.ini`; container names come from
+  the profile's `containers.json`.
+- A custom `--store` path must be readable and must use a format the selected
+  strategy understands.
 
-- Database must be readable by current user
-- Profile discovery may be limited
-- No encryption handling needed
+## Permissions, encryption, and locks
 
-### Safari
+- OS permissions, Keychain, DPAPI, keyring access, and locked files can all
+  produce an empty result.
+- Windows Chromium decryption needs the optional native `@primno/dpapi`
+  binding for real DPAPI-protected keys.
+- Linux Chromium decryption depends on an available keyring secret or the
+  historical fallback password matching the browser's configuration.
+- `--force` does not bypass permissions or encryption. It suppresses
+  interactive lock/permission remediation, so a locked store may still return
+  no cookies.
 
-- Requires access to container directory
-- Binary cookie format parsing
-- System-wide storage access needed
+## Error behavior
 
-## Cookie Handling Limitations
+The public helpers and browser strategies handle many failures by logging and
+returning `[]`. An empty array or CLI `No results` message therefore means
+“no readable match,” not necessarily “the cookie does not exist.”
 
-- Some cookies may be inaccessible due to permissions
-- Expired cookies are filtered by default
-- Domain matching includes subdomains
-- Some browser profiles may be locked/in use
-
-## Error Handling Considerations
-
-- Fails gracefully if browser data is inaccessible
-- Reports decryption failures for Chrome cookies
-- Skips problematic cookies while processing
-- Profile access errors are handled gracefully
-
-## Security Constraints
-
-- Keychain access required for Chrome
-- Container permissions needed for Safari
-- Profile directory access permissions
-- System Integrity Protection affects access
-
-## Performance Considerations
-
-- Large cookie stores may impact performance
-- Multiple profile scanning takes time
-- Decryption operations can be slow
-- Database locks may cause delays
+For recovery steps, see [Troubleshooting](./troubleshooting.md).

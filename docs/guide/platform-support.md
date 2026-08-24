@@ -1,220 +1,81 @@
 # Platform Support Guide
 
-This guide details the current platform support status and requirements for get-cookie.
+For the definitive selector-by-platform table, use the
+[Browser Support Reference](./browser-support.md). This page covers the
+operating-system requirements behind that matrix.
 
-## Support Matrix
+## Supported operating systems
 
-**→ See the complete [Browser Support Matrix](./browser-support.md) for the definitive browser and platform compatibility table**
+Chromium and Firefox strategies are implemented for macOS, Linux, and Windows.
+Safari is intentionally skipped outside macOS. The code does not support other
+Node.js platform values.
 
-**Key platforms:**
-- **macOS**: Full support for all 11 browsers including Safari
-- **Linux**: Full support for 10 Chromium and Firefox variants  
-- **Windows**: Full support for 10 browsers (Arc support added April 2024)
+## macOS
 
-## Platform Details
+Chromium-family browsers need readable profile files plus access to a Safe
+Storage secret in Keychain. The service name depends on the browser, for
+example `Chrome Safe Storage`, `Microsoft Edge Safe Storage`, or
+`Brave Safe Storage`.
 
-### macOS
+Firefox reads `cookies.sqlite` from Firefox profile directories. Safari reads
+the modern `com.apple.Safari` container cookie file first and falls back to
+the legacy `~/Library/Cookies/Cookies.binarycookies` path.
 
-Primary supported platform with full functionality across all major browsers.
+Safari access can require Full Disk Access for the terminal or host
+application. On a locked database, an interactive macOS run may ask before
+closing the browser, retrying, and relaunching it. `--force` suppresses those
+interactive remediation prompts; it does not bypass Keychain, file, or
+container permissions.
 
-#### Supported Browsers
+## Linux
 
-- **Chrome**: Full support with comprehensive cookie decryption
-  - v11+ cookies: AES-128-CBC with PBKDF2 key derivation
-  - Plaintext cookies: Legacy cookies stored without encryption
-  - Keychain integration for encryption keys
-  - Hash prefix handling for modern database versions
-- **Edge**: Full support (Chromium-based, same as Chrome)
-  - Identical encryption and storage format as Chrome
-  - Keychain integration for encryption keys
-  - All Chrome features supported
-- **Firefox**: Full support with profile management
-- **Safari**: Full support with container access
+Chromium-family strategies read the browser's user-data directory and try these
+Safe Storage sources in order:
 
-#### Requirements
+1. GNOME Keyring through `secret-tool`
+2. Python's `keyring` module
+3. KWallet
+4. Chromium's historical `peanuts` fallback
 
-- macOS 10.15 or later recommended
-- Keychain Access for Chrome
-- Browser profile directory access
-- Safari container permissions
-- System Integrity Protection enabled
+Firefox discovery covers native `~/.mozilla/firefox`, XDG
+`$XDG_CONFIG_HOME/mozilla/firefox`, Snap, and Flatpak profile roots. Safari is
+not available on Linux.
 
-#### Known Limitations
+The current code uses local SQLite access, so readable profile directories and
+cookie files are required. A missing keyring can make encrypted Chromium
+cookies unreadable even when the database itself is accessible.
 
-- Some cookies may require specific permissions
-- Browser profiles must be unlocked
-- Container access may need configuration
-- System updates can affect access patterns
+## Windows
 
-### Linux
+Chromium-family browsers read `Local State`, unwrap the master key with
+Windows DPAPI, and decrypt modern `v10` cookies with AES-256-GCM. Real DPAPI
+decryption requires the optional native `@primno/dpapi` package to be
+available in the installation.
 
-Full Chrome and Edge support with experimental Firefox support.
+Firefox discovery covers roaming profile roots for regular Firefox, Firefox
+Developer Edition, and Firefox ESR. Safari is not available on Windows.
 
-#### Supported Browsers
+Arc is a special case: the query strategy has a Windows path, while browser
+availability detection still marks Arc unavailable. Treat Windows Arc as
+verify-locally rather than a guaranteed support promise; see the
+[canonical matrix](./browser-support.md).
 
-- **Chrome**: Full support with comprehensive cookie decryption
-  - v11+ cookies: AES-128-CBC with PBKDF2 key derivation
-  - System keyring integration (libsecret)
-  - Fallback encryption key support
-  - Hash prefix handling for modern database versions
-- **Edge**: Full support (Chromium-based, same as Chrome)
-  - Identical encryption and storage format as Chrome
-  - System keyring integration (libsecret)
-  - All Chrome features supported
-- **Firefox**: Basic support (experimental)
-- **Safari**: Not available on platform
+## Runtime requirements
 
-#### Requirements
+The package declares Node.js `^20`, `^22`, `^24`, `^25`, or `^26`.
+The root import auto-detects the runtime. Use
+`@mherod/get-cookie/node` to force `better-sqlite3`, or
+`@mherod/get-cookie/bun` to force `bun:sqlite`.
 
-- **Chrome**: Google Chrome installation, system keyring (libsecret) recommended
-- **Edge**: Microsoft Edge installation, system keyring (libsecret) recommended
-- **Firefox**: Firefox installation, read access to `~/.mozilla/firefox`
-- SQLite database access
-- Appropriate file permissions
+## Practical checks
 
-#### Known Limitations
-
-- **Chrome/Edge**: Requires keyring access or falls back to hardcoded key
-- **Firefox**: Database locking issues possible, experimental feature set
-- Profile discovery may be limited
-- Some system configurations may require additional setup
-
-### Windows
-
-Full support for Chrome, Edge, and all Firefox variants.
-
-#### Supported Browsers
-
-- **Chrome**: Full support with comprehensive cookie decryption
-- **Edge**: Full support (Chromium-based, same as Chrome)
-  - v10 cookies: AES-256-GCM with DPAPI-protected keys
-  - v11+ cookies: AES-128-CBC with PBKDF2 key derivation
-  - Windows DPAPI integration for encryption keys
-  - Local State file parsing for master key
-- **Firefox**: Full support for all Firefox variants
-- **Safari**: Not available on platform
-
-#### Requirements
-
-- **Chrome/Edge**: Windows DPAPI access for encrypted cookies
-- **Firefox**: Read access to AppData Firefox profile directories
-- Appropriate file permissions for browser data folders
-
-#### Known Limitations
-
-- **Chrome/Edge**: Requires DPAPI access, may need elevated permissions
-- **Firefox**: Database locking issues possible during browser usage
-- Some Windows configurations may require additional setup
-
-## Browser-Specific Notes
-
-### Chrome
-
-- **macOS**: Full support with Keychain integration
-  - v11+ cookies with AES-128-CBC encryption
-  - Plaintext cookie support for legacy cookies
-  - Keychain-based encryption keys
-  - Hash prefix handling
-- **Linux**: Full support with keyring integration
-  - v11+ cookies with AES-128-CBC encryption
-  - System keyring (libsecret) integration
-  - Fallback encryption key support
-  - Hash prefix handling
-- **Windows**: Full support with DPAPI integration
-  - v10 cookies with AES-256-GCM encryption
-  - v11+ cookies with AES-128-CBC encryption
-  - DPAPI-protected encryption keys
-  - Local State file parsing
-
-### Firefox
-
-- **macOS**: Full support with multi-profile detection
-- **Linux**: Full support with profile management
-- **Windows**: Full support for all Firefox variants (regular, Developer Edition, ESR)
-  - Multiple profile support
-  - SQLite database access
-  - No encryption handling needed
-
-### Safari
-
-- **macOS**: Full support
-  - Container-based access
-  - Binary cookie format
-  - System-wide storage
-- **Other Platforms**: Not available
-
-## Installation Requirements
-
-### macOS
+Use the CLI itself before inspecting private browser directories manually:
 
 ```bash
-# Check system version
-sw_vers
-
-# Verify Keychain access (for Chrome)
-security find-generic-password -s "Chrome Safe Storage"
-
-# Check browser installations
-ls -la /Applications/Google\ Chrome.app
-ls -la /Applications/Firefox.app
-ls -la /Applications/Safari.app
+get-cookie --browser chrome --list-profiles
+get-cookie --browser firefox --list-profiles
+get-cookie % example.com --browser chrome --verbose
 ```
 
-### Linux
-
-```bash
-# Check Chrome installation
-which google-chrome
-
-# Verify Chrome profile access
-ls -la ~/.config/google-chrome/Default/
-
-# Check Firefox installation
-which firefox
-
-# Verify Firefox profile access
-ls -la ~/.mozilla/firefox/
-
-# Check SQLite support
-sqlite3 --version
-
-# Check keyring integration (for Chrome)
-which secret-tool
-```
-
-## Common Issues
-
-### macOS
-
-- Keychain access denied
-- Container permissions missing
-- Profile directory unreadable
-- Browser not installed
-
-### Linux
-
-- **Chrome**: Chrome not installed, keyring access denied, profile directory inaccessible
-- **Firefox**: Firefox not installed, profile directory inaccessible, database locked
-- Permission issues with browser directories
-
-### Windows
-
-- **Chrome/Edge**: DPAPI access denied, Local State file inaccessible
-- **Firefox**: Profile directory inaccessible, database locked
-- Permission issues with browser data directories
-
-## Future Support Plans
-
-1. **Browser Expansion**
-   - Additional Chromium-based browser variants
-   - Enhanced Arc browser support across platforms
-
-2. **Platform Optimizations**
-   - Linux keyring integration improvements
-   - Windows DPAPI optimization
-   - macOS keychain access enhancements
-
-3. **Cross-Platform Enhancements**
-   - Unified profile handling across browsers
-   - Consistent error reporting and diagnostics
-   - Enhanced encryption support for future browser versions
+For permission and decryption caveats, see [Security & Privacy](./security.md).
+For symptoms and recovery steps, see [Troubleshooting](./troubleshooting.md).

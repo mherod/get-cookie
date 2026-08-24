@@ -1,51 +1,42 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-# Set up the get-cookie function to use the source directly
-get-cookie() {
-    pnpm tsx src/cli/cli.ts "$@"
+# Development-only examples that execute the CLI source through pnpm/tsx.
+# Published-package users should run get-cookie directly instead.
+
+set -u
+
+TARGET_DOMAIN=${TARGET_DOMAIN:-example.com}
+COOKIE_NAME=${COOKIE_NAME:-sessionid}
+
+if ! command -v pnpm >/dev/null 2>&1; then
+  printf '%s\n' "pnpm is required to run the CLI from source." >&2
+  exit 1
+fi
+
+run_get_cookie() {
+  pnpm tsx src/cli/cli.ts "$@"
 }
 
-# Note: Ensure all browser instances are closed before running these examples
-# On macOS, grant "Full Disk Access" to your terminal
+printf '%s\n' "Source CLI examples"
+printf '%s\n' "Target domain: $TARGET_DOMAIN"
+printf '%s\n' "Cookie values are never printed or saved."
+printf '\n'
 
-echo "GitHub Cookie Examples:"
-echo "----------------------"
+printf '%s\n' "1. CLI help"
+run_get_cookie --help
 
-# Get GitHub authentication cookies (useful for API requests)
-echo "\nGetting GitHub authentication cookies:"
-echo "These cookies are needed for authenticated API requests"
-get-cookie user_session github.com --render
-get-cookie __Host-user_session_same_site github.com --render
+printf '\n%s\n' "2. Check a named cookie without displaying it"
+cookie_value="$(run_get_cookie "$COOKIE_NAME" "$TARGET_DOMAIN" 2>/dev/null || true)"
+if [ -n "$cookie_value" ]; then
+  printf '%s\n' "   Found a matching cookie."
+else
+  printf '%s\n' "   No matching cookie found."
+fi
+unset cookie_value
 
-# Get GitHub user preferences
-echo "\nGetting GitHub user preferences:"
-echo "These cookies store user-specific settings"
-get-cookie color_mode github.com --render
-echo "Color mode preferences (light/dark theme settings)"
-get-cookie tz github.com --render
-echo "Timezone setting"
-
-# Get GitHub session state
-echo "\nGetting GitHub session state:"
-echo "These cookies indicate login status and user identity"
-get-cookie logged_in github.com --render
-echo "Login status"
-get-cookie dotcom_user github.com --render
-echo "GitHub username"
-
-# Get all GitHub cookies in grouped format
-echo "\nGetting all GitHub cookies (grouped by browser):"
-echo "Useful for debugging authentication issues"
-get-cookie % github.com --dump-grouped
-
-# Different output formats for automation
-echo "\nOutput format examples:"
-echo "----------------------"
-
-# JSON output (useful for scripting)
-echo "\nJSON format (good for scripting):"
-get-cookie user_session github.com --output json
-
-# Rendered output (human-readable)
-echo "\nRendered format (good for debugging):"
-get-cookie user_session github.com --render
+printf '\n%s\n' "3. Commands to try manually"
+printf '%s\n' "   pnpm tsx src/cli/cli.ts --browser chrome --list-profiles"
+printf '%s\n' "   pnpm tsx src/cli/cli.ts $COOKIE_NAME $TARGET_DOMAIN --browser chrome --profile '<exact profile>' | grep -q ."
+printf '%s\n' "   pnpm tsx src/cli/cli.ts $COOKIE_NAME $TARGET_DOMAIN --browser firefox --container work | grep -q ."
+printf '%s\n' "   pnpm tsx src/cli/cli.ts $COOKIE_NAME $TARGET_DOMAIN --output json"
+printf '\n%s\n' "Treat all query output as sensitive. --render is not a safe generic request helper."

@@ -133,31 +133,6 @@ export async function batchGetCookies(
 }
 
 /**
- * Retrieves multiple cookie specifications with detailed results for each spec.
- * Unlike `batchGetCookies`, this returns detailed results including any errors
- * that occurred for individual specs.
- * @param specs - Array of cookie specifications to retrieve
- * @param options - Options for batch retrieval
- * @returns Array of batch results with cookies and potential errors
- * @example
- * ```typescript
- * import { batchGetCookiesWithResults } from "@mherod/get-cookie";
- *
- * const results = await batchGetCookiesWithResults([
- *   { name: "auth", domain: "api.example.com" },
- *   { name: "session", domain: "example.com" }
- * ]);
- *
- * results.forEach(result => {
- *   if (result.error) {
- *     console.error(`Failed to get cookies for ${result.spec.name}: ${result.error.message}`);
- *   } else {
- *     console.log(`Got ${result.cookies.length} cookies for ${result.spec.name}`);
- *   }
- * });
- * ```
- */
-/**
  * Process cookies and group them by spec
  * @param specs - Cookie specifications
  * @param allCookies - All retrieved cookies
@@ -207,6 +182,11 @@ async function processChunkWithResults(
 
 /**
  * Retrieves multiple cookie specifications with detailed results for each spec
+ *
+ * @remarks
+ * Detailed grouping currently matches exact cookie names and domains. Prefer
+ * `batchGetCookies` or individual queries when wildcard names or
+ * parent-domain matches matter.
  * @param specs - Array of cookie specifications to retrieve
  * @param options - Options for batch retrieval
  * @returns Array of batch results with cookies and potential errors

@@ -1,7 +1,7 @@
 {
   "$schema": "https://typedoc.org/schema.json",
   "entryPoints": ["src/index.ts", "src/cli/cli.ts"],
-  "out": "docs/reference",
+  "out": "docs/reference/generated",
   "plugin": ["typedoc-plugin-markdown"],
   "readme": "none",
   "cleanOutputDir": true,

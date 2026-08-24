@@ -1,329 +1,337 @@
-# Examples & Tutorials 📚
+---
+title: Examples and recipes
+description: Practical local workflows for turning browser sessions into small, safe developer tools.
+pageClass: cookie-examples
+---
 
-This guide provides comprehensive examples demonstrating real-world usage of get-cookie. All examples are available in the `examples/` directory of the repository.
+# Examples and recipes
 
-## Quick Start Examples
+The interesting part of get-cookie is not reading a value. It is what a local
+developer can prove next: whether a known session is readable, whether an
+admin workflow has its expected inputs, or which profile has the session you
+expect.
 
-For immediate practical patterns, see the **Quick Start Guide**:
+Every recipe here uses <code>example.com</code>, keeps credentials in memory,
+and fails closed when nothing is found. Use only accounts and environments you
+are authorized to access.
+
+<div class="example-chooser" aria-label="Choose an example">
+  <a class="example-chooser__card" href="#check-one-authenticated-session">
+    <span class="example-chooser__meta">Shell · 2 min</span>
+    <strong>Check one authenticated session</strong>
+    <span>Reduce one trusted browser session to a local ready/not-ready signal.</span>
+  </a>
+  <a class="example-chooser__card" href="#check-csrf-aware-inputs">
+    <span class="example-chooser__meta">TypeScript · 4 min</span>
+    <strong>Check CSRF-aware inputs</strong>
+    <span>Verify the two known cookies an admin flow expects.</span>
+  </a>
+  <a class="example-chooser__card" href="#assess-browser-automation-inputs">
+    <span class="example-chooser__meta">Playwright · safety gate</span>
+    <strong>Assess automation inputs</strong>
+    <span>See which metadata survived without replaying a credential.</span>
+  </a>
+  <a class="example-chooser__card" href="#compare-browser-identities-without-values">
+    <span class="example-chooser__meta">CLI · 2 min</span>
+    <strong>Compare browser identities</strong>
+    <span>Find the right work, personal, or Firefox-container session.</span>
+  </a>
+  <a class="example-chooser__card" href="#check-session-health-without-showing-secrets">
+    <span class="example-chooser__meta">Diagnostics · 2 min</span>
+    <strong>Check session health</strong>
+    <span>Inspect expiry and JWT status while projecting away values.</span>
+  </a>
+  <a class="example-chooser__card" href="#preflight-a-local-dev-command">
+    <span class="example-chooser__meta">Shell · 1 min</span>
+    <strong>Preflight a local dev command</strong>
+    <span>Print ready or sign in first before a task starts.</span>
+  </a>
+</div>
+
+Before you start: shell recipes expect <code>get-cookie</code> on your PATH
+and <code>jq</code> for redacted JSON; TypeScript recipes need Node 20+ and
+the package installed.
+
+> [!TIP]
+> Choose the narrowest boundary: CLI flags and direct strategies can target a
+> browser, profile, or Firefox container; root helpers query the default
+> Chrome, Firefox, and Safari strategies and can mix identities.
+
+> [!CAUTION]
+> Browser cookies are live credentials. Do not enable shell tracing, echo
+> values, write cookies to files, inject them into another browser context, or
+> move these patterns into CI. Prefer official API tokens for requests and
+> unattended workflows.
+
+## Check one authenticated session
+
+Use this when a local task needs one known browser session. First choose a
+profile from the CLI's discovery output, then reduce one explicit cookie query
+to a ready/not-ready signal without printing or forwarding the value.
 
 ```bash
-# View the quick start examples
-./examples/quick-start.sh
+#!/usr/bin/env bash
+set -euo pipefail
+
+requested_profile=${1:-}
+if [ -z "$requested_profile" ]; then
+  echo "Choose a profile from:" >&2
+  get-cookie --browser chrome --list-profiles >&2
+  exit 2
+fi
+
+cookie_value="$(
+  get-cookie \
+    sessionid \
+    app.example.com \
+    --browser chrome \
+    --profile "$requested_profile" 2>/dev/null || true
+)"
+
+cleanup() {
+  unset cookie_value
+}
+trap cleanup EXIT
+
+if [ -z "$cookie_value" ]; then
+  echo "No matching local session found" >&2
+  exit 1
+fi
+
+echo "ready"
 ```
 
-The quick start guide covers:
-- Basic cookie extraction patterns
-- One-liner curl commands
-- Reusable shell functions for your `.bashrc/.zshrc`
-- Common output formats
-- Quick login status checks
+This confirms only that a matching value is readable from the selected local
+profile. It does not prove that the cookie applies to an exact destination
+path or secure context. <code>--render</code> is therefore documented as an
+output format, not a generic request helper; <code>--url</code> is broader
+again because it can include public-suffix parents such as
+<code>co.uk</code>. Use the service's supported API auth for requests.
 
-**Example File:** [`examples/quick-start.sh`](https://github.com/mherod/get-cookie/tree/main/examples/quick-start.sh)
+## Check CSRF-aware inputs
 
-## curl Integration Examples
+Some local admin workflows expect both a session cookie and a CSRF cookie. A
+direct strategy asks Chrome for one verified profile, then the code requires
+exactly one match for each known name before reporting readiness. Verify
+profile discovery first because the strategy can fall back to broader local
+stores when `Local State` is unavailable.
 
-For comprehensive curl integration patterns, see the **curl Integration Guide**:
+```typescript
+import {
+  ChromeCookieQueryStrategy,
+  getChromiumProfiles,
+} from "@mherod/get-cookie";
 
-```bash
-# View comprehensive curl integration examples
-./examples/curl-integration.sh
-```
+const requestedProfile = "Work";
+const profileMatches = getChromiumProfiles("chrome").filter(
+  (profile) =>
+    profile.name.toLowerCase() === requestedProfile.toLowerCase() ||
+    profile.directory.toLowerCase() === requestedProfile.toLowerCase(),
+);
 
-This guide demonstrates:
-- Basic single cookie extraction with curl
-- The perfect pattern using `--url` flag
-- Multiple cookie authentication
-- Downloading protected content
-- POST requests with authentication
-- Cookie validation functions
-- Integration with wget, HTTPie, and other tools
-
-**Example File:** [`examples/curl-integration.sh`](https://github.com/mherod/get-cookie/tree/main/examples/curl-integration.sh)
-
-### Key Patterns from curl Integration
-
-#### The Perfect One-Liner
-
-```bash
-# Automatically get all cookies for a URL
-curl -H "Cookie: $(get-cookie --url <URL> --render)" <URL>
-```
-
-#### Reusable Shell Function
-
-```bash
-# Add to your .bashrc/.zshrc
-authenticated_curl() {
-    local url=$1
-    shift
-    curl -H "Cookie: $(get-cookie --url "$url" --render 2>/dev/null)" "$@" "$url"
+if (profileMatches.length !== 1) {
+  throw new Error("Cannot verify exactly one requested Chrome profile");
 }
 
-# Usage
-authenticated_curl https://github.com/settings/profile -s | grep username
+const profile = profileMatches[0];
+if (!profile) {
+  throw new Error("Requested Chrome profile was not resolved");
+}
+
+const source = new ChromeCookieQueryStrategy(profile.directory);
+const domain = "app.example.com";
+
+const [sessions, csrfTokens] = await Promise.all([
+  source.queryCookies("sessionid", domain),
+  source.queryCookies("csrf", domain),
+]);
+
+if (sessions.length !== 1 || csrfTokens.length !== 1) {
+  throw new Error("Expected one session cookie and one CSRF cookie");
+}
+
+const session = sessions[0];
+const csrf = csrfTokens[0];
+if (!session || !csrf) {
+  throw new Error("Sign in locally before continuing");
+}
+
+console.log("session and CSRF inputs are readable");
 ```
 
-## GitHub Authentication Examples
+The code never prints either value or builds an outgoing request. Keep the
+requested names narrow; do not query every cookie when two known cookies are
+enough.
 
-For GitHub-specific authentication patterns, see the **GitHub Authentication Guide**:
+## Assess browser automation inputs
 
-```bash
-# View GitHub authentication examples
-./examples/github-auth.sh
+This is a metadata-only feasibility check, not a login shortcut. On macOS,
+even Safari's richer export is not enough for a safe automatic Playwright
+handoff: `SameSite` is not exported, and Safari represents both genuine
+session cookies and malformed lifetime data as `"Infinity"`. Chromium and
+Firefox may omit scope metadata as well.
+
+```typescript
+import {
+  SafariCookieQueryStrategy,
+  type ExportedCookie,
+} from "@mherod/get-cookie";
+
+function summarizeAutomationInputs(cookie: ExportedCookie) {
+  const path = cookie.meta?.path;
+  const expiry = cookie.expiry;
+  const lifetime =
+    expiry === "Infinity"
+      ? "ambiguous-session-or-invalid"
+      : expiry instanceof Date &&
+          Number.isFinite(expiry.getTime()) &&
+          expiry.getTime() > Date.now()
+        ? "future-persistent"
+        : "missing-or-expired";
+
+  return {
+    name: cookie.name,
+    domain: cookie.domain,
+    hasPath: typeof path === "string" && path.startsWith("/"),
+    hasSecureFlag: typeof cookie.meta?.secure === "boolean",
+    hasHttpOnlyFlag: typeof cookie.meta?.httpOnly === "boolean",
+    lifetime,
+    sameSite: "not exported",
+    safeAutomaticHandoff: false,
+  };
+}
+
+const source = new SafariCookieQueryStrategy();
+const cookies = await source.queryCookies("sessionid", "app.example.com");
+
+if (cookies.length !== 1) {
+  throw new Error("Expected one Safari session cookie");
+}
+
+console.table(cookies.map(summarizeAutomationInputs));
+console.log("Use the service's supported test-login flow for Playwright.");
 ```
 
-This guide covers:
-- Smart cookie filtering for valid sessions
-- JSON filtering for valid cookies
-- Expired cookie filtering comparison
-- Systematic endpoint testing
-- Private repository access patterns
-- Web vs API authentication clarification
+No value is printed and no browser context is created. A
+<code>future-persistent</code> lifetime is useful metadata, but it still does
+not make replay safe while <code>SameSite</code> is unavailable.
+<code>"Infinity"</code> is not accepted as a trustworthy session marker because
+Safari uses it after normalizing invalid lifetime data too. Use a service
+test-login flow for Playwright instead.
 
-**Example File:** [`examples/github-auth.sh`](https://github.com/mherod/get-cookie/tree/main/examples/github-auth.sh)
+## Compare browser identities without values
 
-### Important: Web vs API Authentication
-
-Browser cookies work for GitHub **web pages**, NOT the REST API:
-
-✅ **Works with browser cookies:**
-- Viewing private repositories in browser
-- Accessing settings pages
-- Web scraping authenticated content
-
-❌ **Does NOT work with browser cookies:**
-- GitHub REST API (`api.github.com`)
-- GitHub GraphQL API
-- Git operations (clone, push, pull)
-
-For API access, use:
-- GitHub CLI: `gh auth login`
-- Personal Access Tokens
-- OAuth apps
-
-### GitHub Authentication Patterns
-
-#### Method 1: Smart Cookie Filtering (Recommended)
+When a site works in one profile and fails in another, compare metadata rather
+than comparing credentials. Start with profile discovery, then inspect one
+profile at a time.
 
 ```bash
-# Using --url and --render with automatic filtering
-COOKIES=$(get-cookie --url https://github.com/settings/profile --render)
-curl -H "Cookie: $COOKIES" https://github.com/settings/profile
-```
-
-#### Method 2: JSON Filtering for Valid Cookies
-
-```bash
-# Get valid session cookie (filter by length)
-VALID_SESSION=$(get-cookie --url https://github.com --output json | \
-    jq -r '.[] | select(.name == "user_session" and (.value | length) > 20) | .value' | \
-    head -1)
-
-# Build cookie header
-COOKIE_HEADER="user_session=$VALID_SESSION; __Host-user_session_same_site=$VALID_SESSION"
-curl -H "Cookie: $COOKIE_HEADER" https://github.com/settings/profile
-```
-
-## CLI Features Examples
-
-For comprehensive demonstrations of all CLI features, see the **Features Demo**:
-
-```bash
-# View all CLI features
-./examples/features-demo.sh
-```
-
-This guide demonstrates:
-- Profile listing and selection with `--list-profiles`
-- Cookie deduplication (automatic and manual)
-- Expired cookie filtering
-- Browser-specific extraction
-- Combining multiple features
-- Practical workflows
-
-**Example File:** [`examples/features-demo.sh`](https://github.com/mherod/get-cookie/tree/main/examples/features-demo.sh)
-
-### Key Features Demonstrated
-
-#### Profile Discovery
-
-```bash
-# List available Chrome profiles
 get-cookie --browser chrome --list-profiles
 
-# Use a specific profile
-get-cookie --url https://github.com --browser chrome --profile "Work" --render
+inspect_profile() {
+  local profile=$1
+
+  get-cookie sessionid app.example.com \
+    --browser chrome \
+    --profile "$profile" \
+    --output json |
+    jq --arg profile "$profile" 'map({
+      profile: $profile,
+      name,
+      domain,
+      expiry,
+      browser: .meta.browser
+    })'
+}
+
+inspect_profile "Work"
+inspect_profile "Personal"
 ```
 
-#### Cookie Deduplication
+Firefox containers give you another useful identity boundary:
 
 ```bash
-# Default: automatically deduplicates (keeps longest/most valid)
-get-cookie user_session github.com --render
-
-# Include all duplicates (for debugging)
-get-cookie user_session github.com --include-all --output json
+get-cookie sessionid app.example.com \
+  --browser firefox \
+  --profile default-release \
+  --container Work \
+  --output json |
+  jq 'map({
+    name,
+    domain,
+    expiry,
+    browser: .meta.browser,
+    containerId: .meta.containerId
+  })'
 ```
 
-#### Expired Cookie Filtering
+Full JSON still passes through the local pipe before <code>jq</code> removes
+values. Keep tracing off, and keep profile/container labels out of shared
+screenshots or public issue reports.
+
+## Check session health without showing secrets
+
+Before a demo or local debugging session, inspect expiry and JWT status while
+projecting away the value and decoded claims.
 
 ```bash
-# Default: filters expired cookies
-get-cookie % github.com --output json
-
-# Include expired cookies (for audit)
-get-cookie % github.com --include-expired --output json
+get-cookie auth_token app.example.com --detect-jwt --output json |
+  jq 'map({
+    name,
+    domain,
+    cookieExpiry: .expiry,
+    isJwt: .meta.isJwt,
+    jwtExpiry: .meta.jwtExpiry,
+    jwtInspectionPassed: .meta.jwtValidation.isValid
+  })'
 ```
 
-## Development Examples
+`jwtInspectionPassed` reports the available decode and expiry checks; it is not
+signature verification without a supplied secret. Do not print
+<code>.meta.jwtPayload</code>, and avoid putting a real
+<code>--jwt-secret</code> into shell history.
 
-For development and testing, see the **CLI Examples**:
+## Preflight a local dev command
 
-```bash
-# View development examples
-./examples/cli-examples.sh
-```
-
-This file demonstrates basic CLI usage patterns for development and testing.
-
-**Example File:** [`examples/cli-examples.sh`](https://github.com/mherod/get-cookie/tree/main/examples/cli-examples.sh)
-
-## TypeScript Examples
-
-For programmatic usage, see the TypeScript examples:
-
-- **`examples/basic-usage.ts`**: Basic Node.js module usage
-- **`examples/advanced-usage.ts`**: Advanced usage with browser-specific strategies
-- **`examples/comprehensive-demo.ts`**: Comprehensive demonstration of all features
-- **`examples/auth-tokens.ts`**: Authentication token extraction patterns
-
-## Running the Examples
-
-### Prerequisites
-
-1. Install get-cookie globally or ensure it's in your PATH:
-   ```bash
-   npm install -g @mherod/get-cookie
-   # or
-   pnpm add -g @mherod/get-cookie
-   ```
-
-2. Make scripts executable:
-   ```bash
-   chmod +x examples/*.sh
-   ```
-
-3. Ensure required tools are installed:
-   - `curl` (for HTTP examples)
-   - `jq` (for JSON processing)
-   - Browser with cookies (Chrome, Firefox, or Safari)
-
-### Running Shell Script Examples
+Use a status-only preflight when a local task needs one known browser session.
+List profiles first, replace the placeholder with an exact displayed name, and
+reduce the returned value to a boolean without printing it.
 
 ```bash
-# Quick start
-./examples/quick-start.sh
+#!/usr/bin/env bash
+set -euo pipefail
 
-# curl integration
-./examples/curl-integration.sh
-
-# GitHub authentication
-./examples/github-auth.sh
-
-# CLI features
-./examples/features-demo.sh
-```
-
-### Running TypeScript Examples
-
-```bash
-# Install dependencies
-pnpm install
-
-# Run TypeScript examples
-pnpm tsx examples/basic-usage.ts
-pnpm tsx examples/advanced-usage.ts
-pnpm tsx examples/comprehensive-demo.ts
-pnpm tsx examples/auth-tokens.ts
-```
-
-## Example Use Cases Covered
-
-### Authentication & Session Management
-- ✅ Extracting authentication tokens
-- ✅ Managing multiple browser profiles
-- ✅ Session cookie analysis
-- ✅ GitHub authentication patterns
-
-### API Testing & Development
-- ✅ curl integration patterns
-- ✅ Multiple cookie handling
-- ✅ POST requests with authentication
-- ✅ Cookie validation
-
-### Security & Compliance
-- ✅ Cookie deduplication
-- ✅ Expired cookie filtering
-- ✅ Security token extraction
-- ✅ Cookie auditing
-
-### Automation & CI/CD
-- ✅ Automated testing patterns
-- ✅ Continuous monitoring
-- ✅ Error handling patterns
-- ✅ Shell script automation
-
-## Best Practices from Examples
-
-### 1. Always Use `--url` Flag for curl Integration
-
-```bash
-# ✅ Recommended
-curl -H "Cookie: $(get-cookie --url <URL> --render)" <URL>
-
-# ❌ Not recommended (requires knowing domain and cookie names)
-curl -H "Cookie: $(get-cookie user_session github.com --render)" <URL>
-```
-
-### 2. Filter for Valid Cookies
-
-```bash
-# Filter by length to avoid truncated/invalid cookies
-VALID_SESSION=$(get-cookie --url https://github.com --output json | \
-    jq -r '.[] | select(.name == "user_session" and (.value | length) > 20) | .value' | \
-    head -1)
-```
-
-### 3. Use Profile Selection to Avoid Conflicts
-
-```bash
-# List profiles first
 get-cookie --browser chrome --list-profiles
 
-# Then use specific profile
-get-cookie --url <URL> --browser chrome --profile "Profile Name" --render
-```
+cookie_value="$(
+  get-cookie sessionid app.example.com \
+  --browser chrome \
+  --profile "Work" 2>/dev/null || true
+)"
 
-### 4. Handle Errors Gracefully
-
-```bash
-# Always check for empty results
-COOKIES=$(get-cookie --url <URL> --render 2>/dev/null)
-if [ -z "$COOKIES" ]; then
-    echo "No cookies found" >&2
-    exit 1
+if [ -n "$cookie_value" ]; then
+  echo "ready"
+else
+  echo "sign in first" >&2
+  unset cookie_value
+  exit 1
 fi
+
+unset cookie_value
+
+# Run the local command that needs the session here.
 ```
 
-## Related Documentation
+The value stays in one local process only long enough to become a boolean, so
+keep tracing off. This is a useful front door for local developer tooling; for
+CI, use mocks, fixtures, or the target service's test-authentication
+mechanism instead.
 
-- [CLI Usage Guide](./cli-usage.md) - Complete CLI reference
-- [Use Cases](./use-cases.md) - Real-world use case patterns
-- [Shell Script Automation](../automation/shell-scripts.md) - Automation patterns
-- [Troubleshooting](./troubleshooting.md) - Common issues and solutions
-- [Security Guide](./security.md) - Security best practices
+## Where to go next
 
-## Contributing Examples
-
-If you have a useful example pattern, consider contributing it to the examples directory. See the [Contributing Guide](https://github.com/mherod/get-cookie/blob/main/CONTRIBUTING.md) for details.
-
+- [Use Cases](./use-cases.md) maps common goals to the smallest safe workflow.
+- [Automation overview](/automation/) covers shell checks and metadata-only
+  browser readiness.
+- [Integration Testing](./testing.md) separates deterministic tests from
+  opt-in local checks.
+- [Security and Privacy](./security.md) explains the credential boundary.

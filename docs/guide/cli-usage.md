@@ -1,312 +1,215 @@
-# CLI Usage Guide 💻
+---
+title: CLI reference
+description: Authoritative syntax, flags, output modes, and examples for get-cookie.
+---
 
-Learn how to use get-cookie from the command line.
+# CLI reference
 
-## Basic Commands
+The CLI has no subcommands:
 
-### Get a Specific Cookie
-
-```bash
-get-cookie auth example.com
+```text
+get-cookie [name] [domain] [options]
 ```
 
-### Get All Cookies for a Domain
+With no arguments, it prints help. The positional arguments default to
+`%`. For SQL-backed browsers, the default domain pattern can omit
+single-label stored domains such as `localhost`; pass that domain explicitly
+when it matters.
+
+## First commands
 
 ```bash
-get-cookie % example.com
+# One cookie value
+get-cookie sessionid example.com
+
+# Every cookie for a domain, as structured data
+get-cookie % example.com --output json
+
+# One named cookie, rendered for local inspection
+get-cookie sessionid app.example.com --render
 ```
 
-### Get Cookies by URL
+The exact wildcard accepted by the CLI is `%`. A positional `*` is
+normalized to `%`, but patterns such as `session*` are not rewritten; use
+SQL-style `%` and `_` patterns instead.
 
-```bash
-get-cookie --url https://example.com/dashboard
+## Query selection
+
+| Option                   | Alias | Meaning                                                       |
+| ------------------------ | ----- | ------------------------------------------------------------- |
+| `[name]`                 |       | Positional cookie-name pattern; defaults to `%`.              |
+| `[domain]`               |       | Positional domain pattern; defaults to `%` (see note above).  |
+| `--name PATTERN`         | `-n`  | Cookie-name pattern.                                          |
+| `--domain PATTERN`       | `-D`  | Cookie-domain pattern.                                        |
+| `--url URL`              | `-u`  | Build `%` specs for the URL hostname and every parent domain. |
+| `--browser BROWSER`      | `-b`  | Target one supported browser.                                 |
+| `--profile NAME`         | `-p`  | Target a Chromium or Firefox profile. Use with `--browser`.   |
+| `--container NAME_OR_ID` | `-c`  | Target a Firefox container name, numeric ID, or `none`.       |
+| `--store PATH`           |       | Read an explicit cookie-store path.                           |
+
+> [!CAUTION]
+> `--render` is an output format, not a safe generic request helper. A
+> domain query can still return cookies whose stored scope does not prove
+> applicability to one exact destination. `--url` is broader again: it
+> walks every parent domain and does not stop at public suffixes, so
+> `app.example.co.uk` can also query `co.uk`. Inspect rendered output
+> locally; do not send it as an outgoing request header.
+
+Supported `--browser` values:
+
+```text
+chrome  edge  arc  brave  opera  opera-gx  vivaldi  firefox  safari
 ```
 
-## Output Formats
+If `--browser` is omitted, the CLI creates a composite strategy across the
+supported browser registry. Profile and container selection are meaningful
+only when a browser is selected. `--container` is Firefox-only; other
+browsers warn and ignore it.
 
-### Default Output (Values Only)
+## Profiles and containers
+
+List every discoverable named profile:
 
 ```bash
-get-cookie auth example.com
-# Output: value1234
+get-cookie --list-profiles
 ```
 
-### JSON Output
+Limit the list to one browser:
 
 ```bash
-get-cookie auth example.com --output json
-# Output:
-# {
-#   "name": "auth",
-#   "value": "value1234",
-#   "domain": "example.com",
-#   "expiry": "2024-12-31T23:59:59.000Z"
-# }
-```
-
-### Rendered Output
-
-```bash
-get-cookie auth example.com --render
-# Or short form:
-get-cookie auth example.com -r
-
-# Output:
-# Cookie: auth
-# Domain: example.com
-# Value: value1234
-# Expires: 31 Dec 2024
-# Browser: Chrome
-# Profile: Default
-```
-
-### Detailed Dump
-
-```bash
-get-cookie auth example.com --dump
-# Or short form:
-get-cookie auth example.com -d
-
-# Dumps all cookie details including metadata
-```
-
-### Grouped Output
-
-```bash
-# Grouped dump output
-get-cookie auth example.com --dump-grouped
-# Or short form:
-get-cookie auth example.com -G
-
-# Output groups cookies by browser and profile:
-# Chrome (Default):
-#   auth: value1234
-#   (expires: 2024-12-31T23:59:59.000Z)
-# Firefox (default-release):
-#   auth: value5678
-#   (expires: 2024-12-31T23:59:59.000Z)
-# Safari:
-#   auth: value90ab
-#   (expires: 2024-12-31T23:59:59.000Z)
-```
-
-## Advanced Usage
-
-### Filter by Browser
-
-```bash
-# Chrome only
-get-cookie auth example.com --browser chrome
-
-# Edge only
-get-cookie auth example.com --browser edge
-
-# Arc only
-get-cookie auth example.com --browser arc
-
-# Opera only
-get-cookie auth example.com --browser opera
-
-# Opera GX only
-get-cookie auth example.com --browser opera-gx
-
-# Firefox only
-get-cookie auth example.com --browser firefox
-
-# Safari only
-get-cookie auth example.com --browser safari
-```
-
-### Chrome Profile Selection
-
-```bash
-# Target a specific Chrome profile
-get-cookie auth example.com --browser chrome --profile "Profile 1"
-
-# Use the default Chrome profile
-get-cookie auth example.com --browser chrome --profile Default
-
-# List all available Chrome profiles
 get-cookie --browser chrome --list-profiles
+get-cookie --browser firefox --list-profiles
 ```
 
-### Cookie Management Options
+Then query a specific profile:
 
 ```bash
-# Include expired cookies (filtered by default)
-get-cookie auth example.com --include-expired
-
-# Include all duplicate cookies (deduplicated by default)
-get-cookie auth example.com --include-all
-
-# Combine both options for complete cookie dump
-get-cookie % example.com --include-expired --include-all
+get-cookie sessionid example.com --browser chrome --profile "Work"
+get-cookie sessionid example.com --browser firefox --profile default-release
 ```
 
-### Force Operations
+Firefox containers are independent from profiles:
 
 ```bash
-# Force extraction despite locked database
-get-cookie auth example.com --force
-
-# Short form
-get-cookie auth example.com -f
+get-cookie sessionid example.com --browser firefox --container Personal
+get-cookie sessionid example.com --browser firefox --container 2
+get-cookie sessionid example.com --browser firefox --container none
 ```
 
-### Verbose Logging
+Safari does not expose named-profile filtering.
+
+## Filtering and recovery
+
+| Option              | Alias | Meaning                                                                      |
+| ------------------- | ----- | ---------------------------------------------------------------------------- |
+| `--include-expired` |       | Accepted for compatibility; currently does not change CLI query results.    |
+| `--include-all`     |       | Keep duplicate `name + domain` results. By default one longer value is kept. |
+| `--force`           | `-f`  | Skip interactive lock/permission remediation; it does not guarantee access.  |
+| `--verbose`         | `-v`  | Enable diagnostic logging.                                                   |
+
+For example:
 
 ```bash
-# Enable verbose output for debugging
-get-cookie auth example.com --verbose
-
-# Short form
-get-cookie auth example.com -v
+get-cookie % example.com --include-all --output json
 ```
 
-### Use Custom Cookie Store
+> [!NOTE]
+> `--include-expired` is currently accepted by the CLI but not applied by
+> `CookieQueryService`. Browser strategies keep their own expiry behavior, so
+> do not use this flag to infer that expired rows were included.
+
+## JWT inspection
+
+JWT inspection runs after the cookie query:
+
+| Option             | Alias | Meaning                                                                       |
+| ------------------ | ----- | ----------------------------------------------------------------------------- |
+| `--detect-jwt`     | `-j`  | Annotate JWT-shaped values with decoded metadata when decoding succeeds.      |
+| `--jwt-only`       |       | Keep JWT-shaped values; filter failed expiry or signature checks when known. |
+| `--jwt-secret KEY` |       | With a JWT inspection flag, verify signatures with the supplied secret.     |
 
 ```bash
-# Specify path to cookie database
-get-cookie auth example.com --store ~/custom/path/cookies.sqlite
-
-# Use with Firefox profile
-get-cookie auth example.com --store ~/.mozilla/firefox/abc123.default/cookies.sqlite
+get-cookie % example.com --detect-jwt --output json
+get-cookie % example.com --jwt-only --output json
+get-cookie % example.com --jwt-only --jwt-secret "$JWT_SECRET" --output json
 ```
 
-### Handle Multiple Domains
+`--jwt-secret` only takes effect with `--detect-jwt` or `--jwt-only`; by
+itself it does not start JWT inspection. Without it, these flags inspect token
+shape and decoded expiry claims; they do not authenticate the token or verify
+its signature.
+
+`--jwt-only` keeps JWT-shaped values first. It filters a value only when
+inspection metadata shows an expired token or, with `--jwt-secret`, a failed
+signature check; a JWT-shaped value that cannot be decoded can remain in the
+output. Reserve “verified” for tokens that pass a secret-backed signature
+check.
+
+Do not put a real signing secret into shell history or shared logs.
+
+## Output modes
+
+| Option             | Alias | Output                                                          |
+| ------------------ | ----- | --------------------------------------------------------------- |
+| default            |       | Unique non-empty values, one per line.                          |
+| `--output json`    |       | JSON array of exported cookies. Only lowercase `json` is valid. |
+| `--dump`           | `-d`  | JSON array of exported cookies.                                 |
+| `--dump-grouped`   | `-G`  | JSON object keyed by source-store path.                         |
+| `--render`         | `-r`  | Merged `name=value; name=value` Cookie header value.            |
+| `--render-grouped` | `-R`  | Rendered cookie-header strings grouped by source store.         |
+
+Examples:
 
 ```bash
-# Get auth cookies from multiple domains
-get-cookie auth "*.example.com"
+# Check readiness without printing or storing the value
+if get-cookie sessionid example.com 2>/dev/null | grep -q .; then
+  printf '%s\n' "Cookie is available"
+else
+  printf '%s\n' "Cookie is not available"
+fi
 
-# Get all cookies from multiple domains
-get-cookie % "*.example.com"
+# Sensitive reference only: JSON output includes values; keep it local
+get-cookie % example.com --output json
+
+# Sensitive reference only: --render serializes values, not a safe request
+# helper
+get-cookie sessionid app.example.com --render
 ```
 
-### Alternative Query Methods
+## Help and diagnostics
+
+| Option            | Alias | Meaning                                                         |
+| ----------------- | ----- | --------------------------------------------------------------- |
+| `--help`          | `-h`  | Show CLI help.                                                  |
+| `--verbose`       | `-v`  | Show diagnostic logging.                                        |
+| `--list-profiles` |       | List discoverable profiles, optionally filtered by `--browser`. |
+
+When a query has no matches, the CLI logs `No results` and writes no result
+payload to stdout. In particular, `--output json` does not emit `[]` for that
+case. Do not rely on a specialized no-results exit-code taxonomy; capture
+stdout and check that it is non-empty before parsing JSON or using rendered
+output.
+
+## Safe readiness pattern
 
 ```bash
-# Using --name and --domain flags
-get-cookie --name auth --domain example.com
-get-cookie -n auth -D example.com
-
-# Wildcard pattern for all cookies
-get-cookie --name % --domain example.com
-get-cookie -n % -D example.com
-
-# Pattern matching in name
-get-cookie --name "session*" --domain example.com
-```
-
-## Options Reference
-
-### General Options
-
-| Option      | Short | Description                                         | Example     |
-|-------------|-------|-----------------------------------------------------|-------------|
-| `--help`           | `-h`  | Show help message with build timestamp             | `--help`           |
-| `--verbose`        | `-v`  | Enable verbose output                               | `--verbose`        |
-| `--force`          | `-f`  | Force operation despite warnings (e.g., locked DBs) | `--force`          |
-| `--list-profiles`  |       | List available browser profiles                     | `--list-profiles`  |
-| `--include-expired`|       | Include expired cookies (filtered by default)       | `--include-expired`|
-| `--include-all`    |       | Include all duplicate cookies (deduplicated by default) | `--include-all` |
-
-### Query Options
-
-| Option      | Short | Description                          | Example                  |
-|-------------|-------|--------------------------------------|--------------------------|
-| `--name`    | `-n`  | Cookie name pattern (% or * for wildcard)| `--name auth%`           |
-| `--domain`  | `-D`  | Cookie domain pattern                    | `--domain *.example.com` |
-| `--url`     | `-u`  | URL to extract cookie specs from         | `--url https://...`      |
-| `--browser` |       | Target specific browser                  | `--browser chrome`       |
-| `--profile` |       | Target specific Chrome profile           | `--profile "Profile 1"`  |
-| `--store`   |       | Path to specific cookie store file       | `--store /path/to/db`    |
-
-### Output Options
-
-| Option           | Short | Description                     | Example          |
-|------------------|-------|---------------------------------|------------------|
-| `--output`       |       | Output format (json)                | `--output json`  |
-| `--dump`         | `-d`  | Dump all cookie details             | `--dump`         |
-| `--dump-grouped` | `-G`  | Dump results grouped by browser     | `--dump-grouped` |
-| `--render`       | `-r`  | Render formatted human-readable output | `--render`    |
-
-## Environment Variables
-
-| Variable          | Description             | Default     |
-|-------------------|-------------------------|-------------|
-| `DEBUG`    | Enable debug logging           | `false`     |
-| `NO_COLOR` | Disable colored output         | `false`     |
-| `NODE_ENV` | Set to 'production' for less verbose output | `development` |
-
-## Examples
-
-### Testing API Authentication
-
-```bash
-# Get auth cookie and use with curl
-curl -H "Cookie: $(get-cookie auth api.example.com)" https://api.example.com/me
-```
-
-### Export Multiple Cookies
-
-```bash
-# Export all cookies for domain
-get-cookie % example.com --output json > cookies.json
-```
-
-### Debug Mode
-
-```bash
-# Enable verbose logging
-DEBUG=* get-cookie auth example.com
-
-# Or use verbose flag
-get-cookie auth example.com --verbose
-```
-
-### Automation
-
-```bash
-# Use in shell scripts
-AUTH_COOKIE=$(get-cookie auth example.com)
-if [ -n "$AUTH_COOKIE" ]; then
-    echo "Cookie found: $AUTH_COOKIE"
+if get-cookie sessionid app.example.com --browser chrome --profile "Work" |
+  grep -q .; then
+  echo "matching cookie is readable"
+else
+  echo "No local cookie found" >&2
+  exit 1
 fi
 ```
 
-## Complete Examples
+List profiles first and replace `Work` with an exact displayed profile name.
+The value still crosses a local pipe before `grep` reduces it to a boolean,
+so keep tracing off. Cookie values should not be committed, cached, sent to a
+CI system, or forwarded as a generic request header.
 
-For comprehensive examples covering all CLI features and use cases, see:
+## Related pages
 
-- **[Examples & Tutorials Guide](./examples.md)** - Complete working examples
-- **Quick Start:** `examples/quick-start.sh` - Essential patterns
-- **curl Integration:** `examples/curl-integration.sh` - Comprehensive curl guide
-- **GitHub Auth:** `examples/github-auth.sh` - GitHub authentication patterns
-- **CLI Features:** `examples/features-demo.sh` - All feature demonstrations
-
-## Error Handling
-
-The CLI uses exit codes to indicate status:
-
-| Code | Meaning           |
-|------|-------------------|
-| `0`  | Success           |
-| `1`  | General error     |
-| `2`  | Invalid arguments |
-| `3`  | Permission denied |
-| `4`  | Browser error     |
-
-Example error handling in scripts:
-
-```bash
-get-cookie auth example.com || {
-    case $? in
-        2) echo "Invalid arguments" ;;
-        3) echo "Permission denied" ;;
-        4) echo "Browser error" ;;
-        *) echo "Unknown error" ;;
-    esac
-    exit 1
-}
-```
+- [Getting started](./getting-started.md)
+- [Browser support](./browser-support.md)
+- [Security and privacy](./security.md)
+- [Troubleshooting](./troubleshooting.md)

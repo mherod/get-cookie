@@ -1,198 +1,156 @@
-# get-cookie 🍪
+# get-cookie
 
-Extract cookies from your browser's local storage and use them programmatically. This tool reads browser databases directly, handles decryption, and outputs cookies you can use in API calls, testing, or automation.
+Read cookies from local browser profiles from the command line or from
+TypeScript. `get-cookie` understands Chromium, Firefox, and Safari stores,
+including the platform-specific decryption needed for values that the browser
+keeps encrypted.
 
-## What it does
+> [!CAUTION]
+> Cookies are credentials. Use this package only with accounts and machines
+> you control. Do not commit, upload, or paste cookie output into shared logs.
 
-**The Problem**: You're logged into a website in your browser, but you need those same cookies for API testing, automation, or debugging. Manually copying cookies from DevTools is tedious and they expire quickly.
+## Quick start
 
-**The Solution**: `get-cookie` reads cookies directly from browser databases (Chrome, Firefox, Safari, etc.), handles all the encryption/decryption, and gives you the cookie values to use programmatically.
-
-## Quick Start
+Install the CLI globally:
 
 ```bash
-# Install globally
 pnpm add -g @mherod/get-cookie
+```
 
-# Get a specific cookie
+Query one cookie:
+
+```bash
 get-cookie sessionid example.com
+```
 
-# Get all cookies for a domain  
-get-cookie % example.com
+Query every cookie for a domain as JSON:
 
-# Use in curl/API calls
-curl -H "Cookie: auth=$(get-cookie auth api.example.com)" https://api.example.com/user
+```bash
+get-cookie % example.com --output json
+```
+
+Inspect the rendered form of one named cookie locally:
+
+```bash
+get-cookie sessionid app.example.com --render
+```
+
+The default CLI output is the matching cookie value, one value per line.
+`--render` produces a merged `name=value; name=value` header value, and
+`--output json` preserves metadata for scripts. Treat every output mode as
+sensitive.
+
+`--render` is a serializer, not a safe generic request helper. A domain
+query can still return cookies whose stored domain or path does not prove that
+they apply to one exact destination. `--url` adds another risk because it
+builds wildcard specs for a hostname and its parent domains without excluding
+public suffixes such as `co.uk`. Inspect results locally; do not pipe
+rendered output into an outgoing request.
+
+## Use it from TypeScript
+
+Install the library:
+
+```bash
+pnpm add @mherod/get-cookie
 ```
 
 ```typescript
-// Auto-detecting (works in both Node.js and Bun)
 import { getCookie } from "@mherod/get-cookie";
-
-// Or use a runtime-specific entrypoint for deterministic behavior:
-// import { getCookie } from "@mherod/get-cookie/node";
-// import { getCookie } from "@mherod/get-cookie/bun";
 
 const cookies = await getCookie({
-  name: "auth_token",
-  domain: "api.example.com",
+  name: "sessionid",
+  domain: "example.com",
 });
 
-// Use in fetch, axios, etc.
-fetch("https://api.example.com/data", {
-  headers: {
-    Cookie: `auth_token=${cookies[0]?.value}`
-  }
-});
+console.log(
+  cookies.length > 0 ? "matching cookie is readable" : "sign in first",
+);
 ```
 
-## Common Use Cases
+`getCookie` requires both `name` and `domain`. It queries the default
+Chrome, Firefox, and Safari strategies, tolerates browser-specific failures,
+and returns an empty array when nothing can be read. The public query result
+does not by itself prove that a cookie applies to a particular outgoing URL,
+so keep this first example status-only.
 
-- **API Testing**: Extract session cookies to test authenticated endpoints
-- **Browser Automation**: Get real cookies instead of managing login flows  
-- **Debugging**: Compare cookies across browsers to troubleshoot auth issues
-- **CI/CD**: Automate authenticated API tests without storing credentials
-- **Development**: Test with production-like authentication locally
-
-## How it works
-
-1. **Locates browser databases** on your system (Chrome uses SQLite, Safari uses binary files)
-2. **Handles encryption** (Chrome's keychain/DPAPI encryption, etc.) 
-3. **Extracts and parses** cookie data
-4. **Returns usable values** you can immediately use in HTTP requests
-
-No browser automation, no complex setup - just direct database access.
-
-## Installation 📦
-
-```bash
-pnpm add @mherod/get-cookie    # recommended
-npm install @mherod/get-cookie # or npm
-yarn add @mherod/get-cookie    # or yarn
-```
-
-### Runtime Requirements 🔧
-
-Requires **Node.js v20, v22, v24, or v25**, or **Bun**. We recommend using [nvm](https://github.com/nvm-sh/nvm) to manage your Node.js versions.
-
-```bash
-# Install the correct Node.js version using nvm
-nvm install 22
-nvm use 22
-
-# Or simply run this in the project directory (we've included an .nvmrc file)
-nvm use
-```
-
-The project includes an `.nvmrc` file that specifies the required Node.js version, so `nvm use` will automatically switch to the correct version when you're in the project directory.
-
-Bun is also supported natively — `bun:sqlite` is used automatically when running under Bun. You can also use explicit runtime entrypoints for deterministic behavior:
+For multiple specs, use `batchGetCookies`:
 
 ```typescript
-// Auto-detect runtime (default — works everywhere)
-import { getCookie } from "@mherod/get-cookie";
+import { batchGetCookies } from "@mherod/get-cookie";
 
-// Force Node.js (always uses better-sqlite3)
-import { getCookie } from "@mherod/get-cookie/node";
-
-// Force Bun (always uses bun:sqlite)
-import { getCookie } from "@mherod/get-cookie/bun";
-```
-
-## More Examples
-
-### Command Line
-
-```bash
-# Basic cookie extraction
-get-cookie sessionid github.com
-
-# Get all cookies for a domain
-get-cookie % api.stripe.com
-
-# Pretty print with metadata
-get-cookie auth example.com --render
-
-# JSON output for scripting
-get-cookie % example.com --output json
-
-# Specific browser/profile
-get-cookie auth example.com --browser chrome --profile "Work"
-```
-
-### API Usage
-
-```typescript
-// Use the root import (auto-detects runtime) or a specific entrypoint:
-// import { getCookie, batchGetCookies } from "@mherod/get-cookie/node";
-// import { getCookie, batchGetCookies } from "@mherod/get-cookie/bun";
-import { getCookie, batchGetCookies } from "@mherod/get-cookie";
-
-// Single cookie
-const auth = await getCookie({
-  name: "sessionid", 
-  domain: "github.com"
-});
-
-// Multiple cookies efficiently (2-3x faster than individual calls)
 const cookies = await batchGetCookies([
-  { name: "auth", domain: "api.example.com" },
-  { name: "session", domain: "app.example.com" },
-  { name: "csrf", domain: "admin.example.com" }
+  { name: "sessionid", domain: "example.com" },
+  { name: "csrf", domain: "example.com" },
 ]);
-
-// Use in HTTP client
-const response = await fetch("https://api.github.com/user", {
-  headers: {
-    "Cookie": `sessionid=${auth[0]?.value}`
-  }
-});
 ```
 
-### Real-world Integration
+The root import selects the SQLite adapter for the current runtime. Use an
+explicit entrypoint when you need deterministic adapter selection:
+
+```typescript
+import { getCookie as getCookieInNode } from "@mherod/get-cookie/node";
+import { getCookie as getCookieInBun } from "@mherod/get-cookie/bun";
+```
+
+## Requirements
+
+- Node.js 20, 22, 24, 25, or 26, as declared by the package engine range
+- Or Bun, with the native `bun:sqlite` adapter
+- A local browser profile that contains the cookie you want to read
+- OS access to that profile and, where applicable, its encryption key
+
+On macOS, Chromium decryption uses Keychain and Safari may require Full Disk
+Access for the terminal app. On Windows, Chromium decryption uses the optional
+DPAPI binding. On Linux, Chromium decryption attempts the available secret
+service/keyring providers.
+
+## Browser support
+
+The CLI accepts these browser names:
+
+```text
+chrome  edge  arc  brave  opera  opera-gx  vivaldi  firefox  safari
+```
+
+Chromium-family browsers and Firefox have discovery paths for macOS, Linux, and
+Windows. Safari is macOS-only. Browser installation layouts and OS permissions
+still determine whether a particular local profile can be read; see the
+[browser and platform matrix](docs/guide/browser-support.md) for the precise
+contract and caveats.
+
+Profiles are supported for Chromium-family browsers and Firefox:
 
 ```bash
-# Test API endpoint with browser cookies
-AUTH=$(get-cookie connect.sid api.example.com)
-curl -H "Cookie: connect.sid=$AUTH" https://api.example.com/profile
-
-# Compare session across browsers  
-echo "Chrome:" && get-cookie JSESSIONID app.example.com --browser chrome
-echo "Firefox:" && get-cookie JSESSIONID app.example.com --browser firefox
-
-# Batch export for migration
-get-cookie % example.com --output json > cookies-backup.json
+get-cookie --browser chrome --list-profiles
+get-cookie sessionid example.com --browser chrome --profile "Work"
+get-cookie sessionid example.com --browser firefox --profile default-release
 ```
 
-## Features
+Firefox containers can be selected with `--container`:
 
-- **Multiple browsers**: Chrome, Firefox, Safari, Edge, Opera, Arc, Brave - reads from each browser's native storage format
-- **Handles encryption**: Automatically decrypts Chrome's keychain-encrypted cookies (macOS), DPAPI-encrypted cookies (Windows), and keyring encryption (Linux)
-- **Multiple profiles**: Works with all browser profiles (Personal, Work, etc.)
-- **Batch operations**: Get multiple cookies efficiently with built-in SQL optimization (2-3x faster)
-- **Cross-platform**: macOS, Linux, Windows support
-- **Bun support**: Works natively in Bun environments using `bun:sqlite`, with automatic runtime detection and explicit `@mherod/get-cookie/bun` entrypoint
-- **Output formats**: Raw values, JSON, pretty-printed tables
+```bash
+get-cookie sessionid example.com --browser firefox --container Personal
+```
 
-## Browser Support 🌐
+## Documentation
 
-Supports **11 major browsers** across **macOS, Linux, and Windows**:
+- [Getting started](docs/guide/getting-started.md)
+- [CLI reference](docs/guide/cli-usage.md)
+- [Library usage](docs/guide/api-usage.md)
+- [Browser support](docs/guide/browser-support.md)
+- [Security and privacy](docs/guide/security.md)
+- [Troubleshooting](docs/guide/troubleshooting.md)
+- [Generated API reference](https://mherod.github.io/get-cookie/reference/generated/)
 
-- **Chromium-based**: Chrome, Edge, Arc¹, Opera, Opera GX, Chromium, Brave
-- **Firefox-based**: Firefox, Firefox Developer Edition, Firefox ESR  
-- **Safari**: macOS only
+The full documentation site is published at
+[mherod.github.io/get-cookie](https://mherod.github.io/get-cookie/).
 
-¹ *Arc added Windows support in April 2024*
+## Development
 
-**→ See complete [Browser Support Matrix](docs/guide/browser-support.md) for detailed platform compatibility**
+See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, validation, documentation, and
+pull-request guidance.
 
-## Documentation 📚
+## License
 
-Explore our comprehensive docs at [mherod.github.io/get-cookie](https://mherod.github.io/get-cookie/)
-
-## Contributing 🤝
-
-We welcome contributions! Open an issue or submit a PR to get started.
-
-## License 📄
-
-MIT Licensed. Build something amazing.
+ISC

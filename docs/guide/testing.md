@@ -1,345 +1,124 @@
-# Integration Testing Guide 🧪
+---
+title: Testing
+description: Deterministic project tests and opt-in local browser checks
+---
 
-Learn how to use get-cookie in your testing workflows.
+# Testing
 
-## Basic Testing Setup
+Keep two kinds of testing separate:
 
-### Installation
+1. deterministic repository tests that are safe for CI; and
+2. opt-in local smoke checks that read an authorized browser profile.
+
+A passing CI run proves code behavior against mocks and fixtures. It does not
+prove that a particular user's browser profile, keychain, DPAPI setup, or
+keyring is readable.
+
+## Repository tests
+
+The project uses Jest with TypeScript support. Tests are co-located in
+`__tests__` directories, and browser/database behavior is exercised with
+fixtures and mocked adapters.
+
+Run the normal gate from the repository root:
 
 ```bash
-# Add as dev dependency
-pnpm add -D @mherod/get-cookie
-
-# Or with npm
-npm install --save-dev @mherod/get-cookie
-
-# Or with yarn
-yarn add --dev @mherod/get-cookie
+pnpm run validate
 ```
 
-### Test Helper Function
+Useful focused commands:
+
+```bash
+pnpm test
+pnpm test -- src/core/browsers/firefox/
+pnpm test -- src/tests/integration/cross-platform.test.ts
+pnpm test -- --testNamePattern="specific test name"
+pnpm run type-check
+pnpm run lint
+```
+
+`pnpm run validate` runs type checking, Biome linting, Jest, the docs link
+check, and the formatting check. It does not run the package build; run
+`pnpm run build` separately when changing exports, entrypoints, or CLI
+bundling.
+
+## What belongs in CI
+
+CI-friendly tests should be reproducible without a logged-in browser:
+
+- mock the SQLite adapter factory rather than a native database module;
+- use cookie fixtures with synthetic values;
+- assert platform paths, parsing, decryption routing, and error handling;
+- redact any value that appears in failure output;
+- tolerate missing locally installed browsers where a test only checks
+  discovery or graceful fallback.
+
+Do not put real browser cookies, copied browser profiles, interactive login
+steps, or cookie files into CI. Use the target service's supported test
+authentication mechanism for end-to-end CI.
+
+## Local browser smoke checks
+
+Run a real-profile check only on a trusted local machine with an account you
+are authorized to inspect. Keep output redacted and do not run it while shell
+tracing is enabled.
+
+Start with profile discovery:
+
+```bash
+get-cookie --browser chrome --list-profiles
+```
+
+Then verify metadata without displaying the cookie value:
+
+```bash
+get-cookie test_session app.example.com \
+  --browser chrome \
+  --profile "Profile 1" \
+  --output json |
+  jq 'map({name, domain, expiry, browser: .meta.browser})'
+```
+
+No stdout payload can mean the cookie is missing, the selected profile is
+wrong, or the browser store is inaccessible. The CLI logs `No results` but
+does not emit `[]` for a no-match JSON query. Use
+[Troubleshooting](./troubleshooting.md) before widening the query.
+
+## Local programmatic readiness check
+
+The public API accepts only `name` and `domain` in the cookie spec. Treat an
+empty array as a normal no-result outcome, never log the value, and keep this
+check status-only because the result does not prove exact destination
+applicability.
 
 ```typescript
-// test/helpers/cookies.ts
 import { getCookie } from "@mherod/get-cookie";
 
-export async function getAuthCookie(domain: string): Promise<string> {
-  try {
-    const cookies = await getCookie({
-      name: "auth",
-      domain,
-      removeExpired: true,
-    });
-    return cookies[0]?.value ?? "";
-  } catch (error) {
-    console.error("Failed to get auth cookie:", error);
-    return "";
-  }
-}
-```
-
-## Testing Frameworks
-
-### Jest
-
-```typescript
-// test/api.test.ts
-import { getAuthCookie } from "./helpers/cookies";
-
-describe("API Tests", () => {
-  let authCookie: string;
-
-  beforeAll(async () => {
-    authCookie = await getAuthCookie("api.example.com");
-  });
-
-  test("authenticated request", async () => {
-    const response = await fetch("https://api.example.com/me", {
-      headers: {
-        Cookie: `auth=${authCookie}`,
-      },
-    });
-    expect(response.status).toBe(200);
-  });
-});
-```
-
-### Mocha
-
-```typescript
-// test/api.spec.ts
-import { getAuthCookie } from "./helpers/cookies";
-import { expect } from "chai";
-
-describe("API Tests", () => {
-  let authCookie: string;
-
-  before(async () => {
-    authCookie = await getAuthCookie("api.example.com");
-  });
-
-  it("should make authenticated request", async () => {
-    const response = await fetch("https://api.example.com/me", {
-      headers: {
-        Cookie: `auth=${authCookie}`,
-      },
-    });
-    expect(response.status).to.equal(200);
-  });
-});
-```
-
-## Testing Strategies
-
-### E2E Testing
-
-```typescript
-// cypress/support/commands.ts
-import { getCookie } from "@mherod/get-cookie";
-
-Cypress.Commands.add("loginWithCookie", async (domain) => {
-  const cookies = await getCookie({
-    name: "auth",
-    domain,
-  });
-
-  cookies.forEach((cookie) => {
-    cy.setCookie(cookie.name, cookie.value, {
-      domain: cookie.domain,
-      path: "/",
-    });
-  });
+const cookies = await getCookie({
+  name: "test_session",
+  domain: "app.example.com",
 });
 
-// cypress/e2e/dashboard.cy.ts
-describe("Dashboard", () => {
-  beforeEach(() => {
-    cy.loginWithCookie("example.com");
-    cy.visit("/dashboard");
-  });
-
-  it("shows user data", () => {
-    cy.get("[data-test=user-name]").should("be.visible");
-  });
-});
-```
-
-### API Testing
-
-```typescript
-// test/helpers/api.ts
-import { getCookie } from "@mherod/get-cookie";
-
-export class ApiClient {
-  private baseUrl: string;
-  private cookies: string[];
-
-  constructor(baseUrl: string) {
-    this.baseUrl = baseUrl;
-    this.cookies = [];
-  }
-
-  async authenticate() {
-    const cookies = await getCookie({
-      name: "%",
-      domain: new URL(this.baseUrl).hostname,
-    });
-
-    this.cookies = cookies.map((c) => `${c.name}=${c.value}`);
-  }
-
-  async request(path: string) {
-    return fetch(`${this.baseUrl}${path}`, {
-      headers: {
-        Cookie: this.cookies.join("; "),
-      },
-    });
-  }
+if (cookies.length === 0) {
+  throw new Error("Local test cookie not found");
 }
 
-// test/api/users.test.ts
-const api = new ApiClient("https://api.example.com");
-
-beforeAll(async () => {
-  await api.authenticate();
-});
-
-test("get user profile", async () => {
-  const response = await api.request("/me");
-  expect(response.status).toBe(200);
-});
+console.log("Local test cookie is readable.");
 ```
 
-## CI/CD Integration
+Use a disposable test account where possible. Keep this kind of check out of
+the default test suite and out of CI. For an end-to-end request, use the
+service's supported test-authentication mechanism instead of forwarding a
+browser cookie.
 
-### GitHub Actions
+## Test hygiene
 
-```yaml
-# .github/workflows/test.yml
-name: Integration Tests
-on: [push]
+- Never print or snapshot cookie values.
+- Use placeholder domains and synthetic fixture values in committed tests.
+- Clear in-memory variables after a manual shell check.
+- Do not persist extracted cookies between runs.
+- Report failures with platform, browser family, package version, and redacted
+  errors only.
 
-jobs:
-  test:
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: Setup Chrome
-        uses: browser-actions/setup-chrome@v1
-
-      - name: Login to Test Account
-        run: |
-          # Login to test account in Chrome
-          ./scripts/login.sh
-
-      - name: Run Tests
-        run: |
-          pnpm install
-          pnpm test
-```
-
-### Advanced Testing Workflow
-
-```yaml
-# .github/workflows/comprehensive-tests.yml
-name: Comprehensive Tests
-on: [push, pull_request]
-
-jobs:
-  test:
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20.x
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9.15.2
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Run comprehensive tests
-        run: |
-          pnpm test
-          pnpm run test:integration
-          pnpm run test:e2e
-```
-
-## Best Practices
-
-### Cookie Management
-
-1. **Clear Cookies Between Tests**
-
-   ```typescript
-   afterEach(async () => {
-     // Clear browser cookies
-     await clearBrowserCookies();
-   });
-   ```
-
-2. **Handle Missing Cookies**
-
-   ```typescript
-   function assertCookie(cookie?: string) {
-     if (!cookie) {
-       throw new Error("Required cookie not found");
-     }
-     return cookie;
-   }
-   ```
-
-3. **Timeout Handling**
-
-   ```typescript
-   const COOKIE_TIMEOUT = 5000;
-
-   async function waitForCookie(domain: string) {
-     const startTime = Date.now();
-     while (Date.now() - startTime < COOKIE_TIMEOUT) {
-       const cookie = await getAuthCookie(domain);
-       if (cookie) return cookie;
-       await new Promise((r) => setTimeout(r, 100));
-     }
-     throw new Error("Cookie timeout");
-   }
-   ```
-
-### Security
-
-1. **Test Account Isolation**
-
-   - Use dedicated test accounts
-   - Never use production cookies
-   - Rotate test credentials
-
-2. **CI Environment**
-
-   - Use ephemeral browsers
-   - Clear state between runs
-   - Secure cookie storage
-
-3. **Error Handling**
-   ```typescript
-   process.on("uncaughtException", (error) => {
-     // Clear sensitive data
-     clearCookies();
-     process.exit(1);
-   });
-   ```
-
-## Debugging
-
-### Logging
-
-```typescript
-const DEBUG = process.env.DEBUG === "1";
-
-function debugLog(message: string, data?: any) {
-  if (DEBUG) {
-    console.log(`[get-cookie] ${message}`, data);
-  }
-}
-```
-
-### Cookie Inspection
-
-```typescript
-function inspectCookie(cookie: any) {
-  const { value, ...safeProps } = cookie;
-  debugLog("Cookie found:", {
-    ...safeProps,
-    valueLength: value?.length,
-  });
-}
-```
-
-### Error Tracking
-
-```typescript
-class CookieError extends Error {
-  constructor(
-    message: string,
-    public readonly context: any,
-  ) {
-    super(message);
-    this.name = "CookieError";
-  }
-}
-
-try {
-  // Test code
-} catch (error) {
-  throw new CookieError("Test failed", {
-    browser: process.env.BROWSER,
-    timestamp: new Date().toISOString(),
-  });
-}
-```
+For safe local recipes, see [Examples and Tutorials](./examples.md). Review
+[Security and Privacy](./security.md) before handling real sessions.

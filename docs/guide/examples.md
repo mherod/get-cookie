@@ -26,10 +26,10 @@ are authorized to access.
     <strong>Check CSRF-aware inputs</strong>
     <span>Verify the two known cookies an admin flow expects.</span>
   </a>
-  <a class="example-chooser__card" href="#check-a-playwright-handoff">
+  <a class="example-chooser__card" href="#assess-browser-automation-inputs">
     <span class="example-chooser__meta">Playwright · safety gate</span>
-    <strong>Check a Playwright handoff</strong>
-    <span>Seed a fresh context only when cookie scope is complete.</span>
+    <strong>Assess automation inputs</strong>
+    <span>See which metadata survived without replaying a credential.</span>
   </a>
   <a class="example-chooser__card" href="#compare-browser-identities-without-values">
     <span class="example-chooser__meta">CLI · 2 min</span>
@@ -50,8 +50,7 @@ are authorized to access.
 
 Before you start: shell recipes expect <code>get-cookie</code> on your PATH
 and <code>jq</code> for redacted JSON; TypeScript recipes need Node 20+ and
-the package installed. Playwright is an optional dependency used by one
-advanced recipe.
+the package installed.
 
 > [!TIP]
 > Choose the narrowest boundary: CLI flags and direct strategies can target a
@@ -60,9 +59,9 @@ advanced recipe.
 
 > [!CAUTION]
 > Browser cookies are live credentials. Do not enable shell tracing, echo
-> values, write cookies to files, save Playwright storage state, or move these
-> patterns into CI. Prefer official API tokens for requests and unattended
-> workflows.
+> values, write cookies to files, inject them into another browser context, or
+> move these patterns into CI. Prefer official API tokens for requests and
+> unattended workflows.
 
 ## Check one authenticated session
 
@@ -164,55 +163,41 @@ The code never prints either value or builds an outgoing request. Keep the
 requested names narrow; do not query every cookie when two known cookies are
 enough.
 
-## Check a Playwright handoff
+## Assess browser automation inputs
 
-This is a feasibility check, not a universal login shortcut. On macOS, Safari
-exports the path and flags that a safe Playwright handoff needs. Chromium and
-Firefox may not, so their safe result is often an intentional stop rather than
-a guessed cookie scope.
+This is a metadata-only feasibility check, not a login shortcut. On macOS,
+even Safari's richer export is not enough for a safe automatic Playwright
+handoff: `SameSite` is not exported, and Safari represents both genuine
+session cookies and malformed lifetime data as `"Infinity"`. Chromium and
+Firefox may omit scope metadata as well.
 
 ```typescript
-import { chromium } from "playwright";
 import {
   SafariCookieQueryStrategy,
   type ExportedCookie,
 } from "@mherod/get-cookie";
 
-function toPlaywrightCookie(cookie: ExportedCookie) {
+function summarizeAutomationInputs(cookie: ExportedCookie) {
   const path = cookie.meta?.path;
-  const secure = cookie.meta?.secure;
-  const httpOnly = cookie.meta?.httpOnly;
-  const expires =
-    cookie.expiry === "Infinity"
-      ? undefined
-      : cookie.expiry instanceof Date
-        ? Math.floor(cookie.expiry.getTime() / 1000)
-        : typeof cookie.expiry === "number"
-          ? cookie.expiry
-          : Number.NaN;
-
-  if (
-    !path ||
-    !path.startsWith("/") ||
-    typeof secure !== "boolean" ||
-    typeof httpOnly !== "boolean" ||
-    (expires !== undefined &&
-      (!Number.isSafeInteger(expires) ||
-        expires <= Math.floor(Date.now() / 1000)))
-  ) {
-    throw new Error(
-      "Cookie scope or lifetime metadata is incomplete for a safe handoff",
-    );
-  }
+  const expiry = cookie.expiry;
+  const lifetime =
+    expiry === "Infinity"
+      ? "ambiguous-session-or-invalid"
+      : expiry instanceof Date &&
+          Number.isFinite(expiry.getTime()) &&
+          expiry.getTime() > Date.now()
+        ? "future-persistent"
+        : "missing-or-expired";
 
   return {
     name: cookie.name,
-    value: String(cookie.value),
     domain: cookie.domain,
-    path,
-    secure,
-    httpOnly,
-    ...(expires !== undefined && { expires }),
+    hasPath: typeof path === "string" && path.startsWith("/"),
+    hasSecureFlag: typeof cookie.meta?.secure === "boolean",
+    hasHttpOnlyFlag: typeof cookie.meta?.httpOnly === "boolean",
+    lifetime,
+    sameSite: "not exported",
+    safeAutomaticHandoff: false,
   };
 }
 
@@ -223,31 +208,16 @@ if (cookies.length !== 1) {
   throw new Error("Expected one Safari session cookie");
 }
 
-const browser = await chromium.launch();
-const context = await browser.newContext();
-
-try {
-  await context.addCookies(cookies.map(toPlaywrightCookie));
-
-  const page = await context.newPage();
-  await page.goto("https://app.example.com/dashboard");
-
-  if (new URL(page.url()).pathname.startsWith("/login")) {
-    throw new Error("The local session was not accepted");
-  }
-
-  // Continue with the small, local smoke check here.
-} finally {
-  await context.close();
-  await browser.close();
-}
+console.table(cookies.map(summarizeAutomationInputs));
+console.log("Use the service's supported test-login flow for Playwright.");
 ```
 
-Install Playwright separately before trying this optional recipe. If the app
-needs more than one cookie, query only those known names and run every result
-through the same scope check. Do not write <code>storageState</code>, traces,
-or screenshots that could contain session material; use a service test-login
-flow when scope metadata is incomplete.
+No value is printed and no browser context is created. A
+<code>future-persistent</code> lifetime is useful metadata, but it still does
+not make replay safe while <code>SameSite</code> is unavailable.
+<code>"Infinity"</code> is not accepted as a trustworthy session marker because
+Safari uses it after normalizing invalid lifetime data too. Use a service
+test-login flow for Playwright instead.
 
 ## Compare browser identities without values
 

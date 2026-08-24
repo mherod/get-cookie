@@ -1,6 +1,6 @@
 ---
 title: Automation
-description: Use local browser cookies in short-lived scripts and browser sessions.
+description: Use local browser cookies in status-only scripts and metadata checks.
 ---
 
 # Automation with get-cookie
@@ -18,8 +18,9 @@ storage on the current machine; it is not a credential-management system.
 
 - [Shell scripts](/automation/shell-scripts) cover status-only local
   preflights and redacted metadata checks.
-- [Browser automation](/automation/browser-automation) covers passing cookies
-  into a fresh local browser context.
+- [Browser automation](/automation/browser-automation) covers metadata-only
+  readiness checks and why automatic Playwright cookie replay is not
+  documented.
 - [CLI usage](/guide/cli-usage) documents query, browser, profile, container,
   and output flags.
 - [API reference](/reference/) documents the exported TypeScript surface.
@@ -61,7 +62,7 @@ without authentication.
 3. Keep cookie values in process memory; never write them to files, logs,
    screenshots, traces, or shell history.
 4. Check for an empty result before continuing a local task.
-5. Close browser contexts and unset shell variables as soon as the task ends.
+5. Unset shell variables and discard returned arrays as soon as the task ends.
 
 ## Next steps
 

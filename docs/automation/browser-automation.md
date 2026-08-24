@@ -1,116 +1,90 @@
 ---
 title: Browser automation
-description: Pass local browser cookies into a short-lived Playwright context.
+description: Inspect local cookie metadata before a browser automation task.
 ---
 
 # Browser automation
 
-You can use `get-cookie` to seed a fresh local browser context with cookies
-from an existing local session. This is useful for a user-initiated test or
-debugging run that should not repeat an interactive login.
+`get-cookie` can help a local browser-automation workflow answer a narrow
+question: is one known cookie readable, and which metadata survived export?
+It does not currently expose enough cookie semantics to recreate a browser
+session safely in Playwright.
 
-The example below assumes Playwright is already installed in your project.
+The public export does not preserve `SameSite`. Safari also normalizes both a
+real session cookie and malformed or out-of-range lifetime data to
+`"Infinity"`, so callers cannot tell those cases apart. Because that
+information is lost, this page deliberately does not turn returned values into
+browser-context input.
 
 > [!CAUTION]
-> Injecting cookies transfers an authenticated session into another browser
-> context. Keep this local, use only authorized accounts and domains, and do
-> not save Playwright storage state, traces, screenshots, or logs that contain
-> cookie values.
+> Browser cookies are live credentials. Keep this check local, use only
+> authorized accounts and domains, and do not print, serialize, inject, or
+> persist cookie values in storage state, traces, screenshots, or logs.
 
-## Playwright example
+## Metadata-only feasibility check
 
-This example asks for cookies only for one domain, fails closed when none are
-found or when the original cookie scope is unavailable, and closes the context
-when the task ends:
+On macOS, Safari is useful for this check because its export can include path
+and security flags. Even that richer result is still not a safe automatic
+handoff: `SameSite` is absent, and an `"Infinity"` lifetime is ambiguous.
+The example projects away `value` and reports only what can be inspected:
 
 ```typescript
-import { chromium } from "playwright";
-import { getCookie } from "@mherod/get-cookie";
+import {
+  SafariCookieQueryStrategy,
+  type ExportedCookie,
+} from "@mherod/get-cookie";
 
-const targetUrl = "https://example.com/dashboard";
-
-const cookies = await getCookie({
-  name: "%",
-  domain: "example.com",
-});
-
-if (cookies.length === 0) {
-  throw new Error("No matching browser cookies found");
-}
-
-const playwrightCookies = cookies.map((cookie) => {
+function summarizeAutomationInputs(cookie: ExportedCookie) {
   const path = cookie.meta?.path;
-  const secure = cookie.meta?.secure;
-  const httpOnly = cookie.meta?.httpOnly;
-  const expires =
-    cookie.expiry === "Infinity"
-      ? undefined
-      : cookie.expiry instanceof Date
-        ? Math.floor(cookie.expiry.getTime() / 1000)
-        : typeof cookie.expiry === "number"
-          ? cookie.expiry
-          : Number.NaN;
-
-  if (
-    !path ||
-    !path.startsWith("/") ||
-    typeof secure !== "boolean" ||
-    typeof httpOnly !== "boolean" ||
-    (expires !== undefined &&
-      (!Number.isSafeInteger(expires) ||
-        expires <= Math.floor(Date.now() / 1000)))
-  ) {
-    throw new Error(
-      "Cannot replay a cookie without valid scope and lifetime metadata",
-    );
-  }
+  const expiry = cookie.expiry;
+  const lifetime =
+    expiry === "Infinity"
+      ? "ambiguous-session-or-invalid"
+      : expiry instanceof Date &&
+          Number.isFinite(expiry.getTime()) &&
+          expiry.getTime() > Date.now()
+        ? "future-persistent"
+        : "missing-or-expired";
 
   return {
     name: cookie.name,
-    value: String(cookie.value),
     domain: cookie.domain,
-    path,
-    secure,
-    httpOnly,
-    ...(expires !== undefined && { expires }),
+    hasPath: typeof path === "string" && path.startsWith("/"),
+    hasSecureFlag: typeof cookie.meta?.secure === "boolean",
+    hasHttpOnlyFlag: typeof cookie.meta?.httpOnly === "boolean",
+    lifetime,
+    sameSite: "not exported",
+    safeAutomaticHandoff: false,
   };
-});
-
-const browser = await chromium.launch();
-const context = await browser.newContext();
-
-try {
-  await context.addCookies(playwrightCookies);
-
-  const page = await context.newPage();
-  await page.goto(targetUrl);
-
-  // Perform the local, authorized task here.
-} finally {
-  await context.close();
-  await browser.close();
 }
+
+const source = new SafariCookieQueryStrategy();
+const cookies = await source.queryCookies("sessionid", "app.example.com");
+
+if (cookies.length !== 1) {
+  throw new Error("Expected one local Safari session cookie");
+}
+
+console.table(cookies.map(summarizeAutomationInputs));
+console.log("Use the service's supported test-login flow for Playwright.");
 ```
 
-The example intentionally has no fallback scope or lifetime. Some browser
-strategies do not currently expose `meta.path`, `meta.secure`, or
-`meta.httpOnly`; those results are not safe to replay because substituting `/`
-could widen a path-scoped cookie and guessed flags can change how it is
-exposed or sent. `"Infinity"` remains a session cookie, while a future `Date`
-or Unix-seconds numeric expiry is forwarded as Playwright's `expires`.
-Missing, invalid, or already-expired lifetimes stop the handoff. Use only
-results that retain their original scope metadata, or use the service's normal
-login or test-auth flow instead.
+No cookie value is printed, serialized, or passed to a browser context. A
+`future-persistent` lifetime only means the exported date is usable for
+inspection; it does not make replay safe while `SameSite` is unavailable.
+Likewise, `"Infinity"` cannot be accepted as a safe session marker because
+Safari uses the same value after normalizing invalid lifetime data.
 
-The public `getCookie` API accepts a cookie `name` and `domain`. Use `%`
-as the name only when the target needs all matching cookies; a named cookie is
-safer when one is enough.
+For a real Playwright run, prefer the service's official test-login,
+short-lived API token, or another supported authentication flow. If the public
+export later preserves the complete cookie policy and lifetime provenance, a
+handoff recipe can be reconsidered then.
 
 ## Keep the boundary narrow
 
-- Extract cookies immediately before creating the context.
-- Use one target domain at a time.
-- Do not cache, serialize, or share the returned array.
+- Query one known cookie and one target domain at a time.
+- Inspect names, domains, expiry, and presence of metadata; omit `value`.
+- Do not cache, serialize, share, or inject the returned array.
 - Do not run this pattern in CI or on a shared machine.
 - Prefer the service's official API token or test-login mechanism for
   repeatable automation.

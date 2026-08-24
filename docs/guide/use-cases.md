@@ -20,7 +20,7 @@ For access problems, go to [Troubleshooting](./troubleshooting.md).
 | Check whether a local browser has a cookie | [Compare browser identities](./examples.md#compare-browser-identities-without-values) | Confirms name, domain, browser, and expiry without exposing the value |
 | Check whether one local session is ready   | [Check one authenticated session](./examples.md#check-one-authenticated-session)      | Uses an explicit browser/profile and reduces the result to a boolean  |
 | Check an admin flow's CSRF inputs          | [Check CSRF-aware inputs](./examples.md#check-csrf-aware-inputs)                      | Requires two known values without building a request                  |
-| Seed a local browser smoke check           | [Check a Playwright handoff](./examples.md#check-a-playwright-handoff)                | Refuses to guess when cookie-scope metadata is incomplete             |
+| Assess browser automation inputs           | [Assess automation inputs](./examples.md#assess-browser-automation-inputs)             | Shows why exported metadata is insufficient for automatic replay      |
 | Preflight a local task                     | [Preflight a local dev command](./examples.md#preflight-a-local-dev-command)          | Reports status without printing values                                |
 | Test project behavior                      | Deterministic Jest tests first; optional local smoke check second                     | Keeps CI reproducible and real sessions local                         |
 
@@ -53,17 +53,18 @@ get-cookie sessionid app.example.com \
 If results differ across profiles, keep the diagnosis at the metadata level.
 Avoid comparing or sharing raw values.
 
-## Local browser automation handoff
+## Local browser automation readiness
 
-When a local automation process needs an existing authorized session, retrieve
-cookies immediately before creating its browser context and keep them in
-memory. A handoff is only safe when the export preserves domain, path, and
-security flags; Chromium and Firefox exports may not provide enough scope
-metadata.
+When a local automation process needs an authorized session, inspect whether
+one known cookie is readable and which metadata survived export. The current
+public export does not preserve `SameSite`, and Safari's `"Infinity"`
+lifetime can represent either a session cookie or normalized invalid data, so
+the docs do not present automatic cookie replay as safe.
 
-Use [Check a Playwright handoff](./examples.md#check-a-playwright-handoff) as a
-fail-closed boundary. Do not guess missing fields, copy a browser profile, or
-export a cookie archive as a shortcut.
+Use [Assess automation inputs](./examples.md#assess-browser-automation-inputs)
+as a metadata-only boundary. For a real browser run, use the service's
+supported test-login or token flow rather than guessing missing fields, copying
+a browser profile, or exporting a cookie archive.
 
 ## Security review
 

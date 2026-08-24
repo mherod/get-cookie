@@ -115,16 +115,21 @@ get-cookie % example.com --include-expired --include-all --output json
 
 JWT inspection runs after the cookie query:
 
-| Option             | Alias | Meaning                                           |
-| ------------------ | ----- | ------------------------------------------------- |
-| `--detect-jwt`     | `-j`  | Add decoded JWT metadata to matching cookies.     |
-| `--jwt-only`       |       | Keep only cookies containing valid JWTs.          |
-| `--jwt-secret KEY` |       | Validate JWT signatures with the supplied secret. |
+| Option             | Alias | Meaning                                                          |
+| ------------------ | ----- | ---------------------------------------------------------------- |
+| `--detect-jwt`     | `-j`  | Add decoded JWT metadata to JWT-shaped cookie values.           |
+| `--jwt-only`       |       | Keep JWT-shaped values that pass decoding and expiry filtering. |
+| `--jwt-secret KEY` |       | Verify JWT signatures with the supplied secret.                 |
 
 ```bash
 get-cookie % example.com --detect-jwt --output json
 get-cookie % example.com --jwt-only --output json
 ```
+
+Without `--jwt-secret`, these flags inspect token structure and decoded
+expiry claims; they do not authenticate the token or verify its signature.
+Use `--jwt-secret` when you need secret-backed signature verification, and
+reserve “verified” for tokens that pass that check.
 
 Do not put a real signing secret into shell history or shared logs.
 

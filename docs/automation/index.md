@@ -26,12 +26,16 @@ storage on the current machine; it is not a credential-management system.
 
 ## Two building blocks
 
-For a request that needs every applicable cookie for one URL, `--url` derives
-the cookie query and `--render` returns a Cookie-header string:
+For a request that needs one known cookie, name the cookie and target domain.
+`--render` returns a Cookie-header string:
 
 ```bash
-get-cookie --url https://example.com/dashboard --render
+get-cookie sessionid example.com --render
 ```
+
+`--url` can help inspect hostname and parent-domain matches, but it currently
+does not stop at public suffixes. Do not pipe `--url ... --render` into an
+outgoing request for an arbitrary URL.
 
 For programmatic use, query by cookie name and domain:
 

@@ -107,7 +107,7 @@ safer when one is enough.
 3. Try the equivalent CLI query locally:
 
    ```bash
-   get-cookie --url https://example.com/dashboard --render
+   get-cookie sessionid example.com --browser chrome --output json
    ```
 
 4. See [troubleshooting](/guide/troubleshooting) for permissions, locked

@@ -65,12 +65,12 @@ advanced recipe.
 ## Replay one authenticated request
 
 Use this when the browser is already signed in and you want to reproduce one
-authorized request without copying a cookie out of DevTools. <code>--url</code>
-matches the hostname and parent domains; <code>--render</code> creates one
-in-memory Cookie header. The explicit browser/profile prevents accidentally
-mixing sessions.
+authorized request without copying a cookie out of DevTools. Name the cookie
+and target domain explicitly; <code>--render</code> creates one in-memory
+Cookie header. The explicit browser/profile prevents accidentally mixing
+sessions.
 
-~~~bash
+```bash
 #!/usr/bin/env bash
 set -euo pipefail
 
@@ -78,7 +78,8 @@ origin="https://app.example.com"
 target_url="$origin/api/me"
 cookie_header="$(
   get-cookie \
-    --url "$target_url" \
+    sessionid \
+    app.example.com \
     --browser chrome \
     --profile "Work" \
     --render 2>/dev/null
@@ -100,12 +101,14 @@ curl \
   --show-error \
   -H "Cookie: $cookie_header" \
   "$target_url"
-~~~
+```
 
 This is ideal for reproducing a local API bug or checking an endpoint behind a
-browser login. <code>--url</code> does not model path or secure-cookie
-selection; it derives specs from the hostname. This is not a replacement for
-the service's supported API auth.
+browser login. Do not replace the explicit name/domain with
+<code>--url ... --render</code> for an arbitrary URL: URL expansion currently
+includes every parent domain, including public suffixes such as
+<code>co.uk</code>. This is not a replacement for the service's supported API
+auth.
 
 ## Make a CSRF-aware local client
 
@@ -114,7 +117,7 @@ asks Chrome for one named profile, then the code requires exactly one match for
 each name before it sends anything. If profile discovery is unavailable, the
 strategy can fall back to broader local stores, so keep those count checks.
 
-~~~typescript
+```typescript
 import { ChromeCookieQueryStrategy } from "@mherod/get-cookie";
 
 const source = new ChromeCookieQueryStrategy("Work");
@@ -152,7 +155,7 @@ if (!response.ok) {
 
 const payload = await response.json();
 console.log("request ok:", response.status, "array:", Array.isArray(payload));
-~~~
+```
 
 The code never prints either value. Keep the requested names narrow; do not
 query every cookie when two known cookies are enough.
@@ -164,7 +167,7 @@ exports the path and flags that a safe Playwright handoff needs. Chromium and
 Firefox may not, so their safe result is often an intentional stop rather than
 a guessed cookie scope.
 
-~~~typescript
+```typescript
 import { chromium } from "playwright";
 import {
   SafariCookieQueryStrategy,
@@ -218,7 +221,7 @@ try {
   await context.close();
   await browser.close();
 }
-~~~
+```
 
 Install Playwright separately before trying this optional recipe. If the app
 needs more than one cookie, query only those known names and run every result
@@ -232,7 +235,7 @@ When a site works in one profile and fails in another, compare metadata rather
 than comparing credentials. Start with profile discovery, then inspect one
 profile at a time.
 
-~~~bash
+```bash
 get-cookie --browser chrome --list-profiles
 
 inspect_profile() {
@@ -253,11 +256,11 @@ inspect_profile() {
 
 inspect_profile "Work"
 inspect_profile "Personal"
-~~~
+```
 
 Firefox containers give you another useful identity boundary:
 
-~~~bash
+```bash
 get-cookie sessionid app.example.com \
   --browser firefox \
   --profile default-release \
@@ -270,7 +273,7 @@ get-cookie sessionid app.example.com \
     browser: .meta.browser,
     containerId: .meta.containerId
   })'
-~~~
+```
 
 Full JSON still passes through the local pipe before <code>jq</code> removes
 values. Keep tracing off, and keep profile/container labels out of shared
@@ -281,7 +284,7 @@ screenshots or public issue reports.
 Before a demo or local debugging session, inspect expiry and JWT status while
 projecting away the value and decoded claims.
 
-~~~bash
+```bash
 get-cookie auth_token app.example.com --detect-jwt --output json |
   jq 'map({
     name,
@@ -291,7 +294,7 @@ get-cookie auth_token app.example.com --detect-jwt --output json |
     jwtExpiry: .meta.jwtExpiry,
     jwtValid: .meta.jwtValidation.isValid
   })'
-~~~
+```
 
 JWT decoding is not signature verification. Do not print
 <code>.meta.jwtPayload</code>, and avoid putting a real
@@ -303,7 +306,7 @@ Use a status-only preflight when a local task needs one known browser session.
 The command reports readiness without keeping a cookie value in a variable or
 printing it.
 
-~~~bash
+```bash
 #!/usr/bin/env bash
 set -euo pipefail
 
@@ -319,7 +322,7 @@ else
 fi
 
 pnpm run local:smoke
-~~~
+```
 
 The full JSON still crosses the local pipe before <code>jq</code> reduces it
 to a boolean, so keep tracing off. This is a useful front door for local

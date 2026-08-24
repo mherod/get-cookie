@@ -29,15 +29,20 @@ Query every cookie for a domain as JSON:
 get-cookie % example.com --output json
 ```
 
-Build a `Cookie` header for a URL:
+Build a named `Cookie` header for one host:
 
 ```bash
-curl -H "Cookie: $(get-cookie --url https://app.example.com --render)" https://app.example.com/api/me
+curl -H "Cookie: $(get-cookie sessionid app.example.com --render)" https://app.example.com/api/me
 ```
 
 The default CLI output is the matching cookie value, one value per line.
 `--render` produces a merged `name=value; name=value` header value, and
 `--output json` preserves metadata for scripts.
+
+`--url` builds wildcard specs for a hostname and its parent domains. Do not
+pipe `--url ... --render` into an outgoing request for an arbitrary URL:
+public-suffix parents such as `co.uk` are not excluded. For requests, name
+each cookie and target domain explicitly.
 
 ## Use it from TypeScript
 

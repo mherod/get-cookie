@@ -6,7 +6,8 @@
 set -u
 
 TARGET_DOMAIN=${TARGET_DOMAIN:-example.com}
-TARGET_URL=${TARGET_URL:-https://$TARGET_DOMAIN/dashboard}
+TARGET_PATH=${TARGET_PATH:-/dashboard}
+TARGET_URL="https://$TARGET_DOMAIN$TARGET_PATH"
 COOKIE_NAME=${COOKIE_NAME:-sessionid}
 
 if ! command -v pnpm >/dev/null 2>&1; then
@@ -35,18 +36,18 @@ else
 fi
 unset cookie_value
 
-printf '\n%s\n' "3. Check URL-derived cookies without displaying them"
-cookie_header="$(run_get_cookie --url "$TARGET_URL" --render 2>/dev/null || true)"
+printf '\n%s\n' "3. Check a named rendered cookie without displaying it"
+cookie_header="$(run_get_cookie "$COOKIE_NAME" "$TARGET_DOMAIN" --render 2>/dev/null || true)"
 if [ -n "$cookie_header" ]; then
-  printf '%s\n' "   Found a Cookie header for the target URL."
+  printf '%s\n' "   Found a Cookie header for the named cookie."
 else
-  printf '%s\n' "   No matching cookies found."
+  printf '%s\n' "   No matching named cookie found."
 fi
 unset cookie_header
 
 printf '\n%s\n' "4. Commands to try manually"
 printf '%s\n' "   pnpm tsx src/cli/cli.ts --browser chrome --list-profiles"
-printf '%s\n' "   pnpm tsx src/cli/cli.ts --url $TARGET_URL --browser chrome --profile 'Work' --render"
-printf '%s\n' "   pnpm tsx src/cli/cli.ts --url $TARGET_URL --browser firefox --container work --render"
-printf '%s\n' "   pnpm tsx src/cli/cli.ts --url $TARGET_URL --output json"
+printf '%s\n' "   pnpm tsx src/cli/cli.ts $COOKIE_NAME $TARGET_DOMAIN --browser chrome --profile 'Work' --render"
+printf '%s\n' "   pnpm tsx src/cli/cli.ts $COOKIE_NAME $TARGET_DOMAIN --browser firefox --container work --render"
+printf '%s\n' "   pnpm tsx src/cli/cli.ts $COOKIE_NAME $TARGET_DOMAIN --output json"
 printf '\n%s\n' "Treat all query output as sensitive."

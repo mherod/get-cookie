@@ -6,8 +6,8 @@ description: Use get-cookie in short-lived local shell commands without persisti
 # Shell script automation
 
 Use shell scripts for small, local tasks such as making one authenticated
-request with `curl`. The safest pattern is to derive a Cookie header, use it
-immediately, and then discard it.
+request with `curl`. The safest pattern is to request an explicit cookie for
+a fixed host, use it immediately, and then discard it.
 
 > [!CAUTION]
 > Do not enable `set -x`, echo cookie values, redirect them to a file, or pass
@@ -20,19 +20,22 @@ immediately, and then discard it.
 #!/usr/bin/env bash
 
 auth_curl() {
-  local url=$1
+  local path=$1
   shift
 
+  local origin="https://app.example.com"
   local cookie_header
   local status
 
-  cookie_header="$(get-cookie --url "$url" --render 2>/dev/null)"
+  cookie_header="$(
+    get-cookie sessionid app.example.com --render 2>/dev/null
+  )"
   if [ -z "$cookie_header" ]; then
-    printf '%s\n' "No matching cookies found for $url" >&2
+    printf '%s\n' "No session cookie found for app.example.com" >&2
     return 1
   fi
 
-  if curl --fail-with-body -H "Cookie: $cookie_header" "$@" "$url"; then
+  if curl --fail-with-body -H "Cookie: $cookie_header" "$@" "$origin$path"; then
     status=0
   else
     status=$?
@@ -42,7 +45,7 @@ auth_curl() {
   return "$status"
 }
 
-auth_curl https://example.com/dashboard --silent --show-error
+auth_curl /dashboard --silent --show-error
 ```
 
 `get-cookie` may produce no output when no matching cookie is available.
@@ -56,16 +59,15 @@ List profiles first, then use the exact displayed name:
 ```bash
 get-cookie --browser chrome --list-profiles
 
-url="https://example.com/dashboard"
 cookie_header="$(
-  get-cookie --url "$url" --browser chrome --profile "Work" --render
+  get-cookie sessionid app.example.com --browser chrome --profile "Work" --render
 )"
 ```
 
 Firefox containers can be selected with `--container`:
 
 ```bash
-get-cookie --url https://example.com/dashboard \
+get-cookie sessionid app.example.com \
   --browser firefox \
   --container work \
   --render
@@ -97,8 +99,10 @@ curl --fail-with-body \
 unset cookie_value
 ```
 
-For multiple cookies or URL-specific matching, prefer `--url --render` rather
-than assembling a header yourself.
+For multiple cookies, build an explicit allowlist of names and target domains
+and join only those rendered pairs. Do not use `--url --render` to build an
+outgoing header for an arbitrary URL: URL parent expansion currently reaches
+public suffixes such as `co.uk`.
 
 ## Debug without leaking values
 

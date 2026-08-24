@@ -19,8 +19,10 @@ Then check:
   globs such as `session*` are not name wildcards.
 - Pass the bare domain, such as `example.com`; normal domain matching already
   includes subdomains.
-- Use `--url https://app.example.com/path` when you want the hostname and
-  parent-domain specs generated for you.
+- Use `--url https://app.example.com/path` only for local inspection when you
+  want the hostname and parent-domain specs generated for you. It currently
+  does not stop at public suffixes, so do not pipe `--url ... --render` into
+  an outgoing request for an arbitrary URL.
 - Add `--include-all` if deduplication may be hiding another row.
 - Remember that expired and session-cookie behavior is browser-specific; do
   not assume `--include-expired` can recover every row.
@@ -105,8 +107,9 @@ Safari reads the modern container file first:
 ```
 
 Grant Full Disk Access to the terminal or host application in System Settings
+
 > Privacy & Security, then rerun the command. Avoid `--force` while you want
-the interactive permission guidance, because it suppresses that prompt.
+> the interactive permission guidance, because it suppresses that prompt.
 
 ```bash
 get-cookie % example.com --browser safari --verbose

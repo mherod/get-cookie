@@ -42,12 +42,16 @@ Use `%` to match every cookie name for a domain:
 get-cookie % example.com --output json
 ```
 
-For an HTTP request, `--url` derives cookie specs for the URL hostname and
-its parent domains, while `--render` builds a Cookie header value:
+For an HTTP request, ask for the exact cookie name and target host, then use
+`--render` to build a Cookie header value:
 
 ```bash
-curl -H "Cookie: $(get-cookie --url https://app.example.com --render)" https://app.example.com/api/me
+curl -H "Cookie: $(get-cookie sessionid app.example.com --render)" https://app.example.com/api/me
 ```
+
+Do not pipe `--url ... --render` into an outgoing request for an arbitrary
+URL. URL expansion currently includes every parent domain and does not stop at
+public suffixes such as `co.uk`.
 
 If several profiles may contain the same cookie, list profiles first and then
 select one:

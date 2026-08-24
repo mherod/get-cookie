@@ -23,8 +23,8 @@ get-cookie sessionid example.com
 # Every cookie for a domain, as structured data
 get-cookie % example.com --output json
 
-# Cookies applicable to a URL, rendered as a Cookie header value
-get-cookie --url https://app.example.com --render
+# One named cookie, rendered as a Cookie header value
+get-cookie sessionid app.example.com --render
 ```
 
 The exact wildcard accepted by the CLI is `%`. A positional `*` is
@@ -33,17 +33,23 @@ SQL-style `%` and `_` patterns instead.
 
 ## Query selection
 
-| Option | Alias | Meaning |
-| --- | --- | --- |
-| `[name]` | | Positional cookie-name pattern; defaults to `%`. |
-| `[domain]` | | Positional domain pattern; defaults to `%`. |
-| `--name PATTERN` | `-n` | Cookie-name pattern. |
-| `--domain PATTERN` | `-D` | Cookie-domain pattern. |
-| `--url URL` | `-u` | Build `%` specs for the URL hostname and its parent domains. |
-| `--browser BROWSER` | `-b` | Target one supported browser. |
-| `--profile NAME` | `-p` | Target a Chromium or Firefox profile. Use with `--browser`. |
-| `--container NAME_OR_ID` | `-c` | Target a Firefox container name, numeric ID, or `none`. |
-| `--store PATH` | | Read an explicit cookie-store path. |
+| Option                   | Alias | Meaning                                                       |
+| ------------------------ | ----- | ------------------------------------------------------------- |
+| `[name]`                 |       | Positional cookie-name pattern; defaults to `%`.              |
+| `[domain]`               |       | Positional domain pattern; defaults to `%`.                   |
+| `--name PATTERN`         | `-n`  | Cookie-name pattern.                                          |
+| `--domain PATTERN`       | `-D`  | Cookie-domain pattern.                                        |
+| `--url URL`              | `-u`  | Build `%` specs for the URL hostname and every parent domain. |
+| `--browser BROWSER`      | `-b`  | Target one supported browser.                                 |
+| `--profile NAME`         | `-p`  | Target a Chromium or Firefox profile. Use with `--browser`.   |
+| `--container NAME_OR_ID` | `-c`  | Target a Firefox container name, numeric ID, or `none`.       |
+| `--store PATH`           |       | Read an explicit cookie-store path.                           |
+
+> [!CAUTION]
+> `--url` currently walks every parent domain and does not stop at public
+> suffixes. For `app.example.co.uk`, it can also query `co.uk`. Do not
+> combine it with `--render` and send the result to an arbitrary URL. For
+> outgoing requests, use explicit cookie names and target domains.
 
 Supported `--browser` values:
 
@@ -90,12 +96,12 @@ Safari does not expose named-profile filtering.
 
 ## Filtering and recovery
 
-| Option | Alias | Meaning |
-| --- | --- | --- |
-| `--include-expired` | | Keep expired cookies. By default they are filtered out. |
-| `--include-all` | | Keep duplicate `name + domain` results. By default one longer value is kept. |
-| `--force` | `-f` | Skip interactive lock/permission remediation; it does not guarantee access. |
-| `--verbose` | `-v` | Enable diagnostic logging. |
+| Option              | Alias | Meaning                                                                      |
+| ------------------- | ----- | ---------------------------------------------------------------------------- |
+| `--include-expired` |       | Keep expired cookies. By default they are filtered out.                      |
+| `--include-all`     |       | Keep duplicate `name + domain` results. By default one longer value is kept. |
+| `--force`           | `-f`  | Skip interactive lock/permission remediation; it does not guarantee access.  |
+| `--verbose`         | `-v`  | Enable diagnostic logging.                                                   |
 
 For example:
 
@@ -107,11 +113,11 @@ get-cookie % example.com --include-expired --include-all --output json
 
 JWT inspection runs after the cookie query:
 
-| Option | Alias | Meaning |
-| --- | --- | --- |
-| `--detect-jwt` | `-j` | Add decoded JWT metadata to matching cookies. |
-| `--jwt-only` | | Keep only cookies containing valid JWTs. |
-| `--jwt-secret KEY` | | Validate JWT signatures with the supplied secret. |
+| Option             | Alias | Meaning                                           |
+| ------------------ | ----- | ------------------------------------------------- |
+| `--detect-jwt`     | `-j`  | Add decoded JWT metadata to matching cookies.     |
+| `--jwt-only`       |       | Keep only cookies containing valid JWTs.          |
+| `--jwt-secret KEY` |       | Validate JWT signatures with the supplied secret. |
 
 ```bash
 get-cookie % example.com --detect-jwt --output json
@@ -122,14 +128,14 @@ Do not put a real signing secret into shell history or shared logs.
 
 ## Output modes
 
-| Option | Alias | Output |
-| --- | --- | --- |
-| default | | Unique non-empty values, one per line. |
-| `--output json` | | JSON array of exported cookies. Only lowercase `json` is valid. |
-| `--dump` | `-d` | JSON array of exported cookies. |
-| `--dump-grouped` | `-G` | JSON object keyed by source-store path. |
-| `--render` | `-r` | Merged `name=value; name=value` Cookie header value. |
-| `--render-grouped` | `-R` | Rendered cookie-header strings grouped by source store. |
+| Option             | Alias | Output                                                          |
+| ------------------ | ----- | --------------------------------------------------------------- |
+| default            |       | Unique non-empty values, one per line.                          |
+| `--output json`    |       | JSON array of exported cookies. Only lowercase `json` is valid. |
+| `--dump`           | `-d`  | JSON array of exported cookies.                                 |
+| `--dump-grouped`   | `-G`  | JSON object keyed by source-store path.                         |
+| `--render`         | `-r`  | Merged `name=value; name=value` Cookie header value.            |
+| `--render-grouped` | `-R`  | Rendered cookie-header strings grouped by source store.         |
 
 Examples:
 
@@ -140,17 +146,17 @@ TOKEN=$(get-cookie sessionid example.com)
 # Inspect metadata without printing it into a shared log
 get-cookie % example.com --output json
 
-# Build a request header
-curl -H "Cookie: $(get-cookie --url https://app.example.com --render)" https://app.example.com/api/me
+# Build a request header from one known cookie
+curl -H "Cookie: $(get-cookie sessionid app.example.com --render)" https://app.example.com/api/me
 ```
 
 ## Help and diagnostics
 
-| Option | Alias | Meaning |
-| --- | --- | --- |
-| `--help` | `-h` | Show CLI help. |
-| `--verbose` | `-v` | Show diagnostic logging. |
-| `--list-profiles` | | List discoverable profiles, optionally filtered by `--browser`. |
+| Option            | Alias | Meaning                                                         |
+| ----------------- | ----- | --------------------------------------------------------------- |
+| `--help`          | `-h`  | Show CLI help.                                                  |
+| `--verbose`       | `-v`  | Show diagnostic logging.                                        |
+| `--list-profiles` |       | List discoverable profiles, optionally filtered by `--browser`. |
 
 When a query has no matches, the CLI logs `No results`. Do not rely on a
 specialized no-results exit-code taxonomy; use JSON output or check the
@@ -159,7 +165,7 @@ rendered output in your script.
 ## Safe shell pattern
 
 ```bash
-COOKIE_HEADER=$(get-cookie --url https://app.example.com --render)
+COOKIE_HEADER=$(get-cookie sessionid app.example.com --render)
 
 if [ -z "$COOKIE_HEADER" ]; then
   echo "No local cookie header found" >&2

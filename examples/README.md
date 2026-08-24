@@ -37,7 +37,7 @@ global CLI install.
 
 ## Shell examples
 
-- `quick-start.sh` — a guided tour of basic extraction, URL queries, rendered
+- `quick-start.sh` — a guided tour of named-cookie extraction, rendered
   headers, and login checks.
 - `curl-integration.sh` — a fail-closed local `curl` helper with opt-in
   requests.

@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 
 # Safe, local quick start for get-cookie.
-# Override TARGET_DOMAIN, TARGET_URL, and COOKIE_NAME for an authorized site.
+# Override TARGET_DOMAIN, TARGET_PATH, and COOKIE_NAME for an authorized site.
 
 set -u
 
 TARGET_DOMAIN=${TARGET_DOMAIN:-example.com}
-TARGET_URL=${TARGET_URL:-https://$TARGET_DOMAIN/dashboard}
+TARGET_PATH=${TARGET_PATH:-/dashboard}
+TARGET_URL="https://$TARGET_DOMAIN$TARGET_PATH"
 COOKIE_NAME=${COOKIE_NAME:-sessionid}
 
 if ! command -v get-cookie >/dev/null 2>&1; then
@@ -28,19 +29,19 @@ else
 fi
 unset cookie_value
 
-printf '\n%s\n' "2. Build a Cookie header for one URL"
-cookie_header="$(get-cookie --url "$TARGET_URL" --render 2>/dev/null || true)"
+printf '\n%s\n' "2. Build a named Cookie header for the target domain"
+cookie_header="$(get-cookie "$COOKIE_NAME" "$TARGET_DOMAIN" --render 2>/dev/null || true)"
 if [ -n "$cookie_header" ]; then
-  printf '%s\n' "   Found a header for the target URL."
+  printf '%s\n' "   Found a header for the named cookie."
 else
-  printf '%s\n' "   No matching cookies found for the target URL."
+  printf '%s\n' "   No matching named cookie found."
 fi
 
 printf '\n%s\n' "3. Useful commands to run manually"
 printf '%s\n' "   get-cookie $COOKIE_NAME $TARGET_DOMAIN"
-printf '%s\n' "   get-cookie --url $TARGET_URL --render"
+printf '%s\n' "   get-cookie $COOKIE_NAME $TARGET_DOMAIN --render"
 printf '%s\n' "   get-cookie --browser chrome --list-profiles"
-printf '%s\n' "   get-cookie --url $TARGET_URL --browser chrome --profile 'Work' --render"
+printf '%s\n' "   get-cookie $COOKIE_NAME $TARGET_DOMAIN --browser chrome --profile 'Work' --render"
 
 printf '\n%s\n' "4. Optional local request"
 if [ "${RUN_REQUESTS:-0}" = "1" ] && [ -n "$cookie_header" ]; then
@@ -48,7 +49,7 @@ if [ "${RUN_REQUESTS:-0}" = "1" ] && [ -n "$cookie_header" ]; then
   printf '%s\n' "   Request completed with HTTP $http_code."
   unset http_code
 else
-  printf '%s\n' "   Skipped. Set RUN_REQUESTS=1 to send a request to TARGET_URL."
+  printf '%s\n' "   Skipped. Set RUN_REQUESTS=1 to send a request to the fixed target path."
 fi
 
 unset cookie_header

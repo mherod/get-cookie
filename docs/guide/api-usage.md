@@ -124,8 +124,17 @@ if (!cookie) {
   throw new Error("No matching cookie found");
 }
 
-const cookieHeader = cookie.name + "=" + String(cookie.value);
+const cookieStatus = {
+  name: cookie.name,
+  domain: cookie.domain,
+  found: true,
+  hasValue: String(cookie.value).length > 0,
+  hasExpiry: cookie.expiry !== undefined,
+};
+
+console.info(cookieStatus);
 ```
 
-See [Security and privacy](./security.md) before persisting or forwarding
-cookie values.
+Keep `cookie.value` out of logs, shell variables, and generic request helpers.
+See [Security and privacy](./security.md) before persisting or forwarding a
+value to a destination you have independently verified.

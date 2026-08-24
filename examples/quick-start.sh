@@ -19,20 +19,18 @@ printf '%s\n' "This demo never prints or saves cookie values."
 printf '\n'
 
 printf '%s\n' "1. Check for one named cookie"
-cookie_value="$(get-cookie "$COOKIE_NAME" "$TARGET_DOMAIN" 2>/dev/null || true)"
-if [ -n "$cookie_value" ]; then
+if get-cookie "$COOKIE_NAME" "$TARGET_DOMAIN" 2>/dev/null | grep -q .; then
   printf '%s\n' "   Found a matching cookie."
 else
   printf '%s\n' "   No matching cookie found."
 fi
-unset cookie_value
 
 printf '\n%s\n' "2. Discover profiles before selecting one"
 printf '%s\n' "   get-cookie --browser chrome --list-profiles"
 
 printf '\n%s\n' "3. Useful status-only commands to run manually"
-printf '%s\n' "   get-cookie $COOKIE_NAME $TARGET_DOMAIN"
-printf '%s\n' "   get-cookie $COOKIE_NAME $TARGET_DOMAIN --browser chrome --profile '<exact profile>' | grep -q ."
+printf '%s\n' "   get-cookie $COOKIE_NAME $TARGET_DOMAIN 2>/dev/null | grep -q . && echo found || echo missing"
+printf '%s\n' "   get-cookie $COOKIE_NAME $TARGET_DOMAIN --browser chrome --profile '<exact profile>' 2>/dev/null | grep -q . && echo found || echo missing"
 
 printf '\n%s\n' "4. Why no request is sent"
 printf '%s\n' "   --render is a sensitive serializer, not a safe generic request helper."

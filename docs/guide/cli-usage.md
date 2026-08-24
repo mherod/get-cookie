@@ -154,13 +154,18 @@ Do not put a real signing secret into shell history or shared logs.
 Examples:
 
 ```bash
-# Pass one raw value to another local command
-TOKEN=$(get-cookie sessionid example.com)
+# Check readiness without printing or storing the value
+if get-cookie sessionid example.com 2>/dev/null | grep -q .; then
+  printf '%s\n' "Cookie is available"
+else
+  printf '%s\n' "Cookie is not available"
+fi
 
-# Inspect metadata without printing it into a shared log
+# Sensitive reference only: JSON output includes values; keep it local
 get-cookie % example.com --output json
 
-# Inspect one rendered value locally (still sensitive)
+# Sensitive reference only: --render serializes values, not a safe request
+# helper
 get-cookie sessionid app.example.com --render
 ```
 

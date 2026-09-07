@@ -6,8 +6,10 @@ import { parseFirefoxProfilesIni } from "../core/browsers/firefox/FirefoxCookieQ
 import { fileExists } from "../core/browsers/runtime/FileSystemAdapter";
 
 /**
+ * Lists available browser profiles for a given browser or across all supported browsers.
  *
- * @param browser
+ * @param browser - Optional browser name to filter profiles.
+ * @returns Array of browser profile descriptors with browser, profile name, and directory path.
  */
 export function listProfiles(browser?: string) {
   const profiles: { browser: string; name: string; directory: string }[] = [];

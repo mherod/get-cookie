@@ -9,7 +9,7 @@ import type { ExportedCookie } from "../types/schemas";
 import { McpOperationError } from "./policy";
 
 /**
- *
+ * Parameters for selecting cookies from a specific browser and store.
  */
 export interface CookieSelection {
   browser: string;
@@ -19,7 +19,7 @@ export interface CookieSelection {
 }
 
 /**
- *
+ * Function signature for reading cookies given a target URL and selection criteria.
  */
 export type CookieReader = (
   url: URL,
@@ -27,8 +27,10 @@ export type CookieReader = (
 ) => Promise<ExportedCookie[]>;
 
 /**
+ * Computes the domain hierarchy for cookie matching from a given hostname.
  *
- * @param host
+ * @param host - Target hostname to analyze.
+ * @returns Array of parent and exact domain candidates.
  */
 export function cookieDomains(host: string): string[] {
   const domains = [host];
@@ -45,9 +47,11 @@ export function cookieDomains(host: string): string[] {
 }
 
 /**
+ * Default reader implementation querying local browser cookie stores.
  *
- * @param url
- * @param selection
+ * @param url - Destination URL.
+ * @param selection - Browser and profile selection options.
+ * @returns Promise resolving to matching exported cookies.
  */
 export const readCookies: CookieReader = async (url, selection) => {
   if (selection.browser === "safari" && selection.profile) {
@@ -82,10 +86,12 @@ export const readCookies: CookieReader = async (url, selection) => {
 };
 
 /**
+ * Checks whether a cookie matches a destination URL according to domain, path, secure, and expiry rules.
  *
- * @param cookie
- * @param url
- * @param now
+ * @param cookie - The exported cookie to test.
+ * @param url - Destination URL to match against.
+ * @param now - Current timestamp in milliseconds (defaults to Date.now()).
+ * @returns True if the cookie matches and is applicable for the URL.
  */
 export function cookieMatchesUrl(
   cookie: ExportedCookie,
@@ -153,10 +159,12 @@ export function cookieMatchesUrl(
 }
 
 /**
+ * Queries and filters cookies applicable to a URL, deduplicating conflicting values.
  *
- * @param url
- * @param selection
- * @param reader
+ * @param url - Destination URL.
+ * @param selection - Cookie selection criteria.
+ * @param reader - Underlying cookie reading function.
+ * @returns Filtered array of matching cookies sorted by path specificity.
  */
 export async function selectCookies(
   url: URL,
@@ -191,8 +199,10 @@ export async function selectCookies(
 }
 
 /**
+ * Builds an HTTP Cookie header string from an array of applicable cookies.
  *
- * @param cookies
+ * @param cookies - Array of cookies to serialize.
+ * @returns Formatted Cookie header value.
  */
 export function cookieHeader(cookies: ExportedCookie[]): string {
   if (cookies.length === 0) {

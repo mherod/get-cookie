@@ -7,7 +7,7 @@ import {
 import { assertAllowedUrl, McpOperationError, type McpPolicy } from "./policy";
 
 /**
- *
+ * Input arguments for the authenticated HTTP fetch operation.
  */
 export interface FetchInput extends CookieSelection {
   url: string;
@@ -68,12 +68,14 @@ async function readBody(response: Response, limit: number) {
 }
 
 /**
+ * Performs an HTTP request with local cookies attached, respecting origin and method policy.
  *
- * @param input
- * @param policy
- * @param reader
- * @param fetchImpl
- * @param cancellation
+ * @param input - Request parameters and cookie selection criteria.
+ * @param policy - Security policy enforcing origin and method constraints.
+ * @param reader - Function for extracting local cookies.
+ * @param fetchImpl - Fetch implementation (defaults to global fetch).
+ * @param cancellation - Optional external cancellation signal.
+ * @returns Response object with status, headers, body, and truncation indicator.
  */
 export async function authenticatedFetch(
   input: FetchInput,

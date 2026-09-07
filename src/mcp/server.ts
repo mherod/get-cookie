@@ -43,7 +43,7 @@ const selection = {
 };
 
 /**
- *
+ * Dependency injection container for MCP server operations.
  */
 export interface McpDependencies {
   readCookies: CookieReader;
@@ -78,9 +78,11 @@ async function execute(operation: () => Promise<Record<string, unknown>>) {
 }
 
 /**
+ * Creates and configures an MCP server instance with get-cookie tools.
  *
- * @param policy
- * @param overrides
+ * @param policy - Security policy defining allowed origins and permissions.
+ * @param overrides - Optional dependency overrides for testing.
+ * @returns Configured McpServer instance.
  */
 export function createMcpServer(
   policy: McpPolicy,
@@ -192,8 +194,9 @@ export function createMcpServer(
 }
 
 /**
+ * Starts the MCP server on stdio with the provided policy.
  *
- * @param policy
+ * @param policy - The security policy to enforce.
  */
 export async function startMcpServer(policy: McpPolicy): Promise<void> {
   const server = createMcpServer(policy);

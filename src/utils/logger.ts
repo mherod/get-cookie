@@ -12,6 +12,21 @@ import { env } from "../config";
  * - fatal: Critical errors that prevent the app from continuing
  */
 const consola = createConsola({
+  ...(process.argv[2] === "mcp" && {
+    reporters: [
+      {
+        log: (log: { type: string }) => {
+          // Browser diagnostics can contain cookie values. Keep protocol stdout and
+          // credential-bearing debug payloads out of MCP client logs.
+          if (log.type === "error" || log.type === "warn") {
+            process.stderr.write(
+              `get-cookie: browser ${log.type}; diagnostic details suppressed in MCP mode.\n`,
+            );
+          }
+        },
+      },
+    ],
+  }),
   formatOptions: {
     showLogLevel: false,
     colors: true,

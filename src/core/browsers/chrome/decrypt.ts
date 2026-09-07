@@ -3,6 +3,8 @@ import { createDecipheriv, pbkdf2 } from "node:crypto";
 
 import { isMacOS, isWindows } from "@utils/platformUtils";
 
+import { usesRawCookieValues } from "../../cookies/CookieQueryContext";
+
 /**
  * Simple memoization utility for caching Buffer operations
  * @param fn - The function to memoize that takes a Buffer and returns a Buffer
@@ -273,7 +275,7 @@ export async function decrypt(
         : decrypted;
 
     const decodedString = finalDecrypted.toString("utf8");
-    return extractValue(decodedString);
+    return usesRawCookieValues() ? decodedString : extractValue(decodedString);
   } catch (e) {
     // Preserve the specific finalize-failure message; wrap anything else.
     if (

@@ -7,15 +7,71 @@ import type {
   CookieSpec,
   ExportedCookie,
 } from "../../../types/schemas";
+import type { CookieMeta } from "../../../types/schemas";
 import { chromeTimestampToDate } from "../../../utils/chromeDates";
+import { usesRawCookieValues } from "../../cookies/CookieQueryContext";
 import { BaseCookieQueryStrategy } from "../BaseCookieQueryStrategy";
 import { BrowserLockHandler } from "../BrowserLockHandler";
 import type { ChromiumBrowser } from "../chrome/ChromiumBrowsers";
 import { decrypt } from "../chrome/decrypt";
 import { getChromiumPassword } from "../chrome/getChromiumPassword";
+import type { SqliteDatabase } from "../sql/adapters/DatabaseAdapter";
 import { CookieQueryBuilder, isSqlBrowser } from "../sql/CookieQueryBuilder";
 import { getGlobalConnectionManager } from "../sql/DatabaseConnectionManager";
 import { getGlobalQueryMonitor } from "../sql/QueryMonitor";
+
+interface ChromiumQueryRow {
+  encrypted_value: Buffer;
+  plaintext_value?: string;
+  name: string;
+  domain: string;
+  expiry: number;
+  path?: string;
+  is_secure?: number;
+  is_httponly?: number;
+  top_frame_site_key?: string;
+}
+
+type RequestCookieRow = CookieRow & { requestMeta?: CookieMeta };
+
+function rawCookieSql(db: SqliteDatabase, sql: string): string {
+  if (!usesRawCookieValues()) {
+    return sql;
+  }
+  const columns = db.prepare("PRAGMA table_info(cookies)").all() as {
+    name: string;
+  }[];
+  const partition = columns.some(
+    (column) => column.name === "top_frame_site_key",
+  )
+    ? "top_frame_site_key"
+    : "'' AS top_frame_site_key";
+  return sql.replace(
+    "SELECT ",
+    `SELECT value AS plaintext_value, ${partition}, `,
+  );
+}
+
+function toCookieRow(row: ChromiumQueryRow): RequestCookieRow {
+  return {
+    name: row.name,
+    domain: row.domain,
+    expiry: row.expiry,
+    value:
+      usesRawCookieValues() && !row.encrypted_value?.length
+        ? (row.plaintext_value ?? "")
+        : row.encrypted_value,
+    ...(usesRawCookieValues() && {
+      requestMeta: {
+        ...(row.path !== undefined && { path: row.path }),
+        secure: row.is_secure === 1,
+        httpOnly: row.is_httponly === 1,
+        hostOnly: !row.domain.startsWith("."),
+        partitioned: Boolean(row.top_frame_site_key),
+      },
+    }),
+  };
+}
 
 interface DecryptionContext {
   file: string;
@@ -195,21 +251,14 @@ export abstract class BaseChromiumCookieQueryStrategy extends BaseCookieQueryStr
       const encryptedCookies = await connectionManager.executeQuery(
         file,
         (db) => {
-          const rows = monitor.executeQuery<{
-            encrypted_value: Buffer;
-            name: string;
-            domain: string;
-            expiry: number;
-          }>(db, queryConfig.sql, queryConfig.params, file);
-
-          return rows.map(
-            (row): CookieRow => ({
-              name: row.name,
-              domain: row.domain,
-              value: row.encrypted_value,
-              expiry: row.expiry,
-            }),
+          const rows = monitor.executeQuery<ChromiumQueryRow>(
+            db,
+            rawCookieSql(db, queryConfig.sql),
+            queryConfig.params,
+            file,
           );
+
+          return rows.map(toCookieRow);
         },
         queryConfig.description || queryConfig.sql,
       );
@@ -506,22 +555,15 @@ export abstract class BaseChromiumCookieQueryStrategy extends BaseCookieQueryStr
         file,
         (db) => {
           // The CookieQueryBuilder aliases columns, so we get 'domain' not 'host_key'
-          const rows = monitor.executeQuery<{
-            encrypted_value: Buffer;
-            name: string;
-            domain: string;
-            expiry: number;
-          }>(db, queryConfig.sql, queryConfig.params, file);
+          const rows = monitor.executeQuery<ChromiumQueryRow>(
+            db,
+            rawCookieSql(db, queryConfig.sql),
+            queryConfig.params,
+            file,
+          );
 
           // Transform to CookieRow format
-          return rows.map(
-            (row): CookieRow => ({
-              name: row.name,
-              domain: row.domain,
-              value: row.encrypted_value,
-              expiry: row.expiry,
-            }),
-          );
+          return rows.map(toCookieRow);
         },
         queryConfig.sql,
       );
@@ -593,7 +635,7 @@ export abstract class BaseChromiumCookieQueryStrategy extends BaseCookieQueryStr
    * @returns Exported cookie
    */
   protected async processCookie(
-    cookie: CookieRow,
+    cookie: RequestCookieRow,
     context: DecryptionContext,
   ): Promise<ExportedCookie> {
     try {
@@ -601,13 +643,12 @@ export abstract class BaseChromiumCookieQueryStrategy extends BaseCookieQueryStr
         ? cookie.value
         : Buffer.from(String(cookie.value));
 
-      const decryptedValue = await decrypt(
-        value,
-        context.password,
-        context.metaVersion,
-      );
+      const decryptedValue =
+        usesRawCookieValues() && typeof cookie.value === "string"
+          ? cookie.value
+          : await decrypt(value, context.password, context.metaVersion);
 
-      return createExportedCookie(
+      const exported = createExportedCookie(
         cookie.domain,
         cookie.name,
         decryptedValue,
@@ -616,6 +657,10 @@ export abstract class BaseChromiumCookieQueryStrategy extends BaseCookieQueryStr
         context.browser,
         true,
       );
+      if (cookie.requestMeta && exported.meta) {
+        Object.assign(exported.meta, cookie.requestMeta);
+      }
+      return exported;
     } catch (error) {
       this.logger.warn(`Failed to decrypt ${context.browser} cookie`, {
         error: this.getErrorMessage(error),

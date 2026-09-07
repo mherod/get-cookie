@@ -1,5 +1,11 @@
 {
-  "include": ["src/**/*", "scripts/**/*", "*.ts", "examples/**/*"],
+  "include": [
+    "src/**/*",
+    "scripts/**/*",
+    "*.ts",
+    "examples/**/*",
+    "package.json"
+  ],
   "compilerOptions": {
     "moduleResolution": "node",
     "target": "es2020",

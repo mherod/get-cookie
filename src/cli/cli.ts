@@ -24,6 +24,7 @@ declare const BUILD_TIMESTAMP: string;
 
 function showHelp(): void {
   logger.log("Usage: get-cookie [name] [domain] [options]");
+  logger.log("       get-cookie mcp --allow-origin https://example.com");
 
   // Show build info if available
   if (typeof BUILD_TIMESTAMP !== "undefined") {
@@ -245,6 +246,20 @@ async function handleCookieQuery(
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
 
+  if (args[0] === "mcp") {
+    const { parseMcpArgs } = await import("../mcp/policy");
+    const policy = parseMcpArgs(args.slice(1));
+    if (policy.help) {
+      process.stderr.write(
+        "Usage: get-cookie mcp [--allow-origin https://example.com] [--allow-cookie-values] [--allow-unsafe-methods]\nRepeat --allow-origin for each origin. Without it only profile discovery is available. HTTP is allowed only on loopback.\n",
+      );
+      return;
+    }
+    const { startMcpServer } = await import("../mcp/server");
+    await startMcpServer(policy);
+    return;
+  }
+
   // Show help if no arguments provided
   if (args.length === 0) {
     showHelp();
@@ -269,6 +284,10 @@ async function main(): Promise<void> {
 }
 
 main().catch((error) => {
+  if (process.argv[2] === "mcp") {
+    process.stderr.write(`get-cookie MCP: ${getErrorMessage(error)}\n`);
+    process.exit(1);
+  }
   logger.error("Fatal error:", getErrorMessage(error));
   process.exit(1);
 });

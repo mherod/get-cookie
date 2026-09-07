@@ -10,6 +10,7 @@ import {
 } from "@utils/systemPermissions";
 
 import type { ExportedCookie } from "../../../types/schemas";
+import { usesRawCookieValues } from "../../cookies/CookieQueryContext";
 import { BaseCookieQueryStrategy } from "../BaseCookieQueryStrategy";
 import { BrowserLockHandler } from "../BrowserLockHandler";
 import { fileExists } from "../runtime/FileSystemAdapter";
@@ -387,7 +388,9 @@ export class SafariCookieQueryStrategy extends BaseCookieQueryStrategy {
     return {
       domain: this.formatDomain(cookieObj.domain),
       name: cookieObj.name,
-      value: this.processValue(cookieObj.value),
+      value: usesRawCookieValues()
+        ? cookieObj.value
+        : this.processValue(cookieObj.value),
       expiry: this.formatExpiry(cookieObj.expiry),
       meta: {
         file: cookieDbPath,

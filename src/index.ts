@@ -1,8 +1,4 @@
 /**
- * Core cookie retrieval function (main entry point)
- */
-
-/**
  * Composite strategy that queries cookies from multiple browser strategies in parallel
  */
 export { CompositeCookieQueryStrategy } from "./core/browsers/CompositeCookieQueryStrategy";
@@ -16,7 +12,7 @@ export { ChromeCookieQueryStrategy } from "./core/browsers/chrome/ChromeCookieQu
  */
 export { ChromiumCookieQueryStrategy } from "./core/browsers/chromium/ChromiumCookieQueryStrategy";
 /**
- *
+ * Discover installed Chromium browser profiles
  */
 export {
   getChromiumProfiles,

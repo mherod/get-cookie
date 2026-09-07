@@ -182,14 +182,13 @@ async function processChunkWithResults(
 
 /**
  * Retrieves multiple cookie specifications with detailed results for each spec
- *
+ * @param specs - Array of cookie specifications to retrieve
+ * @param options - Options for batch retrieval
+ * @returns Array of batch results with cookies and potential errors
  * @remarks
  * Detailed grouping currently matches exact cookie names and domains. Prefer
  * `batchGetCookies` or individual queries when wildcard names or
  * parent-domain matches matter.
- * @param specs - Array of cookie specifications to retrieve
- * @param options - Options for batch retrieval
- * @returns Array of batch results with cookies and potential errors
  */
 export async function batchGetCookiesWithResults(
   specs: CookieSpec[],

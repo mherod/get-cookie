@@ -16,7 +16,6 @@ export class McpOperationError extends Error {}
 
 /**
  * Parses and validates an absolute HTTP or HTTPS URL string.
- *
  * @param value - The raw URL string to validate.
  * @returns The parsed URL instance.
  * @throws McpOperationError if URL is invalid, non-HTTP(S), or contains credentials/fragments.
@@ -44,7 +43,6 @@ export function parseHttpUrl(value: string): URL {
 
 /**
  * Validates that the provided URL belongs to an allowed origin per the given policy.
- *
  * @param value - The raw URL string to check.
  * @param policy - The active MCP policy containing allowed origins.
  * @returns The parsed and validated URL instance.
@@ -62,7 +60,6 @@ export function assertAllowedUrl(value: string, policy: McpPolicy): URL {
 
 /**
  * Parses command-line arguments for the MCP server subcommand.
- *
  * @param args - CLI arguments array passed after 'mcp'.
  * @returns Parsed McpPolicy and help flag.
  */

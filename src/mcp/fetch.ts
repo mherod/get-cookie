@@ -69,7 +69,6 @@ async function readBody(response: Response, limit: number) {
 
 /**
  * Performs an HTTP request with local cookies attached, respecting origin and method policy.
- *
  * @param input - Request parameters and cookie selection criteria.
  * @param policy - Security policy enforcing origin and method constraints.
  * @param reader - Function for extracting local cookies.

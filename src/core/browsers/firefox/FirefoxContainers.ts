@@ -2,6 +2,9 @@ import { dirname, join } from "node:path";
 
 import { fileExists, readTextFile } from "../runtime/FileSystemAdapter";
 
+/**
+ *
+ */
 export interface FirefoxContainer {
   userContextId: number;
   name: string;
@@ -9,6 +12,9 @@ export interface FirefoxContainer {
   color?: string;
 }
 
+/**
+ *
+ */
 export interface FirefoxContainersConfig {
   containers?: FirefoxContainer[];
   [key: string]: unknown;

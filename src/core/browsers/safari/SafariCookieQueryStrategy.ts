@@ -399,6 +399,12 @@ export class SafariCookieQueryStrategy extends BaseCookieQueryStrategy {
         secure: this.isFlagSet(cookieObj.flags, 0x1),
         httpOnly: this.isFlagSet(cookieObj.flags, 0x4),
         path: cookieObj.path ?? undefined,
+        ...(usesRawCookieValues() && {
+          hostOnly:
+            typeof cookieObj.domain === "string"
+              ? !cookieObj.domain.startsWith(".")
+              : true,
+        }),
         version:
           cookieObj.version === undefined ? undefined : cookieObj.version,
         comment: cookieObj.comment ?? undefined,

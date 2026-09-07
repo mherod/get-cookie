@@ -28,7 +28,6 @@ export type CookieReader = (
 
 /**
  * Computes the domain hierarchy for cookie matching from a given hostname.
- *
  * @param host - Target hostname to analyze.
  * @returns Array of parent and exact domain candidates.
  */
@@ -48,7 +47,6 @@ export function cookieDomains(host: string): string[] {
 
 /**
  * Default reader implementation querying local browser cookie stores.
- *
  * @param url - Destination URL.
  * @param selection - Browser and profile selection options.
  * @returns Promise resolving to matching exported cookies.
@@ -87,7 +85,6 @@ export const readCookies: CookieReader = async (url, selection) => {
 
 /**
  * Checks whether a cookie matches a destination URL according to domain, path, secure, and expiry rules.
- *
  * @param cookie - The exported cookie to test.
  * @param url - Destination URL to match against.
  * @param now - Current timestamp in milliseconds (defaults to Date.now()).
@@ -160,7 +157,6 @@ export function cookieMatchesUrl(
 
 /**
  * Queries and filters cookies applicable to a URL, deduplicating conflicting values.
- *
  * @param url - Destination URL.
  * @param selection - Cookie selection criteria.
  * @param reader - Underlying cookie reading function.
@@ -200,7 +196,6 @@ export async function selectCookies(
 
 /**
  * Builds an HTTP Cookie header string from an array of applicable cookies.
- *
  * @param cookies - Array of cookies to serialize.
  * @returns Formatted Cookie header value.
  */

@@ -1,9 +1,9 @@
+import * as fileSystemAdapter from "../../runtime/FileSystemAdapter";
 import {
   extractUserContextId,
   parseFirefoxContainersJson,
   resolveFirefoxContainer,
 } from "../FirefoxContainers";
-import * as fileSystemAdapter from "../../runtime/FileSystemAdapter";
 
 jest.mock("../../runtime/FileSystemAdapter");
 

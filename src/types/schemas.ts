@@ -208,6 +208,8 @@ export const CookieMetaSchema = z
     httpOnly: z.boolean().optional(),
     path: CookiePathSchema.optional(),
     containerId: z.number().int().optional(),
+    hostOnly: z.boolean().optional(),
+    partitioned: z.boolean().optional(),
   })
   .catchall(z.unknown());
 

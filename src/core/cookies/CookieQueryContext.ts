@@ -6,7 +6,6 @@ const context = new AsyncLocalStorage<{ rawValues: boolean }>();
 
 /**
  * Checks whether the current async context requires raw cookie values.
- *
  * @returns True if raw cookie values should be preserved, false otherwise.
  */
 export function usesRawCookieValues(): boolean {
@@ -15,7 +14,6 @@ export function usesRawCookieValues(): boolean {
 
 /**
  * Executes an asynchronous operation with raw cookie values preserved.
- *
  * @param operation - The asynchronous callback to execute within this context.
  * @returns The resolved result of the operation.
  */

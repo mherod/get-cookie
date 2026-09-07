@@ -15,6 +15,9 @@ export { ChromeCookieQueryStrategy } from "./core/browsers/chrome/ChromeCookieQu
  * Chromium-based browser cookie query strategy for browsers like Edge, Brave, etc.
  */
 export { ChromiumCookieQueryStrategy } from "./core/browsers/chromium/ChromiumCookieQueryStrategy";
+/**
+ *
+ */
 export {
   getChromiumProfiles,
   type ChromiumProfile,

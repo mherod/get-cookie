@@ -418,6 +418,7 @@ export class CookieQueryBuilder {
    * @param domain - Domain name for filtering
    * @param exactDomain - Whether to use exact domain matching
    * @param includeExpired - Whether to include expired cookies
+   * @param container
    * @returns Object containing WHERE clause SQL and parameter values
    */
   private buildWhereClause(

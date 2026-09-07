@@ -6,6 +6,18 @@ import { withRawCookieValues } from "../../../cookies/CookieQueryContext";
 import { BinaryCodableCookie } from "../BinaryCodableCookie";
 import { SafariCookieQueryStrategy } from "../SafariCookieQueryStrategy";
 
+// Mock platform utilities so Safari strategy executes on Linux/Windows CI
+jest.mock("@utils/platformUtils", () => ({
+  ...jest.requireActual("@utils/platformUtils"),
+  isMacOS: jest.fn().mockReturnValue(true),
+}));
+
+// Mock SystemPermissions utilities
+jest.mock("@utils/systemPermissions", () => ({
+  checkFilePermission: jest.fn().mockResolvedValue(true),
+  handleSafariPermissionError: jest.fn().mockResolvedValue(false),
+}));
+
 interface CookieParams {
   url: string;
   name: string;

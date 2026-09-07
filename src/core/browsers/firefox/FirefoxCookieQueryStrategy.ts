@@ -9,12 +9,14 @@ import { getPlatform } from "@utils/platformUtils";
 import { isFirefoxRunning } from "@utils/processDetector";
 
 import type { ExportedCookie } from "../../../types/schemas";
+import { usesRawCookieValues } from "../../cookies/CookieQueryContext";
 import { BaseCookieQueryStrategy } from "../BaseCookieQueryStrategy";
 import { FIREFOX_DATA_DIRS } from "../BrowserAvailability";
 import { BrowserLockHandler } from "../BrowserLockHandler";
 import { fileExists, readTextFile } from "../runtime/FileSystemAdapter";
 import { getGlobalConnectionManager } from "../sql/DatabaseConnectionManager";
 import { getGlobalQueryMonitor } from "../sql/QueryMonitor";
+
 import {
   extractUserContextId,
   resolveFirefoxContainer,
@@ -26,6 +28,9 @@ interface FirefoxCookieRow {
   domain: string;
   expiry: number | null;
   originAttributes?: string | null;
+  path?: string;
+  is_secure?: number;
+  is_httponly?: number;
 }
 
 /**
@@ -457,6 +462,15 @@ export class FirefoxCookieQueryStrategy extends BaseCookieQueryStrategy {
             file,
             browser: "Firefox",
             decrypted: false,
+            ...(usesRawCookieValues() && {
+              ...(row.path !== undefined && { path: row.path }),
+              secure: row.is_secure === 1,
+              httpOnly: row.is_httponly === 1,
+              hostOnly: !row.domain.startsWith("."),
+              partitioned: /(?:partitionKey|firstPartyDomain)=([^&]+)/.test(
+                row.originAttributes ?? "",
+              ),
+            }),
             ...(userContextId !== undefined && { containerId: userContextId }),
           },
         };

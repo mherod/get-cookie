@@ -5,6 +5,7 @@ import {
   BinaryCookieRowSchema,
 } from "../../../types/schemas";
 import { createTaggedLogger } from "../../../utils/logHelpers";
+import { usesRawCookieValues } from "../../cookies/CookieQueryContext";
 
 import type { BinaryCodableContainer } from "./interfaces/BinaryCodableContainer";
 import type { BinaryCodableFlags } from "./interfaces/BinaryCodableFlags";
@@ -312,6 +313,11 @@ export class BinaryCodableCookie {
         commentURL: this.commentURL,
       });
 
+      // Preserve the bytes represented by the stored string for HTTP consumers.
+      // The ordinary schema intentionally decodes values for display.
+      if (usesRawCookieValues()) {
+        cookieRow.value = this.value;
+      }
       return cookieRow;
     } catch (_error) {
       return null;

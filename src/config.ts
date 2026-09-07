@@ -4,7 +4,7 @@ import { config } from "dotenv";
 import { z } from "zod";
 
 // Load environment variables from .env file
-config();
+config({ quiet: true });
 
 const EnvironmentSchema = z.object({
   LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),

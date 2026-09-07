@@ -12,7 +12,6 @@ import {
   isValidBrowserType,
 } from "./BrowserDetector";
 import { ChromeCookieQueryStrategy } from "./chrome/ChromeCookieQueryStrategy";
-import type { ChromiumBrowser } from "./chrome/ChromiumBrowsers";
 import { ChromiumCookieQueryStrategy } from "./chromium/ChromiumCookieQueryStrategy";
 import { CompositeCookieQueryStrategy } from "./CompositeCookieQueryStrategy";
 import { FirefoxCookieQueryStrategy } from "./firefox/FirefoxCookieQueryStrategy";
@@ -51,7 +50,6 @@ const CHROMIUM_BROWSERS: Set<string> = new Set([
 
 /**
  * Creates a strategy for the specified browser
- *
  * @param browser - The browser to create a strategy for
  * @param profile - Optional profile name to target (supported by Chromium-based browsers)
  * @param container - Optional Firefox container name, ID, or "none"
@@ -83,7 +81,7 @@ export function createBrowserStrategy(
   }
 
   if (CHROMIUM_BROWSERS.has(browser)) {
-    return new ChromiumCookieQueryStrategy(browser as ChromiumBrowser, profile);
+    return new ChromiumCookieQueryStrategy(browser, profile);
   }
 
   return new ChromiumCookieQueryStrategy("chrome", profile);

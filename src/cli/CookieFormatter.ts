@@ -1,6 +1,8 @@
+import { groupBy } from "lodash-es";
+
 import { renderCookies } from "@core/cookies/renderCookies";
 import logger from "@utils/logger";
-import { groupBy } from "lodash-es";
+
 import type { ExportedCookie } from "../types/schemas";
 
 /**
@@ -35,7 +37,6 @@ export function validateOutputFormat(options: CookieFormatOptions): void {
 
 /**
  * Formats an array of exported cookies into a string according to output options.
- *
  * @param cookies - Array of exported cookies
  * @param options - Formatting options / CLI arguments
  * @returns Formatted output string

@@ -666,15 +666,21 @@ export abstract class BaseChromiumCookieQueryStrategy extends BaseCookieQueryStr
         error: this.getErrorMessage(error),
       });
 
-      return createExportedCookie(
+      const failed = createExportedCookie(
         cookie.domain,
         cookie.name,
-        cookie.value.toString("utf-8"),
+        Buffer.isBuffer(cookie.value)
+          ? cookie.value.toString("utf-8")
+          : String(cookie.value),
         cookie.expiry,
         context.file,
         context.browser,
         false,
       );
+      if (cookie.requestMeta && failed.meta) {
+        Object.assign(failed.meta, cookie.requestMeta);
+      }
+      return failed;
     }
   }
 }

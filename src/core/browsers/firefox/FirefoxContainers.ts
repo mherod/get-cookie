@@ -2,6 +2,9 @@ import { dirname, join } from "node:path";
 
 import { fileExists, readTextFile } from "../runtime/FileSystemAdapter";
 
+/**
+ * Represents a Firefox Multi-Account Container definition.
+ */
 export interface FirefoxContainer {
   userContextId: number;
   name: string;
@@ -9,6 +12,9 @@ export interface FirefoxContainer {
   color?: string;
 }
 
+/**
+ * Schema for Firefox containers.json configuration file.
+ */
 export interface FirefoxContainersConfig {
   containers?: FirefoxContainer[];
   [key: string]: unknown;

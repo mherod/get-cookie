@@ -1,5 +1,5 @@
-import { getChromiumProfiles } from "../getChromiumProfiles";
 import { setFileSystemAdapter } from "../../runtime/FileSystemAdapter";
+import { getChromiumProfiles } from "../getChromiumProfiles";
 
 describe("getChromiumProfiles", () => {
   beforeEach(() => {

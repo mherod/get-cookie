@@ -35,6 +35,7 @@ export const CookieStrategyFactory = {
    * @param browser - The browser to create a strategy for
    * @param storePath - Optional path to a cookie store file
    * @param profile - Optional Chrome profile name
+   * @param container
    * @returns A cookie query strategy for the specified browser
    */
   createStrategy(

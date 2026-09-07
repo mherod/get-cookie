@@ -1,4 +1,5 @@
 import { join } from "node:path";
+
 import { CHROMIUM_DATA_DIRS } from "../BrowserAvailability";
 import { fileExists, readTextFile } from "../runtime/FileSystemAdapter";
 
@@ -41,7 +42,6 @@ interface LocalStateProfileInfo {
 /**
  * Helper to discover profiles in a specific User Data directory for a browser name.
  * Reads the `Local State` JSON file's `profile.info_cache` object.
- *
  * @param browserName - Name of the browser (e.g. "chrome", "edge")
  * @param dataDir - Absolute path to the browser's User Data directory
  * @returns Array of discovered ChromiumProfile entries
@@ -88,9 +88,8 @@ function discoverProfilesInDir(
 
 /**
  * Enumerates installed profiles for a Chromium-based browser (or all Chromium-based browsers).
- *
  * @param targetBrowser - Optional browser name (e.g. "chrome", "edge", "brave") or path to User Data dir.
- *                        If omitted, enumerates profiles across all supported Chromium browsers on the current OS.
+ * If omitted, enumerates profiles across all supported Chromium browsers on the current OS.
  * @returns Array of discovered ChromiumProfile entries
  */
 export function getChromiumProfiles(targetBrowser?: string): ChromiumProfile[] {

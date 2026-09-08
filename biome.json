@@ -132,7 +132,9 @@
               "options": {
                 "paths": {
                   "node:fs": "Import disk access through the runtime FileSystemAdapter (src/core/browsers/runtime/FileSystemAdapter) instead of node:fs directly.",
-                  "fs": "Import disk access through the runtime FileSystemAdapter (src/core/browsers/runtime/FileSystemAdapter) instead of node:fs directly."
+                  "fs": "Import disk access through the runtime FileSystemAdapter (src/core/browsers/runtime/FileSystemAdapter) instead of node:fs directly.",
+                  "node:fs/promises": "Import disk access through the runtime FileSystemAdapter (src/core/browsers/runtime/FileSystemAdapter) instead of node:fs/promises directly.",
+                  "fs/promises": "Import disk access through the runtime FileSystemAdapter (src/core/browsers/runtime/FileSystemAdapter) instead of fs/promises directly."
                 }
               }
             }

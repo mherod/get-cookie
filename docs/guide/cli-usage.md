@@ -171,7 +171,8 @@ Do not put a real signing secret into shell history or shared logs.
 | Option             | Alias | Output                                                          |
 | ------------------ | ----- | --------------------------------------------------------------- |
 | default            |       | Unique non-empty values, one per line.                          |
-| `--output json`    |       | JSON array of exported cookies. Only lowercase `json` is valid. |
+| `--output json`    |       | JSON array of exported cookies. |
+| `--output netscape` |      | Netscape `cookies.txt` with raw values and cookie metadata. |
 | `--dump`           | `-d`  | JSON array of exported cookies.                                 |
 | `--dump-grouped`   | `-G`  | JSON object keyed by source-store path.                         |
 | `--render`         | `-r`  | Merged `name=value; name=value` Cookie header value.            |
@@ -195,6 +196,21 @@ get-cookie % example.com --output json
 get-cookie sessionid app.example.com --render
 ```
 
+### Netscape cookie files
+
+```bash
+get-cookie % example.com --browser chrome --profile Work --output netscape > cookies.txt
+curl --cookie cookies.txt https://example.com/
+yt-dlp --cookies cookies.txt https://example.com/video
+```
+
+This format preserves raw values, paths, Secure and HttpOnly flags, host-only
+scope, and expiry in Unix seconds. Session cookies use `0`. Cookies on different
+paths remain separate. Select a browser and profile when accounts overlap.
+An empty query produces a header-only cookie file. Tabs, newlines and NUL bytes
+cannot be represented losslessly, so export rejects those fields. Partitioned
+cookies are also rejected because this format cannot preserve their partition.
+
 ## Help and diagnostics
 
 | Option            | Alias | Meaning                                                         |
@@ -203,7 +219,7 @@ get-cookie sessionid app.example.com --render
 | `--verbose`       | `-v`  | Show diagnostic logging.                                        |
 | `--list-profiles` |       | List discoverable profiles, optionally filtered by `--browser`. |
 
-When a query has no matches, the CLI logs `No results` and writes no result
+Except for Netscape export, when a query has no matches, the CLI logs `No results` and writes no result
 payload to stdout. In particular, `--output json` does not emit `[]` for that
 case. Do not rely on a specialized no-results exit-code taxonomy; capture
 stdout and check that it is non-empty before parsing JSON or using rendered

@@ -2,7 +2,10 @@ import { CompositeCookieQueryStrategy } from "@core/browsers/CompositeCookieQuer
 import { createStrategy } from "@core/browsers/StrategyFactory";
 import { logger } from "@utils/logHelpers";
 import { parseArgv } from "@utils/argv";
-import { getLinuxKeyringOverride } from "@core/cookies/CookieQueryContext";
+import {
+  getLinuxKeyringOverride,
+  usesRawCookieValues,
+} from "@core/cookies/CookieQueryContext";
 
 import { cliQueryCookies } from "../cliQueryCookies";
 import { formatAndPrintCookies } from "../CookieFormatter";
@@ -19,6 +22,30 @@ describe("cliQueryCookies", () => {
   const cookie = { ...spec, value: "short", expiry: 4102444800 };
   const strategy = new CompositeCookieQueryStrategy([]);
   const query = jest.spyOn(strategy, "queryCookies");
+
+  it("queries lossless Netscape values and preserves cookies on different paths", async () => {
+    const rows = [
+      { ...cookie, value: "raw%2Fvalue", meta: { path: "/" } },
+      { ...cookie, value: "nested", meta: { path: "/app" } },
+    ];
+    query.mockImplementation(async () => {
+      expect(usesRawCookieValues()).toBe(true);
+      expect(getLinuxKeyringOverride()).toBe("basic");
+      return rows;
+    });
+    const args = { output: "netscape", keyring: "basic" };
+    await cliQueryCookies(args, spec);
+    expect(formatAndPrintCookies).toHaveBeenCalledWith(rows, args);
+    expect(usesRawCookieValues()).toBe(false);
+  });
+
+  it("prints an empty Netscape jar when no cookies match", async () => {
+    query.mockResolvedValue([]);
+    await cliQueryCookies({ output: "netscape" }, spec);
+    expect(formatAndPrintCookies).toHaveBeenCalledWith([], {
+      output: "netscape",
+    });
+  });
 
   it("forwards a parsed keyring override in the query context", async () => {
     query.mockImplementation(async () => {

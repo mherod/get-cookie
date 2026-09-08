@@ -188,12 +188,15 @@ export async function cliQueryCookies(
       args,
       strategy,
       removeExpired,
-      deduplicateCookies,
+      deduplicateCookies && args.output !== "netscape",
       limit,
       store,
     );
     let results = await withCookieQueryOptions(
-      { ...(keyring !== undefined && { keyring }) },
+      {
+        ...(keyring !== undefined && { keyring }),
+        ...(args.output === "netscape" && { rawValues: true }),
+      },
       () => queryAndLimitCookies(specs, queryOptions),
     );
 
@@ -221,6 +224,10 @@ export async function cliQueryCookies(
     }
 
     if (results.length === 0) {
+      if (args.output === "netscape") {
+        formatAndPrintCookies([], args);
+        return;
+      }
       logger.error("No results");
 
       // Provide helpful feedback for profile-related issues

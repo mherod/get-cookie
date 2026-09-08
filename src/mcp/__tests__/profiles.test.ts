@@ -1,3 +1,5 @@
+import { resolve } from "node:path";
+
 import { FIREFOX_DATA_DIRS } from "../../core/browsers/BrowserAvailability";
 import { parseFirefoxProfilesIni } from "../../core/browsers/firefox/FirefoxCookieQueryStrategy";
 import { fileExists } from "../../core/browsers/runtime/FileSystemAdapter";
@@ -23,4 +25,3 @@ it("resolves relative Firefox directories against each installation root", () =>
     ]),
   );
 });
-import { resolve } from "node:path";

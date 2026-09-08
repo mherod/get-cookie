@@ -67,6 +67,18 @@ function result(output: Record<string, unknown>) {
 }
 
 function operationError(error: unknown) {
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "name" in error &&
+    error.name === "AbortError"
+  ) {
+    return {
+      code: "REQUEST_ABORTED",
+      message:
+        "The call was cancelled. An in-progress browser read may need to finish before cancellation is observed.",
+    };
+  }
   return error instanceof McpOperationError
     ? { code: error.code, message: error.message }
     : {
@@ -155,7 +167,7 @@ export function createMcpServer(
     "list_profiles",
     {
       description:
-        "List local browser profiles. Supply a URL on an enabled origin to count applicable cookies in each profile and find the right account in one call. Cookie values are never returned. Zero matches can also indicate an inaccessible store. Safari uses its default store; query it directly.",
+        "List local browser profiles. Supply a URL on an enabled origin to count applicable cookies in each profile and find the right account in one call. Specify browser to limit reads; omitting it with a URL reads and decrypts cookies across all discovered browsers. Reads run sequentially, have no per-profile timeout, and observe cancellation between reads. Cookie values are never returned. Zero matches can also indicate an inaccessible store. Safari uses its default store; query it directly.",
       inputSchema: {
         browser: browser.optional(),
         url: selection.url.optional(),

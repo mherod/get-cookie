@@ -43,6 +43,11 @@ export function validateOutputFormat(options: CookieFormatOptions): void {
 function formatNetscapeCookies(cookies: ExportedCookie[]): string {
   const rows = cookies.map((cookie) => {
     const meta = cookie.meta;
+    if (meta?.decrypted === false) {
+      throw new Error(
+        "Cannot export Netscape cookies: a cookie value could not be decrypted",
+      );
+    }
     const includeSubdomains =
       meta?.hostOnly === undefined
         ? cookie.domain.startsWith(".")

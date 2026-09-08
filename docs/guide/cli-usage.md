@@ -210,6 +210,7 @@ paths remain separate. Select a browser and profile when accounts overlap.
 An empty query produces a header-only cookie file. Tabs, newlines and NUL bytes
 cannot be represented losslessly, so export rejects those fields. Partitioned
 cookies are also rejected because this format cannot preserve their partition.
+Export also reports an error if a cookie value could not be decrypted.
 
 ## Help and diagnostics
 

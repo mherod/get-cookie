@@ -49,6 +49,21 @@ describe("CookieFormatter", () => {
   });
 
   describe("formatCookies", () => {
+    it("refuses to export a cookie whose value could not be decrypted", () => {
+      expect(() =>
+        formatCookies(
+          [
+            {
+              domain: "example.com",
+              name: "n",
+              value: "v10ciphertext",
+              meta: { decrypted: false },
+            },
+          ],
+          { output: "netscape" },
+        ),
+      ).toThrow("could not be decrypted");
+    });
     it("exports raw values and all seven Netscape columns", () => {
       const cookies: ExportedCookie[] = [
         {

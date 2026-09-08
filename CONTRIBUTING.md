@@ -80,6 +80,24 @@ pnpm run build
 `validate` does not build the package, so run `pnpm run build` as well when
 changing exports, entrypoints, the CLI, bundling, or release-facing code.
 
+### Filesystem import guardrails
+
+Production browser and CLI modules access disk through the runtime
+[FileSystemAdapter](src/core/browsers/runtime/FileSystemAdapter.ts).
+Both linters restrict direct imports of `fs`, `node:fs`, `fs/promises` and
+`node:fs/promises` in these modules. Runtime adapters, test files and mocks
+remain exempt from that import restriction.
+
+Safari's production `BinaryCodable*.ts` parsers are covered too. Their Biome
+allowance for non-null assertions does not exempt them from the import rule.
+When changing lint overrides, check real temporary files in the affected
+directories with `pnpm exec biome lint <file>` and verify both rules:
+
+- All four direct filesystem imports are rejected in ordinary browser code
+  and production `BinaryCodable*.ts` files, with `FileSystemAdapter` guidance.
+- Non-null assertions remain allowed in `BinaryCodable*.ts` and test files.
+- Runtime adapters, tests and mocks retain their import exemptions.
+
 ## Documentation changes
 
 The documentation site is built with VitePress and the API reference is

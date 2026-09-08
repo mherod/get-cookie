@@ -1,4 +1,5 @@
 import { isIP } from "node:net";
+import { join } from "node:path";
 
 import { getDomain } from "tldts";
 
@@ -7,6 +8,7 @@ import { withRawCookieValues } from "../core/cookies/CookieQueryContext";
 import type { ExportedCookie } from "../types/schemas";
 
 import { McpOperationError } from "./policy";
+import { listProfiles } from "./profiles";
 
 /**
  * Parameters for selecting cookies from a specific browser and store.
@@ -14,6 +16,7 @@ import { McpOperationError } from "./policy";
 export interface CookieSelection {
   browser: string;
   profile?: string | undefined;
+  profileDirectory?: string | undefined;
   container?: string | number | undefined;
   name?: string | undefined;
 }
@@ -52,6 +55,24 @@ export function cookieDomains(host: string): string[] {
  * @returns Promise resolving to matching exported cookies.
  */
 export const readCookies: CookieReader = async (url, selection) => {
+  let store: string | undefined;
+  if (selection.profileDirectory !== undefined) {
+    if (selection.browser !== "firefox") {
+      throw new McpOperationError(
+        "Profile directories are supported only by Firefox.",
+      );
+    }
+    const profile = listProfiles("firefox").profiles.find(
+      (candidate) => candidate.profileDirectory === selection.profileDirectory,
+    );
+    if (!profile) {
+      throw new McpOperationError(
+        "Profile directory is no longer available. Run list_profiles again.",
+        "PROFILE_NOT_FOUND",
+      );
+    }
+    store = join(selection.profileDirectory, "cookies.sqlite");
+  }
   if (selection.browser === "safari" && selection.profile) {
     throw new McpOperationError("Safari does not support named profiles.");
   }
@@ -61,7 +82,8 @@ export const readCookies: CookieReader = async (url, selection) => {
   return withRawCookieValues(async () => {
     const strategy = createStrategy({
       browser: selection.browser,
-      ...(selection.profile !== undefined && { profile: selection.profile }),
+      ...(store === undefined &&
+        selection.profile !== undefined && { profile: selection.profile }),
       ...(selection.browser === "firefox" && {
         container: selection.container ?? "none",
       }),
@@ -74,7 +96,7 @@ export const readCookies: CookieReader = async (url, selection) => {
         ...(await strategy.queryCookies(
           selection.name ?? "%",
           domain,
-          undefined,
+          store,
           true,
         )),
       );

@@ -251,7 +251,7 @@ async function main(): Promise<void> {
     const policy = parseMcpArgs(args.slice(1));
     if (policy.help) {
       process.stderr.write(
-        "Usage: get-cookie mcp [--allow-origin https://example.com] [--allow-cookie-values] [--allow-unsafe-methods]\nRepeat --allow-origin for each origin. Without it only profile discovery is available. HTTP is allowed only on loopback.\n",
+        "Usage: get-cookie mcp [--allow-origin https://example.com] [--allow-cookie-values] [--allow-unsafe-methods]\nRepeat --allow-origin for each origin. Without it only server status and profile discovery are available. HTTP is allowed only on loopback.\nTools: get_status, list_profiles (optional URL and cookie name), query_cookies, authenticated_fetch.\n",
       );
       return;
     }

@@ -119,4 +119,49 @@ describe("authenticated fetch", () => {
       authenticatedFetch({ ...input, timeoutMs: 20 }, policy, reader, request),
     ).rejects.toThrow("timed out");
   });
+  it.each([
+    ["EPERM", "HTTP_PROXY"],
+    ["ENOTFOUND", "hostname"],
+    ["ECONNREFUSED", "reachable"],
+    ["CERT_HAS_EXPIRED", "expired"],
+    ["SELF_SIGNED_CERT_IN_CHAIN", "NODE_EXTRA_CA_CERTS"],
+    ["UND_ERR_CONNECT_TIMEOUT", "timed out"],
+  ])("explains %s failures without exposing transport details", async (code, hint) => {
+    const cause = Object.assign(new Error("secret request details"), { code });
+    const error = Object.assign(new TypeError("secret cookie header"), {
+      cause,
+    });
+    const request = jest.fn<typeof fetch>().mockRejectedValue(error);
+    await expect(
+      authenticatedFetch(input, policy, reader, request),
+    ).rejects.toMatchObject({ code, message: expect.stringContaining(hint) });
+    await expect(
+      authenticatedFetch(input, policy, reader, request),
+    ).rejects.not.toThrow("secret");
+  });
+  it("recognizes errors nested inside AggregateError", async () => {
+    const error = Object.assign(new Error("secret"), {
+      cause: new AggregateError([
+        Object.assign(new Error("secret"), { code: "EACCES" }),
+      ]),
+    });
+    const request = jest.fn<typeof fetch>().mockRejectedValue(error);
+    await expect(
+      authenticatedFetch(input, policy, reader, request),
+    ).rejects.toMatchObject({ code: "EACCES" });
+  });
+  it("bounds circular error causes and hides unknown codes and raw messages", async () => {
+    const error: { message: string; code: string; cause?: unknown } = {
+      message: "secret",
+      code: "secret",
+    };
+    error.cause = error;
+    const request = jest.fn<typeof fetch>().mockRejectedValue(error);
+    await expect(
+      authenticatedFetch(input, policy, reader, request),
+    ).rejects.toMatchObject({
+      code: "FETCH_FAILED",
+      message: expect.not.stringContaining("secret"),
+    });
+  });
 });

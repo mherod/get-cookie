@@ -1,4 +1,4 @@
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 
 import { FIREFOX_DATA_DIRS } from "../core/browsers/BrowserAvailability";
 import { getChromiumProfiles } from "../core/browsers/chromium/getChromiumProfiles";
@@ -11,7 +11,12 @@ import { fileExists } from "../core/browsers/runtime/FileSystemAdapter";
  * @returns Array of browser profile descriptors with browser, profile name, and directory path.
  */
 export function listProfiles(browser?: string) {
-  const profiles: { browser: string; name: string; directory: string }[] = [];
+  const profiles: {
+    browser: string;
+    name: string;
+    directory: string;
+    profileDirectory?: string;
+  }[] = [];
   if (!browser || (browser !== "firefox" && browser !== "safari")) {
     profiles.push(
       ...getChromiumProfiles(browser).map((profile) => ({
@@ -32,6 +37,9 @@ export function listProfiles(browser?: string) {
           browser: "firefox",
           name: profile.name,
           directory: profile.path,
+          profileDirectory: profile.isRelative
+            ? resolve(dir, profile.path)
+            : resolve(profile.path),
         })),
       );
     }

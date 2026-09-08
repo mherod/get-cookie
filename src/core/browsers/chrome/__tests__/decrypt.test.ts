@@ -1,6 +1,6 @@
 import { createCipheriv, pbkdf2Sync, randomBytes } from "node:crypto";
 
-import { isMacOS, isWindows } from "@utils/platformUtils";
+import { isLinux, isMacOS, isWindows } from "@utils/platformUtils";
 
 import { decrypt } from "../decrypt";
 
@@ -11,6 +11,7 @@ import {
 } from "./fixtures/cookieFixtures";
 
 jest.mock("@utils/platformUtils", () => ({
+  isLinux: jest.fn(() => false),
   isMacOS: jest.fn(() => false),
   isWindows: jest.fn(() => false),
 }));
@@ -30,11 +31,16 @@ function buildWindowsV10Blob(plaintext: Buffer, key: Buffer): Buffer {
   ]);
 }
 
-function buildCbcBlob(plaintext: Buffer, password: string): Buffer {
-  const key = pbkdf2Sync(password, "saltysalt", 1003, 16, "sha1");
+function buildCbcBlob(
+  plaintext: Buffer,
+  password: string,
+  iterations = 1003,
+  prefix = "v10",
+): Buffer {
+  const key = pbkdf2Sync(password, "saltysalt", iterations, 16, "sha1");
   const cipher = createCipheriv("aes-128-cbc", key, Buffer.alloc(16, " "));
   return Buffer.concat([
-    Buffer.from("v10"),
+    Buffer.from(prefix),
     cipher.update(plaintext),
     cipher.final(),
   ]);
@@ -42,6 +48,7 @@ function buildCbcBlob(plaintext: Buffer, password: string): Buffer {
 
 describe("decrypt", () => {
   beforeEach(() => {
+    jest.mocked(isLinux).mockReturnValue(false);
     mockIsMacOS.mockReturnValue(false);
     mockIsWindows.mockReturnValue(false);
   });
@@ -59,6 +66,73 @@ describe("decrypt", () => {
       } else {
         expect(decrypted).toBe(cookie.decrypted);
       }
+    });
+  });
+
+  describe("Linux fallback passwords", () => {
+    beforeEach(() => jest.mocked(isLinux).mockReturnValue(true));
+    const prefixes = ["v10", "v11"];
+    const forPrefix = it.each(prefixes);
+    forPrefix(
+      "decrypts empty-password %s cookies without value cleanup",
+      async (prefix) => {
+        const value = "whole'value%2F中文;USD";
+        const blob = buildCbcBlob(Buffer.from(value), "", 1, prefix);
+        expect(await decrypt(blob, "wrong-keyring")).toBe(value);
+      },
+    );
+    it("accepts the supplied key before basic and empty passwords", async () => {
+      const value = "retain'whole-value";
+      expect(
+        await decrypt(
+          buildCbcBlob(Buffer.from(value), "keyring", 1),
+          "keyring",
+        ),
+      ).toBe(value);
+      expect(
+        await decrypt(buildCbcBlob(Buffer.from(value), "peanuts", 1), "wrong"),
+      ).toBe(value);
+    });
+    it("strips the version 24 hash prefix, including an empty cookie", async () => {
+      const hash = Buffer.alloc(32, 0xff);
+      expect(
+        await decrypt(
+          buildCbcBlob(Buffer.concat([hash, Buffer.from("✓")]), "", 1),
+          "wrong",
+          24,
+        ),
+      ).toBe("✓");
+      expect(await decrypt(buildCbcBlob(hash, "", 1), "wrong", 24)).toBe("");
+    });
+    it("rejects invalid UTF-8 and undersized hash payloads", async () => {
+      await expect(
+        decrypt(buildCbcBlob(Buffer.from([0xff]), "", 1), "wrong"),
+      ).rejects.toThrow("no Linux password");
+      await expect(
+        decrypt(buildCbcBlob(Buffer.from("short"), "", 1), "wrong", 24),
+      ).rejects.toThrow("no Linux password");
+    });
+    it("rejects invalid padding and unsupported prefixes", async () => {
+      const invalid = buildCbcBlob(Buffer.from("hello"), "", 1);
+      invalid[invalid.length - 1] =
+        invalid.readUInt8(invalid.length - 1) ^ 0xff;
+      await expect(decrypt(invalid, "wrong")).rejects.toThrow(
+        "no Linux password",
+      );
+      await expect(
+        decrypt(buildCbcBlob(Buffer.from("hello"), "", 1, "v20"), "wrong"),
+      ).rejects.toThrow("Unsupported Linux");
+    });
+    it("keeps Linux and macOS key derivations separate in the cache", async () => {
+      const value = "cache-value";
+      expect(
+        await decrypt(buildCbcBlob(Buffer.from(value), "same", 1), "same"),
+      ).toBe(value);
+      jest.mocked(isLinux).mockReturnValue(false);
+      mockIsMacOS.mockReturnValue(true);
+      expect(
+        await decrypt(buildCbcBlob(Buffer.from(value), "same"), "same"),
+      ).toBe(value);
     });
   });
 

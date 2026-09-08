@@ -1,7 +1,7 @@
 // External imports
 import { createDecipheriv, pbkdf2 } from "node:crypto";
 
-import { isMacOS, isWindows } from "@utils/platformUtils";
+import { isLinux, isMacOS, isWindows } from "@utils/platformUtils";
 
 import { usesRawCookieValues } from "../../cookies/CookieQueryContext";
 
@@ -126,11 +126,11 @@ function extractValue(decodedString: string): string {
 }
 
 /**
- * Cache of derived AES keys, keyed by the source password string.
+ * Cache of derived AES keys, keyed by iteration count and source password.
  *
  * Chrome's key derivation is a pure function of the password: the salt
- * ("saltysalt"), iteration count (1003), key length (16) and digest (sha1) are
- * all constant, so the same password always yields the same 16-byte key.
+ * ("saltysalt"), key length (16) and digest (sha1) are constant. macOS uses
+ * 1003 iterations and Linux uses one, so the cache distinguishes both.
  * Re-running PBKDF2 (1003 HMAC-SHA1 rounds) for every cookie is wasted work —
  * memoizing collapses it to a single derivation per distinct password.
  *
@@ -143,16 +143,18 @@ const derivedKeyCache = new Map<string, Promise<Buffer>>();
 /**
  * Derives (or returns a cached) AES-128 key from a Chrome password via PBKDF2.
  * @param password - The Chrome encryption password
+ * @param iterations - Platform-specific PBKDF2 iteration count
  * @returns A promise resolving to the 16-byte derived key
  */
-async function deriveKey(password: string): Promise<Buffer> {
-  const cached = derivedKeyCache.get(password);
+async function deriveKey(password: string, iterations = 1003): Promise<Buffer> {
+  const cacheKey = `${iterations}:${password}`;
+  const cached = derivedKeyCache.get(cacheKey);
   if (cached !== undefined) {
     return cached;
   }
 
   const keyPromise = new Promise<Buffer>((resolve, reject) => {
-    pbkdf2(password, "saltysalt", 1003, 16, "sha1", (error, key) => {
+    pbkdf2(password, "saltysalt", iterations, 16, "sha1", (error, key) => {
       if (error) {
         reject(new Error(`Failed to derive key: ${error.message}`));
         return;
@@ -161,12 +163,54 @@ async function deriveKey(password: string): Promise<Buffer> {
     });
   }).catch((error: unknown) => {
     // Don't cache failures — let the next call retry from scratch.
-    derivedKeyCache.delete(password);
+    derivedKeyCache.delete(cacheKey);
     throw error;
   });
 
-  derivedKeyCache.set(password, keyPromise);
+  derivedKeyCache.set(cacheKey, keyPromise);
   return keyPromise;
+}
+
+/** Tries Linux's keyring, basic and empty passwords using strict plaintext validation. */
+async function decryptLinuxCookie(
+  encryptedValue: Buffer,
+  password: string,
+  metaVersion?: number,
+): Promise<string> {
+  const prefix = encryptedValue.subarray(0, 3).toString("ascii");
+  if (prefix !== "v10" && prefix !== "v11") {
+    throw new Error(`Unsupported Linux cookie encryption: ${prefix}`);
+  }
+  const value = encryptedValue.subarray(3);
+  if (!value.length || value.length % 16 !== 0) {
+    throw new Error("Encrypted data length is not a multiple of 16");
+  }
+  for (const candidate of new Set([password, "peanuts", ""])) {
+    const key = await deriveKey(candidate, 1);
+    try {
+      const decipher = createDecipheriv(
+        "aes-128-cbc",
+        key,
+        Buffer.alloc(16, " "),
+      );
+      // Node's default padding verifies every PKCS7 byte before returning data.
+      let plaintext = Buffer.concat([decipher.update(value), decipher.final()]);
+      if ((metaVersion ?? 0) >= CHROME_M127_META_VERSION) {
+        if (plaintext.length < CHROME_DOMAIN_HASH_LENGTH) {
+          continue;
+        }
+        plaintext = plaintext.subarray(CHROME_DOMAIN_HASH_LENGTH);
+      }
+      return new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(
+        plaintext,
+      );
+    } catch {
+      // Invalid padding or UTF-8 means this candidate cannot decrypt the cookie.
+    }
+  }
+  throw new Error(
+    "Decryption failed: no Linux password produced valid cookie data",
+  );
 }
 
 /**
@@ -240,6 +284,10 @@ export async function decrypt(
   }
   if (!Buffer.isBuffer(encryptedValue)) {
     throw new Error("encryptedData must be a Buffer");
+  }
+
+  if (isLinux()) {
+    return decryptLinuxCookie(encryptedValue, password, metaVersion);
   }
 
   // Derive the AES key once per password (cached); see deriveKey above.

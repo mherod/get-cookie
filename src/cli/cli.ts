@@ -87,7 +87,7 @@ function showHelp(): void {
   );
   logger.log("");
   logger.log("Output options:");
-  logger.log("  --output FORMAT           Output format (json)");
+  logger.log("  --output FORMAT           Output format (json, netscape)");
   logger.log("  -d, --dump                Dump all cookie details");
   logger.log(
     "  -G, --dump-grouped        Dump all results, grouped by profile",

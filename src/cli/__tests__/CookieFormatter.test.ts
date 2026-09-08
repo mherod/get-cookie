@@ -49,6 +49,88 @@ describe("CookieFormatter", () => {
   });
 
   describe("formatCookies", () => {
+    it("exports raw values and all seven Netscape columns", () => {
+      const cookies: ExportedCookie[] = [
+        {
+          domain: ".example.com",
+          name: "encoded",
+          value: "a%2Fb%3D",
+          expiry: new Date("2030-01-01T00:00:00Z"),
+          meta: { path: "/app", secure: true, httpOnly: true },
+        },
+        {
+          domain: "example.com",
+          name: "jwt",
+          value: "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjMifQ.sig",
+          expiry: "Infinity",
+        },
+        {
+          domain: "example.com",
+          name: "empty",
+          value: "",
+          expiry: Number.POSITIVE_INFINITY,
+        },
+      ];
+      expect(formatCookies(cookies, { output: "netscape" })).toBe(
+        "# Netscape HTTP Cookie File\n" +
+          "#HttpOnly_.example.com\tTRUE\t/app\tTRUE\t1893456000\tencoded\ta%2Fb%3D\n" +
+          "example.com\tFALSE\t/\tFALSE\t0\tjwt\teyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjMifQ.sig\n" +
+          "example.com\tFALSE\t/\tFALSE\t0\tempty\t\n",
+      );
+    });
+    it("honors host-only metadata and numeric expiry", () => {
+      expect(
+        formatCookies(
+          [
+            {
+              domain: ".example.com",
+              name: "n",
+              value: "v",
+              expiry: 1893456000,
+              meta: { hostOnly: true },
+            },
+          ],
+          { output: "netscape" },
+        ),
+      ).toContain("example.com\tFALSE\t/\tFALSE\t1893456000\tn\tv\n");
+    });
+    it("returns a valid empty jar", () => {
+      expect(formatCookies([], { output: "netscape" })).toBe(
+        "# Netscape HTTP Cookie File\n",
+      );
+    });
+    const invalidValues = [
+      "tab\tvalue",
+      "line\nvalue",
+      "cr\rvalue",
+      "nul\0value",
+    ];
+    const forInvalidValue = it.each(invalidValues);
+    forInvalidValue(
+      "rejects unrepresentable fields without altering values: %j",
+      (value) => {
+        expect(() =>
+          formatCookies([{ domain: "example.com", name: "n", value }], {
+            output: "netscape",
+          }),
+        ).toThrow("fields contain");
+      },
+    );
+    it("refuses to discard a cookie partition", () => {
+      expect(() =>
+        formatCookies(
+          [
+            {
+              domain: "example.com",
+              name: "n",
+              value: "v",
+              meta: { partitioned: true },
+            },
+          ],
+          { output: "netscape" },
+        ),
+      ).toThrow("cannot preserve their partition");
+    });
     it("should format as JSON when output: json", () => {
       const output = formatCookies(sampleCookies, { output: "json" });
       const parsed = JSON.parse(output);

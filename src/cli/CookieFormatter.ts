@@ -28,11 +28,61 @@ export interface CookieFormatOptions {
  * @throws Error if an invalid output format is specified
  */
 export function validateOutputFormat(options: CookieFormatOptions): void {
-  if (options.output !== undefined && options.output !== "json") {
+  if (
+    options.output !== undefined &&
+    options.output !== "json" &&
+    options.output !== "netscape"
+  ) {
     throw new Error(
-      `Invalid output format: '${options.output}'. Valid formats are: json`,
+      `Invalid output format: '${options.output}'. Valid formats are: json, netscape`,
     );
   }
+}
+
+/** Serializes raw cookies using curl's seven-column Netscape cookie-jar format. */
+function formatNetscapeCookies(cookies: ExportedCookie[]): string {
+  const rows = cookies.map((cookie) => {
+    const meta = cookie.meta;
+    const includeSubdomains =
+      meta?.hostOnly === undefined
+        ? cookie.domain.startsWith(".")
+        : !meta.hostOnly;
+    const host = cookie.domain.replace(/^\./, "");
+    const domain = `${includeSubdomains ? "." : ""}${host}`;
+    const path = meta?.path ?? "/";
+    const expiry =
+      cookie.expiry instanceof Date
+        ? cookie.expiry.getTime() / 1000
+        : cookie.expiry;
+    const seconds =
+      typeof expiry === "number" && Number.isFinite(expiry)
+        ? Math.floor(expiry)
+        : 0;
+    if (!host || host.startsWith("#") || !path.startsWith("/")) {
+      throw new Error("Cannot export Netscape cookies: invalid domain or path");
+    }
+    if (meta?.partitioned) {
+      throw new Error(
+        "Cannot export partitioned cookies: Netscape format cannot preserve their partition",
+      );
+    }
+    const fields = [
+      `${meta?.httpOnly ? "#HttpOnly_" : ""}${domain}`,
+      includeSubdomains ? "TRUE" : "FALSE",
+      path,
+      meta?.secure ? "TRUE" : "FALSE",
+      String(seconds),
+      cookie.name,
+      cookie.value,
+    ];
+    if (fields.some((field) => /[\t\r\n\0]/.test(field))) {
+      throw new Error(
+        "Cannot export Netscape cookies: fields contain a tab, newline or NUL",
+      );
+    }
+    return fields.join("\t");
+  });
+  return ["# Netscape HTTP Cookie File", ...rows, ""].join("\n");
 }
 
 /**
@@ -46,6 +96,10 @@ export function formatCookies(
   options: CookieFormatOptions = {},
 ): string {
   validateOutputFormat(options);
+
+  if (options.output === "netscape") {
+    return formatNetscapeCookies(cookies);
+  }
 
   if (options.output === "json") {
     if (cookies.length === 0) {

@@ -5,6 +5,9 @@ import { join } from "node:path";
 import Database from "better-sqlite3";
 
 import { withRawCookieValues } from "../../../cookies/CookieQueryContext";
+import { BaseChromiumCookieQueryStrategy } from "../../chromium/BaseChromiumCookieQueryStrategy";
+import { SafariCookieQueryStrategy } from "../../safari/SafariCookieQueryStrategy";
+import { createStrategy } from "../../StrategyFactory";
 import { FirefoxCookieQueryStrategy } from "../FirefoxCookieQueryStrategy";
 
 describe("FirefoxCookieQueryStrategy — raw values & metadata", () => {
@@ -343,5 +346,32 @@ describe("FirefoxCookieQueryStrategy — raw values & metadata", () => {
     expect(displayWork?.meta?.partitioned).toBeUndefined();
     // containerId is retained for display purposes
     expect(displayWork?.meta?.containerId).toBe(2);
+  });
+
+  it.each([
+    2,
+    "work",
+    "none",
+  ])("filters Firefox cookies through the default composite for container %s", async (container) => {
+    const chromium = jest
+      .spyOn(BaseChromiumCookieQueryStrategy.prototype, "queryCookies")
+      .mockResolvedValue([]);
+    const safari = jest
+      .spyOn(SafariCookieQueryStrategy.prototype, "queryCookies")
+      .mockResolvedValue([]);
+    try {
+      const strategy = createStrategy({ container });
+      const cookies = await withRawCookieValues(async () =>
+        strategy.queryCookies("%", "%", schema16DbPath),
+      );
+      expect(cookies.map((cookie) => cookie.name).sort()).toEqual(
+        container === "none"
+          ? ["default_token", "fpd_cookie"]
+          : ["jwt_work", "part_key_cookie"],
+      );
+    } finally {
+      chromium.mockRestore();
+      safari.mockRestore();
+    }
   });
 });

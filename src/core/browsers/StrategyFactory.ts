@@ -89,12 +89,17 @@ export function createBrowserStrategy(
 
 /**
  * Creates a composite strategy with all browser strategies
+ * @param profile - Optional browser profile name
+ * @param container - Optional Firefox container name, ID, or "none"
  * @returns A composite strategy that queries all browsers
  */
-export function createCompositeStrategy(): CompositeCookieQueryStrategy {
+export function createCompositeStrategy(
+  profile?: string,
+  container?: string | number,
+): CompositeCookieQueryStrategy {
   logger.debug("Creating composite strategy with all browsers");
   const strategies = AVAILABLE_BROWSERS.map((browser) =>
-    createBrowserStrategy(browser),
+    createBrowserStrategy(browser, profile, container),
   );
   return new CompositeCookieQueryStrategy(strategies);
 }
@@ -159,7 +164,7 @@ export function createStrategy(options?: {
 
   // Default to composite strategy (queries all browsers)
   logger.debug("Creating composite strategy as default");
-  return createCompositeStrategy();
+  return createCompositeStrategy(profile, container);
 }
 
 /**

@@ -75,4 +75,46 @@ describe("getChromiumProfiles", () => {
     const profiles = getChromiumProfiles("chrome");
     expect(profiles).toEqual([]);
   });
+
+  it("discovers macOS Arc profiles from User Data/Local State", () => {
+    const platform = Object.getOwnPropertyDescriptor(process, "platform");
+    const dataDir = join(
+      homedir(),
+      "Library",
+      "Application Support",
+      "Arc",
+      "User Data",
+    );
+    const localStatePath = join(dataDir, "Local State");
+    const adapter = {
+      fileExists: jest.fn((path: string) => path === localStatePath),
+      readTextFile: jest.fn(() =>
+        JSON.stringify({
+          profile: { info_cache: { Default: { name: "Personal" } } },
+        }),
+      ),
+      getFileModificationTime: jest.fn(),
+      readLeadingBytes: jest.fn(),
+      readFile: jest.fn(),
+    };
+    Object.defineProperty(process, "platform", { value: "darwin" });
+    setFileSystemAdapter(adapter);
+    try {
+      expect(getChromiumProfiles("arc")).toEqual([
+        {
+          name: "Personal",
+          directory: "Default",
+          path: join(dataDir, "Default"),
+          browser: "arc",
+        },
+      ]);
+      expect(adapter.readTextFile).toHaveBeenCalledWith(localStatePath);
+    } finally {
+      if (platform) {
+        Object.defineProperty(process, "platform", platform);
+      }
+    }
+  });
 });
+import { homedir } from "node:os";
+import { join } from "node:path";

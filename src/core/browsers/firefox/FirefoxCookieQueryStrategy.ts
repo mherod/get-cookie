@@ -597,7 +597,20 @@ export class FirefoxCookieQueryStrategy extends BaseCookieQueryStrategy {
     domain: string,
     force?: boolean,
   ): Promise<ExportedCookie[]> {
-    const queryConfig = await this.createCookieQueryConfig(name, domain, file);
+    let queryConfig: Awaited<ReturnType<typeof this.createCookieQueryConfig>>;
+    try {
+      queryConfig = await this.createCookieQueryConfig(name, domain, file);
+    } catch (error) {
+      this.logger.debug(
+        "Skipping Firefox profile: query configuration failed",
+        {
+          file,
+          container: this.container,
+          error: getErrorMessage(error),
+        },
+      );
+      return [];
+    }
 
     try {
       return await this.executeQueryWithNewUtilities(queryConfig);

@@ -3,9 +3,14 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import Database from "better-sqlite3";
+import fg from "fast-glob";
+
+import { logger } from "@utils/logHelpers";
+import * as platformUtils from "@utils/platformUtils";
 
 import { withRawCookieValues } from "../../../cookies/CookieQueryContext";
 import { BaseChromiumCookieQueryStrategy } from "../../chromium/BaseChromiumCookieQueryStrategy";
+import * as fileSystem from "../../runtime/FileSystemAdapter";
 import { SafariCookieQueryStrategy } from "../../safari/SafariCookieQueryStrategy";
 import { createStrategy } from "../../StrategyFactory";
 import { FirefoxCookieQueryStrategy } from "../FirefoxCookieQueryStrategy";
@@ -346,6 +351,63 @@ describe("FirefoxCookieQueryStrategy — raw values & metadata", () => {
     expect(displayWork?.meta?.partitioned).toBeUndefined();
     // containerId is retained for display purposes
     expect(displayWork?.meta?.containerId).toBe(2);
+  });
+
+  const invalidContainerConfigs = [
+    { label: "missing", content: undefined },
+    { label: "unknown", content: JSON.stringify({ identities: [] }) },
+    { label: "malformed", content: "{invalid" },
+  ];
+
+  describe.each(invalidContainerConfigs)("$label container config", ({
+    content,
+  }) => {
+    it.each([
+      false,
+      true,
+    ])("keeps valid profile results (valid first: %s)", async (validFirst) => {
+      const configPath = join(schema15Dir, "containers.json");
+      if (content !== undefined) {
+        writeFileSync(configPath, content, "utf8");
+      }
+      const paths = validFirst
+        ? [schema16DbPath, schema15DbPath]
+        : [schema15DbPath, schema16DbPath];
+      const platform = jest
+        .spyOn(platformUtils, "getPlatform")
+        .mockReturnValue("darwin");
+      const fileExists = fileSystem.fileExists;
+      const exists = jest
+        .spyOn(fileSystem, "fileExists")
+        .mockImplementation(
+          (path) => path.endsWith("Firefox") || fileExists(path),
+        );
+      const glob = jest.spyOn(fg, "sync").mockReturnValue(paths);
+      jest.mocked(logger.debug).mockClear();
+      try {
+        const strategy = new FirefoxCookieQueryStrategy(undefined, "work");
+        const cookies = await withRawCookieValues(async () =>
+          strategy.queryCookies("%", "%"),
+        );
+        expect(cookies.map((cookie) => cookie.name).sort()).toEqual([
+          "jwt_work",
+          "part_key_cookie",
+        ]);
+        expect(logger.debug).toHaveBeenCalledWith(
+          "Skipping Firefox profile: query configuration failed",
+          expect.objectContaining({
+            file: schema15DbPath,
+            container: "work",
+            error: "Unknown Firefox container: 'work'",
+          }),
+        );
+      } finally {
+        platform.mockRestore();
+        exists.mockRestore();
+        glob.mockRestore();
+        rmSync(configPath, { force: true });
+      }
+    });
   });
 
   it.each([

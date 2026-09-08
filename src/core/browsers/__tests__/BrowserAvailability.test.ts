@@ -40,6 +40,12 @@ describe("CHROMIUM_DATA_DIRS", () => {
       expect(typeof darwin?.["opera-gx"]).toBe("string");
     });
 
+    it("arc profiles are under Arc/User Data", () => {
+      expect(darwin?.arc).toBe(
+        join(homedir(), "Library", "Application Support", "Arc", "User Data"),
+      );
+    });
+
     it("opera-gx path uses com.operasoftware.OperaGX bundle", () => {
       expect(darwin?.["opera-gx"]).toContain("com.operasoftware.OperaGX");
     });

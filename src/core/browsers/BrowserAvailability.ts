@@ -190,7 +190,7 @@ export const CHROMIUM_DATA_DIRS: Partial<
       "Chrome",
     ),
     edge: join(homedir(), "Library", "Application Support", "Microsoft Edge"),
-    arc: join(homedir(), "Library", "Application Support", "Arc"),
+    arc: join(homedir(), "Library", "Application Support", "Arc", "User Data"),
     opera: join(
       homedir(),
       "Library",

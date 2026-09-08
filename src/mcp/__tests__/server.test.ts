@@ -218,3 +218,59 @@ it("returns actionable transport errors without leaking their raw payloads", asy
   });
   expect(JSON.stringify(result)).not.toContain("fixture-secret");
 });
+
+it("keeps same-name Firefox profiles separate through discovery and fetching", async () => {
+  const duplicates = [
+    "/firefox/Profiles/default",
+    "/firefox-esr/Profiles/default",
+  ].map((profileDirectory) => ({
+    browser: "firefox",
+    name: "Work",
+    directory: "Profiles/default",
+    profileDirectory,
+  }));
+  listProfiles.mockReturnValueOnce({
+    profiles: duplicates,
+    note: "Fixture profiles.",
+  });
+  readCookies.mockImplementation(async (_url, selection) => [
+    {
+      domain: "example.com",
+      name: "session",
+      value: "fixture-secret",
+      meta: {
+        browser: "Firefox",
+        file: `${selection.profileDirectory}/cookies.sqlite`,
+        path: "/",
+      },
+    },
+  ]);
+  const discovered = await client.callTool({
+    name: "list_profiles",
+    arguments: { browser: "firefox", url },
+  });
+  expect(discovered.structuredContent).toMatchObject({
+    matchingProfiles: 2,
+    profiles: duplicates.map((profile) => ({ ...profile, cookieCount: 1 })),
+  });
+  for (const profile of duplicates) {
+    expect(readCookies).toHaveBeenCalledWith(new URL(url), {
+      browser: "firefox",
+      profile: "Work",
+      profileDirectory: profile.profileDirectory,
+    });
+    const response = await client.callTool({
+      name: "authenticated_fetch",
+      arguments: {
+        browser: "firefox",
+        profile: "Work",
+        profileDirectory: profile.profileDirectory,
+        url,
+      },
+    });
+    expect(response.structuredContent).toMatchObject({
+      status: 200,
+      cookiesSent: 1,
+    });
+  }
+});

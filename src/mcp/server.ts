@@ -28,6 +28,14 @@ const selection = {
     .describe("Exact destination URL, including path, on an enabled origin."),
   browser,
   profile: z.string().min(1).max(256).optional(),
+  profileDirectory: z
+    .string()
+    .min(1)
+    .max(8192)
+    .optional()
+    .describe(
+      "Exact Firefox profileDirectory returned by list_profiles; takes precedence over profile names.",
+    ),
   container: z
     .union([z.string().min(1).max(256), z.number().int().nonnegative()])
     .optional()
@@ -106,7 +114,7 @@ export function createMcpServer(
     { name: "get-cookie", version },
     {
       instructions:
-        "Use get_status to inspect enabled origins. Call list_profiles with the destination URL and optional cookie name to find a matching profile in one call, then pass its browser and name as the profile to query_cookies or authenticated_fetch. Authenticated fetch uses cookies directly; reading their values is unnecessary.",
+        "Use get_status to inspect enabled origins. Call list_profiles with the destination URL and optional cookie name to find a matching profile in one call, then pass its browser and name as profile to query_cookies or authenticated_fetch. For Firefox, also pass the returned profileDirectory to select that exact store. Authenticated fetch uses cookies directly; reading their values is unnecessary.",
     },
   );
   server.registerTool(
@@ -188,6 +196,9 @@ export function createMcpServer(
               {
                 browser: profile.browser,
                 profile: profile.name,
+                ...(profile.profileDirectory !== undefined && {
+                  profileDirectory: profile.profileDirectory,
+                }),
                 ...(input.name !== undefined && { name: input.name }),
                 ...(input.container !== undefined && {
                   container: input.container,
@@ -211,7 +222,7 @@ export function createMcpServer(
           matchingProfiles: profiles.filter(
             (p) => p.cookieCount !== null && p.cookieCount > 0,
           ).length,
-          note: `${discovered.note} Counts include only applicable cookies; zero can also mean an inaccessible store. Pass a returned profile name as profile when querying or fetching.`,
+          note: `${discovered.note} Counts include only applicable cookies; zero can also mean an inaccessible store. Pass the returned name as profile and, for Firefox, profileDirectory when querying or fetching.`,
         };
       }),
   );

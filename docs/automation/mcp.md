@@ -66,7 +66,9 @@ Find the Chrome profile containing a site's session cookie in one call:
 
 The result includes each profile's `cookieCount` and a `matchingProfiles`
 total. Select a profile with a positive count and pass its `name` as
-`profile`. If several profiles match, select the account needed for the task.
+`profile`. For Firefox, also pass the returned `profileDirectory` unchanged;
+it identifies the exact store even when different installations use the same
+profile name. If several profiles match, select the account needed for the task.
 
 For example, if the matching profile is called `Work`:
 

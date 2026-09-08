@@ -126,7 +126,7 @@ describe("authenticated fetch", () => {
     ["CERT_HAS_EXPIRED", "expired"],
     ["SELF_SIGNED_CERT_IN_CHAIN", "NODE_EXTRA_CA_CERTS"],
     ["UND_ERR_CONNECT_TIMEOUT", "timed out"],
-  ])("explains %s failures without exposing transport details", async (code, hint) => {
+  ])("explains %s without leaking details", async (code, hint) => {
     const cause = Object.assign(new Error("secret request details"), { code });
     const error = Object.assign(new TypeError("secret cookie header"), {
       cause,

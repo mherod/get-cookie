@@ -47,12 +47,27 @@ async function queryAndLimitCookies(
   let results: ExportedCookie[] = [];
 
   for (const spec of specs) {
-    const cookies = await options.strategy.queryCookies(
+    const matching = await options.strategy.queryCookies(
       spec.name,
       spec.domain,
       options.store,
       options.force,
     );
+    // Netscape queries retain sessions at the source; filter persistent expiries
+    // only after each browser has converted its own timestamp representation.
+    const now = Date.now();
+    const cookies =
+      options.netscape && options.removeExpired
+        ? matching.filter((cookie) => {
+            const expiry = cookie.expiry;
+            if (expiry instanceof Date) {
+              return expiry.getTime() > now;
+            }
+            return (
+              typeof expiry !== "number" || expiry === 0 || expiry * 1000 > now
+            );
+          })
+        : matching;
     results = [...results, ...cookies];
 
     if (
@@ -206,7 +221,10 @@ export async function cliQueryCookies(
     let results = await withCookieQueryOptions(
       {
         ...(keyring !== undefined && { keyring }),
-        ...(args.output === "netscape" && { rawValues: true }),
+        ...(args.output === "netscape" && {
+          rawValues: true,
+          includeAllExpiries: true,
+        }),
       },
       () => queryAndLimitCookies(specs, queryOptions),
     );

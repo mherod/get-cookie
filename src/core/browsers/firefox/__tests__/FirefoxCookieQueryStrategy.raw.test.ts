@@ -8,7 +8,10 @@ import fg from "fast-glob";
 import { logger } from "@utils/logHelpers";
 import * as platformUtils from "@utils/platformUtils";
 
-import { withRawCookieValues } from "../../../cookies/CookieQueryContext";
+import {
+  withCookieQueryOptions,
+  withRawCookieValues,
+} from "../../../cookies/CookieQueryContext";
 import { BaseChromiumCookieQueryStrategy } from "../../chromium/BaseChromiumCookieQueryStrategy";
 import * as fileSystem from "../../runtime/FileSystemAdapter";
 import { SafariCookieQueryStrategy } from "../../safari/SafariCookieQueryStrategy";
@@ -227,6 +230,27 @@ describe("FirefoxCookieQueryStrategy — raw values & metadata", () => {
     } catch {
       // Ignore cleanup errors
     }
+  });
+
+  it("retains session rows when callers request all converted expiries", async () => {
+    const strategy = new FirefoxCookieQueryStrategy();
+    const rows = await withCookieQueryOptions(
+      { rawValues: true, includeAllExpiries: true },
+      () => strategy.queryCookies("%", "%", schema15DbPath),
+    );
+    expect(rows).toContainEqual(
+      expect.objectContaining({
+        name: "session_cookie",
+        value: "sess_val",
+        expiry: "Infinity",
+      }),
+    );
+    expect(rows).toContainEqual(
+      expect.objectContaining({
+        name: "expired_cookie",
+        expiry: expect.any(Date),
+      }),
+    );
   });
 
   it("converts schema < 16 seconds expiry and filters expired rows in raw mode", async () => {

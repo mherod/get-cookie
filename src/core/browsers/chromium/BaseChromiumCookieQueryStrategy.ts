@@ -10,7 +10,10 @@ import type {
 import type { CookieMeta } from "../../../types/schemas";
 import { BrowserNameSchema } from "../../../types/schemas";
 import { chromeTimestampToDate } from "../../../utils/chromeDates";
-import { usesRawCookieValues } from "../../cookies/CookieQueryContext";
+import {
+  includesAllCookieExpiries,
+  usesRawCookieValues,
+} from "../../cookies/CookieQueryContext";
 import { BaseCookieQueryStrategy } from "../BaseCookieQueryStrategy";
 import { BrowserLockHandler } from "../BrowserLockHandler";
 import type { ChromiumBrowser } from "../chrome/ChromiumBrowsers";
@@ -242,6 +245,7 @@ export abstract class BaseChromiumCookieQueryStrategy extends BaseCookieQueryStr
 
       // Convert CookieSpec to CookieQueryOptions
       const queryOptions = specs.map((spec) => ({
+        includeExpired: includesAllCookieExpiries(),
         name: spec.name,
         domain: spec.domain,
         browser: this.sqlBrowserType,
@@ -547,6 +551,7 @@ export abstract class BaseChromiumCookieQueryStrategy extends BaseCookieQueryStr
       const queryBuilder = new CookieQueryBuilder(this.sqlBrowserType);
 
       const queryConfig = queryBuilder.buildSelectQuery({
+        includeExpired: includesAllCookieExpiries(),
         name,
         domain,
         browser: this.sqlBrowserType,

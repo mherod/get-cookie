@@ -3,11 +3,17 @@ import { AsyncLocalStorage } from "node:async_hooks";
 export type LinuxKeyring = "basic" | "gnome" | "kwallet";
 
 interface CookieQueryOptions {
+  includeAllExpiries?: boolean;
   rawValues?: boolean;
   keyring?: LinuxKeyring;
 }
 
 const context = new AsyncLocalStorage<CookieQueryOptions>();
+
+/** Lets callers apply expiry filtering after conversion while retaining session rows. */
+export function includesAllCookieExpiries(): boolean {
+  return context.getStore()?.includeAllExpiries === true;
+}
 
 /** Returns the Linux keyring override for the current cookie query. */
 export function getLinuxKeyringOverride(): LinuxKeyring | undefined {

@@ -58,19 +58,28 @@ function result(output: Record<string, unknown>) {
   };
 }
 
+function operationError(error: unknown) {
+  return error instanceof McpOperationError
+    ? { code: error.code, message: error.message }
+    : {
+        code: "OPERATION_FAILED",
+        message:
+          "Operation failed. Check local browser access and server configuration.",
+      };
+}
+
 async function execute(operation: () => Promise<Record<string, unknown>>) {
   try {
     return result(await operation());
   } catch (error) {
+    const detail = operationError(error);
     return {
       isError: true,
+      structuredContent: { error: detail },
       content: [
         {
           type: "text" as const,
-          text:
-            error instanceof McpOperationError
-              ? error.message
-              : "Operation failed. Check local browser access and server configuration.",
+          text: detail.message,
         },
       ],
     };
@@ -93,19 +102,118 @@ export function createMcpServer(
     fetch,
     ...overrides,
   };
-  const server = new McpServer({ name: "get-cookie", version });
-  server.registerTool(
-    "list_profiles",
+  const server = new McpServer(
+    { name: "get-cookie", version },
     {
-      description: "List local browser profiles available for cookie access.",
-      inputSchema: { browser: browser.optional() },
+      instructions:
+        "Use get_status to inspect enabled origins. Call list_profiles with the destination URL and optional cookie name to find a matching profile in one call, then pass its browser and name as the profile to query_cookies or authenticated_fetch. Authenticated fetch uses cookies directly; reading their values is unnecessary.",
+    },
+  );
+  server.registerTool(
+    "get_status",
+    {
+      description:
+        "Show enabled origins, cookie-value access, HTTP methods and proxy environment configuration. Does not probe the network or read cookies.",
+      inputSchema: {},
       annotations: {
         readOnlyHint: true,
         destructiveHint: false,
         openWorldHint: false,
       },
     },
-    async ({ browser }) => execute(async () => deps.listProfiles(browser)),
+    async () =>
+      result({
+        version,
+        allowedOrigins: [...policy.allowedOrigins].sort(),
+        cookieValuesEnabled: policy.allowCookieValues,
+        allowedMethods: policy.allowUnsafeMethods
+          ? ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
+          : ["GET", "HEAD"],
+        network: {
+          proxyConfigured: Boolean(
+            process.env.HTTPS_PROXY ||
+              process.env.https_proxy ||
+              process.env.HTTP_PROXY ||
+              process.env.http_proxy,
+          ),
+          nodeUseEnvProxy: process.env.NODE_USE_ENV_PROXY === "1",
+        },
+        nextStep: policy.allowedOrigins.size
+          ? "Call list_profiles with a URL on an enabled origin to find a profile containing applicable cookies."
+          : "Add --allow-origin https://your-site.example to the MCP server arguments and restart the server to enable cookie queries and requests.",
+      }),
+  );
+  server.registerTool(
+    "list_profiles",
+    {
+      description:
+        "List local browser profiles. Supply a URL on an enabled origin to count applicable cookies in each profile and find the right account in one call. Cookie values are never returned. Zero matches can also indicate an inaccessible store. Safari uses its default store; query it directly.",
+      inputSchema: {
+        browser: browser.optional(),
+        url: selection.url.optional(),
+        name: selection.name,
+        container: selection.container,
+      },
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        openWorldHint: false,
+      },
+    },
+    async (input, extra) =>
+      execute(async () => {
+        if (input.url === undefined) {
+          if (input.name !== undefined || input.container !== undefined) {
+            throw new McpOperationError(
+              "Provide a URL to check cookies by name or container.",
+              "URL_REQUIRED",
+            );
+          }
+          return deps.listProfiles(input.browser);
+        }
+        const url = assertAllowedUrl(input.url, policy);
+        if (input.container !== undefined && input.browser !== "firefox") {
+          throw new McpOperationError(
+            "Select browser firefox when filtering by container.",
+            "FIREFOX_REQUIRED",
+          );
+        }
+        const discovered = deps.listProfiles(input.browser);
+        const profiles = [];
+        for (const profile of discovered.profiles) {
+          extra.signal.throwIfAborted();
+          try {
+            const cookies = await selectCookies(
+              url,
+              {
+                browser: profile.browser,
+                profile: profile.name,
+                ...(input.name !== undefined && { name: input.name }),
+                ...(input.container !== undefined && {
+                  container: input.container,
+                }),
+              },
+              deps.readCookies,
+            );
+            profiles.push({ ...profile, cookieCount: cookies.length });
+          } catch (error) {
+            profiles.push({
+              ...profile,
+              cookieCount: null,
+              error: operationError(error),
+            });
+          }
+        }
+        extra.signal.throwIfAborted();
+        return {
+          ...discovered,
+          profiles,
+          matchingProfiles: profiles.filter(
+            (p) => p.cookieCount !== null && p.cookieCount > 0,
+          ).length,
+          note: `${discovered.note} Counts include only applicable cookies; zero can also mean an inaccessible store. Pass a returned profile name as profile when querying or fetching.`,
+        };
+      }),
   );
 
   server.registerTool(

@@ -16,6 +16,8 @@ storage on the current machine; it is not a credential-management system.
 
 ## Choose a path
 
+- [MCP server](/automation/mcp) lets agents find matching browser profiles
+  and make authenticated requests using your existing session.
 - [Shell scripts](/automation/shell-scripts) cover status-only local
   preflights and redacted metadata checks.
 - [Browser automation](/automation/browser-automation) covers metadata-only

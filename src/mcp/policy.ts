@@ -12,7 +12,15 @@ export interface McpPolicy {
 /**
  * Error raised when an MCP tool operation or policy validation fails.
  */
-export class McpOperationError extends Error {}
+export class McpOperationError extends Error {
+  constructor(
+    message: string,
+    public readonly code = "OPERATION_FAILED",
+  ) {
+    super(message);
+    this.name = "McpOperationError";
+  }
+}
 
 /**
  * Parses and validates an absolute HTTP or HTTPS URL string.
@@ -52,7 +60,8 @@ export function assertAllowedUrl(value: string, policy: McpPolicy): URL {
   const url = parseHttpUrl(value);
   if (!policy.allowedOrigins.has(url.origin)) {
     throw new McpOperationError(
-      "Origin is not enabled. Add its exact scheme, host and port with --allow-origin at server startup.",
+      `Origin is not enabled. Add --allow-origin ${url.origin} to the MCP server arguments and restart the server. Call get_status to see enabled origins.`,
+      "ORIGIN_NOT_ALLOWED",
     );
   }
   return url;

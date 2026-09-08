@@ -36,6 +36,65 @@ const RESPONSE_HEADERS = [
   "retry-after",
 ];
 
+const NETWORK_ERRORS = new Map(
+  Object.entries({
+    EPERM:
+      "Network access was denied. Check the MCP host's network permissions and pass HTTP_PROXY/HTTPS_PROXY and NODE_USE_ENV_PROXY to the server when required.",
+    EACCES:
+      "Network access was denied. Check the MCP host's network permissions and proxy configuration.",
+    ENOTFOUND:
+      "DNS lookup failed. Check the destination hostname and proxy configuration.",
+    EAI_AGAIN:
+      "DNS lookup temporarily failed. Check network connectivity and retry.",
+    ECONNREFUSED:
+      "The connection was refused. Check that the destination or configured proxy is reachable.",
+    ECONNRESET:
+      "The connection was reset. Check network connectivity and retry.",
+    ETIMEDOUT:
+      "The connection timed out. Check network connectivity and proxy configuration.",
+    UND_ERR_CONNECT_TIMEOUT:
+      "The connection timed out. Check network connectivity and proxy configuration.",
+    CERT_HAS_EXPIRED:
+      "A TLS certificate has expired. Check the destination or proxy certificate.",
+    DEPTH_ZERO_SELF_SIGNED_CERT:
+      "A TLS certificate is not trusted. Configure the required CA certificate with NODE_EXTRA_CA_CERTS.",
+    SELF_SIGNED_CERT_IN_CHAIN:
+      "A TLS certificate is not trusted. Configure the required CA certificate with NODE_EXTRA_CA_CERTS.",
+    UNABLE_TO_VERIFY_LEAF_SIGNATURE:
+      "A TLS certificate could not be verified. Configure the required CA certificate with NODE_EXTRA_CA_CERTS.",
+  }),
+);
+
+// Fetch wraps transport errors in `cause` (and sometimes AggregateError).
+// Return only known codes and our own messages, never credential-bearing errors.
+function networkErrorCode(error: unknown, depth = 0): string | undefined {
+  if (!error || typeof error !== "object" || depth > 4) {
+    return undefined;
+  }
+  if (
+    "code" in error &&
+    typeof error.code === "string" &&
+    NETWORK_ERRORS.has(error.code)
+  ) {
+    return error.code;
+  }
+  if ("cause" in error) {
+    const code = networkErrorCode(error.cause, depth + 1);
+    if (code) {
+      return code;
+    }
+  }
+  if (error instanceof AggregateError) {
+    for (const child of error.errors.slice(0, 8)) {
+      const code = networkErrorCode(child, depth + 1);
+      if (code) {
+        return code;
+      }
+    }
+  }
+  return undefined;
+}
+
 async function readBody(response: Response, limit: number) {
   if (!response.body) {
     return { body: "", truncated: false, bytes: 0 };
@@ -138,11 +197,19 @@ export async function authenticatedFetch(
       ...body,
       cookiesSent: cookies.length,
     };
-  } catch {
+  } catch (error) {
+    if (controller.signal.aborted) {
+      throw new McpOperationError(
+        "Request cancelled or timed out.",
+        "REQUEST_ABORTED",
+      );
+    }
+    const code = networkErrorCode(error);
     throw new McpOperationError(
-      controller.signal.aborted
-        ? "Request cancelled or timed out."
-        : "Authenticated request failed.",
+      code
+        ? `Authenticated request failed (${code}). ${NETWORK_ERRORS.get(code)}`
+        : "Authenticated request failed. Check network connectivity, proxy configuration and TLS certificates.",
+      code ?? "FETCH_FAILED",
     );
   } finally {
     clearTimeout(timer);

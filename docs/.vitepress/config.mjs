@@ -32,6 +32,7 @@ export default defineConfig({
           text: "Use get-cookie",
           items: [
             { text: "CLI reference", link: "/guide/cli-usage" },
+            { text: "MCP server", link: "/automation/mcp" },
             { text: "Library usage", link: "/guide/api-usage" },
             { text: "Examples", link: "/guide/examples" },
             { text: "Automation", link: "/automation/" },
@@ -60,6 +61,7 @@ export default defineConfig({
           text: "Automation",
           items: [
             { text: "Overview", link: "/automation/" },
+            { text: "MCP server", link: "/automation/mcp" },
             { text: "Shell recipes", link: "/automation/shell-scripts" },
             {
               text: "Browser automation",

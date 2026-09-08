@@ -25,8 +25,8 @@ selector matrix. The limitations below apply even on an implemented platform.
   `localhost`. Query those domains explicitly.
 - A normal domain query matches the domain and its subdomains. It is not a
   shell-glob matcher, so `*.example.com` is not the recommended form.
-- `--include-expired` is currently accepted by the CLI but not applied by
-  `CookieQueryService`; each browser strategy keeps its existing expiry
+- `--include-expired` is currently accepted by the CLI but not applied when
+  querying cookies; each browser strategy keeps its existing expiry
   behavior. Do not rely on the flag to recover expired or session cookies.
 - CLI deduplication is on by default and keeps one value for each
   `name:domain` pair, preferring the longer value. Use `--include-all` when

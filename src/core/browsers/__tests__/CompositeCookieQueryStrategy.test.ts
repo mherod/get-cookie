@@ -47,6 +47,7 @@ describe("CompositeCookieQueryStrategy", () => {
     const safariCookies = createTestCookies("safari");
 
     const chromeStrategy = createMockStrategy("Chrome", chromeCookies);
+    const query = jest.spyOn(chromeStrategy, "queryCookies");
     const firefoxStrategy = createMockStrategy("Firefox", firefoxCookies);
     const safariStrategy = createMockStrategy("Safari", safariCookies);
 
@@ -57,6 +58,12 @@ describe("CompositeCookieQueryStrategy", () => {
     ]);
 
     const results = await composite.queryCookies("test-cookie", "example.com");
+    expect(query).toHaveBeenCalledWith(
+      "test-cookie",
+      "example.com",
+      undefined,
+      undefined,
+    );
     expect(results).toHaveLength(6);
     expect(results).toEqual(
       expect.arrayContaining([

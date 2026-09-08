@@ -114,8 +114,8 @@ get-cookie % example.com --include-all --output json
 ```
 
 > [!NOTE]
-> `--include-expired` is currently accepted by the CLI but not applied by
-> `CookieQueryService`. Browser strategies keep their own expiry behavior, so
+> `--include-expired` is currently accepted by the CLI but not applied when
+> querying cookies. Browser strategies keep their own expiry behavior, so
 > do not use this flag to infer that expired rows were included.
 
 ## JWT inspection

@@ -1,4 +1,9 @@
 import {
+  type AnyQueryStrategy,
+  createStrategy,
+} from "@core/browsers/StrategyFactory";
+
+import {
   detectJwtCookies,
   filterJwtCookies,
   type JwtDetectionOptions,
@@ -8,11 +13,6 @@ import { getErrorMessage } from "../utils/errorUtils";
 import { logger } from "../utils/logHelpers";
 
 import { formatAndPrintCookies } from "./CookieFormatter";
-import { CookieQueryService } from "./services/CookieQueryService";
-import {
-  type CookieQueryStrategy,
-  CookieStrategyFactory,
-} from "./services/CookieStrategyFactory";
 
 interface QueryOptions {
   /** Maximum number of cookies to return */
@@ -24,27 +24,30 @@ interface QueryOptions {
   /** Optional path to a specific binarycookies store file */
   store?: string;
   /** Strategy for querying cookies */
-  strategy: CookieQueryStrategy;
+  strategy: AnyQueryStrategy;
   /** Whether to force operations despite warnings */
   force?: boolean;
 }
 
 /**
  * Internal function to query cookies and apply limit
- * @param queryService - The query service to use
  * @param specs - Cookie specifications to query
  * @param options - Query options including limit, expiry handling, store path, and strategy
  * @returns Array of cookies
  */
 async function queryAndLimitCookies(
-  queryService: CookieQueryService,
   specs: CookieSpec[],
   options: QueryOptions,
 ): Promise<ExportedCookie[]> {
   let results: ExportedCookie[] = [];
 
   for (const spec of specs) {
-    const cookies = await queryService.queryCookies(spec, options);
+    const cookies = await options.strategy.queryCookies(
+      spec.name,
+      spec.domain,
+      options.store,
+      options.force,
+    );
     results = [...results, ...cookies];
 
     if (
@@ -107,7 +110,7 @@ async function queryAndLimitCookies(
  */
 function buildQueryOptions(
   args: Record<string, unknown>,
-  strategy: CookieQueryStrategy,
+  strategy: AnyQueryStrategy,
   removeExpired: boolean,
   deduplicateCookies: boolean,
   limit?: number,
@@ -168,13 +171,12 @@ export async function cliQueryCookies(
       typeof args.container === "string" || typeof args.container === "number"
         ? args.container
         : undefined;
-    const strategy = CookieStrategyFactory.createStrategy(
-      browser,
-      store,
-      profile,
-      container,
-    );
-    const queryService = new CookieQueryService(strategy);
+    const strategy = createStrategy({
+      ...(browser !== undefined && { browser }),
+      ...(store !== undefined && { storePath: store }),
+      ...(profile !== undefined && { profile }),
+      ...(container !== undefined && { container }),
+    });
     const specs = Array.isArray(cookieSpec) ? cookieSpec : [cookieSpec];
 
     const queryOptions = buildQueryOptions(
@@ -185,7 +187,7 @@ export async function cliQueryCookies(
       limit,
       store,
     );
-    let results = await queryAndLimitCookies(queryService, specs, queryOptions);
+    let results = await queryAndLimitCookies(specs, queryOptions);
 
     // Handle JWT detection if requested
     if (args["detect-jwt"] === true || args["jwt-only"] === true) {

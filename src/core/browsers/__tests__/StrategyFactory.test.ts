@@ -75,6 +75,7 @@ describe("createCompositeStrategy", () => {
   it("returns a CompositeCookieQueryStrategy", () => {
     const strategy = createCompositeStrategy();
     expect(strategy).toBeInstanceOf(CompositeCookieQueryStrategy);
+    expect(strategy.browserName).toBe("internal");
   });
 
   it("covers the same number of browsers as the strategy registry", () => {
@@ -98,6 +99,29 @@ describe("createSelectiveCompositeStrategy", () => {
 });
 
 describe("createStrategy", () => {
+  it("matches browser names case-insensitively", () => {
+    expect(createStrategy({ browser: "SAFARI" })).toBeInstanceOf(
+      SafariCookieQueryStrategy,
+    );
+  });
+
+  const freshInstanceOptions = [
+    {},
+    { browser: "safari" },
+    { browser: "unknown" },
+  ];
+  it.each(
+    freshInstanceOptions,
+  )("creates a fresh instance for %j", (options) => {
+    expect(createStrategy(options)).not.toBe(createStrategy(options));
+  });
+
+  it("creates distinct strategy types for distinct browsers", () => {
+    expect(createStrategy({ browser: "safari" }).constructor).not.toBe(
+      createStrategy({ browser: "firefox" }).constructor,
+    );
+  });
+
   it("returns a Chrome strategy when browser is 'chrome'", () => {
     const strategy = createStrategy({ browser: "chrome" });
     expect(strategy).toBeInstanceOf(ChromeCookieQueryStrategy);

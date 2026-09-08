@@ -28,8 +28,8 @@ Then check:
   exact destination applicability, so do not send rendered output as a generic
   outgoing request header.
 - Add `--include-all` if deduplication may be hiding another row.
-- `--include-expired` is currently accepted but not applied by
-  `CookieQueryService`; browser-specific expiry behavior still controls the
+- `--include-expired` is currently accepted but not applied when
+  querying cookies; browser-specific expiry behavior still controls the
   result. Do not assume the flag can recover an expired row.
 
 An empty result can also mean the store was unreadable or decryption failed,

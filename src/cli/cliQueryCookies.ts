@@ -19,6 +19,7 @@ import { logger } from "../utils/logHelpers";
 import { formatAndPrintCookies } from "./CookieFormatter";
 
 interface QueryOptions {
+  netscape: boolean;
   /** Maximum number of cookies to return */
   limit?: number;
   /** Whether to remove expired cookies */
@@ -69,7 +70,16 @@ async function queryAndLimitCookies(
     const cookieMap = new Map<string, ExportedCookie>();
 
     for (const cookie of results) {
-      const key = `${cookie.name}:${cookie.domain}`;
+      const key = options.netscape
+        ? JSON.stringify([
+            cookie.meta?.browser,
+            cookie.meta?.file,
+            cookie.meta?.containerId,
+            cookie.domain,
+            cookie.meta?.path ?? "/",
+            cookie.name,
+          ])
+        : `${cookie.name}:${cookie.domain}`;
       const existing = cookieMap.get(key);
 
       if (!existing) {
@@ -121,6 +131,7 @@ function buildQueryOptions(
   store?: string,
 ): QueryOptions {
   const queryOptions: QueryOptions = {
+    netscape: args.output === "netscape",
     removeExpired,
     deduplicateCookies,
     strategy,
@@ -188,7 +199,7 @@ export async function cliQueryCookies(
       args,
       strategy,
       removeExpired,
-      deduplicateCookies && args.output !== "netscape",
+      deduplicateCookies,
       limit,
       store,
     );

@@ -1,6 +1,8 @@
 import { CompositeCookieQueryStrategy } from "@core/browsers/CompositeCookieQueryStrategy";
 import { createStrategy } from "@core/browsers/StrategyFactory";
 import { logger } from "@utils/logHelpers";
+import { parseArgv } from "@utils/argv";
+import { getLinuxKeyringOverride } from "@core/cookies/CookieQueryContext";
 
 import { cliQueryCookies } from "../cliQueryCookies";
 import { formatAndPrintCookies } from "../CookieFormatter";
@@ -17,6 +19,24 @@ describe("cliQueryCookies", () => {
   const cookie = { ...spec, value: "short", expiry: 4102444800 };
   const strategy = new CompositeCookieQueryStrategy([]);
   const query = jest.spyOn(strategy, "queryCookies");
+
+  it("forwards a parsed keyring override in the query context", async () => {
+    query.mockImplementation(async () => {
+      expect(getLinuxKeyringOverride()).toBe("basic");
+      return [cookie];
+    });
+    await cliQueryCookies(parseArgv(["--keyring", "basic"]).values, spec);
+    expect(query).toHaveBeenCalledTimes(1);
+    expect(getLinuxKeyringOverride()).toBeUndefined();
+  });
+
+  it("rejects invalid keyring selectors before querying", async () => {
+    await cliQueryCookies({ keyring: "invalid" }, spec);
+    expect(query).not.toHaveBeenCalled();
+    expect(logger.error).toHaveBeenCalledWith(
+      "--keyring must be basic, gnome or kwallet",
+    );
+  });
 
   beforeEach(() => {
     jest.clearAllMocks();

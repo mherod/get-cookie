@@ -1,8 +1,37 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 
-// Request-local options keep machine consumers from receiving display-decoded
-// values without changing the existing CLI/library presentation behaviour.
-const context = new AsyncLocalStorage<{ rawValues: boolean }>();
+export type LinuxKeyring = "basic" | "gnome" | "kwallet";
+
+interface CookieQueryOptions {
+  rawValues?: boolean;
+  keyring?: LinuxKeyring;
+}
+
+const context = new AsyncLocalStorage<CookieQueryOptions>();
+
+/** Returns the Linux keyring override for the current cookie query. */
+export function getLinuxKeyringOverride(): LinuxKeyring | undefined {
+  return context.getStore()?.keyring;
+}
+
+/** Validates a CLI keyring selector before querying any browser. */
+export function parseLinuxKeyring(value: unknown): LinuxKeyring | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+  if (value === "basic" || value === "gnome" || value === "kwallet") {
+    return value;
+  }
+  throw new Error("--keyring must be basic, gnome or kwallet");
+}
+
+/** Runs a query with isolated options, preserving options from an outer query. */
+export function withCookieQueryOptions<T>(
+  options: CookieQueryOptions,
+  operation: () => Promise<T>,
+): Promise<T> {
+  return context.run({ ...context.getStore(), ...options }, operation);
+}
 
 /**
  * Checks whether the current async context requires raw cookie values.
@@ -20,5 +49,5 @@ export function usesRawCookieValues(): boolean {
 export async function withRawCookieValues<T>(
   operation: () => Promise<T>,
 ): Promise<T> {
-  return context.run({ rawValues: true }, operation);
+  return withCookieQueryOptions({ rawValues: true }, operation);
 }

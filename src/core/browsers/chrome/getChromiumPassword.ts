@@ -1,6 +1,10 @@
 import { assertPlatformSupported, getPlatform } from "@utils/platformUtils";
 
 import { execSimple } from "../../../utils/execSimple";
+import {
+  getLinuxKeyringOverride,
+  type LinuxKeyring,
+} from "../../cookies/CookieQueryContext";
 
 import type { ChromiumBrowser } from "./ChromiumBrowsers";
 
@@ -66,10 +70,13 @@ async function getWindowsPassword(): Promise<string | Buffer> {
  * Gets the Chromium browser password for Linux
  * Linux typically uses a hardcoded key or libsecret
  */
-async function getLinuxPassword(): Promise<string> {
+async function getLinuxPassword(
+  browser: ChromiumBrowser,
+  keyring?: LinuxKeyring,
+): Promise<string> {
   // Import dynamically to avoid loading on non-Linux platforms
   const { getChromePassword } = await import("./linux/getChromePassword");
-  return getChromePassword();
+  return getChromePassword(browser, keyring);
 }
 
 /**
@@ -79,6 +86,7 @@ async function getLinuxPassword(): Promise<string> {
  */
 async function resolveChromiumPassword(
   browser: ChromiumBrowser,
+  keyring?: LinuxKeyring,
 ): Promise<string | Buffer> {
   assertPlatformSupported();
 
@@ -91,8 +99,7 @@ async function resolveChromiumPassword(
       return getWindowsPassword();
     }
     case "linux": {
-      // Linux uses a hardcoded key for all Chromium browsers
-      return getLinuxPassword();
+      return getLinuxPassword(browser, keyring);
     }
     default:
       throw new Error(`Platform ${getPlatform()} is not supported`);
@@ -100,7 +107,7 @@ async function resolveChromiumPassword(
 }
 
 /**
- * Per-browser cache of the Safe Storage password.
+ * Cache of Safe Storage passwords by platform, browser and keyring override.
  *
  * The Safe Storage secret is stable for the lifetime of the process, but each
  * lookup is expensive: macOS spawns the `security` subprocess and Windows/Linux
@@ -113,14 +120,14 @@ async function resolveChromiumPassword(
  * (e.g. keychain locked) does not poison later retries — only successful
  * lookups stay cached.
  */
-const passwordCache = new Map<ChromiumBrowser, Promise<string | Buffer>>();
+const passwordCache = new Map<string, Promise<string | Buffer>>();
 
 /**
  * Gets the Chromium-based browser Safe Storage password for the current platform.
  * This password is used to decrypt cookies stored in the browser's cookie database.
  * Supports macOS (keychain), Windows (DPAPI), and Linux (keyring/libsecret).
  *
- * The result is memoized per browser for the process lifetime; see
+ * The result is memoized per platform, browser and keyring for the process lifetime; see
  * {@link resetChromiumPasswordCache} to clear it in tests.
  * @param browser - The Chromium-based browser to get the password for
  * @returns A promise that resolves to the browser's Safe Storage password or Buffer
@@ -129,20 +136,22 @@ const passwordCache = new Map<ChromiumBrowser, Promise<string | Buffer>>();
 export function getChromiumPassword(
   browser: ChromiumBrowser = "chrome",
 ): Promise<string | Buffer> {
-  const cached = passwordCache.get(browser);
+  const keyring = getLinuxKeyringOverride();
+  const cacheKey = `${getPlatform()}:${browser}:${keyring ?? "auto"}`;
+  const cached = passwordCache.get(cacheKey);
   if (cached !== undefined) {
     return cached;
   }
 
-  const passwordPromise = resolveChromiumPassword(browser).catch(
+  const passwordPromise = resolveChromiumPassword(browser, keyring).catch(
     (error: unknown) => {
       // Don't cache failures — let the next call retry the keychain/import.
-      passwordCache.delete(browser);
+      passwordCache.delete(cacheKey);
       throw error;
     },
   );
 
-  passwordCache.set(browser, passwordPromise);
+  passwordCache.set(cacheKey, passwordPromise);
   return passwordPromise;
 }
 

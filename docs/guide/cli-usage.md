@@ -5,6 +5,25 @@ description: Authoritative syntax, flags, output modes, and examples for get-coo
 
 # CLI reference
 
+## Linux password stores
+
+Linux detects GNOME/libsecret or KWallet from the desktop environment. KDE 5
+and KDE 6 use their respective wallet services. Unknown desktops use basic
+storage. Override detection when your browser uses a different store:
+
+```bash
+get-cookie --browser brave --keyring gnome --domain example.com
+get-cookie --browser chrome --keyring kwallet --domain example.com
+get-cookie --browser chrome --keyring basic --domain example.com
+```
+
+GNOME lookup uses `secret-tool`, with Python 3's `secretstorage` package as a
+fallback for entries indexed by their Safe Storage label. KWallet uses
+`dbus-send` and `kwallet-query`, including the browser's Keys folder and the
+configured network wallet. Missing commands or entries fall back to Chromium's
+basic password. On Linux, Edge and Opera use the Chromium keyring name, while
+Vivaldi uses Chrome. The override applies only to Linux password lookup.
+
 The CLI has no subcommands:
 
 ```text

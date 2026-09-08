@@ -8,6 +8,10 @@ import {
   filterJwtCookies,
   type JwtDetectionOptions,
 } from "../core/cookies/JwtCookieDetector";
+import {
+  parseLinuxKeyring,
+  withCookieQueryOptions,
+} from "../core/cookies/CookieQueryContext";
 import type { CookieSpec, ExportedCookie } from "../types/schemas";
 import { getErrorMessage } from "../utils/errorUtils";
 import { logger } from "../utils/logHelpers";
@@ -165,6 +169,7 @@ export async function cliQueryCookies(
   deduplicateCookies = true,
 ): Promise<void> {
   try {
+    const keyring = parseLinuxKeyring(args.keyring);
     const browser = typeof args.browser === "string" ? args.browser : undefined;
     const profile = typeof args.profile === "string" ? args.profile : undefined;
     const container =
@@ -187,7 +192,10 @@ export async function cliQueryCookies(
       limit,
       store,
     );
-    let results = await queryAndLimitCookies(specs, queryOptions);
+    let results = await withCookieQueryOptions(
+      { ...(keyring !== undefined && { keyring }) },
+      () => queryAndLimitCookies(specs, queryOptions),
+    );
 
     // Handle JWT detection if requested
     if (args["detect-jwt"] === true || args["jwt-only"] === true) {

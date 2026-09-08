@@ -63,6 +63,7 @@ function showHelp(): void {
   );
   logger.log(
     "  -c, --container NAME|ID   Target Firefox container name, userContextId, or 'none'",
+    "  --keyring BACKEND         Linux password store: basic, gnome or kwallet (default: detect desktop)",
   );
   logger.log(
     "  --store PATH              Path to a specific cookie store file",

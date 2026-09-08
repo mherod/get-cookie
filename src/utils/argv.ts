@@ -31,6 +31,7 @@ const CLI_OPTIONS = {
     "browser",
     "profile",
     "container",
+    "keyring",
     "url",
     "domain",
     "name",

@@ -1,3 +1,5 @@
+import type { BrowserName } from "../types/schemas";
+
 import { getErrorMessage } from "./errorUtils";
 import { execSimple } from "./execSimple";
 import { createTaggedLogger } from "./logHelpers";
@@ -230,4 +232,3 @@ export function getBrowserConflictAdvice(
 
   return `${browserDisplayName} is currently running (${processCount} process${processCount > 1 ? "es" : ""} detected). For reliable cookie access, consider closing ${browserDisplayName} and trying again. Alternatively, use the --force flag to attempt access despite the lock.`;
 }
-import type { BrowserName } from "../types/schemas";

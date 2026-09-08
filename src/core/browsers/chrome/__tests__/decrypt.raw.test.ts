@@ -4,6 +4,7 @@ import { withRawCookieValues } from "../../../cookies/CookieQueryContext";
 import { decrypt } from "../decrypt";
 
 jest.mock("@utils/platformUtils", () => ({
+  isLinux: () => false,
   isMacOS: () => true,
   isWindows: () => false,
 }));

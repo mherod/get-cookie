@@ -140,12 +140,8 @@ describe("createStrategy", () => {
     expect(strategy).toBeInstanceOf(CompositeCookieQueryStrategy);
   });
 
-  it.each([
-    2,
-    "Work",
-    "none",
-    0,
-  ])("preserves profile and container %s in the default composite", (container) => {
+  const containers = [2, "Work", "none", 0];
+  it.each(containers)("preserves composite selectors (%s)", (container) => {
     const strategy = createStrategy({ profile: "Work", container });
     expect(strategy).toMatchObject({
       strategies: expect.arrayContaining([

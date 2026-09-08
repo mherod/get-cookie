@@ -28,8 +28,8 @@ other Chromium selectors.
 
 ### Chromium profiles
 
-Without `--profile`, every discovered cookie file is queried. With an
-explicit `--browser`, `--profile` is matched case-insensitively against the
+Without `--profile`, every discovered cookie file is queried. The profile
+selector is matched case-insensitively against the
 display name in `Local State.profile.info_cache`, then against the directory
 name such as `Default` or `Profile 1`.
 
@@ -63,8 +63,8 @@ The strategy discovers profile databases from:
   `Firefox ESR` roots
 - Linux: `~/.mozilla/firefox`, XDG, Snap, and Flatpak roots
 
-`--profile` matches the `Name` field in `profiles.ini`. Firefox container
-filtering is available only with `--browser firefox`:
+`--profile` matches the `Name` field in `profiles.ini`. Use `--container` to
+filter Firefox cookies and `--browser firefox` to query only Firefox:
 
 ```bash
 get-cookie session example.com --browser firefox --profile "default-release"

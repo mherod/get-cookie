@@ -55,8 +55,8 @@ directly, but neither is a CLI `--browser` selector.
 - `--container` applies only to Firefox and accepts a container name, numeric
   user-context ID, or `none`.
 - Safari has one cookie store and does not support named profile filtering.
-- Pass `--browser` with `--profile` or `--container`; the default composite
-  strategy does not apply those filters.
+- Without `--browser`, `--profile` is passed to each supported browser and
+  `--container` filters Firefox's portion of the results.
 
 ## Firefox variants
 

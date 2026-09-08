@@ -99,7 +99,11 @@ export function createCompositeStrategy(
 ): CompositeCookieQueryStrategy {
   logger.debug("Creating composite strategy with all browsers");
   const strategies = AVAILABLE_BROWSERS.map((browser) =>
-    createBrowserStrategy(browser, profile, container),
+    createBrowserStrategy(
+      browser,
+      profile,
+      browser === "firefox" ? container : undefined,
+    ),
   );
   return new CompositeCookieQueryStrategy(strategies);
 }

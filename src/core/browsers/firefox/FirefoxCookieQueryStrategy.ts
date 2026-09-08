@@ -9,7 +9,10 @@ import { getPlatform } from "@utils/platformUtils";
 import { isFirefoxRunning } from "@utils/processDetector";
 
 import type { ExportedCookie } from "../../../types/schemas";
-import { usesRawCookieValues } from "../../cookies/CookieQueryContext";
+import {
+  includesAllCookieExpiries,
+  usesRawCookieValues,
+} from "../../cookies/CookieQueryContext";
 import { BaseCookieQueryStrategy } from "../BaseCookieQueryStrategy";
 import { FIREFOX_DATA_DIRS } from "../BrowserAvailability";
 import { BrowserLockHandler } from "../BrowserLockHandler";
@@ -683,8 +686,10 @@ export class FirefoxCookieQueryStrategy extends BaseCookieQueryStrategy {
         // Apply schema-aware expiry filtering and transformation.
         const nowMs = Date.now();
         return rows
-          .filter((row) =>
-            isFirefoxCookieUnexpired(row.expiry, schemaVersion, nowMs),
+          .filter(
+            (row) =>
+              includesAllCookieExpiries() ||
+              isFirefoxCookieUnexpired(row.expiry, schemaVersion, nowMs),
           )
           .map((row) => queryConfig.rowTransform(row, schemaVersion));
       },

@@ -4,6 +4,7 @@ import { logger } from "@utils/logHelpers";
 import { parseArgv } from "@utils/argv";
 import {
   getLinuxKeyringOverride,
+  includesAllCookieExpiries,
   usesRawCookieValues,
 } from "@core/cookies/CookieQueryContext";
 
@@ -22,6 +23,28 @@ describe("cliQueryCookies", () => {
   const cookie = { ...spec, value: "short", expiry: 4102444800 };
   const strategy = new CompositeCookieQueryStrategy([]);
   const query = jest.spyOn(strategy, "queryCookies");
+
+  it("includes Netscape sessions while filtering expired persistent cookies", async () => {
+    const session = { ...cookie, expiry: "Infinity" as const };
+    const expired = { ...cookie, name: "expired", expiry: new Date(1) };
+    const future = {
+      ...cookie,
+      name: "future",
+      expiry: new Date("2030-01-01"),
+    };
+    query.mockResolvedValue([session, expired, future]);
+    const args = { output: "netscape" };
+    await cliQueryCookies(args, spec, undefined, true);
+    expect(formatAndPrintCookies).toHaveBeenLastCalledWith(
+      [session, future],
+      args,
+    );
+    await cliQueryCookies(args, spec, undefined, false);
+    expect(formatAndPrintCookies).toHaveBeenLastCalledWith(
+      [session, expired, future],
+      args,
+    );
+  });
 
   it("deduplicates overlapping Netscape specs by source and cookie path", async () => {
     const root = {
@@ -50,6 +73,7 @@ describe("cliQueryCookies", () => {
     ];
     query.mockImplementation(async () => {
       expect(usesRawCookieValues()).toBe(true);
+      expect(includesAllCookieExpiries()).toBe(true);
       expect(getLinuxKeyringOverride()).toBe("basic");
       return rows;
     });

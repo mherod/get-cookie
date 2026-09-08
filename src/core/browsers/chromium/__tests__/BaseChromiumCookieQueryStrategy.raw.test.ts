@@ -6,7 +6,10 @@ import { join } from "node:path";
 import Database from "better-sqlite3";
 import { getPlatform, isLinux, isMacOS, isWindows } from "@utils/platformUtils";
 
-import { withRawCookieValues } from "../../../cookies/CookieQueryContext";
+import {
+  withCookieQueryOptions,
+  withRawCookieValues,
+} from "../../../cookies/CookieQueryContext";
 import { BaseChromiumCookieQueryStrategy } from "../BaseChromiumCookieQueryStrategy";
 
 jest.mock("../../chrome/getChromiumPassword", () => ({
@@ -192,6 +195,28 @@ forPlatform(
         1,
       );
 
+      insertModern.run(
+        "example.com",
+        "",
+        "session_cookie",
+        "session%2Fvalue",
+        Buffer.alloc(0),
+        "/",
+        0,
+        0,
+        1,
+      );
+      insertModern.run(
+        "example.com",
+        "",
+        "expired_cookie",
+        "old",
+        Buffer.alloc(0),
+        "/",
+        (futureExpiry - 172800 + 11644473600) * 1000000,
+        0,
+        0,
+      );
       modernDb.close();
 
       // 2. Create legacy database WITHOUT top_frame_site_key
@@ -253,6 +278,33 @@ forPlatform(
       } catch {
         // Ignore cleanup error
       }
+    });
+
+    it("retains session rows for callers that filter converted expiries", async () => {
+      const strategy = new TestChromiumStrategy([modernDbPath]);
+      const rows = await withCookieQueryOptions(
+        { rawValues: true, includeAllExpiries: true },
+        () => strategy.queryCookies("%", "%", modernDbPath),
+      );
+      expect(rows).toContainEqual(
+        expect.objectContaining({
+          name: "session_cookie",
+          value: "session%2Fvalue",
+          expiry: "Infinity",
+        }),
+      );
+      expect(rows).toContainEqual(
+        expect.objectContaining({
+          name: "expired_cookie",
+          expiry: expect.any(Date),
+        }),
+      );
+      const defaultRows = await withRawCookieValues(() =>
+        strategy.queryCookies("%", "%", modernDbPath),
+      );
+      expect(defaultRows.some((row) => row.name === "session_cookie")).toBe(
+        false,
+      );
     });
 
     it("extracts raw values with full metadata under withRawCookieValues()", async () => {

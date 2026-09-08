@@ -27,6 +27,7 @@ describe("ChromeCookieQueryStrategy - Basic Functionality", () => {
       mockCookieData.value,
       mockPassword,
       0,
+      mockCookieData.domain,
     );
 
     expect(cookies).toHaveLength(1);
@@ -109,6 +110,7 @@ describe("ChromeCookieQueryStrategy - Value Handling", () => {
       expect.any(Buffer),
       mockPassword,
       0,
+      mockCookieData.domain,
     );
     expect(cookies).toHaveLength(1);
     expect(cookies[0]!.value).toBe("decrypted-value");

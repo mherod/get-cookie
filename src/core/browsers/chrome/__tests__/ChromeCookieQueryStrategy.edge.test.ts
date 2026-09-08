@@ -19,8 +19,8 @@ describe("ChromeCookieQueryStrategy - Edge Cases", () => {
       {
         encrypted_value: "non-buffer-value",
         name: mockCookieData.name,
-        host_key: mockCookieData.domain,
-        expires_utc: mockCookieData.expiry,
+        domain: mockCookieData.domain,
+        expiry: mockCookieData.expiry,
       },
     ]);
 
@@ -30,6 +30,7 @@ describe("ChromeCookieQueryStrategy - Edge Cases", () => {
       expect.any(Buffer),
       "test-password",
       0,
+      mockCookieData.domain,
     );
     expect(cookies).toHaveLength(1);
     expect(cookies[0]!.value).toBe("decrypted-value");

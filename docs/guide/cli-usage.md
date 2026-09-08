@@ -43,7 +43,7 @@ SQL-style `%` and `_` patterns instead.
 | `--domain PATTERN`       | `-D`  | Cookie-domain pattern.                                        |
 | `--url URL`              | `-u`  | Build `%` specs for the URL hostname and every parent domain. |
 | `--browser BROWSER`      | `-b`  | Target one supported browser.                                 |
-| `--profile NAME`         | `-p`  | Target a Chromium or Firefox profile. Use with `--browser`.   |
+| `--profile NAME`         | `-p`  | Target a Chromium or Firefox profile.                         |
 | `--container NAME_OR_ID` | `-c`  | Target a Firefox container name, numeric ID, or `none`.       |
 | `--store PATH`           |       | Read an explicit cookie-store path.                           |
 
@@ -62,9 +62,9 @@ chrome  edge  arc  brave  opera  opera-gx  vivaldi  firefox  safari
 ```
 
 If `--browser` is omitted, the CLI creates a composite strategy across the
-supported browser registry. Profile and container selection are meaningful
-only when a browser is selected. `--container` is Firefox-only; other
-browsers warn and ignore it.
+supported browser registry. Profile filters apply to Chromium and Firefox.
+`--container` filters only Firefox cookies; other browsers warn and ignore
+it. Add `--browser firefox` to query only Firefox.
 
 ## Profiles and containers
 

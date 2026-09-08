@@ -34,13 +34,16 @@ selector matrix. The limitations below apply even on an implemented platform.
 
 ## Profiles and stores
 
-- `--profile` and `--container` need an explicit `--browser`; the default
-  composite strategy does not apply those filters.
+- `--container` filters only Firefox cookies in an all-browser query. Add
+  `--browser firefox` to exclude results from other browsers.
 - Chromium profile filtering depends on readable `Local State` metadata. If
   that metadata is missing or malformed, the strategy can fall back to all
   discovered cookie files.
 - Firefox profile names come from `profiles.ini`; container names come from
   the profile's `containers.json`.
+- Some built-in Firefox container names are not resolved yet. Use their
+  numeric container IDs; custom or renamed containers with stored names can
+  be selected by name. See [#610](https://github.com/mherod/get-cookie/issues/610).
 - A custom `--store` path must be readable and must use a format the selected
   strategy understands.
 

@@ -53,8 +53,8 @@ get-cookie session example.com --browser firefox --profile "default-release"
 
 Chromium matching is case-insensitive against the display name or directory
 name. Firefox matching is case-insensitive against `profiles.ini` `Name`.
-`--profile` is not applied by the default all-browser composite, and Safari
-does not support named profiles.
+The default all-browser query forwards `--profile` to Chromium and Firefox.
+Safari does not support named profiles.
 
 ## A Firefox container returns nothing
 

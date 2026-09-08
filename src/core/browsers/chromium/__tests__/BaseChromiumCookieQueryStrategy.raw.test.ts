@@ -1,4 +1,4 @@
-import { createCipheriv, pbkdf2Sync } from "node:crypto";
+import { createCipheriv, createHash, pbkdf2Sync } from "node:crypto";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -28,6 +28,7 @@ function encryptAes128Cbc(
   value: string,
   password = "password",
   withHashPrefix = true,
+  domain = ".example.com",
 ): Buffer {
   const cipher = createCipheriv(
     "aes-128-cbc",
@@ -35,7 +36,10 @@ function encryptAes128Cbc(
     Buffer.alloc(16, " "),
   );
   const payload = withHashPrefix
-    ? Buffer.concat([Buffer.alloc(32, "a"), Buffer.from(value, "utf8")])
+    ? Buffer.concat([
+        createHash("sha256").update(domain).digest(),
+        Buffer.from(value, "utf8"),
+      ])
     : Buffer.from(value, "utf8");
   return Buffer.concat([
     Buffer.from("v10"),
@@ -149,7 +153,7 @@ forPlatform(
         "",
         "jwt_token",
         "",
-        encryptAes128Cbc(jwt),
+        encryptAes128Cbc(jwt, "password", true, "example.com"),
         "/",
         chromeExpiry,
         1,

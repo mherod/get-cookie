@@ -36,7 +36,8 @@ describe("FirefoxCookieQueryStrategy — raw values & metadata", () => {
     writeFileSync(
       join(schema16Dir, "containers.json"),
       JSON.stringify({
-        containers: [
+        version: 5,
+        identities: [
           { userContextId: 1, name: "Personal" },
           { userContextId: 2, name: "Work" },
         ],

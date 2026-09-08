@@ -16,6 +16,8 @@ export interface FirefoxContainer {
  * Schema for Firefox containers.json configuration file.
  */
 export interface FirefoxContainersConfig {
+  identities?: FirefoxContainer[];
+  /** Legacy input supported for compatibility. */
   containers?: FirefoxContainer[];
   [key: string]: unknown;
 }
@@ -56,8 +58,9 @@ export function parseFirefoxContainersJson(
   try {
     const content = readTextFile(filePath);
     const parsed = JSON.parse(content) as FirefoxContainersConfig;
-    if (Array.isArray(parsed.containers)) {
-      for (const container of parsed.containers) {
+    const definitions = parsed.identities ?? parsed.containers;
+    if (Array.isArray(definitions)) {
+      for (const container of definitions) {
         if (
           typeof container.name === "string" &&
           typeof container.userContextId === "number"

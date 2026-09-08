@@ -63,6 +63,8 @@ function showHelp(): void {
   );
   logger.log(
     "  -c, --container NAME|ID   Target Firefox container name, userContextId, or 'none'",
+  );
+  logger.log(
     "  --keyring BACKEND         Linux password store: basic, gnome or kwallet (default: detect desktop)",
   );
   logger.log(

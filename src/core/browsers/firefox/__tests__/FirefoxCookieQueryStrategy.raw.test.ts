@@ -216,9 +216,13 @@ describe("FirefoxCookieQueryStrategy — raw values & metadata", () => {
     expect(cookie?.name).toBe("auth_token");
     expect(cookie?.value).toBe(rawAuthToken);
     expect(cookie?.domain).toBe(".example.com");
-    expect(cookie?.expiry).toBeInstanceOf(Date);
-    // Expiry converted from seconds to Date (within 10s tolerance)
-    expect((cookie?.expiry as Date).getTime()).toBeGreaterThan(nowMs);
+    const expiry = cookie?.expiry;
+    expect(expiry).toBeInstanceOf(Date);
+    if (!(expiry instanceof Date)) {
+      throw new Error("Expected Firefox cookie expiry to be a Date");
+    }
+    // Expiry converted from seconds to a future Date.
+    expect(expiry.getTime()).toBeGreaterThan(nowMs);
     expect(cookie?.meta).toMatchObject({
       file: schema15DbPath,
       browser: "Firefox",

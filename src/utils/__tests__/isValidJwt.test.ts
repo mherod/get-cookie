@@ -58,9 +58,7 @@ describe("isValidJwt - Format Validation", () => {
     "abc.def.ghi",
   ];
 
-  it.each(
-    invalidFormatTokens,
-  )("should reject token with invalid format: %s", (token) => {
+  it.each(invalidFormatTokens)("rejects invalid JWT: %s", (token) => {
     const result = validateToken(token);
     expect(result.isValid).toBe(false);
     expect(result.error).toBe(
@@ -68,9 +66,7 @@ describe("isValidJwt - Format Validation", () => {
     );
   });
 
-  it.each(
-    nonBase64Tokens,
-  )("should reject non-base64url encoded token: %s", (token) => {
+  it.each(nonBase64Tokens)("rejects non-base64url: %s", (token) => {
     const result = validateToken(token);
     expect(result.isValid).toBe(false);
     expect(result.error).toBe("Failed to decode token");

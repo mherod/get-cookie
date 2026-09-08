@@ -3,6 +3,17 @@
 Thanks for contributing. This repository uses a protected `main` branch: every
 change lands through a pull request with passing CI.
 
+## Licensing contributions
+
+By submitting a contribution for inclusion in get-cookie, you agree to
+license it under the project's [ISC License](LICENSE). You retain ownership
+of your contribution; this does not assign your copyright to the maintainer.
+Submit only work that you have the right to contribute under these terms.
+
+Preserve existing copyright and licence notices. If a contribution includes
+third-party material, identify its source and licence in the pull request,
+retain its required notices, and explain how its licence permits inclusion.
+
 ## Set up the repository
 
 Use the Node.js version pinned in `.nvmrc` and the pnpm version declared in
@@ -136,6 +147,20 @@ Replace `<release-pr-number>` with the merged release PR number. The pushed
 tag triggers the release workflow. If a manual npm publish is
 explicitly needed, build and validate first, then use
 `pnpm publish --access public`.
+
+### Check licensing in the release package
+
+Before publishing, inspect the output of `pnpm pack` and confirm:
+
+- `LICENSE`, `ATTRIBUTION.md`, and `README.md` are included.
+- The package metadata still declares `"license": "ISC"`.
+- `LICENSE` includes the existing copyright and permission notices.
+- Any bundled third-party material retains the notices its licence requires.
+
+The [attribution guide](ATTRIBUTION.md) explains how downstream projects can
+carry these notices. It is included in the npm package and reused by the
+documentation site; edit that guide when clarifying attribution guidance.
+`LICENSE` remains the controlling text.
 
 ## Getting help
 

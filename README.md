@@ -153,4 +153,23 @@ pull-request guidance.
 
 ## License
 
-ISC
+get-cookie is free and open source under the [ISC License](LICENSE).
+
+Copyright (c) 2022-2026 Matthew Herod and contributors.
+
+You may use, copy, modify, and distribute this library for any purpose,
+including in commercial and closed-source products. All copies must retain
+the copyright notice and permission notice in `LICENSE`.
+
+When distributing this library, including as part of another product, include
+the full `LICENSE` text with your distribution, for example in a third-party
+licences file. An author name or project link alone does not replace the
+required notices. Public-facing credit in your product's interface or
+advertising is not required.
+
+See [LICENSE](LICENSE) for the full terms, including the warranty disclaimer
+and limitation of liability.
+
+See [Licence and attribution](ATTRIBUTION.md) for distribution examples and
+instructions for preparing a third-party licences entry. That guide explains
+the ISC licence and adds no separate conditions.

@@ -6,7 +6,9 @@
   "type": "module",
   "source": "src/index.ts",
   "files": [
-    "dist"
+    "dist",
+    "LICENSE",
+    "ATTRIBUTION.md"
   ],
   "bin": {
     "get-cookie": "./dist/cli.cjs"

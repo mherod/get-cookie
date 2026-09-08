@@ -51,6 +51,7 @@ export default defineConfig({
           items: [
             { text: "Architecture", link: "/guide/architecture" },
             { text: "Testing", link: "/guide/testing" },
+            { text: "Licence and attribution", link: "/guide/license" },
           ],
         },
       ],
@@ -83,7 +84,8 @@ export default defineConfig({
     ],
     footer: {
       message: "Local browser-cookie extraction for controlled environments",
-      copyright: "ISC licensed",
+      copyright:
+        'ISC licensed · <a href="/get-cookie/guide/license.html">Licence and attribution</a>',
     },
     outline: {
       level: [2, 3],

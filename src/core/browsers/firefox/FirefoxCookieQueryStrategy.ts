@@ -588,7 +588,7 @@ export class FirefoxCookieQueryStrategy extends BaseCookieQueryStrategy {
    * @param name - The cookie name to search for
    * @param domain - The domain pattern to match
    * @param force - Whether to force operations despite warnings
-   * @returns Promise resolving to extracted cookies from this file
+   * @returns Extracted cookies or a configuration error for query-level reporting
    * @private
    */
   private async processCookieFile(
@@ -596,7 +596,7 @@ export class FirefoxCookieQueryStrategy extends BaseCookieQueryStrategy {
     name: string,
     domain: string,
     force?: boolean,
-  ): Promise<ExportedCookie[]> {
+  ): Promise<ExportedCookie[] | { configurationError: string }> {
     let queryConfig: Awaited<ReturnType<typeof this.createCookieQueryConfig>>;
     try {
       queryConfig = await this.createCookieQueryConfig(name, domain, file);
@@ -609,7 +609,7 @@ export class FirefoxCookieQueryStrategy extends BaseCookieQueryStrategy {
           error: getErrorMessage(error),
         },
       );
-      return [];
+      return { configurationError: getErrorMessage(error) };
     }
 
     try {
@@ -719,10 +719,25 @@ export class FirefoxCookieQueryStrategy extends BaseCookieQueryStrategy {
     }
 
     const results: ExportedCookie[] = [];
+    let configuredProfiles = 0;
+    let configurationError: string | undefined;
 
     for (const file of fileList) {
-      const cookies = await this.processCookieFile(file, name, domain, force);
-      results.push(...cookies);
+      const result = await this.processCookieFile(file, name, domain, force);
+      if (Array.isArray(result)) {
+        configuredProfiles++;
+        results.push(...result);
+      } else {
+        configurationError ??= result.configurationError;
+      }
+    }
+
+    if (configuredProfiles === 0 && configurationError !== undefined) {
+      this.logger.warn("No Firefox profiles could be queried", {
+        container: this.container,
+        profileCount: fileList.length,
+        error: configurationError,
+      });
     }
 
     return results;

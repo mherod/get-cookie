@@ -15,6 +15,22 @@ import { SafariCookieQueryStrategy } from "../../safari/SafariCookieQueryStrateg
 import { createStrategy } from "../../StrategyFactory";
 import { FirefoxCookieQueryStrategy } from "../FirefoxCookieQueryStrategy";
 
+function mockFirefoxDiscovery(paths: string[]): () => void {
+  const platform = jest
+    .spyOn(platformUtils, "getPlatform")
+    .mockReturnValue("darwin");
+  const fileExists = fileSystem.fileExists;
+  const exists = jest
+    .spyOn(fileSystem, "fileExists")
+    .mockImplementation((path) => path.endsWith("Firefox") || fileExists(path));
+  const glob = jest.spyOn(fg, "sync").mockReturnValue(paths);
+  return () => {
+    platform.mockRestore();
+    exists.mockRestore();
+    glob.mockRestore();
+  };
+}
+
 describe("FirefoxCookieQueryStrategy — raw values & metadata", () => {
   let tempDir: string;
   let schema15Dir: string;
@@ -371,17 +387,9 @@ describe("FirefoxCookieQueryStrategy — raw values & metadata", () => {
       const paths = validFirst
         ? [schema16DbPath, schema15DbPath]
         : [schema15DbPath, schema16DbPath];
-      const platform = jest
-        .spyOn(platformUtils, "getPlatform")
-        .mockReturnValue("darwin");
-      const fileExists = fileSystem.fileExists;
-      const exists = jest
-        .spyOn(fileSystem, "fileExists")
-        .mockImplementation(
-          (path) => path.endsWith("Firefox") || fileExists(path),
-        );
-      const glob = jest.spyOn(fg, "sync").mockReturnValue(paths);
+      const restoreDiscovery = mockFirefoxDiscovery(paths);
       jest.mocked(logger.debug).mockClear();
+      jest.mocked(logger.warn).mockClear();
       try {
         const strategy = new FirefoxCookieQueryStrategy(undefined, "work");
         const cookies = await withRawCookieValues(async () =>
@@ -391,6 +399,7 @@ describe("FirefoxCookieQueryStrategy — raw values & metadata", () => {
           "jwt_work",
           "part_key_cookie",
         ]);
+        expect(logger.warn).not.toHaveBeenCalled();
         expect(logger.debug).toHaveBeenCalledWith(
           "Skipping Firefox profile: query configuration failed",
           expect.objectContaining({
@@ -400,12 +409,48 @@ describe("FirefoxCookieQueryStrategy — raw values & metadata", () => {
           }),
         );
       } finally {
-        platform.mockRestore();
-        exists.mockRestore();
-        glob.mockRestore();
+        restoreDiscovery();
         rmSync(configPath, { force: true });
       }
     });
+  });
+
+  it("reports the container error once when every profile is skipped", async () => {
+    const restoreDiscovery = mockFirefoxDiscovery([
+      schema15DbPath,
+      schema16DbPath,
+    ]);
+    jest.mocked(logger.warn).mockClear();
+    try {
+      const strategy = new FirefoxCookieQueryStrategy(undefined, "typo");
+      expect(await strategy.queryCookies("%", "%")).toEqual([]);
+      expect(logger.warn).toHaveBeenCalledTimes(1);
+      expect(logger.warn).toHaveBeenCalledWith(
+        "No Firefox profiles could be queried",
+        expect.objectContaining({
+          container: "typo",
+          profileCount: 2,
+          error: "Unknown Firefox container: 'typo'",
+        }),
+      );
+    } finally {
+      restoreDiscovery();
+    }
+  });
+
+  it("does not report a container error when a valid profile has no matches", async () => {
+    const restoreDiscovery = mockFirefoxDiscovery([
+      schema15DbPath,
+      schema16DbPath,
+    ]);
+    jest.mocked(logger.warn).mockClear();
+    try {
+      const strategy = new FirefoxCookieQueryStrategy(undefined, "work");
+      expect(await strategy.queryCookies("no-such-cookie", "%")).toEqual([]);
+      expect(logger.warn).not.toHaveBeenCalled();
+    } finally {
+      restoreDiscovery();
+    }
   });
 
   const compositeContainers = [2, "work", "none"];

@@ -359,13 +359,11 @@ describe("FirefoxCookieQueryStrategy — raw values & metadata", () => {
     { label: "malformed", content: "{invalid" },
   ];
 
-  describe.each(invalidContainerConfigs)("$label container config", ({
-    content,
-  }) => {
+  const forConfig = describe.each(invalidContainerConfigs);
+  forConfig("$label container config", ({ content }) => {
     const profileOrders = [false, true];
-    it.each(
-      profileOrders,
-    )("keeps cookies (valid first: %s)", async (validFirst) => {
+    const forOrder = it.each(profileOrders);
+    forOrder("keeps cookies (valid first: %s)", async (validFirst) => {
       const configPath = join(schema15Dir, "containers.json");
       if (content !== undefined) {
         writeFileSync(configPath, content, "utf8");
@@ -411,9 +409,8 @@ describe("FirefoxCookieQueryStrategy — raw values & metadata", () => {
   });
 
   const compositeContainers = [2, "work", "none"];
-  it.each(
-    compositeContainers,
-  )("filters composite cookies (%s)", async (container) => {
+  const forCompositeContainer = it.each(compositeContainers);
+  forCompositeContainer("filters composite cookies (%s)", async (container) => {
     const chromium = jest
       .spyOn(BaseChromiumCookieQueryStrategy.prototype, "queryCookies")
       .mockResolvedValue([]);

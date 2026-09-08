@@ -62,9 +62,8 @@ describe("cliQueryCookies", () => {
   });
 
   const containers = [0, 2, "none", "Work"];
-  it.each(
-    containers,
-  )("forwards container %s without a browser", async (container) => {
+  const forContainer = it.each(containers);
+  forContainer("forwards container %s without a browser", async (container) => {
     await cliQueryCookies({ container }, spec);
     expect(createStrategy).toHaveBeenCalledWith({ container });
   });

@@ -110,9 +110,8 @@ describe("createStrategy", () => {
     { browser: "safari" },
     { browser: "unknown" },
   ];
-  it.each(
-    freshInstanceOptions,
-  )("creates a fresh instance for %j", (options) => {
+  const forOptions = it.each(freshInstanceOptions);
+  forOptions("creates a fresh instance for %j", (options) => {
     expect(createStrategy(options)).not.toBe(createStrategy(options));
   });
 

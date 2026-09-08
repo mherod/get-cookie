@@ -41,9 +41,11 @@ export interface BrowserControlOptions {
  * Map of browser names to their macOS application names
  * Only includes browsers that can be controlled on macOS
  */
-const BROWSER_APP_NAMES: Partial<Record<BrowserName, string>> = {
+export const BROWSER_APP_NAMES: Partial<Record<BrowserName, string>> = {
   Firefox: "Firefox",
   Chrome: "Google Chrome",
+  Chromium: "Chromium",
+  Whale: "Whale",
   Safari: "Safari",
 };
 
@@ -142,8 +144,9 @@ async function saveBrowserSessionMacOS(
       // Chrome will restore tabs automatically if quit gracefully
       logger.debug("Chrome will restore tabs automatically", { browserName });
     } else {
-      // Safari will restore tabs if quit gracefully
-      logger.debug("Safari will restore tabs automatically", { browserName });
+      logger.debug("Session restoration is handled by the browser", {
+        browserName,
+      });
     }
   } catch (error) {
     logger.debug("Failed to save browser session", { browserName, error });

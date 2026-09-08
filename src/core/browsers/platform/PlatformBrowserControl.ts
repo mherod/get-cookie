@@ -1,7 +1,7 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 
-import type { BrowserName } from "@utils/browserControl";
+import { BROWSER_APP_NAMES, type BrowserName } from "@utils/browserControl";
 import { getPlatform, isWindows, type Platform } from "@utils/platformUtils";
 
 const execFileAsync = promisify(execFile);
@@ -184,11 +184,12 @@ export class MacOSBrowserControl extends BasePlatformBrowserControl {
   protected initializeBrowserExecutables(): Partial<
     Record<BrowserName, string[]>
   > {
-    return {
-      Firefox: ["Firefox"],
-      Chrome: ["Google Chrome"],
-      Safari: ["Safari"],
-    };
+    return Object.fromEntries(
+      Object.entries(BROWSER_APP_NAMES).map(([browser, app]) => [
+        browser,
+        [app],
+      ]),
+    );
   }
 
   /**
@@ -198,13 +199,7 @@ export class MacOSBrowserControl extends BasePlatformBrowserControl {
    * @throws {Error} When the browser is not supported on macOS
    */
   public async launchBrowser(browserName: BrowserName): Promise<void> {
-    const appNames: Partial<Record<BrowserName, string>> = {
-      Firefox: "Firefox",
-      Chrome: "Google Chrome",
-      Safari: "Safari",
-    };
-
-    const appName = appNames[browserName];
+    const appName = this.getBrowserExecutables(browserName)[0];
     if (appName === undefined || appName === "") {
       throw new Error(`${browserName} not supported on macOS`);
     }
@@ -240,6 +235,8 @@ export class WindowsBrowserControl extends BasePlatformBrowserControl {
     return {
       Firefox: ["firefox.exe", "Firefox"],
       Chrome: ["chrome.exe", "Google Chrome"],
+      Chromium: ["chrome.exe"],
+      Whale: ["whale.exe"],
       Safari: [], // Not available on Windows
     };
   }
@@ -309,6 +306,8 @@ export class LinuxBrowserControl extends BasePlatformBrowserControl {
   > {
     return {
       Firefox: ["firefox", "firefox-bin"],
+      Chromium: ["chromium", "chromium-browser"],
+      Whale: ["naver-whale", "whale"],
       Chrome: [
         "google-chrome",
         "google-chrome-stable",

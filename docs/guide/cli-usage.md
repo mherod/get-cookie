@@ -63,7 +63,7 @@ chrome  edge  arc  brave  opera  opera-gx  vivaldi  firefox  safari
 
 If `--browser` is omitted, the CLI creates a composite strategy across the
 supported browser registry. Profile filters apply to Chromium and Firefox.
-`--container` filters only Firefox cookies; other browsers warn and ignore
+`--container` filters only Firefox cookies; other browsers ignore
 it. Add `--browser firefox` to query only Firefox.
 
 ## Profiles and containers

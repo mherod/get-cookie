@@ -1,5 +1,7 @@
 import { describe, expect, it } from "@jest/globals";
 
+import { logger } from "@utils/logHelpers";
+
 import { BaseCookieQueryStrategy } from "../BaseCookieQueryStrategy";
 import { isValidBrowserType } from "../BrowserDetector";
 import { ChromeCookieQueryStrategy } from "../chrome/ChromeCookieQueryStrategy";
@@ -137,6 +139,21 @@ describe("createStrategy", () => {
   it("returns a composite strategy when no browser is specified", () => {
     const strategy = createStrategy();
     expect(strategy).toBeInstanceOf(CompositeCookieQueryStrategy);
+  });
+
+  it("does not warn about unsupported browsers in a container composite", () => {
+    jest.mocked(logger.warn).mockClear();
+    createStrategy({ container: "Work" });
+    expect(logger.warn).not.toHaveBeenCalled();
+  });
+
+  it("still warns for an explicitly selected non-Firefox browser", () => {
+    jest.mocked(logger.warn).mockClear();
+    createStrategy({ browser: "chrome", container: "Work" });
+    expect(logger.warn).toHaveBeenCalledTimes(1);
+    expect(logger.warn).toHaveBeenCalledWith(
+      "--container option is only supported for Firefox, ignoring for chrome",
+    );
   });
 
   const containers = [2, "Work", "none", 0];

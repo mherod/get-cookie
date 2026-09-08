@@ -47,6 +47,20 @@ builds wildcard specs for a hostname and its parent domains without excluding
 public suffixes such as `co.uk`. Inspect results locally; do not pipe
 rendered output into an outgoing request.
 
+## Use it as an MCP server
+
+The MCP server lets agents find browser profiles containing a site's cookies
+and make authenticated requests with them. From a local checkout:
+
+```bash
+pnpm run build
+codex mcp add get-cookie -- pnpm --dir /absolute/path/to/get-cookie exec tsx /absolute/path/to/get-cookie/dist/cli.cjs mcp --allow-origin https://app.example.com
+```
+
+Call `get_status`, then `list_profiles` with a destination URL to find the
+right profile. Pass that profile to `authenticated_fetch`. See the
+[MCP guide](docs/automation/mcp.md) for setup, examples and proxy configuration.
+
 ## Use it from TypeScript
 
 Install the library:

@@ -49,6 +49,27 @@ describe("CookieFormatter", () => {
   });
 
   describe("formatCookies", () => {
+    const plaintextBrowsers = ["Firefox", "Safari"];
+    const forPlaintextBrowser = it.each(plaintextBrowsers);
+    forPlaintextBrowser(
+      "exports plaintext %s cookies without a decryption step",
+      (browser) => {
+        expect(
+          formatCookies(
+            [
+              {
+                domain: "example.com",
+                name: "session",
+                value: "raw%2Fvalue",
+                expiry: "Infinity",
+                meta: { browser, decrypted: false },
+              },
+            ],
+            { output: "netscape" },
+          ),
+        ).toContain("example.com\tFALSE\t/\tFALSE\t0\tsession\traw%2Fvalue\n");
+      },
+    );
     it("refuses to export a cookie whose value could not be decrypted", () => {
       expect(() =>
         formatCookies(

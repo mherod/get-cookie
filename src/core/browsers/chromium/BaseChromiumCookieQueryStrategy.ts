@@ -652,7 +652,12 @@ export abstract class BaseChromiumCookieQueryStrategy extends BaseCookieQueryStr
       const decryptedValue =
         usesRawCookieValues() && typeof cookie.value === "string"
           ? cookie.value
-          : await decrypt(value, context.password, context.metaVersion);
+          : await decrypt(
+              value,
+              context.password,
+              context.metaVersion,
+              cookie.domain,
+            );
 
       const exported = createExportedCookie(
         cookie.domain,

@@ -1,4 +1,9 @@
-import { createCipheriv, pbkdf2Sync, randomBytes } from "node:crypto";
+import {
+  createCipheriv,
+  createHash,
+  pbkdf2Sync,
+  randomBytes,
+} from "node:crypto";
 
 import { isLinux, isMacOS, isWindows } from "@utils/platformUtils";
 
@@ -94,22 +99,61 @@ describe("decrypt", () => {
       ).toBe(value);
     });
     it("strips the version 24 hash prefix, including an empty cookie", async () => {
-      const hash = Buffer.alloc(32, 0xff);
+      const domain = ".example.com";
+      const hash = createHash("sha256").update(domain).digest();
       expect(
         await decrypt(
           buildCbcBlob(Buffer.concat([hash, Buffer.from("✓")]), "", 1),
           "wrong",
           24,
+          domain,
         ),
       ).toBe("✓");
-      expect(await decrypt(buildCbcBlob(hash, "", 1), "wrong", 24)).toBe("");
+      expect(
+        await decrypt(buildCbcBlob(hash, "", 1), "wrong", 24, domain),
+      ).toBe("");
     });
+    it("rejects a domain mismatch even when padding and UTF-8 are valid", async () => {
+      const hash = createHash("sha256").update(".example.com").digest();
+      const blob = buildCbcBlob(
+        Buffer.concat([hash, Buffer.from("valid-value")]),
+        "keyring",
+        1,
+      );
+      await expect(decrypt(blob, "keyring", 24, "example.com")).rejects.toThrow(
+        "no Linux password",
+      );
+      await expect(decrypt(blob, "keyring", 24)).rejects.toThrow(
+        "Cookie domain is required",
+      );
+    });
+    const forFallback = it.each(["peanuts", ""]);
+    forFallback(
+      "verifies the domain when falling back to password %j",
+      async (password) => {
+        const domain = ".example.com";
+        const hash = createHash("sha256").update(domain).digest();
+        const blob = buildCbcBlob(
+          Buffer.concat([hash, Buffer.from("raw%2Fvalue")]),
+          password,
+          1,
+        );
+        await expect(decrypt(blob, "stale-keyring", 24, domain)).resolves.toBe(
+          "raw%2Fvalue",
+        );
+      },
+    );
     it("rejects invalid UTF-8 and undersized hash payloads", async () => {
       await expect(
         decrypt(buildCbcBlob(Buffer.from([0xff]), "", 1), "wrong"),
       ).rejects.toThrow("no Linux password");
       await expect(
-        decrypt(buildCbcBlob(Buffer.from("short"), "", 1), "wrong", 24),
+        decrypt(
+          buildCbcBlob(Buffer.from("short"), "", 1),
+          "wrong",
+          24,
+          "example.com",
+        ),
       ).rejects.toThrow("no Linux password");
     });
     it("rejects invalid padding and unsupported prefixes", async () => {

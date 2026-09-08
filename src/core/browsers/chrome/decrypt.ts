@@ -1,5 +1,5 @@
 // External imports
-import { createDecipheriv, pbkdf2 } from "node:crypto";
+import { createDecipheriv, createHash, pbkdf2 } from "node:crypto";
 
 import { isLinux, isMacOS, isWindows } from "@utils/platformUtils";
 
@@ -176,6 +176,7 @@ async function decryptLinuxCookie(
   encryptedValue: Buffer,
   password: string,
   metaVersion?: number,
+  domain?: string,
 ): Promise<string> {
   const prefix = encryptedValue.subarray(0, 3).toString("ascii");
   if (prefix !== "v10" && prefix !== "v11") {
@@ -185,6 +186,17 @@ async function decryptLinuxCookie(
   if (!value.length || value.length % 16 !== 0) {
     throw new Error("Encrypted data length is not a multiple of 16");
   }
+  const hasDomainHash = (metaVersion ?? 0) >= CHROME_M127_META_VERSION;
+  if (hasDomainHash && domain === undefined) {
+    throw new Error(
+      "Cookie domain is required for Linux version 24+ decryption",
+    );
+  }
+  const expectedHash = hasDomainHash
+    ? createHash("sha256")
+        .update(domain ?? "")
+        .digest()
+    : null;
   for (const candidate of new Set([password, "peanuts", ""])) {
     const key = await deriveKey(candidate, 1);
     try {
@@ -195,8 +207,11 @@ async function decryptLinuxCookie(
       );
       // Node's default padding verifies every PKCS7 byte before returning data.
       let plaintext = Buffer.concat([decipher.update(value), decipher.final()]);
-      if ((metaVersion ?? 0) >= CHROME_M127_META_VERSION) {
-        if (plaintext.length < CHROME_DOMAIN_HASH_LENGTH) {
+      if (expectedHash) {
+        if (
+          plaintext.length < CHROME_DOMAIN_HASH_LENGTH ||
+          !plaintext.subarray(0, CHROME_DOMAIN_HASH_LENGTH).equals(expectedHash)
+        ) {
           continue;
         }
         plaintext = plaintext.subarray(CHROME_DOMAIN_HASH_LENGTH);
@@ -238,6 +253,7 @@ function normalizeV10MasterKey(password: string | Buffer): Buffer | null {
  * @param encryptedValue - The encrypted cookie value as a Buffer
  * @param password - The Chrome encryption password
  * @param metaVersion - Optional meta version for determining decryption behavior
+ * @param domain - Exact database host_key, required for Linux version 24+ hash validation
  * @returns A promise that resolves to the decrypted cookie value
  * @throws {Error} If decryption fails
  * @example
@@ -246,6 +262,7 @@ export async function decrypt(
   encryptedValue: Buffer,
   password: string | Buffer,
   metaVersion?: number,
+  domain?: string,
 ): Promise<string> {
   // v10 cookies use AES-GCM on Windows only
   // On macOS, cookies starting with v10 are actually v11 encrypted with a value that starts with "v10,"
@@ -287,7 +304,7 @@ export async function decrypt(
   }
 
   if (isLinux()) {
-    return decryptLinuxCookie(encryptedValue, password, metaVersion);
+    return decryptLinuxCookie(encryptedValue, password, metaVersion, domain);
   }
 
   // Derive the AES key once per password (cached); see deriveKey above.

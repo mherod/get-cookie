@@ -23,6 +23,26 @@ describe("cliQueryCookies", () => {
   const strategy = new CompositeCookieQueryStrategy([]);
   const query = jest.spyOn(strategy, "queryCookies");
 
+  it("deduplicates overlapping Netscape specs by source and cookie path", async () => {
+    const root = {
+      ...cookie,
+      meta: { file: "/browser/Default/Cookies", path: "/" },
+    };
+    const nested = { ...root, meta: { ...root.meta, path: "/app" } };
+    const otherProfile = {
+      ...root,
+      meta: { ...root.meta, file: "/browser/Work/Cookies" },
+    };
+    query.mockResolvedValue([root, nested, otherProfile]);
+    const args = { output: "netscape" };
+    await cliQueryCookies(args, [spec, { ...spec, domain: "www.example.com" }]);
+    expect(query).toHaveBeenCalledTimes(2);
+    expect(formatAndPrintCookies).toHaveBeenCalledWith(
+      [root, nested, otherProfile],
+      args,
+    );
+  });
+
   it("queries lossless Netscape values and preserves cookies on different paths", async () => {
     const rows = [
       { ...cookie, value: "raw%2Fvalue", meta: { path: "/" } },

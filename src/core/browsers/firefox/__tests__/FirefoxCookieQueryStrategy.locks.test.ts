@@ -8,6 +8,10 @@ import {
   type TestSetup,
 } from "./FirefoxCookieQueryStrategy.locks.setup";
 
+const { closeBrowserGracefully } = jest.requireMock<{
+  closeBrowserGracefully: jest.Mock;
+}>("@utils/browserControl");
+
 describe("FirefoxCookieQueryStrategy - Database Lock Handling", () => {
   let testSetup: TestSetup;
 
@@ -54,6 +58,10 @@ describe("FirefoxCookieQueryStrategy - Database Lock Handling", () => {
           details: "PID: 1234, Command: firefox",
         },
       ]);
+      expect(closeBrowserGracefully).toHaveBeenCalledWith("Firefox", {
+        interactive: true,
+        force: false,
+      });
     }, 10000); // Increase timeout to 10 seconds for CI environments
 
     it("should handle database lock with no Firefox processes detected", async () => {
@@ -72,6 +80,7 @@ describe("FirefoxCookieQueryStrategy - Database Lock Handling", () => {
       // Verify results and process detection
       expect(result).toEqual([]);
       expect(mocks.isFirefoxRunning).toHaveBeenCalled();
+      expect(closeBrowserGracefully).not.toHaveBeenCalled();
     }, 10000); // Increase timeout to 10 seconds for Windows CI environments
   });
 

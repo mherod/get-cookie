@@ -7,6 +7,18 @@ import { FirefoxCookieQueryStrategy } from "../FirefoxCookieQueryStrategy";
 // Mock the ProcessDetector
 jest.mock("@utils/processDetector");
 
+// BrowserLockHandler uses these utilities directly, independently of the
+// platform control below. Keep lock tests away from real OS commands.
+jest.mock("@utils/browserControl", () => ({
+  closeBrowserGracefully: jest.fn().mockResolvedValue(false),
+  waitForBrowserToClose: jest.fn().mockResolvedValue(false),
+}));
+
+jest.mock("@utils/fileHandleDetector", () => ({
+  detectFileHandles: jest.fn().mockResolvedValue([]),
+  getFileLockInfo: jest.fn().mockResolvedValue("No file handles"),
+}));
+
 // Mock platform utils to ensure consistent behavior across platforms
 jest.mock("@utils/platformUtils", () => ({
   getPlatform: jest.fn().mockReturnValue("darwin"),

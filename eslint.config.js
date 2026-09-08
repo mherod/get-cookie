@@ -280,6 +280,16 @@ export default [
               message:
                 "Import disk access through the runtime FileSystemAdapter (src/core/browsers/runtime/FileSystemAdapter) instead of node:fs directly.",
             },
+            {
+              name: "node:fs/promises",
+              message:
+                "Import disk access through the runtime FileSystemAdapter (src/core/browsers/runtime/FileSystemAdapter) instead of node:fs/promises directly.",
+            },
+            {
+              name: "fs/promises",
+              message:
+                "Import disk access through the runtime FileSystemAdapter (src/core/browsers/runtime/FileSystemAdapter) instead of fs/promises directly.",
+            },
           ],
         },
       ],

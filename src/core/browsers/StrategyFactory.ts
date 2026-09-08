@@ -10,6 +10,7 @@ import {
   type BrowserType,
   detectBrowserFromStore,
   isValidBrowserType,
+  SUPPORTED_BROWSER_TYPES,
 } from "./BrowserDetector";
 import { ChromeCookieQueryStrategy } from "./chrome/ChromeCookieQueryStrategy";
 import { ChromiumCookieQueryStrategy } from "./chromium/ChromiumCookieQueryStrategy";
@@ -25,28 +26,6 @@ export type AnyQueryStrategy =
   | CompositeCookieQueryStrategy;
 
 const logger = createTaggedLogger("StrategyFactory");
-
-const AVAILABLE_BROWSERS: BrowserType[] = [
-  "chrome",
-  "edge",
-  "arc",
-  "brave",
-  "opera",
-  "opera-gx",
-  "vivaldi",
-  "firefox",
-  "safari",
-];
-
-const CHROMIUM_BROWSERS: Set<string> = new Set([
-  "chrome",
-  "edge",
-  "arc",
-  "brave",
-  "opera",
-  "opera-gx",
-  "vivaldi",
-]);
 
 /**
  * Creates a strategy for the specified browser
@@ -80,11 +59,7 @@ export function createBrowserStrategy(
     return new ChromeCookieQueryStrategy(profile);
   }
 
-  if (CHROMIUM_BROWSERS.has(browser)) {
-    return new ChromiumCookieQueryStrategy(browser, profile);
-  }
-
-  return new ChromiumCookieQueryStrategy("chrome", profile);
+  return new ChromiumCookieQueryStrategy(browser, profile);
 }
 
 /**
@@ -98,7 +73,7 @@ export function createCompositeStrategy(
   container?: string | number,
 ): CompositeCookieQueryStrategy {
   logger.debug("Creating composite strategy with all browsers");
-  const strategies = AVAILABLE_BROWSERS.map((browser) =>
+  const strategies = SUPPORTED_BROWSER_TYPES.map((browser) =>
     createBrowserStrategy(
       browser,
       profile,
@@ -176,5 +151,5 @@ export function createStrategy(options?: {
  * @returns Array of available browser types
  */
 export function getAvailableBrowsers(): BrowserType[] {
-  return [...AVAILABLE_BROWSERS];
+  return [...SUPPORTED_BROWSER_TYPES];
 }

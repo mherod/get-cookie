@@ -8,6 +8,7 @@ import type {
   ExportedCookie,
 } from "../../../types/schemas";
 import type { CookieMeta } from "../../../types/schemas";
+import { BrowserNameSchema } from "../../../types/schemas";
 import { chromeTimestampToDate } from "../../../utils/chromeDates";
 import { usesRawCookieValues } from "../../cookies/CookieQueryContext";
 import { BaseCookieQueryStrategy } from "../BaseCookieQueryStrategy";
@@ -141,7 +142,7 @@ export abstract class BaseChromiumCookieQueryStrategy extends BaseCookieQueryStr
     browserName: string,
     browserType: ChromiumBrowser = "chrome",
   ) {
-    super(strategyName, "Chrome"); // Use "Chrome" for base class compatibility
+    super(strategyName, BrowserNameSchema.catch("Chrome").parse(browserName));
     this.browserDisplayName = browserName;
     this.browserType = browserType;
     this.lockHandler = new BrowserLockHandler(this.logger, "Chrome");
@@ -150,7 +151,7 @@ export abstract class BaseChromiumCookieQueryStrategy extends BaseCookieQueryStr
   /**
    * Returns the SQL browser type for this strategy.
    * Falls back to "chrome" for Chromium variants not yet in SqlBrowserType
-   * (e.g. vivaldi, whale), which all share Chrome's cookie schema.
+   * for compatibility with extensions that share Chrome's cookie schema.
    */
   private get sqlBrowserType() {
     return isSqlBrowser(this.browserType)

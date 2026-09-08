@@ -18,6 +18,15 @@ import {
 } from "../StrategyFactory";
 
 describe("createBrowserStrategy", () => {
+  const addedBrowsers = ["chromium", "whale"] as const;
+  const forBrowser = it.each(addedBrowsers);
+  forBrowser("selects %s through the public factory", (browser) => {
+    expect(isValidBrowserType(browser)).toBe(true);
+    const strategy = createStrategy({ browser, profile: "Work" });
+    expect(strategy).toBeInstanceOf(ChromiumCookieQueryStrategy);
+    expect(strategy.browserName.toLowerCase()).toBe(browser);
+    expect(getAvailableBrowsers()).toContain(browser);
+  });
   it("returns a Chrome strategy for 'chrome'", () => {
     const strategy = createBrowserStrategy("chrome");
     expect(strategy).toBeInstanceOf(ChromeCookieQueryStrategy);
@@ -82,7 +91,7 @@ describe("createCompositeStrategy", () => {
 
   it("covers the same number of browsers as the strategy registry", () => {
     const registrySize = getAvailableBrowsers().length;
-    expect(registrySize).toBe(9);
+    expect(registrySize).toBe(11);
   });
 });
 
@@ -203,8 +212,8 @@ describe("getAvailableBrowsers", () => {
     expect(browsers).toContain("vivaldi");
   });
 
-  it("returns exactly 9 browsers matching the current registry", () => {
-    expect(getAvailableBrowsers()).toHaveLength(9);
+  it("returns exactly 11 browsers matching the current registry", () => {
+    expect(getAvailableBrowsers()).toHaveLength(11);
   });
 });
 

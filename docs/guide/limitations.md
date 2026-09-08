@@ -10,8 +10,8 @@ selector matrix. The limitations below apply even on an implemented platform.
 - The root `getCookie()` and `batchGetCookies()` helpers query only Chrome,
   Firefox, and Safari by default. Use a strategy directly for another Chromium
   selector.
-- The CLI accepts nine `--browser` selectors. `chromium` and `whale` are
-  direct `ChromiumCookieQueryStrategy` values, not CLI selectors.
+- The CLI and MCP accept eleven browser selectors, including `chromium` and
+  `whale`. A selector requires an installed browser or a readable cookie store.
 - Safari is macOS-only and has no named-profile filtering.
 
 ## Matching and filtering

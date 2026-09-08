@@ -6,6 +6,17 @@ import type { CookieReader } from "../cookies";
 import { parseMcpArgs } from "../policy";
 import { createMcpServer } from "../server";
 
+const addedBrowsers = ["chromium", "whale"];
+const forAddedBrowser = it.each(addedBrowsers);
+forAddedBrowser("accepts %s in MCP profile discovery", async (browser) => {
+  const result = await client.callTool({
+    name: "list_profiles",
+    arguments: { browser },
+  });
+  expect(result.isError).not.toBe(true);
+  expect(listProfiles).toHaveBeenCalledWith(browser);
+});
+
 const url = "https://example.com/api/me";
 const profiles = [
   { browser: "firefox", name: "Personal", directory: "personal" },

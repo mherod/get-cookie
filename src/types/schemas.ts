@@ -335,6 +335,8 @@ export type RenderOptions = z.infer<typeof RenderOptionsSchema>;
  */
 export const BrowserNameSchema = z.enum([
   "Chrome",
+  "Chromium",
+  "Whale",
   "Firefox",
   "Safari",
   "internal",
@@ -421,6 +423,7 @@ export const CookieQueryOptionsSchema = BaseCookieQueryOptionsSchema.extend({
 export const SqlBrowserTypeSchema = z.enum([
   "chrome",
   "chromium",
+  "whale",
   "edge",
   "firefox",
   "opera",

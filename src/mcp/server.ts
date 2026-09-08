@@ -3,6 +3,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod";
 
 import { version } from "../../package.json";
+import { SUPPORTED_BROWSER_TYPES } from "../core/browsers/BrowserDetector";
 import { resetGlobalConnectionManager } from "../core/browsers/sql/DatabaseConnectionManager";
 
 import { type CookieReader, readCookies, selectCookies } from "./cookies";
@@ -10,17 +11,7 @@ import { authenticatedFetch } from "./fetch";
 import { assertAllowedUrl, McpOperationError, type McpPolicy } from "./policy";
 import { listProfiles } from "./profiles";
 
-const browser = z.enum([
-  "chrome",
-  "edge",
-  "arc",
-  "brave",
-  "opera",
-  "opera-gx",
-  "vivaldi",
-  "firefox",
-  "safari",
-]);
+const browser = z.enum(SUPPORTED_BROWSER_TYPES);
 const selection = {
   url: z
     .string()

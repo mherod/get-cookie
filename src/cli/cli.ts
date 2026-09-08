@@ -56,7 +56,7 @@ function showHelp(): void {
   logger.log("  -D, --domain PATTERN      Cookie domain pattern");
   logger.log("  -u, --url URL             URL to extract cookie specs from");
   logger.log(
-    "  --browser BROWSER         Target specific browser (chrome|edge|arc|opera|opera-gx|firefox|safari)",
+    "  --browser BROWSER         Target browser (chrome|chromium|edge|arc|brave|opera|opera-gx|vivaldi|whale|firefox|safari)",
   );
   logger.log(
     "  --profile NAME            Target specific browser profile by name (e.g., 'Default', 'Profile 1')",

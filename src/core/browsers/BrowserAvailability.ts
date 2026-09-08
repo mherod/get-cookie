@@ -12,7 +12,10 @@ import { execSimple } from "@utils/execSimple";
 import { createTaggedLogger } from "@utils/logHelpers";
 import { getPlatform, isLinux, isMacOS, isWindows } from "@utils/platformUtils";
 
-import { getBrowserDisplayName } from "./BrowserDetector";
+import {
+  getBrowserDisplayName,
+  SUPPORTED_BROWSER_TYPES,
+} from "./BrowserDetector";
 import type { BrowserType } from "./BrowserDetector";
 import { fileExists } from "./runtime/FileSystemAdapter";
 
@@ -51,6 +54,14 @@ export interface AvailableBrowser {
  */
 export const BROWSER_PATHS = {
   darwin: {
+    chromium: [
+      "/Applications/Chromium.app",
+      join(homedir(), "Library", "Application Support", "Chromium"),
+    ],
+    whale: [
+      "/Applications/Whale.app",
+      join(homedir(), "Library", "Application Support", "Naver", "Whale"),
+    ],
     chrome: [
       "/Applications/Google Chrome.app",
       `${homedir()}/Applications/Google Chrome.app`,
@@ -98,6 +109,10 @@ export const BROWSER_PATHS = {
     ],
   },
   win32: {
+    chromium: [join(process.env.LOCALAPPDATA ?? "", "Chromium", "User Data")],
+    whale: [
+      join(process.env.LOCALAPPDATA ?? "", "Naver", "Naver Whale", "User Data"),
+    ],
     chrome: [
       join(process.env.LOCALAPPDATA ?? "", "Google", "Chrome"),
       join(process.env.PROGRAMFILES ?? "", "Google", "Chrome"),
@@ -135,6 +150,12 @@ export const BROWSER_PATHS = {
     ],
   },
   linux: {
+    chromium: [
+      join(homedir(), ".config", "chromium"),
+      "/usr/bin/chromium",
+      "/usr/bin/chromium-browser",
+    ],
+    whale: [join(homedir(), ".config", "naver-whale"), "/usr/bin/naver-whale"],
     chrome: [
       `${homedir()}/.config/google-chrome`,
       "/usr/bin/google-chrome",
@@ -211,6 +232,8 @@ export const CHROMIUM_DATA_DIRS: Partial<
       "Brave-Browser",
     ),
     vivaldi: join(homedir(), "Library", "Application Support", "Vivaldi"),
+    chromium: join(homedir(), "Library", "Application Support", "Chromium"),
+    whale: join(homedir(), "Library", "Application Support", "Naver", "Whale"),
   },
   win32: {
     // Chrome and Edge store profiles under …\User Data on Windows
@@ -245,6 +268,13 @@ export const CHROMIUM_DATA_DIRS: Partial<
       "User Data",
     ),
     vivaldi: join(process.env.LOCALAPPDATA ?? "", "Vivaldi", "User Data"),
+    chromium: join(process.env.LOCALAPPDATA ?? "", "Chromium", "User Data"),
+    whale: join(
+      process.env.LOCALAPPDATA ?? "",
+      "Naver",
+      "Naver Whale",
+      "User Data",
+    ),
   },
   linux: {
     chrome: join(homedir(), ".config", "google-chrome"),
@@ -253,6 +283,8 @@ export const CHROMIUM_DATA_DIRS: Partial<
     "opera-gx": join(homedir(), ".config", "opera-gx"),
     brave: join(homedir(), ".config", "BraveSoftware", "Brave-Browser"),
     vivaldi: join(homedir(), ".config", "vivaldi"),
+    chromium: join(homedir(), ".config", "chromium"),
+    whale: join(homedir(), ".config", "naver-whale"),
   },
 };
 
@@ -461,41 +493,6 @@ function findFirefoxProfilesInPath(basePath: string): string[] {
 }
 
 /**
- * Get base path for Chromium-based browsers (Chrome/Edge)
- * @param browser - Browser type (chrome or edge)
- * @returns Base path for browser profiles
- */
-function getChromiumBasePath(browser: "chrome" | "edge" | "brave"): string {
-  const home = homedir();
-
-  const dirMap = {
-    darwin: {
-      chrome: "Google/Chrome",
-      edge: "Microsoft Edge",
-      brave: "BraveSoftware/Brave-Browser",
-    },
-    win32: {
-      chrome: "Google/Chrome",
-      edge: "Microsoft/Edge",
-      brave: "BraveSoftware/Brave-Browser",
-    },
-    linux: {
-      chrome: "google-chrome",
-      edge: "microsoft-edge",
-      brave: "BraveSoftware/Brave-Browser",
-    },
-  } as const;
-
-  if (isMacOS()) {
-    return join(home, "Library", "Application Support", dirMap.darwin[browser]);
-  }
-  if (isWindows()) {
-    return join(process.env.LOCALAPPDATA ?? "", dirMap.win32[browser]);
-  }
-  return join(home, ".config", dirMap.linux[browser]);
-}
-
-/**
  * Get base path for Firefox browser
  * @returns Base path for Firefox profiles
  */
@@ -519,8 +516,8 @@ function findBrowserProfiles(browser: BrowserType): string[] {
   const profiles: string[] = [];
 
   try {
-    if (browser === "chrome" || browser === "edge" || browser === "brave") {
-      const basePath = getChromiumBasePath(browser);
+    const basePath = CHROMIUM_DATA_DIRS[getPlatform()]?.[browser];
+    if (basePath) {
       profiles.push(...findChromiumProfiles(basePath));
     } else if (browser === "firefox") {
       const basePath = getFirefoxBasePath();
@@ -559,21 +556,9 @@ function findBrowserProfiles(browser: BrowserType): string[] {
  * ```
  */
 export function detectAvailableBrowsers(): AvailableBrowser[] {
-  const browsers: BrowserType[] = [
-    "chrome",
-    "firefox",
-    "safari",
-    "edge",
-    "arc",
-    "brave",
-    "opera",
-    "opera-gx",
-    "vivaldi",
-  ];
-
   const available: AvailableBrowser[] = [];
 
-  for (const browser of browsers) {
+  for (const browser of SUPPORTED_BROWSER_TYPES) {
     const installed = checkBrowserInstalled(browser);
 
     if (installed) {

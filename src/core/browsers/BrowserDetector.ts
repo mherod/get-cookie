@@ -12,16 +12,20 @@ const logger = createTaggedLogger("BrowserDetector");
 /**
  * Supported browser types for cookie extraction
  */
-export type BrowserType =
-  | "chrome"
-  | "firefox"
-  | "safari"
-  | "edge"
-  | "arc"
-  | "brave"
-  | "opera"
-  | "opera-gx"
-  | "vivaldi";
+export const SUPPORTED_BROWSER_TYPES = [
+  "chrome",
+  "edge",
+  "arc",
+  "brave",
+  "opera",
+  "opera-gx",
+  "vivaldi",
+  "chromium",
+  "whale",
+  "firefox",
+  "safari",
+] as const;
+export type BrowserType = (typeof SUPPORTED_BROWSER_TYPES)[number];
 
 /**
  * Magic bytes for Safari binary cookies format
@@ -137,18 +141,7 @@ export function detectBrowserFromStore(
  * @returns True if the browser is a known type
  */
 export function isValidBrowserType(browser: string): browser is BrowserType {
-  const validTypes: BrowserType[] = [
-    "chrome",
-    "firefox",
-    "safari",
-    "edge",
-    "arc",
-    "brave",
-    "opera",
-    "opera-gx",
-    "vivaldi",
-  ];
-  return validTypes.includes(browser as BrowserType);
+  return SUPPORTED_BROWSER_TYPES.some((type) => type === browser);
 }
 
 /**
@@ -159,6 +152,8 @@ export function isValidBrowserType(browser: string): browser is BrowserType {
 export function getBrowserDisplayName(browser: BrowserType): string {
   const displayNames: Record<BrowserType, string> = {
     chrome: "Google Chrome",
+    chromium: "Chromium",
+    whale: "Naver Whale",
     firefox: "Mozilla Firefox",
     safari: "Safari",
     edge: "Microsoft Edge",

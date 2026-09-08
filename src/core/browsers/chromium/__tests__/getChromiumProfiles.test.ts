@@ -2,9 +2,52 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 
 import { setFileSystemAdapter } from "../../runtime/FileSystemAdapter";
+import { CHROMIUM_DATA_DIRS, BROWSER_PATHS } from "../../BrowserAvailability";
 import { getChromiumProfiles } from "../getChromiumProfiles";
 
 describe("getChromiumProfiles", () => {
+  const platforms = ["darwin", "linux", "win32"] as const;
+  const forPlatform = it.each(platforms);
+  forPlatform("discovers Chromium and Whale profiles on %s", (platform) => {
+    const descriptor = Object.getOwnPropertyDescriptor(process, "platform");
+    Object.defineProperty(process, "platform", { value: platform });
+    try {
+      for (const browser of ["chromium", "whale"] as const) {
+        const dataDir = CHROMIUM_DATA_DIRS[platform]?.[browser];
+        expect(dataDir).toBeDefined();
+        expect(BROWSER_PATHS[platform][browser]).toContain(dataDir);
+        const localStatePath = join(dataDir ?? "", "Local State");
+        const adapter = {
+          fileExists: jest.fn((path: string) => path === localStatePath),
+          readTextFile: jest.fn(() =>
+            JSON.stringify({
+              profile: { info_cache: { Default: { name: "Personal" } } },
+            }),
+          ),
+          getFileModificationTime: jest.fn(),
+          readLeadingBytes: jest.fn(),
+          readFile: jest.fn(),
+        };
+        setFileSystemAdapter(adapter);
+        expect(getChromiumProfiles(browser)).toEqual([
+          {
+            browser,
+            name: "Personal",
+            directory: "Default",
+            path: join(dataDir ?? "", "Default"),
+          },
+        ]);
+        expect(getChromiumProfiles()).toContainEqual(
+          expect.objectContaining({ browser, name: "Personal" }),
+        );
+        expect(adapter.readTextFile).toHaveBeenCalledWith(localStatePath);
+      }
+    } finally {
+      if (descriptor) {
+        Object.defineProperty(process, "platform", descriptor);
+      }
+    }
+  });
   beforeEach(() => {
     setFileSystemAdapter(undefined);
   });

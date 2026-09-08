@@ -9,6 +9,8 @@ compatibility certification for every browser release.
 | Selector | Browser family | macOS | Linux | Windows | Notes |
 | --- | --- | --- | --- | --- | --- |
 | `chrome` | Chromium | ✅ | ✅ | ✅ | Uses Chrome's platform data directory. |
+| `chromium` | Chromium | ✅ | ✅ | ✅ | Uses the Chromium data directory and Safe Storage entry. |
+| `whale` | Chromium | ✅ | ✅ | ✅ | Uses Naver Whale's data directory and Safe Storage entry. |
 | `edge` | Chromium | ✅ | ✅ | ✅ | Uses Microsoft Edge's platform data directory. |
 | `arc` | Chromium | ✅ | — | ⚠️ | Windows query paths exist, but availability detection still marks Arc unavailable; verify locally before relying on it. |
 | `brave` | Chromium | ✅ | ✅ | ✅ | Uses Brave's platform data directory. |
@@ -42,8 +44,8 @@ const edge = new ChromiumCookieQueryStrategy("edge", "Work");
 const firefox = new FirefoxCookieQueryStrategy("default-release");
 ```
 
-`ChromiumCookieQueryStrategy` also accepts `chromium` and `whale` when used
-directly, but neither is a CLI `--browser` selector.
+`chromium` and `whale` work with `--browser`, `--list-profiles`, the public
+strategy factory, and MCP browser selection.
 
 ## Profiles and containers
 

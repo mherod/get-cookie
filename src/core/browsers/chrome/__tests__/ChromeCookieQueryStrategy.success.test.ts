@@ -93,6 +93,11 @@ describe("ChromeCookieQueryStrategy - Success", () => {
     expect(mockGetChromiumPassword).toHaveBeenCalled();
     expect(mockGetGlobalConnectionManager).toHaveBeenCalled();
     expect(mockGetGlobalQueryMonitor).toHaveBeenCalled();
-    expect(mockDecrypt).toHaveBeenCalledWith(mockCookieValue, mockPassword, 0);
+    expect(mockDecrypt).toHaveBeenCalledWith(
+      mockCookieValue,
+      mockPassword,
+      0,
+      "example.com",
+    );
   });
 });

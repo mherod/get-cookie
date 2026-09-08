@@ -34,6 +34,34 @@ describe("FirefoxContainers", () => {
   });
 
   describe("parseFirefoxContainersJson", () => {
+    it("reads Firefox identities before legacy containers", () => {
+      (fileSystemAdapter.fileExists as jest.Mock).mockReturnValue(true);
+      (fileSystemAdapter.readTextFile as jest.Mock).mockReturnValue(
+        JSON.stringify({
+          version: 5,
+          lastUserContextId: 7,
+          identities: [{ userContextId: 7, name: "Work" }],
+          containers: [{ userContextId: 2, name: "Work" }],
+        }),
+      );
+
+      const map = parseFirefoxContainersJson("/mock/profile/containers.json");
+      expect([...map]).toEqual([["work", 7]]);
+    });
+
+    it("keeps an empty identities array authoritative", () => {
+      (fileSystemAdapter.fileExists as jest.Mock).mockReturnValue(true);
+      (fileSystemAdapter.readTextFile as jest.Mock).mockReturnValue(
+        JSON.stringify({
+          identities: [],
+          containers: [{ userContextId: 2, name: "Work" }],
+        }),
+      );
+
+      const map = parseFirefoxContainersJson("/mock/profile/containers.json");
+      expect(map.size).toBe(0);
+    });
+
     it("parses valid containers.json file into a map of lowercased names to userContextIds", () => {
       const mockContent = JSON.stringify({
         version: 1,
@@ -86,7 +114,8 @@ describe("FirefoxContainers", () => {
 
     it("resolves container name using containers.json beside cookies.sqlite", () => {
       const mockContent = JSON.stringify({
-        containers: [{ userContextId: 2, name: "Work" }],
+        version: 5,
+        identities: [{ userContextId: 2, name: "Work" }],
       });
 
       (fileSystemAdapter.fileExists as jest.Mock).mockReturnValue(true);
@@ -95,7 +124,7 @@ describe("FirefoxContainers", () => {
       );
 
       const result = resolveFirefoxContainer(
-        "Work",
+        "wOrK",
         "/mock/profile/cookies.sqlite",
       );
       expect(result).toBe(2);

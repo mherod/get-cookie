@@ -69,6 +69,27 @@ describe("decrypt", () => {
   });
 
   describe("Windows v10 routing", () => {
+    it("reports a non-string password before normalizing the Windows key", async () => {
+      mockIsWindows.mockReturnValue(true);
+      const encryptedValue = Buffer.from(
+        TEST_COOKIES.logged_in.encrypted,
+        "hex",
+      );
+
+      await expect(
+        decrypt(encryptedValue, 123 as unknown as string),
+      ).rejects.toThrow("password must be a string");
+    });
+
+    it("uses AES-GCM when the Windows master key arrives as a Buffer", async () => {
+      mockIsWindows.mockReturnValue(true);
+      const key = randomBytes(32);
+      const value = "buffer_key_value";
+      const blob = buildWindowsV10Blob(Buffer.from(value, "utf8"), key);
+
+      await expect(decrypt(blob, key, 23)).resolves.toBe(value);
+    });
+
     it("keeps legacy AES-CBC fixtures on the CBC path when the string key is not 32 bytes", async () => {
       mockIsWindows.mockReturnValue(true);
       const cookie = TEST_COOKIES.logged_in;

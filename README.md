@@ -124,7 +124,7 @@ service/keyring providers.
 The CLI accepts these browser names:
 
 ```text
-chrome  edge  arc  brave  opera  opera-gx  vivaldi  firefox  safari
+chrome  chromium  whale  edge  arc  brave  opera  opera-gx  vivaldi  firefox  safari
 ```
 
 Chromium-family browsers and Firefox have discovery paths for macOS, Linux, and

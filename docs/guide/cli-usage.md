@@ -77,7 +77,7 @@ SQL-style `%` and `_` patterns instead.
 Supported `--browser` values:
 
 ```text
-chrome  edge  arc  brave  opera  opera-gx  vivaldi  firefox  safari
+chrome  chromium  whale  edge  arc  brave  opera  opera-gx  vivaldi  firefox  safari
 ```
 
 If `--browser` is omitted, the CLI creates a composite strategy across the

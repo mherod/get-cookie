@@ -62,8 +62,8 @@ Concrete strategies handle browser-specific discovery and decoding:
 - `SafariCookieQueryStrategy` for Safari binary-cookie files on macOS
 - `CompositeCookieQueryStrategy` for aggregating several strategies
 
-The CLI's `StrategyFactory` registry covers nine selectors: Chrome, Edge,
-Arc, Brave, Opera, Opera GX, Vivaldi, Firefox, and Safari. The root
+The CLI's `StrategyFactory` registry covers eleven selectors: Chrome, Chromium,
+Whale, Edge, Arc, Brave, Opera, Opera GX, Vivaldi, Firefox, and Safari. The root
 `getCookie` helper deliberately uses a smaller default set: Chrome, Firefox,
 and Safari.
 

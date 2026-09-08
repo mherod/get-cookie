@@ -43,7 +43,12 @@ export function validateOutputFormat(options: CookieFormatOptions): void {
 function formatNetscapeCookies(cookies: ExportedCookie[]): string {
   const rows = cookies.map((cookie) => {
     const meta = cookie.meta;
-    if (meta?.decrypted === false) {
+    // Firefox and Safari store plaintext; their false flag is not a decryption failure.
+    if (
+      meta?.decrypted === false &&
+      meta.browser !== "Firefox" &&
+      meta.browser !== "Safari"
+    ) {
       throw new Error(
         "Cannot export Netscape cookies: a cookie value could not be decrypted",
       );

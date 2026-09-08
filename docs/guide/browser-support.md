@@ -25,7 +25,7 @@ compatibility certification for every browser release.
 - — unavailable or intentionally skipped
 
 When `--browser` is omitted, the CLI creates a composite strategy containing
-all nine selectors above. An invalid browser value also falls back to that
+all eleven selectors above. An invalid browser value also falls back to that
 composite strategy, so use `--verbose` if a selector appears to be ignored.
 
 ## Library API boundary

@@ -274,3 +274,18 @@ it("keeps same-name Firefox profiles separate through discovery and fetching", a
     });
   }
 });
+
+it("uses the cancellation error code without exposing the abort reason", async () => {
+  readCookies.mockRejectedValue(
+    new DOMException("fixture-secret", "AbortError"),
+  );
+  const result = await client.callTool({
+    name: "query_cookies",
+    arguments: { url, browser: "firefox", profile: "Work" },
+  });
+  expect(result.isError).toBe(true);
+  expect(result.structuredContent).toMatchObject({
+    error: { code: "REQUEST_ABORTED" },
+  });
+  expect(JSON.stringify(result)).not.toContain("fixture-secret");
+});

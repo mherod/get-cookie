@@ -105,6 +105,13 @@ of zero means no readable, applicable cookies were returned; it can also
 indicate an inaccessible store. A profile-level failure has `cookieCount:
 null` and an `error`; other profiles are still checked.
 
+Supply `browser` to limit the work. With a URL and no browser filter, discovery
+reads and decrypts cookies across all discovered browsers and may trigger OS
+keychain prompts. Profiles are read sequentially with no per-profile timeout.
+Cancellation is checked between reads; a locked store or pending keychain
+prompt can delay cancellation until that read finishes. Use metadata-only
+discovery first when browser access is uncertain.
+
 For Firefox containers, pass `browser: "firefox"` and a `container` name or
 ID alongside the URL, then use the same container in the subsequent query or
 request. Safari has no named profiles: call `query_cookies` or

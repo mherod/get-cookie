@@ -1,3 +1,5 @@
+import { join, resolve } from "node:path";
+
 import { createStrategy } from "../../core/browsers/StrategyFactory";
 import { readCookies } from "../cookies";
 import { listProfiles } from "../profiles";
@@ -67,4 +69,3 @@ it("rejects directory selection for other browsers", async () => {
   ).rejects.toThrow("only by Firefox");
   expect(createStrategy).not.toHaveBeenCalled();
 });
-import { join, resolve } from "node:path";

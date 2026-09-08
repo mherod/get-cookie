@@ -104,7 +104,8 @@ async function detectBrowserProcesses(
         firefox: "firefox.exe",
         chrome: "chrome.exe",
         "google chrome": "chrome.exe",
-        chromium: "chromium.exe",
+        chromium: "chrome.exe",
+        whale: "whale.exe",
         safari: "safari.exe", // Won't exist on Windows but included for consistency
         edge: "msedge.exe",
       };
@@ -178,6 +179,26 @@ export async function isChromeRunning(): Promise<ProcessInfo[]> {
   return detectBrowserProcesses("Chrome", "google chrome\\|chromium");
 }
 
+/** Detect the browser managed by a cookie strategy's lock controller. */
+export async function isBrowserRunning(
+  browser: BrowserName,
+): Promise<ProcessInfo[]> {
+  switch (browser) {
+    case "Chromium":
+      return detectBrowserProcesses(browser, "chromium");
+    case "Whale":
+      return detectBrowserProcesses(browser, "whale");
+    case "Chrome":
+      return isChromeRunning();
+    case "Firefox":
+      return isFirefoxRunning();
+    case "Safari":
+      return isSafariRunning();
+    default:
+      return [];
+  }
+}
+
 /**
  * Check if Safari browser is currently running
  * @returns Promise that resolves to array of Safari process information
@@ -209,3 +230,4 @@ export function getBrowserConflictAdvice(
 
   return `${browserDisplayName} is currently running (${processCount} process${processCount > 1 ? "es" : ""} detected). For reliable cookie access, consider closing ${browserDisplayName} and trying again. Alternatively, use the --force flag to attempt access despite the lock.`;
 }
+import type { BrowserName } from "../types/schemas";

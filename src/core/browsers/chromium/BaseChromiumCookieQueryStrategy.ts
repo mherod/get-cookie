@@ -1,6 +1,6 @@
 import { getErrorMessage } from "@utils/errorUtils";
 import { getPlatform, isPlatformSupported } from "@utils/platformUtils";
-import { isChromeRunning } from "@utils/processDetector";
+import { isBrowserRunning } from "@utils/processDetector";
 
 import type {
   CookieRow,
@@ -148,7 +148,7 @@ export abstract class BaseChromiumCookieQueryStrategy extends BaseCookieQueryStr
     super(strategyName, BrowserNameSchema.catch("Chrome").parse(browserName));
     this.browserDisplayName = browserName;
     this.browserType = browserType;
-    this.lockHandler = new BrowserLockHandler(this.logger, "Chrome");
+    this.lockHandler = new BrowserLockHandler(this.logger, this.browserName);
   }
 
   /**
@@ -460,7 +460,7 @@ export abstract class BaseChromiumCookieQueryStrategy extends BaseCookieQueryStr
     domain: string,
     force?: boolean,
   ): Promise<{ resolved: boolean; shouldRelaunch: boolean }> {
-    const processes = await isChromeRunning();
+    const processes = await isBrowserRunning(this.browserName);
     const lockResult = await this.lockHandler.handleBrowserConflict(
       error,
       file,

@@ -86,11 +86,19 @@ describe("decrypt", () => {
         expect(await decrypt(blob, "wrong-keyring")).toBe(value);
       },
     );
-    it("accepts the supplied key before basic and empty passwords", async () => {
+    it("prefers the v10 basic key when a stale key also produces valid text", async () => {
+      // Real CBC collision: this stale password passes padding and UTF-8 validation.
+      // The ciphertext was encrypted with peanuts and contains the value "cookie".
+      const blob = Buffer.from("7631301bea037fd02eda9472a6491e3836843f", "hex");
+      await expect(decrypt(blob, "stale-key-512902", 23)).resolves.toBe(
+        "cookie",
+      );
+    });
+    it("accepts the v11 keyring key and the v10 basic key", async () => {
       const value = "retain'whole-value";
       expect(
         await decrypt(
-          buildCbcBlob(Buffer.from(value), "keyring", 1),
+          buildCbcBlob(Buffer.from(value), "keyring", 1, "v11"),
           "keyring",
         ),
       ).toBe(value);

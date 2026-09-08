@@ -197,7 +197,12 @@ async function decryptLinuxCookie(
         .update(domain ?? "")
         .digest()
     : null;
-  for (const candidate of new Set([password, "peanuts", ""])) {
+  // Linux v10 selects basic storage; v11 selects the desktop keyring.
+  // Older databases lack a domain hash, so padding/text alone cannot establish
+  // which key was intended. Prefer the format's key before compatibility fallbacks.
+  const candidates =
+    prefix === "v10" ? ["peanuts", password, ""] : [password, "peanuts", ""];
+  for (const candidate of new Set(candidates)) {
     const key = await deriveKey(candidate, 1);
     try {
       const decipher = createDecipheriv(

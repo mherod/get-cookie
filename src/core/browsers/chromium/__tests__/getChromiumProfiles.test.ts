@@ -1,3 +1,6 @@
+import { homedir } from "node:os";
+import { join } from "node:path";
+
 import { setFileSystemAdapter } from "../../runtime/FileSystemAdapter";
 import { getChromiumProfiles } from "../getChromiumProfiles";
 
@@ -116,5 +119,3 @@ describe("getChromiumProfiles", () => {
     }
   });
 });
-import { homedir } from "node:os";
-import { join } from "node:path";

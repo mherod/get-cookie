@@ -362,10 +362,10 @@ describe("FirefoxCookieQueryStrategy — raw values & metadata", () => {
   describe.each(invalidContainerConfigs)("$label container config", ({
     content,
   }) => {
-    it.each([
-      false,
-      true,
-    ])("keeps valid profile results (valid first: %s)", async (validFirst) => {
+    const profileOrders = [false, true];
+    it.each(
+      profileOrders,
+    )("keeps cookies (valid first: %s)", async (validFirst) => {
       const configPath = join(schema15Dir, "containers.json");
       if (content !== undefined) {
         writeFileSync(configPath, content, "utf8");
@@ -410,11 +410,10 @@ describe("FirefoxCookieQueryStrategy — raw values & metadata", () => {
     });
   });
 
-  it.each([
-    2,
-    "work",
-    "none",
-  ])("filters Firefox cookies through the default composite for container %s", async (container) => {
+  const compositeContainers = [2, "work", "none"];
+  it.each(
+    compositeContainers,
+  )("filters composite cookies (%s)", async (container) => {
     const chromium = jest
       .spyOn(BaseChromiumCookieQueryStrategy.prototype, "queryCookies")
       .mockResolvedValue([]);

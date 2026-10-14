@@ -86,7 +86,7 @@
   "author": "Matthew Herod",
   "license": "ISC",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "1.30.0",
+    "@modelcontextprotocol/sdk": "1.31.0",
     "better-sqlite3": "^12.4.1",
     "consola": "^3.4.2",
     "date-fns": "4.4.0",
